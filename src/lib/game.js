@@ -37,7 +37,11 @@ export function newProfile(uid, { name, username } = {}) {
     level: "студент",
     profession: "Терапевт",
     specializations: [...SPECIALIZATIONS["Терапевт"]],
-    onboarding_done: true,
+    onboarding_done: false, // анкета: кто вы, где учитесь/работаете, чего ждёте
+    about: "",
+    expectations: "",
+    review_asked: false,
+    feedback: [],
     registered_at: now,
     last_active: now,
     patient_counter: 0,
@@ -63,7 +67,9 @@ export function newProfile(uid, { name, username } = {}) {
 export function normalizeProfile(p) {
   const base = newProfile(p.uid, p);
   const prof = { ...base, ...p, stats: { ...base.stats, ...(p.stats || {}) } };
-  for (const k of ["active_patient_ids", "closed_patient_ids", "test_ids", "daily_patients", "strengths", "weaknesses", "recommendations"]) {
+  // Анкету показываем только новым пользователям
+  if (p.onboarding_done === undefined) prof.onboarding_done = true;
+  for (const k of ["active_patient_ids", "closed_patient_ids", "test_ids", "daily_patients", "strengths", "weaknesses", "recommendations", "feedback"]) {
     if (!Array.isArray(prof[k])) prof[k] = [];
   }
   if (!Array.isArray(prof.specializations) || !prof.specializations.length) {
@@ -159,6 +165,17 @@ export function applyQuizTask(prof) {
     return true;
   }
   return false;
+}
+
+// ---------- Просьба об отзыве ----------
+const REVIEW_AFTER_MS = 2 * 86400000;
+const REVIEW_ACTIVE_WITHIN_MS = 14 * 86400000;
+
+/** Через 2+ дня после регистрации — один раз, и только тем, кто недавно заходил */
+export function shouldAskReview(prof, now = Date.now()) {
+  if (prof.review_asked || (prof.feedback || []).length) return false;
+  if (!prof.registered_at || now - prof.registered_at < REVIEW_AFTER_MS) return false;
+  return now - (prof.last_active || 0) < REVIEW_ACTIVE_WITHIN_MS;
 }
 
 // ---------- Стрик ----------

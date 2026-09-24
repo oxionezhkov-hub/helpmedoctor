@@ -7,7 +7,7 @@
 import { DurableObject } from "cloudflare:workers";
 import {
   ALIEN_PATIENT_EVERY, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
-  MAX_ACTIVE_PATIENTS, PLANS, SPECIALIZATIONS, TEST_TYPES,
+  MAX_ACTIVE_PATIENTS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES,
 } from "../config.js";
 import { aiJson, aiText, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
@@ -157,7 +157,7 @@ export class UserDO extends DurableObject {
       patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => patientSummary(p)),
       quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map(quizSummary),
       plans: PLANS,
-      config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, tests: TEST_TYPES, max_active: MAX_ACTIVE_PATIENTS },
+      config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, tests: TEST_TYPES, exams: PHYSICAL_EXAMPLES, max_active: MAX_ACTIVE_PATIENTS },
     };
   }
 
@@ -184,9 +184,67 @@ export class UserDO extends DurableObject {
       if (specs.length) prof.specializations = [...new Set(specs)];
     }
     if (patch.notifications !== undefined) prof.notifications = !!patch.notifications;
+    if (patch.about !== undefined) prof.about = clampStr(patch.about, 200);
+    if (patch.expectations !== undefined) prof.expectations = clampStr(patch.expectations, 600);
+    const finishedOnboarding = patch.onboarding_done === true && !prof.onboarding_done;
+    if (finishedOnboarding) prof.onboarding_done = true;
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile");
+    if (finishedOnboarding && (prof.about || prof.expectations)) {
+      await this.hub().notifyAdmin(
+        `📝 Анкета: ${prof.name}${prof.username ? " @" + prof.username : ""} (${prof.uid})\n` +
+        `Кто: ${G.levelMeta(prof.level).label}${prof.about ? ` — ${prof.about}` : ""}\n` +
+        `Ожидания: ${prof.expectations || "—"}`,
+      );
+    }
     return publicProfile(prof);
+  }
+
+  /** Разделы для своей специальности (ИИ, с кэшем на пользователя) */
+  async suggestSections(profession) {
+    profession = clampStr(profession, 40);
+    if (!profession) return [];
+    const known = Object.keys(SPECIALIZATIONS).find((k) => k.toLowerCase() === profession.toLowerCase());
+    if (known) return SPECIALIZATIONS[known];
+    const key = `sections:${profession.toLowerCase()}`;
+    const cached = await this.ctx.storage.get(key);
+    if (cached) return cached;
+    const p = P.sectionsPrompt(profession);
+    let data;
+    try {
+      data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature });
+    } catch (e) {
+      console.error("sections", e);
+      throw new UserError("Не удалось подобрать разделы — добавьте их вручную", "ai_error");
+    }
+    const list = [...new Set((Array.isArray(data?.sections) ? data.sections : [])
+      .map((x) => clampStr(x, 60).toLowerCase()).filter(Boolean))].slice(0, 6);
+    await this.ctx.storage.put(key, list);
+    return list;
+  }
+
+  /** Отзыв о тренажёре. rating 1-5 и/или текст; текст без оценки дописывается к последнему отзыву. */
+  async saveFeedback({ rating, text } = {}, source = "web") {
+    const prof = await this.profile();
+    const r = Math.round(Number(rating));
+    const stars = r >= 1 && r <= 5 ? r : null;
+    const body = clampStr(text, 1500);
+    if (!stars && !body) throw new UserError("Поставьте оценку или напишите пару слов");
+    prof.feedback = Array.isArray(prof.feedback) ? prof.feedback : [];
+    const last = prof.feedback[prof.feedback.length - 1];
+    let entry;
+    if (!stars && last && !last.text && Date.now() - last.ts < 3600000) {
+      last.text = body;
+      entry = last;
+    } else {
+      entry = { ts: Date.now(), rating: stars, text: body, source };
+      prof.feedback = [...prof.feedback, entry].slice(-10);
+    }
+    prof.review_asked = true;
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.hub().saveFeedback(prof.uid, { name: prof.name, username: prof.username, rating: entry.rating, text: entry.text, source, ts: entry.ts });
+    return { ok: true };
   }
 
   // ---------------------------------------------------
@@ -243,6 +301,7 @@ export class UserDO extends DurableObject {
       personality: clampStr(data.personality, 300),
       opening_phrase: clampStr(data.opening_phrase, 400),
       key_findings: clampStr(data.key_findings, 600),
+      findings: normalizeFindings(data.findings),
       condition_trajectory: data.condition_trajectory || "stable",
       status: "new",
       created_at: now,
@@ -468,10 +527,15 @@ export class UserDO extends DurableObject {
     if (!["diagnosis", "referral", "discharge"].includes(type)) throw new UserError("Неизвестное действие");
     const value = clampStr(action.value, 300);
     if (type !== "discharge" && !value) throw new UserError(type === "diagnosis" ? "Введите диагноз" : "Укажите специалиста");
+    const refDiagnosis = clampStr(action.diagnosis, 300);
+    if (type === "referral" && !refDiagnosis) throw new UserError("Укажите диагноз, с которым направляете пациента");
     return this.withLock(patId, async () => {
       const pat = await this.openPatient(patId);
       if (type === "diagnosis") pat.current.diagnosis = value;
-      if (type === "referral") pat.current.referrals.push(value);
+      if (type === "referral") {
+        pat.current.referrals.push(value);
+        pat.current.diagnosis = refDiagnosis;
+      }
       if (type === "discharge") pat.current.discharged = true;
       const treatment = clampStr(action.treatment, 500);
       if (treatment) pat.current.treatment = treatment;
@@ -543,7 +607,7 @@ export class UserDO extends DurableObject {
         outcome_update: "worsening", post_story: `${pat.name} ушёл без назначений и через неделю обратился в другую клинику.`,
       };
     } else {
-      const p = P.evaluationPrompt(pat, facts);
+      const p = P.evaluationPrompt(pat, { ...facts, profession: (await this.profile()).profession });
       try {
         ev = normalizeEvaluation(await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature }));
       } catch (e) {
@@ -762,6 +826,13 @@ export class UserDO extends DurableObject {
     let sent = "none";
     if (kind === "morning") {
       if (G.ensureDailyTask(prof)) await this.ctx.storage.put(PROFILE, prof);
+      if (G.shouldAskReview(prof)) {
+        prof.review_asked = true;
+        await this.ctx.storage.put(PROFILE, prof);
+        const m = R.reviewRequest(prof.name);
+        await bot.send(prof.uid, m.text, m.kb);
+        return "review";
+      }
       if (gap === 0) return "active";
       if (gap === 1 && streak >= 2) {
         const m = R.streakReminder(this.env, streak);
@@ -934,6 +1005,13 @@ function mergeList(fresh = [], old = [], max) {
   return [...new Set([...(fresh || []).filter(Boolean).map((s) => clampStr(s, 160)), ...(old || [])])].slice(0, max);
 }
 
+function normalizeFindings(f) {
+  if (!f || typeof f !== "object") return null;
+  const out = {};
+  for (const k of ["exam", "lab", "imaging", "ecg", "pathology"]) out[k] = clampStr(typeof f[k] === "string" ? f[k] : "", 500);
+  return out;
+}
+
 function validatePatient(d) {
   if (!d || typeof d !== "object") throw new Error("patient: не объект");
   for (const k of ["name", "true_diagnosis", "full_history", "opening_phrase"]) {
@@ -1044,7 +1122,7 @@ export function patientSummary(p) {
 
 export function publicPatient(p) {
   const closed = p.status === "closed";
-  const { full_history, key_findings, personality, last_facts, summary, ...rest } = p;
+  const { full_history, key_findings, findings, personality, last_facts, summary, ...rest } = p;
   return {
     ...rest,
     true_diagnosis: closed ? p.true_diagnosis : null,

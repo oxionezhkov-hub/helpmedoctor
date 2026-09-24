@@ -54,8 +54,66 @@ export function kbMain(env) {
   return [
     [appBtn("🏥 Открыть приложение", appUrl(env))],
     [btn("➕ Новый пациент", "new"), btn("👥 Мои пациенты", "list")],
+    [btn("✍️ Оставить отзыв", "fb")],
   ];
 }
+
+// ---------- Анкета нового пользователя ----------
+export const ONBOARDING_ROLES = [
+  ["студент", "🎓 Студент"],
+  ["ординатор", "🩺 Ординатор"],
+  ["врач", "👩‍⚕️ Врач"],
+  ["специалист", "🏅 Опытный специалист"],
+];
+
+export function onboardingStart(name) {
+  return {
+    text: `👩‍⚕️ <b>Добро пожаловать в «Help me, Doctor», ${esc(name)}!</b>\n\n` +
+      `Это тренажёр врача: ИИ-пациенты с настоящими жалобами, обследования, осмотр, диагноз — и разбор от эксперта.\n\n` +
+      `Давайте познакомимся — 3 коротких вопроса, чтобы пациенты были вам по уровню.\n\n<b>1/3. Кто вы?</b>`,
+    kb: [
+      ONBOARDING_ROLES.slice(0, 2).map(([k, l]) => btn(l, `ob_lvl_${k}`)),
+      ONBOARDING_ROLES.slice(2).map(([k, l]) => btn(l, `ob_lvl_${k}`)),
+      [btn("Пропустить →", "ob_skip")],
+    ],
+  };
+}
+
+export function onboardingAbout(level) {
+  const q = level === "студент" ? "На каком вы курсе и в каком вузе?"
+    : level === "ординатор" ? "Какая специальность ординатуры и какой год?"
+      : "Кем и где вы работаете? Специальность и стаж.";
+  return { text: `<b>2/3.</b> ${q}\n<i>Напишите ответ сообщением.</i>`, kb: [[btn("Пропустить →", "ob_next")]] };
+}
+
+export const onboardingExpectations = () => ({
+  text: "<b>3/3. Чего вы ждёте от тренажёра?</b>\nЧто хотите прокачать: диагностику, общение с пациентами, подготовку к экзамену…\n<i>Напишите ответ сообщением.</i>",
+  kb: [[btn("Пропустить →", "ob_done")]],
+});
+
+export function onboardingDone(env, profile) {
+  return {
+    text: `✅ <b>Спасибо!</b> Вы — ${esc(profile.level_label)} (${esc(profile.profession)}). Специальность и разделы можно поменять в приложении, в профиле.\n\nНачнём с первого пациента?`,
+    kb: [[btn("➕ Принять первого пациента", "new")], [appBtn("🏥 Открыть приложение", appUrl(env))]],
+  };
+}
+
+// ---------- Отзыв ----------
+export const kbRating = () => [[1, 2, 3, 4, 5].map((n) => btn(`${n} ⭐`, `rv_${n}`))];
+
+export function reviewRequest(name) {
+  return {
+    text: `👋 ${esc(name)}, вы пользуетесь «Help me, Doctor» уже пару дней.\n\n<b>Как вам тренажёр?</b> Оцените от 1 до 5 — это займёт секунду и очень поможет сделать его лучше.`,
+    kb: kbRating(),
+  };
+}
+
+export const feedbackAskRating = () => ({ text: "✍️ <b>Отзыв о тренажёре</b>\n\nОцените от 1 до 5:", kb: kbRating() });
+
+export const feedbackAskText = (rating) => ({
+  text: `Спасибо за оценку ${"⭐".repeat(rating)}!\n\nНапишите пару слов: что понравилось, что мешает, чего не хватает?`,
+  kb: [[btn("Пропустить", "fb_skip")]],
+});
 
 export function patientMsg(name, text) {
   return `👤 <b>${esc(firstName(name))}:</b> ${esc(text)}`;

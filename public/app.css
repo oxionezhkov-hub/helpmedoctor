@@ -453,3 +453,20 @@ button.chip:active { transform: scale(.97); }
 .boot .bar i { display: block; width: 40%; height: 100%; border-radius: 2px; background: var(--accent); animation: slide 1.6s ease-in-out infinite; }
 @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
 .btn > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Поле + кнопка в одной строке */
+.inline-form { gap: 8px; }
+.inline-form .btn { flex: none; min-width: 52px; }
+.inline-form .input { min-width: 0; }
+
+/* Маленький индикатор загрузки внутри текста */
+.spin { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+
+/* Оценка звёздами */
+.rate-row { display: flex; justify-content: center; gap: 6px; }
+.rate { width: 52px; height: 52px; border: 0; border-radius: 14px; background: var(--surface-2); display: grid; place-items: center; }
+.rate .i { width: 28px; height: 28px; color: var(--muted); }
+.rate.on { background: var(--warn-soft, var(--accent-soft)); }
+.rate.on .i { color: var(--warn); fill: var(--warn); }
+
+.onb { border: 1.5px solid var(--accent); }

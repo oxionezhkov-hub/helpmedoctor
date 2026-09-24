@@ -204,6 +204,28 @@ function btnBusy(btn, on = true) {
   }
 }
 
+// ---------- Поле + кнопка «OK» ----------
+// Форма, а не keydown: «Готово»/«Ввод» на мобильной клавиатуре отправляет её везде.
+// pointerdown без blur: иначе клавиатура закрывается, вёрстка прыгает и нажатие проходит мимо кнопки.
+function inlineForm(id, placeholder, maxlength, btnLabel = "OK", btnCls = "btn") {
+  return html`<form class="row inline-form" data-inline="${id}" autocomplete="off">
+    <input class="input grow" id="${id}" placeholder="${placeholder}" maxlength="${maxlength}" enterkeyhint="done">
+    <button type="submit" class="${btnCls}" id="${id}-go">${btnLabel}</button></form>`;
+}
+function bindInlineForm(id, onValue) {
+  const form = document.querySelector(`[data-inline="${id}"]`);
+  if (!form) return;
+  const input = form.querySelector("input");
+  const btn = form.querySelector("button");
+  btn.onpointerdown = (e) => { if (document.activeElement === input) e.preventDefault(); };
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const v = input.value.trim();
+    if (!v) return input.focus();
+    onValue(v, input);
+  };
+}
+
 // ---------- Мягкое обновление DOM без перерисовки всего экрана ----------
 function morph(from, to) {
   if (from.nodeType !== to.nodeType || from.nodeName !== to.nodeName || (from.id && to.id && from.id !== to.id)) {
@@ -649,6 +671,8 @@ function viewHome(fresh) {
       </div>
     </div>
 
+    ${!p.onboarding_done ? onboardingCard(p) : ""}
+
     ${task ? html`<div class="card task">
       <div class="tile ${task.done ? "ok" : "accent"}">${ic(task.done ? "checkCircle" : "target")}</div>
       <div class="grow">
@@ -679,6 +703,52 @@ function viewHome(fresh) {
   </div>`);
   if (!fresh) window.scrollTo(0, y);
   bindNewPatient();
+  bindOnboarding();
+}
+
+// ---------- Анкета нового пользователя ----------
+let onb = null;
+const ONB_ABOUT = {
+  "студент": ["На каком вы курсе и в каком вузе?", "Например: 4 курс, Сеченовский университет"],
+  "ординатор": ["Какая специальность ординатуры и какой год?", "Например: терапия, 1-й год"],
+  "врач": ["Кем и где вы работаете?", "Например: терапевт в поликлинике, стаж 3 года"],
+  "специалист": ["Кем и где вы работаете?", "Например: кардиолог, стаж 12 лет"],
+};
+function onboardingCard(p) {
+  onb = onb || { level: null };
+  const [q, ph] = ONB_ABOUT[onb.level] || ["Где вы учитесь или работаете?", "Курс и вуз или специальность и стаж"];
+  return html`<div class="card stack onb" id="onb">
+    <div><h3>Расскажите о себе</h3><p class="small muted">3 коротких вопроса — чтобы пациенты были вам по уровню.</p></div>
+    <div class="field"><label>1. Кто вы?</label>
+      <div class="row wrap" style="gap:6px">${S.me.config.levels.map((l) => html`<button class="chip ${onb.level === l.key ? "on" : ""}" data-onb-level="${l.key}">${l.label}</button>`)}</div></div>
+    <div class="field"><label>2. ${q}</label><input class="input" id="onb-about" placeholder="${ph}" maxlength="200"></div>
+    <div class="field"><label>3. Чего ждёте от тренажёра? Что хотите прокачать?</label><textarea id="onb-exp" placeholder="Например: подготовиться к аккредитации, научиться собирать анамнез" maxlength="600"></textarea></div>
+    <div class="grid-2"><button class="btn ghost" id="onb-skip">Пропустить</button><button class="btn" id="onb-save">Готово</button></div>
+  </div>`;
+}
+function bindOnboarding() {
+  if (!$("#onb")) return;
+  root.querySelectorAll("[data-onb-level]").forEach((b) => (b.onclick = () => { onb.level = b.dataset.onbLevel; viewHome(); }));
+  const send = async (btn, patch) => {
+    btnBusy(btn);
+    try {
+      const { profile } = await api("PATCH", "/profile", { ...patch, onboarding_done: true });
+      S.me.profile = profile;
+      onb = null;
+      if (patch.about || patch.expectations) toast("Спасибо! Приятной практики", "ok");
+      viewHome();
+    } catch (e) {
+      toast(e.message, "error");
+      btnBusy(btn, false);
+    }
+  };
+  $("#onb-skip").onclick = (e) => send(e.currentTarget, {});
+  $("#onb-save").onclick = (e) => {
+    const patch = { about: $("#onb-about").value.trim(), expectations: $("#onb-exp").value.trim() };
+    if (onb.level) patch.level = onb.level;
+    if (!onb.level && !patch.about && !patch.expectations) return toast("Ответьте хотя бы на один вопрос — или нажмите «Пропустить»", "error");
+    send(e.currentTarget, patch);
+  };
 }
 
 function newPatientBlock() {
@@ -891,8 +961,9 @@ function confirmDialog(title, text, okLabel = "Да") {
     if (IN_TG && tg.showConfirm) return tg.showConfirm(`${title}\n\n${text}`, (ok) => resolve(!!ok));
     openSheet(html`<h2>${title}</h2><p class="muted" style="margin-bottom:16px">${text}</p>
       <div class="grid-2"><button class="btn ghost" data-no>Отмена</button><button class="btn danger" data-yes>${okLabel}</button></div>`, (el) => {
-      el.querySelector("[data-no]").onclick = () => { closeSheet(); resolve(false); };
-      el.querySelector("[data-yes]").onclick = () => { closeSheet(); resolve(true); };
+      // Закрываем «тихо»: иначе onClose первым вернёт false и «Да» не сработает
+      el.querySelector("[data-no]").onclick = () => { closeSheet(true); resolve(false); };
+      el.querySelector("[data-yes]").onclick = () => { closeSheet(true); resolve(true); };
     }, () => resolve(false));
   });
 }
@@ -1130,27 +1201,28 @@ function sheetTests(p) {
   const done = new Set(p.current?.tests || []);
   openSheet(html`<h2 class="row-c">${ic("flask", "c-accent")}Назначить обследование</h2>
     <div class="grid-2">${S.me.config.tests.map((t) => html`<button class="option" data-test="${t}">${done.has(t) ? ic("check", "c-ok") : ""}${t}</button>`)}</div>
+    ${[...done].filter((t) => !S.me.config.tests.includes(t)).length ? html`<div class="tiny muted" style="margin-top:10px">Уже назначено: ${[...done].filter((t) => !S.me.config.tests.includes(t)).join(", ")}</div>` : ""}
     <div class="field" style="margin-top:14px"><label>Другое обследование</label>
-      <div class="row"><input class="input grow" id="custom-test" placeholder="Например: рентген кисти, ФГДС…" maxlength="80"><button class="btn" id="custom-test-go">OK</button></div>
+      ${inlineForm("custom-test", "Например: рентген кисти, ФГДС…", 80)}
     </div>`, (el) => {
     el.querySelectorAll("[data-test]").forEach((b) => (b.onclick = () => runAction(p.id, "test", b.dataset.test)));
-    const go1 = () => { const v = $("#custom-test").value.trim(); if (v) runAction(p.id, "test", v); };
-    $("#custom-test-go").onclick = go1;
-    $("#custom-test").onkeydown = (e) => e.key === "Enter" && go1();
+    bindInlineForm("custom-test", (v) => runAction(p.id, "test", v));
   });
 }
 
 const EXAMS = ["Аускультация лёгких", "Аускультация сердца", "Пальпация живота", "Перкуссия грудной клетки", "Осмотр кожи", "Измерить давление и пульс", "Неврологический осмотр", "Осмотр зева"];
 function sheetExam(p) {
+  const done = new Set(p.current?.physicals || []);
+  const exams = S.me.config.exams || EXAMS;
+  const own = [...done].filter((t) => !exams.includes(t));
   openSheet(html`<h2 class="row-c">${ic("steth", "c-accent")}Физический осмотр</h2>
-    <div class="grid-2">${EXAMS.map((t) => html`<button class="option" data-exam="${t}">${t}</button>`)}</div>
-    <div class="field" style="margin-top:14px"><label>Свой вариант</label>
-      <div class="row"><input class="input grow" id="custom-exam" placeholder="Например: пальпация щитовидной железы" maxlength="200"><button class="btn" id="custom-exam-go">OK</button></div>
+    <div class="grid-2">${exams.map((t) => html`<button class="option" data-exam="${t}">${done.has(t) ? ic("check", "c-ok") : ""}${t}</button>`)}</div>
+    ${own.length ? html`<div class="tiny muted row-c" style="margin-top:10px">${ic("check", "c-ok")}Уже проведено: ${own.join(", ")}</div>` : ""}
+    <div class="field" style="margin-top:14px"><label>Свой вариант осмотра</label>
+      ${inlineForm("custom-exam", "Например: пальпация щитовидной железы", 200)}
     </div>`, (el) => {
     el.querySelectorAll("[data-exam]").forEach((b) => (b.onclick = () => runAction(p.id, "exam", b.dataset.exam)));
-    const go1 = () => { const v = $("#custom-exam").value.trim(); if (v) runAction(p.id, "exam", v); };
-    $("#custom-exam-go").onclick = go1;
-    $("#custom-exam").onkeydown = (e) => e.key === "Enter" && go1();
+    bindInlineForm("custom-exam", (v) => runAction(p.id, "exam", v));
   });
 }
 
@@ -1178,6 +1250,8 @@ function sheetFinish(p) {
         <button class="btn lg block" id="finish-go">Поставить диагноз и завершить</button></div>` : ""}
       ${mode === "referral" ? html`<div class="stack">
         <div class="field"><label>К какому специалисту направляете?</label><input class="input" id="ref" placeholder="Например: гастроэнтеролог" maxlength="300"></div>
+        <div class="field"><label>Диагноз направления</label><input class="input" id="ref-dx" placeholder="Например: язвенная болезнь желудка, обострение" maxlength="300"></div>
+        <div class="field"><label>Рекомендации до консультации (по желанию)</label><textarea id="ref-tx" placeholder="Обследования, препараты, режим…" maxlength="500"></textarea></div>
         <button class="btn lg block" id="finish-go">Направить и завершить</button></div>` : ""}
       ${mode === "discharge" ? html`<div class="stack"><p class="muted">Приём завершится без диагноза. Эксперт всё равно разберёт ваши действия.</p>
         <button class="btn lg block danger" id="finish-go">Отказаться от пациента</button></div>` : ""}`[RAW];
@@ -1191,7 +1265,10 @@ function sheetFinish(p) {
       }
       if (mode === "referral") {
         body.value = $("#ref").value.trim();
+        body.diagnosis = $("#ref-dx").value.trim();
+        body.treatment = $("#ref-tx").value.trim();
         if (!body.value) return toast("Укажите специалиста", "error");
+        if (!body.diagnosis) return toast("Укажите диагноз направления", "error");
       }
       await finishConsult(p, body);
     };
@@ -1382,12 +1459,60 @@ function renderQuizResult() {
 // ---------------------------------------------------
 // Профиль
 // ---------------------------------------------------
-function viewProfile() {
+// Черновик формы живёт отдельно от DOM: фоновые обновления экрана не сбрасывают выбор
+let pf = null;
+
+function profileDraft(p, cfg) {
+  const all = new Set(Object.values(cfg.specializations).flat());
+  const known = !!cfg.specializations[p.profession];
+  // Свои разделы пользователя — те, что не входят в стандартные ни одной специальности
+  const own = p.specializations.filter((s) => !all.has(s) && s !== p.profession);
+  const options = known ? [...new Set([...cfg.specializations[p.profession], ...own])] : own;
+  let specs = new Set(p.specializations.filter((s) => options.includes(s)));
+  if (!specs.size && known) specs = new Set(cfg.specializations[p.profession]);
+  return { name: p.name, level: p.level, profession: known ? p.profession : "__custom", custom: known ? "" : p.profession, options, specs, suggesting: false, suggested: known };
+}
+
+let suggestTimer = null;
+async function suggestSections(profession) {
+  clearTimeout(suggestTimer);
+  if (!pf || profession.length < 3) return;
+  const known = Object.keys(S.me.config.specializations).find((k) => k.toLowerCase() === profession.toLowerCase());
+  if (known) return pickProfession(known);
+  pf.suggesting = true;
+  viewProfile();
+  try {
+    const { sections } = await api("POST", "/sections/suggest", { profession });
+    if (!pf || pf.custom !== profession) return; // пока ждали, специальность поменяли
+    const own = pf.options.filter((s) => pf.specs.has(s) && pf.added?.has(s));
+    pf.options = [...new Set([...sections, ...own])];
+    pf.specs = new Set(pf.options);
+    pf.suggested = true;
+    if (!sections.length) toast("Не нашли разделы для такой специальности — добавьте свои", "error");
+  } catch (e) {
+    toast(e.message, "error");
+  } finally {
+    if (pf) pf.suggesting = false;
+    if (S.route.name === "profile") viewProfile();
+  }
+}
+
+function pickProfession(name) {
+  const cfg = S.me.config;
+  pf.profession = name;
+  pf.custom = "";
+  pf.options = [...cfg.specializations[name]];
+  pf.specs = new Set(pf.options);
+  pf.suggesting = false;
+  viewProfile();
+}
+
+function viewProfile(fresh) {
   const p = S.me.profile;
   const cfg = S.me.config;
+  if (fresh || !pf) pf = profileDraft(p, cfg);
   const professions = Object.keys(cfg.specializations);
-  const isCustomProf = !professions.includes(p.profession);
-  const available = [...new Set([...(cfg.specializations[p.profession] || []), ...p.specializations])];
+  const custom = pf.profession === "__custom";
   const sub = p.has_sub ? (p.sub_until === -1 ? "навсегда" : `до ${dateText(p.sub_until)}`) : null;
 
   renderShell(html`<div class="page">
@@ -1412,18 +1537,26 @@ function viewProfile() {
 
     <div class="card stack" id="profile-form">
       <h3>Настройки</h3>
-      <div class="field"><label>Имя</label><input class="input" id="pf-name" value="${p.name}" maxlength="40"></div>
+      <div class="field"><label>Имя</label><input class="input" id="pf-name" value="${pf.name}" maxlength="40"></div>
       <div class="field"><label>Уровень подготовки — влияет на сложность пациентов</label>
-        <div class="row wrap" style="gap:6px">${cfg.levels.map((l) => html`<button class="chip ${p.level === l.key ? "on" : ""}" data-level="${l.key}">${l.label}</button>`)}</div></div>
+        <div class="row wrap" style="gap:6px">${cfg.levels.map((l) => html`<button class="chip ${pf.level === l.key ? "on" : ""}" data-level="${l.key}">${l.label}</button>`)}</div></div>
       <div class="field"><label>Специальность</label>
-        <div class="row wrap" style="gap:6px">${professions.map((x) => html`<button class="chip ${p.profession === x ? "on" : ""}" data-prof="${x}">${x}</button>`)}<button class="chip ${isCustomProf ? "on" : ""}" data-prof="__custom">Другая…</button></div>
-        <input class="input ${isCustomProf ? "" : "hidden"}" id="pf-prof-custom" value="${isCustomProf ? p.profession : ""}" placeholder="Ваша специальность" maxlength="40"></div>
-      <div class="field"><label>Разделы, из которых приходят пациенты</label>
-        <div class="row wrap" style="gap:6px" id="pf-specs">${available.map((s) => html`<button class="chip ${p.specializations.includes(s) ? "on" : ""}" data-spec="${s}">${s}</button>`)}</div>
-        <div class="row"><input class="input grow" id="pf-spec-add" placeholder="Добавить раздел" maxlength="60"><button class="btn ghost sm" id="pf-spec-add-btn">+</button></div></div>
+        <div class="row wrap" style="gap:6px">${professions.map((x) => html`<button class="chip ${pf.profession === x ? "on" : ""}" data-prof="${x}">${x}</button>`)}<button class="chip ${custom ? "on" : ""}" data-prof="__custom">Другая…</button></div>
+        <input class="input ${custom ? "" : "hidden"}" id="pf-prof-custom" value="${pf.custom}" placeholder="Ваша специальность, например: неонатолог" maxlength="40"></div>
+      <div class="field"><label>Разделы, из которых приходят пациенты${custom ? "" : ` · ${pf.profession}`}</label>
+        ${pf.suggesting ? html`<div class="small muted row-c"><span class="spin"></span>Подбираем разделы для «${pf.custom}»…</div>` : ""}
+        ${!pf.suggesting && pf.options.length ? html`<div class="row wrap" style="gap:6px">${pf.options.map((s) => html`<button class="chip ${pf.specs.has(s) ? "on" : ""}" data-spec="${s}">${s}</button>`)}</div>` : ""}
+        ${!pf.suggesting && !pf.options.length ? html`<div class="small muted">${custom ? (pf.custom ? "Добавьте разделы ниже — или сохраните без них: пациенты будут по всей специальности." : "Введите специальность — разделы подберутся автоматически.") : "Добавьте хотя бы один раздел."}</div>` : ""}
+        ${inlineForm("pf-spec-add", "Свой раздел, например: желтуха новорождённых", 60, ic("plus"), "btn ghost")}
+      </div>
       <label class="row" style="justify-content:space-between"><span>Напоминания в Telegram о стрике</span><input type="checkbox" id="pf-notify" ${p.notifications === false ? "" : "checked"} style="width:22px;height:22px;accent-color:var(--accent)"></label>
       <button class="btn block" id="pf-save">Сохранить</button>
     </div>
+
+    <button class="card tap row" id="feedback-open" style="width:100%;text-align:left;font:inherit;color:inherit">
+      <div class="tile warn">${ic("star")}</div>
+      <div class="grow"><b>Оставить отзыв</b><div class="small muted">Что нравится, что мешает, чего не хватает</div></div>${ic("chevron", "c-muted")}
+    </button>
 
     <div class="card stack-sm small">
       <a href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener" class="row-c">${ic("telegram")}Открыть бота в Telegram</a>
@@ -1431,62 +1564,106 @@ function viewProfile() {
     </div>
   </div>`);
 
-  const form = { level: p.level, profession: p.profession, specs: new Set(p.specializations) };
-  root.querySelectorAll("[data-level]").forEach((b) => (b.onclick = () => {
-    form.level = b.dataset.level;
-    root.querySelectorAll("[data-level]").forEach((x) => x.classList.toggle("on", x === b));
-  }));
+  $("#pf-name").oninput = (e) => { pf.name = e.target.value; };
+  root.querySelectorAll("[data-level]").forEach((b) => (b.onclick = () => { pf.level = b.dataset.level; viewProfile(); }));
   root.querySelectorAll("[data-prof]").forEach((b) => (b.onclick = () => {
-    root.querySelectorAll("[data-prof]").forEach((x) => x.classList.toggle("on", x === b));
-    const custom = b.dataset.prof === "__custom";
-    $("#pf-prof-custom").classList.toggle("hidden", !custom);
-    if (custom) { $("#pf-prof-custom").focus(); form.profession = null; return; }
-    form.profession = b.dataset.prof;
-    form.specs = new Set(cfg.specializations[form.profession]);
-    $("#pf-specs").innerHTML = html`${cfg.specializations[form.profession].map((s) => html`<button class="chip on" data-spec="${s}">${s}</button>`)}`[RAW];
-    bindSpecs();
+    if (b.dataset.prof !== "__custom") return pickProfession(b.dataset.prof);
+    if (custom) return;
+    pf.profession = "__custom";
+    pf.options = [];
+    pf.specs = new Set();
+    viewProfile();
+    const inp = $("#pf-prof-custom");
+    inp.focus();
+    if (pf.custom) suggestSections(pf.custom);
   }));
-  const bindSpecs = () => root.querySelectorAll("[data-spec]").forEach((b) => (b.onclick = () => {
-    const s = b.dataset.spec;
-    if (form.specs.has(s)) form.specs.delete(s); else form.specs.add(s);
-    b.classList.toggle("on", form.specs.has(s));
-  }));
-  bindSpecs();
-  const addSpec = () => {
-    const v = $("#pf-spec-add").value.trim();
-    if (!v) return;
-    form.specs.add(v);
-    $("#pf-specs").insertAdjacentHTML("beforeend", html`<button class="chip on" data-spec="${v}">${v}</button>`[RAW]);
-    $("#pf-spec-add").value = "";
-    bindSpecs();
+  const customInput = $("#pf-prof-custom");
+  customInput.oninput = () => {
+    pf.custom = customInput.value.trim();
+    clearTimeout(suggestTimer);
+    suggestTimer = setTimeout(() => suggestSections(pf.custom), 900);
   };
-  $("#pf-spec-add-btn").onclick = addSpec;
-  $("#pf-spec-add").onkeydown = (e) => e.key === "Enter" && addSpec();
+  customInput.onchange = () => { if (pf.custom && !pf.suggesting) suggestSections(pf.custom); };
+  // Своя специальность, для которой ещё не подбирали разделы (сохранена до этого обновления)
+  if (custom && pf.custom && !pf.suggested && !pf.options.length && !pf.suggesting) {
+    pf.suggested = true;
+    suggestSections(pf.custom);
+  }
+  root.querySelectorAll("[data-spec]").forEach((b) => (b.onclick = () => {
+    const s = b.dataset.spec;
+    if (pf.specs.has(s)) pf.specs.delete(s); else pf.specs.add(s);
+    viewProfile();
+  }));
+  const addSpec = (v, input) => {
+    v = pf.options.find((o) => o.toLowerCase() === v.toLowerCase()) || v;
+    pf.added = pf.added || new Set();
+    pf.added.add(v);
+    if (!pf.options.includes(v)) pf.options = [...pf.options, v];
+    pf.specs.add(v);
+    if (input) input.value = "";
+    viewProfile();
+  };
+  bindInlineForm("pf-spec-add", addSpec);
   $("#pf-save").onclick = async () => {
-    const profession = form.profession || $("#pf-prof-custom").value.trim();
+    // Раздел, который ввели, но не нажали «+», тоже сохраняем
+    const pending = $("#pf-spec-add").value.trim();
+    if (pending) addSpec(pending, $("#pf-spec-add"));
+    const profession = custom ? pf.custom : pf.profession;
     if (!profession) return toast("Укажите специальность", "error");
-    const specs = [...form.specs];
+    const specs = pf.options.filter((s) => pf.specs.has(s));
     if (!specs.length) {
-      if (form.profession) return toast("Выберите хотя бы один раздел", "error");
+      if (!custom) return toast("Выберите хотя бы один раздел", "error");
       specs.push(profession); // своя специальность без разделов — пациенты по ней целиком
     }
     const btn = $("#pf-save");
-    btn.disabled = true;
+    btnBusy(btn);
     try {
       const { profile } = await api("PATCH", "/profile", {
-        name: $("#pf-name").value, level: form.level, profession, specializations: specs, notifications: $("#pf-notify").checked,
+        name: pf.name, level: pf.level, profession, specializations: specs, notifications: $("#pf-notify").checked,
       });
       S.me.profile = profile;
+      pf = null;
       haptic("success");
       toast("Сохранено", "ok");
-      viewProfile();
+      viewProfile(true);
     } catch (e) {
       toast(e.message, "error");
-      btn.disabled = false;
+      btnBusy(btn, false);
     }
   };
+  $("#feedback-open").onclick = () => sheetFeedback();
   const lo = $("#logout");
   if (lo) lo.onclick = (e) => { e.preventDefault(); logout(); };
+}
+
+// ---------- Отзыв ----------
+function sheetFeedback() {
+  let rating = 0;
+  const draw = (el) => {
+    const text = el.querySelector("#fb-text")?.value || "";
+    el.innerHTML = html`<div class="grip"></div><h2 class="row-c">${ic("star", "c-warn")}Отзыв о тренажёре</h2>
+      <p class="small muted" style="margin-bottom:12px">Оцените и напишите пару слов — мы читаем каждый отзыв.</p>
+      <div class="rate-row">${[1, 2, 3, 4, 5].map((n) => html`<button class="rate ${n <= rating ? "on" : ""}" data-rate="${n}" aria-label="${n} из 5">${ic("star", n <= rating ? "on" : "")}</button>`)}</div>
+      <div class="field" style="margin-top:14px"><textarea id="fb-text" placeholder="Что понравилось, что мешает, чего не хватает?" maxlength="1500"></textarea></div>
+      <button class="btn lg block" id="fb-send" style="margin-top:14px">Отправить</button>`[RAW];
+    el.querySelector("#fb-text").value = text;
+    el.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => { rating = Number(b.dataset.rate); haptic(); draw(el); }));
+    el.querySelector("#fb-send").onclick = async (e) => {
+      const body = { rating, text: el.querySelector("#fb-text").value.trim() };
+      if (!body.rating && !body.text) return toast("Поставьте оценку или напишите пару слов", "error");
+      btnBusy(e.currentTarget);
+      try {
+        await api("POST", "/feedback", body);
+        closeSheet();
+        haptic("success");
+        toast("Спасибо за отзыв!", "ok");
+      } catch (err) {
+        toast(err.message, "error");
+        btnBusy(el.querySelector("#fb-send"), false);
+      }
+    };
+  };
+  openSheet("", draw);
 }
 
 // ---------------------------------------------------
