@@ -57,8 +57,17 @@ const step = (name) => console.log(`✔ ${name}`);
 // ---------------------------------------------------------------- бот
 const U = "777";
 await text(U, "/start");
-await waitFor(() => sent(U).some((m) => m.text.includes("Добро пожаловать")), "welcome");
-step("бот: /start регистрирует нового пользователя");
+await waitFor(() => sent(U).some((m) => m.text.includes("Добро пожаловать") && m.text.includes("Кто вы")), "welcome");
+step("бот: /start регистрирует нового пользователя и начинает анкету");
+
+await press(U, "ob_lvl_студент");
+await waitFor(() => sent(U).some((m) => m.text.includes("На каком вы курсе")), "onboarding q2");
+await text(U, "4 курс, Сеченовский");
+await waitFor(() => sent(U).some((m) => m.text.includes("Чего вы ждёте")), "onboarding q3");
+await text(U, "Хочу научиться ставить диагноз");
+await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо!") && m.text.includes("Студент")), "onboarding done");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("Анкета") && m.text.includes("4 курс")), "admin onboarding");
+step("бот: анкета (кто вы, где учитесь, ожидания) сохраняется, админ получает ответы");
 
 await press(U, "new");
 const ready = await waitFor(() => sent(U).find((m) => m.text.includes("Новый пациент готов")), "new patient");
@@ -102,6 +111,9 @@ await press(U, "t_0");
 await waitFor(() => sent(U).some((m) => m.text.includes("Результат: КТ")), "test result");
 await press(U, "px_2");
 await waitFor(() => sent(U).some((m) => m.text.includes("Осмотр: Пальпация живота")), "exam");
+const afterExam = (await api(webToken, "GET", `/patients/${patId}`)).data.patient;
+assert.deepEqual(afterExam.current.physicals, ["Пальпация живота"], "осмотр отмечается как проведённый");
+assert.equal(afterExam.findings, undefined, "находки по методам не утекают на клиент");
 r = await api(webToken, "POST", `/patients/${patId}/test`, { name: "КТ" });
 assert.equal(r.data.cached, true);
 step("бот: обследование и осмотр; повторное КТ отдаётся из кэша без ИИ");
@@ -142,6 +154,29 @@ assert.equal(r.status, 409);
 assert.equal(r.data.code, "limit");
 step("лимит: второй бесплатный пациент за день запрещён");
 
+// ---------------------------------------------------------------- отзыв
+await press(U, "fb");
+await waitFor(() => sent(U).some((m) => m.text.includes("Отзыв о тренажёре")), "feedback ask");
+await press(U, "rv_4");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("Новый отзыв ★★★★☆")), "admin feedback");
+await text(U, "Удобно, но хочется больше педиатрии");
+await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо за отзыв")), "feedback thanks");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("Отзыв дополнен") && m.text.includes("педиатрии")), "admin feedback text");
+r = await api(webToken, "POST", "/feedback", { rating: 5, text: "С сайта" });
+assert.equal(r.status, 200);
+assert.equal((await api(webToken, "POST", "/feedback", {})).status, 409);
+me = (await api(webToken, "GET", "/me")).data;
+assert.equal(me.profile.feedback.length, 2);
+assert.equal(me.profile.review_asked, true);
+step("отзыв: оценка и текст в боте и на сайте, админ получает уведомления");
+
+// ---------------------------------------------------------------- разделы своей специальности
+r = await api(webToken, "POST", "/sections/suggest", { profession: "Неонатолог" });
+assert.ok(r.data.sections.length >= 2, JSON.stringify(r.data));
+r = await api(webToken, "POST", "/sections/suggest", { profession: "педиатр" });
+assert.deepEqual(r.data.sections, ["неонатология", "детская инфекция", "детская кардиология"]);
+step("профиль: для своей специальности подбираются разделы");
+
 // ---------------------------------------------------------------- миграция
 const oldToken = await login("555");
 const old = (await api(oldToken, "GET", "/me")).data;
@@ -158,7 +193,29 @@ r = await api(oldToken, "POST", "/patients/pat_555_1/message", { text: "Как �
 assert.equal(r.status, 200);
 r = await api(oldToken, "POST", "/patients/new");
 assert.equal(r.status, 200, "у подписчика нет лимита");
+assert.equal(old.profile.onboarding_done, true, "старым пользователям анкета не показывается");
 step("миграция: старый профиль, пациенты, тест и подписка перенесены из KV");
+
+// Направление: без диагноза нельзя, с диагнозом — диагноз засчитывается
+r = await api(oldToken, "POST", "/patients/pat_555_1/finish", { type: "referral", value: "гастроэнтеролог" });
+assert.equal(r.status, 409);
+r = await api(oldToken, "POST", "/patients/pat_555_1/finish", { type: "referral", value: "гастроэнтеролог", diagnosis: "Язва ДПК", treatment: "Омепразол до консультации" });
+assert.equal(r.status, 200, JSON.stringify(r.data));
+const referred = (await api(oldToken, "GET", "/patients/pat_555_1")).data.patient;
+const lastCons = referred.consultations[referred.consultations.length - 1];
+assert.equal(lastCons.diagnosis, "Язва ДПК");
+assert.deepEqual(lastCons.referrals, ["гастроэнтеролог"]);
+step("направление к специалисту: диагноз направления обязателен и сохраняется");
+
+// Отказ от нового пациента убирает его из очереди
+const fresh555 = await waitFor(async () => {
+  const x = (await api(oldToken, "GET", "/me")).data;
+  return x.patients.find((p) => p.status !== "closed" && !p.consultations);
+}, "new patient for 555");
+r = await api(oldToken, "POST", `/patients/${fresh555.id}/reject`);
+assert.equal(r.status, 200);
+assert.ok(!(await api(oldToken, "GET", "/me")).data.patients.some((p) => p.id === fresh555.id));
+step("отказ от пациента: пациент исчезает из очереди");
 
 // ---------------------------------------------------------------- вход по ссылке
 r = await api(null, "POST", "/auth/login");
@@ -185,6 +242,7 @@ await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");
 const cron = await fetch(`${BASE}/__scheduled?cron=0+17+*+*+*`);
 assert.equal(cron.status, 200);
+assert.equal((await fetch(`${BASE}/__scheduled?cron=0+7+*+*+*`)).status, 200);
 step("админка и cron отвечают");
 
 ws.close();

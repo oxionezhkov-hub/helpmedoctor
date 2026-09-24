@@ -143,6 +143,12 @@ async function api(request, env, url) {
     if (path === "/profile" && method === "PATCH") {
       return json({ profile: await user.updateProfile(await readJson(request)) });
     }
+    if (path === "/feedback" && method === "POST") {
+      return json(await user.saveFeedback(await readJson(request), "web"));
+    }
+    if (path === "/sections/suggest" && method === "POST") {
+      return json({ sections: await user.suggestSections((await readJson(request)).profession) });
+    }
     if (path === "/patients/new" && method === "POST") {
       return json(await user.requestNewPatient("web"));
     }

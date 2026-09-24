@@ -74,3 +74,40 @@ test("вебхук Точки: operationId из JWT и JSON", () => {
   assert.equal(planFromPurpose("HelpMeDoctor uid1: 1 неделя"), "week");
   assert.equal(planFromPurpose("… Навсегда"), "forever");
 });
+
+test("анкета: новым — показываем, старым из KV — нет", () => {
+  assert.equal(G.newProfile("1").onboarding_done, false);
+  assert.equal(G.normalizeProfile({ uid: "2", name: "Анна" }).onboarding_done, true);
+});
+
+test("просьба об отзыве: через 2 дня, один раз и только активным", () => {
+  const now = Date.parse("2026-09-24T07:00:00Z");
+  const p = G.newProfile("1");
+  p.registered_at = now - 1 * 86400000;
+  p.last_active = now;
+  assert.equal(G.shouldAskReview(p, now), false, "рано");
+  p.registered_at = now - 2 * 86400000;
+  assert.equal(G.shouldAskReview(p, now), true);
+  p.last_active = now - 30 * 86400000;
+  assert.equal(G.shouldAskReview(p, now), false, "давно не заходил");
+  p.last_active = now;
+  p.review_asked = true;
+  assert.equal(G.shouldAskReview(p, now), false, "уже спрашивали");
+});
+
+test("обследования: метод определяет, какие данные можно показывать", async () => {
+  const { methodKind } = await import("../src/lib/prompts.js");
+  assert.equal(methodKind("УЗИ").kind, "imaging");
+  assert.equal(methodKind("Эхо-КГ").kind, "imaging");
+  assert.equal(methodKind("рентген кисти").kind, "imaging");
+  assert.equal(methodKind("Анализ крови").kind, "lab");
+  assert.equal(methodKind("Онкомаркеры").kind, "lab");
+  assert.equal(methodKind("ЭКГ").kind, "ecg");
+  assert.equal(methodKind("Биопсия").kind, "pathology");
+});
+
+test("из ответа ИИ убираются иероглифы", async () => {
+  const { cleanText } = await import("../src/lib/ai.js");
+  assert.equal(cleanText("как мы можем一起 работать."), "как мы можем работать.");
+  assert.equal(cleanText("Норма: 3,3–5,5 ммоль/л"), "Норма: 3,3–5,5 ммоль/л");
+});

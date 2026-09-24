@@ -78,10 +78,12 @@ async function onMessage(ctx, msg) {
     if (command === "/new") return newPatient(ctx);
     if (command === "/patients") return listPatients(ctx);
     if (command === "/app") return bot.send(uid, "Откройте приложение:", R.kbMain(env));
+    await clearSoftPending(ctx);
     if (command === "/stop") {
       await user.setBotPending(null);
       return bot.send(uid, "Ок, ввод отменён.");
     }
+    if (command === "/feedback") return askFeedback(ctx);
     if (command === "/help") return help(ctx);
     if (command === "/admin" && uid === String(env.ADMIN_ID || ADMIN_ID)) return admin(ctx);
     return help(ctx);
@@ -146,13 +148,9 @@ async function onStart(ctx, payload) {
   }
   await user.touch({ username: from.username });
   const { profile, waiting } = await user.waitingSummary();
-  if (ctx.isNew) {
-    return bot.send(uid,
-      `👩‍⚕️ <b>Добро пожаловать в «Help me, Doctor», ${esc(profile.name)}!</b>\n\n` +
-      `Это тренажёр врача: ИИ-пациенты с настоящими жалобами, обследования, осмотр, диагноз — и разбор от эксперта.\n\n` +
-      `Вы — <b>${esc(profile.level_label)}</b> (${esc(profile.profession)}). Уровень и специализацию можно поменять в приложении.\n\n` +
-      `Начнём с первого пациента?`,
-      [[btn("➕ Принять первого пациента", "new")], [appBtn("🏥 Открыть приложение", R.appUrl(env))]]);
+  if (!profile.onboarding_done) {
+    const m = R.onboardingStart(profile.name);
+    return bot.send(uid, m.text, m.kb);
   }
   let t = `С возвращением, ${esc(profile.name)}! 👋\n\n📊 Уровень ${profile.level_info.level} · 🔥 ${profile.streak || 0} · ⚡ ${profile.xp || 0} XP`;
   if (profile.daily_task) t += `\n🎯 Задание дня: ${esc(profile.daily_task.desc)}${profile.daily_task.done ? " ✅" : ` (${profile.daily_task.progress || 0}/${profile.daily_task.target})`}`;
@@ -163,7 +161,7 @@ async function onStart(ctx, payload) {
 async function help(ctx) {
   await ctx.bot.send(ctx.uid,
     `<b>Help me, Doctor</b> — тренажёр врача.\n\n` +
-    `/new — принять нового пациента\n/patients — мои пациенты\n/app — открыть приложение\n/stop — отменить ввод\n\n` +
+    `/new — принять нового пациента\n/patients — мои пациенты\n/app — открыть приложение\n/feedback — оставить отзыв\n/stop — отменить ввод\n\n` +
     `Во время приёма просто пишите пациенту (можно голосом), а обследования, осмотр и диагноз — через кнопку «⚕️ Действия».\n\n` +
     `Всё синхронизировано с сайтом: начали в боте — продолжайте в приложении, и наоборот.`,
     R.kbMain(ctx.env));
@@ -220,10 +218,25 @@ async function onPendingInput(ctx, st, text) {
   const pending = st.bot.pending;
   const patId = st.active_patient_id;
   await user.setBotPending(null);
+  if (pending === "ob_about") {
+    await user.updateProfile({ about: text });
+    await user.setBotPending({ pending: "ob_exp" });
+    const m = R.onboardingExpectations();
+    return bot.send(uid, m.text, m.kb);
+  }
+  if (pending === "ob_exp") return finishOnboarding(ctx, { expectations: text });
+  if (pending === "fb_text") {
+    await user.saveFeedback({ text }, "bot");
+    return bot.send(uid, "🙏 Спасибо за отзыв! Мы читаем каждый.", R.kbMain(ctx.env));
+  }
   if (!patId) return bot.send(uid, "Приём не найден. Выберите пациента заново.", [[btn("👥 Мои пациенты", "list")]]);
   if (pending === "test") return doTest(ctx, patId, text);
   if (pending === "phys") return doExam(ctx, patId, text);
-  if (pending === "ref") return finish(ctx, patId, { type: "referral", value: text });
+  if (pending === "ref") {
+    await user.setBotPending({ pending: "ref_dx", referral: text.slice(0, 300) });
+    return bot.send(uid, `Направление: <b>${esc(text)}</b>\n\n🩺 С каким диагнозом направляете? (диагноз направления)`, R.kbCancelInput());
+  }
+  if (pending === "ref_dx") return finish(ctx, patId, { type: "referral", value: st.bot.referral, diagnosis: text });
   if (pending === "dx") {
     await user.setBotPending({ pending: "tx", diagnosis: text.slice(0, 300) });
     return bot.send(uid, `Диагноз: <b>${esc(text)}</b>\n\nНазначьте лечение (препараты, режим, рекомендации) — или пропустите:`, R.kbSkipTreatment());
@@ -283,6 +296,40 @@ async function onCallback(ctx, cb) {
     return startPatient(ctx, data.slice(3));
   }
   if (data.startsWith("qz_")) return startQuiz(ctx, data.slice(3));
+
+  // Анкета нового пользователя
+  if (data.startsWith("ob_")) {
+    await bot.editKeyboard(uid, mid, []);
+    if (data.startsWith("ob_lvl_")) {
+      const level = data.slice(7);
+      await user.updateProfile({ level });
+      await user.setBotPending({ pending: "ob_about" });
+      const m = R.onboardingAbout(level);
+      return bot.send(uid, m.text, m.kb);
+    }
+    if (data === "ob_next") {
+      await user.setBotPending({ pending: "ob_exp" });
+      const m = R.onboardingExpectations();
+      return bot.send(uid, m.text, m.kb);
+    }
+    return finishOnboarding(ctx, {}); // ob_skip, ob_done
+  }
+
+  // Отзыв
+  if (data === "fb") return askFeedback(ctx);
+  if (data.startsWith("rv_")) {
+    const rating = Number(data.slice(3));
+    await bot.editKeyboard(uid, mid, []);
+    await user.saveFeedback({ rating }, "bot");
+    await user.setBotPending({ pending: "fb_text" });
+    const m = R.feedbackAskText(rating);
+    return bot.send(uid, m.text, m.kb);
+  }
+  if (data === "fb_skip") {
+    await clearSoftPending(ctx);
+    return bot.edit(uid, mid, "🙏 Спасибо за оценку!");
+  }
+  await clearSoftPending(ctx);
   if (data.startsWith("qa_")) return quizAnswer(ctx, data, mid);
 
   // Всё ниже — действия внутри приёма
@@ -349,6 +396,30 @@ async function onCallback(ctx, cb) {
 }
 
 // ---------------------------------------------------
+// Анкета и отзывы
+// ---------------------------------------------------
+const SOFT_PENDING = ["ob_about", "ob_exp", "fb_text"];
+
+/** Анкету и отзыв можно бросить на полпути — тогда следующий текст уйдёт пациенту, а не в анкету */
+async function clearSoftPending(ctx) {
+  const st = await ctx.user.state();
+  if (SOFT_PENDING.includes(st.bot?.pending)) await ctx.user.setBotPending(null);
+}
+
+async function finishOnboarding(ctx, patch) {
+  const { user, bot, uid, env } = ctx;
+  await user.setBotPending(null);
+  const profile = await user.updateProfile({ ...patch, onboarding_done: true });
+  const m = R.onboardingDone(env, profile);
+  return bot.send(uid, m.text, m.kb);
+}
+
+async function askFeedback(ctx) {
+  const m = R.feedbackAskRating();
+  return ctx.bot.send(ctx.uid, m.text, m.kb);
+}
+
+// ---------------------------------------------------
 // Тест «работа над ошибками» в боте
 // ---------------------------------------------------
 async function startQuiz(ctx, patId) {
@@ -389,6 +460,7 @@ async function admin(ctx) {
     `👥 Пользователей: ${base}\nНовых: ${s.new_users.join(" / ")} (1/7/14 дн.)\nАктивных: ${s.active.join(" / ")} (1/7/14 дн.)\n\n` +
     `Консультаций: ${s.consultations_total}\nТестов пройдено: ${s.quizzes_total}\n\n` +
     `💰 Оплат: ${s.payments_total} · выручка ${s.revenue_total} ₽\nПлатёжных ссылок: ${s.payment_links}\n\n` +
+    `⭐ Отзывов: ${s.feedback?.n || 0}${s.feedback?.avg ? ` · средняя ${s.feedback.avg}` : ""}\n\n` +
     `🏆 <b>Топ-5</b>\n${(s.top || []).map((u, i) => `${i + 1}. ${esc(u.name || "—")}${u.username ? " @" + esc(u.username) : ""} — ${u.cons} приёмов`).join("\n") || "—"}\n\n` +
     `🔽 <b>Воронка</b> (данные по ${f.known || 0} активным после обновления)\n≥1 пациента: ${f.p1 || 0} (${pct(f.p1)}%)\n≥3 пациентов: ${f.p3 || 0} (${pct(f.p3)}%)\nС подпиской: ${f.paid || 0} (${pct(f.paid)}%)`);
 }

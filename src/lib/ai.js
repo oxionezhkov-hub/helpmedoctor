@@ -16,7 +16,7 @@ export async function aiText(env, { system, prompt, maxTokens = 300, temperature
   messages.push({ role: "user", content: prompt });
   const text = responseToText(await runWithRetry(env, { messages, max_tokens: maxTokens, temperature }));
   if (!text) throw new Error("Workers AI: пустой ответ");
-  return stripQuotes(text);
+  return stripQuotes(cleanText(text));
 }
 
 /**
@@ -31,9 +31,9 @@ export async function aiJson(env, { system, prompt, maxTokens = 800, temperature
   for (let attempt = 0; attempt < 2; attempt++) {
     const result = await runWithRetry(env, { messages, max_tokens: maxTokens, temperature: attempt ? 0.3 : temperature });
     // Workers AI сам парсит JSON-ответ в объект — тогда он уже готов
-    if (result?.response && typeof result.response === "object") return result.response;
+    if (result?.response && typeof result.response === "object") return cleanDeep(result.response);
     try {
-      return parseJsonLoose(responseToText(result));
+      return cleanDeep(parseJsonLoose(responseToText(result)));
     } catch (e) {
       lastErr = e;
       console.warn("aiJson: невалидный JSON, повтор", e.message);
@@ -85,6 +85,20 @@ export function parseJsonLoose(text) {
   const end = Math.max(clean.lastIndexOf("}"), clean.lastIndexOf("]"));
   if (start === -1 || end <= start) throw new Error("в ответе нет JSON");
   return JSON.parse(clean.slice(start, end + 1));
+}
+
+// Llama изредка вставляет в русский текст китайские/японские/корейские иероглифы («можем一起 работать»)
+const CJK = /[\u2e80-\u2fdf\u3000-\u30ff\u3100-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]+/g;
+
+export function cleanText(text) {
+  return String(text).replace(CJK, " ").replace(/[ \t]{2,}/g, " ").replace(/ +([,.!?;:])/g, "$1").trim();
+}
+
+function cleanDeep(v) {
+  if (typeof v === "string") return cleanText(v);
+  if (Array.isArray(v)) return v.map(cleanDeep);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, cleanDeep(x)]));
+  return v;
 }
 
 /** Модель иногда оборачивает реплику в кавычки или добавляет «Пациент:» */

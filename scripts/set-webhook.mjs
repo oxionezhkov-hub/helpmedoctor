@@ -27,6 +27,7 @@ await call("setMyCommands", {
     { command: "new", description: "Принять нового пациента" },
     { command: "patients", description: "Мои пациенты" },
     { command: "app", description: "Открыть приложение" },
+    { command: "feedback", description: "Оставить отзыв" },
     { command: "help", description: "Как пользоваться" },
   ],
 });

@@ -24,6 +24,7 @@ export class HubDO extends DurableObject {
       CREATE TABLE IF NOT EXISTS daily (day TEXT, metric TEXT, value INTEGER, PRIMARY KEY (day, metric));
       CREATE TABLE IF NOT EXISTS active (day TEXT, uid TEXT, PRIMARY KEY (day, uid));
       CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
+      CREATE TABLE IF NOT EXISTS feedback (uid TEXT, ts INTEGER, rating INTEGER, text TEXT, source TEXT, PRIMARY KEY (uid, ts));
     `);
   }
 
@@ -139,6 +140,20 @@ export class HubDO extends DurableObject {
     }
   }
 
+  // ---------- Отзывы ----------
+  async saveFeedback(uid, { name = "", username = "", rating = null, text = "", source = "", ts = Date.now() } = {}) {
+    const existed = this.sql.exec("SELECT 1 FROM feedback WHERE uid = ? AND ts = ?", String(uid), ts).toArray().length > 0;
+    this.sql.exec(
+      "INSERT INTO feedback (uid, ts, rating, text, source) VALUES (?, ?, ?, ?, ?) ON CONFLICT(uid, ts) DO UPDATE SET rating = excluded.rating, text = excluded.text",
+      String(uid), ts, rating, text || "", source,
+    );
+    const stars = rating ? "★".repeat(rating) + "☆".repeat(5 - rating) : "";
+    const who = `${name}${username ? " @" + username : ""} (${uid})`;
+    await this.notifyAdmin(existed
+      ? `💬 Отзыв дополнен — ${who}\n${text}`
+      : `⭐ Новый отзыв ${stars} — ${who}${source === "bot" ? " · бот" : " · сайт"}${text ? `\n${text}` : ""}`);
+  }
+
   // ---------- Рассылки по расписанию ----------
   // Обходим пользователей порциями: каждый alarm — новый лимит подзапросов.
   async startCron(kind) {
@@ -191,6 +206,7 @@ export class HubDO extends DurableObject {
       payments_total: all("payments") + (legacy.payments_total || 0),
       revenue_total: all("revenue") + (legacy.payments_revenue || 0),
       payment_links: all("payment_links"),
+      feedback: this.sql.exec("SELECT COUNT(*) AS n, ROUND(AVG(rating), 1) AS avg FROM feedback").one(),
       top: this.sql.exec("SELECT name, username, cons, quizzes FROM users ORDER BY cons * 2 + quizzes DESC LIMIT 5").toArray(),
       funnel: this.sql.exec(
         "SELECT SUM(patients >= 1) AS p1, SUM(patients >= 3) AS p3, SUM(paid) AS paid, SUM(last_active > 0) AS known FROM users",
