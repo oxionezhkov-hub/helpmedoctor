@@ -192,8 +192,20 @@ async function listPatients(ctx) {
 }
 
 async function startPatient(ctx, patId) {
-  const { user, bot, uid } = ctx;
+  const { user } = ctx;
+  await sendConsultationStart(ctx, await user.startConsultation(patId));
+}
+
+/** Приём, начатый из мини-приложения в Telegram, продолжается в чате с ботом */
+export async function startInBot(env, uid, patId) {
+  const user = userStub(env, uid);
   const start = await user.startConsultation(patId);
+  await sendConsultationStart({ user, bot: tg(env), uid }, start);
+  return start;
+}
+
+async function sendConsultationStart(ctx, start) {
+  const { bot, uid } = ctx;
   if (start.paused_other) await bot.send(uid, "⏸ Предыдущий приём поставлен на паузу — к нему можно вернуться в любой момент.");
   await bot.send(uid, R.consultationHeader(start));
   const opening = start.last_patient_message || start.patient.opening_phrase;

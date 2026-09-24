@@ -7,9 +7,10 @@ function lastUser(messages) {
 
 export const mockAi = {
   async run(model, input) {
-    await new Promise((r) => setTimeout(r, 150));
+    const prompt = lastUser(input?.messages);
+    // Реалистичные задержки: генерация пациента заметно дольше остального
+    await new Promise((r) => setTimeout(r, /Создай (уникального|пациента)/.test(prompt) ? 3000 : 400));
     if (model.includes("whisper")) return { text: "Где именно болит и как давно?" };
-    const prompt = lastUser(input.messages);
     if (prompt.includes("Создай пациента-ИНОПЛАНЕТЯНИНА")) {
       return { response: { name: "Зорг Кварк", age: "340 земных лет", sex: "неизвестен", chief_complaint: "Мерцает третий гребень", true_diagnosis: "Гребневая мерцалгия", full_history: "Гребень мерцает неделю.", personality: "вежливый", condition_trajectory: "stable", opening_phrase: "Приветствую, земной лекарь!", key_findings: "Гребень светится" } };
     }

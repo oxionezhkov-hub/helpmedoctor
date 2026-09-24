@@ -1023,6 +1023,7 @@ export function publicProfile(prof) {
     today_patients: G.todayPatientsCount(prof),
     can_accept: G.canAcceptPatient(prof),
     generating_patient: !!(prof.generating_patient && Date.now() - prof.generating_patient < 120000),
+    generating_since: prof.generating_patient && Date.now() - prof.generating_patient < 120000 ? prof.generating_patient : null,
   };
 }
 

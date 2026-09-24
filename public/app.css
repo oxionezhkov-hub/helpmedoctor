@@ -67,22 +67,24 @@
 
 /* Внутри Telegram — цвета клиента */
 :root.tg {
-  --bg: var(--tg-theme-secondary-bg-color, var(--bg));
-  --surface: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, var(--surface)));
-  --text: var(--tg-theme-text-color, var(--text));
-  --muted: var(--tg-theme-hint-color, var(--muted));
-  --accent: var(--tg-theme-button-color, var(--accent));
-  --accent-contrast: var(--tg-theme-button-text-color, var(--accent-contrast));
+  /* Запасные значения — конкретные цвета: ссылка var(--x) на саму себя сделала бы значение невалидным */
+  --bg: var(--tg-theme-secondary-bg-color, #f4f7f7);
+  --surface: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #ffffff));
+  --text: var(--tg-theme-text-color, #11201f);
+  --muted: var(--tg-theme-hint-color, #5f7270);
+  --accent: var(--tg-theme-button-color, #0f766e);
+  --accent-contrast: var(--tg-theme-button-text-color, #ffffff);
   --accent-soft: color-mix(in srgb, var(--tg-theme-button-color, #0f766e) 14%, transparent);
-  --doctor-bubble: var(--tg-theme-button-color, var(--doctor-bubble));
-  --doctor-text: var(--tg-theme-button-text-color, var(--doctor-text));
-  --patient-bubble: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, var(--patient-bubble)));
+  --doctor-bubble: var(--tg-theme-button-color, #0f766e);
+  --doctor-text: var(--tg-theme-button-text-color, #ffffff);
+  --patient-bubble: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #ffffff));
   --app-h: var(--tg-viewport-stable-height, 100dvh);
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
+@media (hover: hover) and (pointer: fine) { html { scrollbar-gutter: stable; } }
 body {
   background: var(--bg);
   color: var(--text);
@@ -116,7 +118,6 @@ p { margin: 0; }
 /* ---------- Каркас ---------- */
 .app { min-height: 100dvh; }
 .boot { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 14px; }
-.boot-logo { font-size: 56px; }
 .page {
   max-width: 720px;
   margin: 0 auto;
@@ -136,8 +137,8 @@ html.tg .back { display: none; } /* в Telegram — системная кноп�
 }
 html.tg .card { border-color: transparent; }
 .card.flat { box-shadow: none; }
-.card.tap { transition: transform .12s ease; }
-.card.tap:active { transform: scale(.985); }
+.card.tap { transition: background-color .15s ease, box-shadow .15s ease; }
+.card.tap:active { background: var(--surface-2); }
 .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin: 4px 4px -6px; }
 
 /* ---------- Нижняя навигация ---------- */
@@ -153,9 +154,9 @@ html.tg .card { border-color: transparent; }
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   text-decoration: none; color: var(--muted); font-size: 11px; font-weight: 600; position: relative;
 }
-.nav a .ico { font-size: 22px; line-height: 1; filter: grayscale(1); opacity: .75; }
+.nav a .nav-i { width: 24px; height: 24px; stroke-width: 1.8; }
 .nav a.active { color: var(--accent); }
-.nav a.active .ico { filter: none; opacity: 1; }
+.nav a.active .nav-i { stroke-width: 2.2; }
 .nav .dot {
   position: absolute; top: 8px; left: calc(50% + 8px); min-width: 16px; height: 16px; padding: 0 4px;
   border-radius: 8px; background: var(--danger); color: #fff; font-size: 10px; display: grid; place-items: center;
@@ -168,7 +169,7 @@ html.tg .card { border-color: transparent; }
   background: var(--accent); color: var(--accent-contrast); font-weight: 600; font-size: 16px;
   transition: filter .15s, transform .1s; text-decoration: none; user-select: none; text-align: center;
 }
-.btn:active { transform: scale(.98); }
+.btn:active { filter: brightness(.93); }
 .btn:disabled { opacity: .55; pointer-events: none; }
 .btn.block { width: 100%; }
 .btn.lg { min-height: 56px; font-size: 17px; border-radius: 16px; }
@@ -176,7 +177,15 @@ html.tg .card { border-color: transparent; }
 .btn.ghost { background: var(--surface-2); color: var(--text); }
 .btn.outline { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 .btn.danger { background: var(--danger-soft); color: var(--danger); }
-.btn .spinner { width: 18px; height: 18px; border-width: 2px; border-color: currentColor; border-right-color: transparent; }
+/* Кнопка в ожидании: подпись прячем, но место сохраняем — ничего не сдвигается */
+.btn.busy { position: relative; color: transparent !important; pointer-events: none; }
+.btn.busy > * { visibility: hidden; }
+.btn.busy::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid color-mix(in srgb, var(--accent-contrast) 30%, transparent); border-top-color: var(--accent-contrast);
+  animation: spin 1.3s cubic-bezier(.55, .15, .45, .85) infinite;
+}
+.btn.ghost.busy::after, .btn.outline.busy::after, .btn.danger.busy::after { border-color: color-mix(in srgb, var(--accent) 25%, transparent); border-top-color: var(--accent); }
 .icon-btn {
   width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--surface-2);
   display: grid; place-items: center; font-size: 20px; flex: none;
@@ -264,7 +273,10 @@ button.chip:active { transform: scale(.97); }
 .composer textarea {
   flex: 1; resize: none; border: 1px solid var(--border); background: var(--surface); border-radius: 22px;
   padding: 11px 16px; max-height: 140px; min-height: 44px; line-height: 1.35; outline: none; font-size: 16px;
+  overflow-y: hidden; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted) 40%, transparent) transparent;
 }
+.composer textarea::-webkit-scrollbar { width: 4px; }
+.composer textarea::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--muted) 40%, transparent); border-radius: 2px; }
 .composer textarea:focus { border-color: var(--accent); }
 .send { background: var(--accent); color: var(--accent-contrast); }
 .rec { background: var(--danger); color: #fff; animation: pulse 1.2s infinite; }
@@ -304,7 +316,9 @@ button.chip:active { transform: scale(.97); }
 
 /* ---------- Разбор ---------- */
 .rating-big { font-size: 44px; font-weight: 800; line-height: 1; }
-.stars { color: var(--gold); letter-spacing: 2px; }
+.stars { display: inline-flex; gap: 2px; color: var(--gold); }
+.stars .i { width: 18px; height: 18px; }
+.stars .i.on, .badge .i.on { fill: currentColor; }
 .axis { display: grid; grid-template-columns: 110px 1fr 28px; gap: 8px; align-items: center; font-size: 14px; }
 .axis .bar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
 .axis .bar i { display: block; height: 100%; background: var(--accent); }
@@ -339,7 +353,11 @@ button.chip:active { transform: scale(.97); }
 .toast { background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow); max-width: 480px; animation: fade .2s; pointer-events: auto; }
 .toast.error { background: var(--danger); color: #fff; }
 
-.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--accent); border-right-color: transparent; animation: spin .8s linear infinite; display: inline-block; }
+.spinner {
+  width: 28px; height: 28px; border-radius: 50%; display: inline-block; flex: none;
+  border: 3px solid color-mix(in srgb, var(--accent) 18%, transparent); border-top-color: var(--accent);
+  animation: spin 1.3s cubic-bezier(.55, .15, .45, .85) infinite;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
 .skeleton { background: linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2)); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: 12px; min-height: 72px; }
 @keyframes sk { to { background-position: -200% 0; } }
@@ -351,3 +369,92 @@ button.chip:active { transform: scale(.97); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Иконки ---------- */
+.i { width: 1.2em; height: 1.2em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.22em; }
+.btn .i { width: 20px; height: 20px; }
+.chip .i { width: 17px; height: 17px; }
+.icon-btn .i { width: 21px; height: 21px; }
+.badge .i { width: 12px; height: 12px; }
+.c-accent { color: var(--accent); }
+.c-ok { color: var(--ok); }
+.c-warn { color: var(--warn); }
+.c-danger { color: var(--danger); }
+.c-muted { color: var(--muted); }
+.c-flame { color: #f97316; }
+.c-soft { opacity: .75; margin-right: 4px; }
+.row-c { display: flex; align-items: center; gap: 8px; }
+.stat .row-c { justify-content: center; gap: 4px; }
+.tile {
+  width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; flex: none;
+  background: var(--surface-2); color: var(--muted);
+}
+.tile .i { width: 22px; height: 22px; }
+.tile.accent { background: var(--accent-soft); color: var(--accent); }
+.tile.ok { background: var(--ok-soft); color: var(--ok); }
+.tile.warn { background: var(--warn-soft); color: var(--warn); }
+.tile.lg { width: 64px; height: 64px; border-radius: 20px; margin: 0 auto 10px; }
+.tile.lg .i { width: 30px; height: 30px; }
+.empty .tile.lg { background: var(--surface); }
+.facts { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.fact { display: flex; gap: 8px; align-items: flex-start; }
+.fact > .i { margin-top: 2px; }
+.cta { color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.cta .i { width: 16px; height: 16px; }
+.option { display: flex; align-items: center; gap: 6px; }
+.login .logo { color: var(--accent); }
+.login .logo .i { width: 64px; height: 64px; stroke-width: 1.6; }
+
+/* ---------- Аватары пациентов ---------- */
+.pav {
+  --h: 170; width: 46px; height: 46px; border-radius: 14px; flex: none; display: grid; place-items: center;
+  font-weight: 700; font-size: 16px; letter-spacing: .02em;
+  background: hsl(var(--h) 55% 90%); color: hsl(var(--h) 45% 30%);
+}
+.pav.sm { width: 38px; height: 38px; border-radius: 12px; font-size: 14px; }
+.pav.lg { width: 60px; height: 60px; border-radius: 18px; font-size: 21px; }
+.pav.alien { background: #ede4ff; color: #6d28d9; }
+.pav .i { width: 60%; height: 60%; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pav { background: hsl(var(--h) 30% 22%); color: hsl(var(--h) 60% 80%); }
+  :root:not([data-theme="light"]) .pav.alien { background: #2e2350; color: #c4b5fd; }
+}
+
+/* ---------- Ожидание с оценкой времени ---------- */
+.eta { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.eta-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+.eta-step { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eta-left { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.eta-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; position: relative; }
+.eta-bar i {
+  display: block; height: 100%; width: 0; border-radius: 3px; transition: width .25s linear;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #7dd3fc));
+  position: relative; overflow: hidden;
+}
+.eta-bar i::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .45), transparent);
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.eta.mini { max-width: 220px; gap: 5px; }
+.eta.mini .eta-top { font-size: 12px; }
+.eta.mini .eta-step { font-weight: 500; color: var(--muted); }
+.eta.mini .eta-bar { height: 4px; }
+.eta-card { height: 64px; padding: 10px 16px; display: flex; align-items: center; }
+#new-patient { height: 64px; }
+.typing-wrap { align-self: flex-start; display: flex; flex-direction: column; gap: 6px; }
+.pending-event .eta { margin-top: 4px; }
+.tg-note { width: 100%; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.quiz-opt.picked { border-color: var(--accent); background: var(--accent-soft); }
+
+/* ---------- Экран загрузки ---------- */
+.boot-logo { width: 96px; height: 96px; color: var(--accent); }
+.boot-logo svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.boot-logo .heart { opacity: .35; }
+.boot-logo .pulse { stroke-width: 2; stroke-dasharray: 60; stroke-dashoffset: 60; animation: ecg 1.8s ease-in-out infinite; }
+@keyframes ecg { 0% { stroke-dashoffset: 60; opacity: 1; } 60% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.boot .bar { width: 160px; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--accent) 15%, transparent); overflow: hidden; }
+.boot .bar i { display: block; width: 40%; height: 100%; border-radius: 2px; background: var(--accent); animation: slide 1.6s ease-in-out infinite; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+.btn > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }

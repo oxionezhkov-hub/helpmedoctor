@@ -6,7 +6,7 @@ import { PLANS } from "./config.js";
 import { bearer, createSession, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
 import { arrayBufferToBase64, json, userError } from "./lib/util.js";
 import { createPayment, fetchPayment, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
-import { handleUpdate, hubStub, userStub } from "./bot/handlers.js";
+import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 
 export { UserDO } from "./do/user.js";
 export { HubDO } from "./do/hub.js";
@@ -159,7 +159,11 @@ async function api(request, env, url) {
       const [, id, action] = m;
       if (!action && method === "GET") return json(await user.patientView(id));
       if (method !== "POST") return json({ error: "Метод не поддерживается" }, 405);
-      if (action === "start") return json(await user.startConsultation(id));
+      if (action === "start") {
+        // Из мини-приложения Telegram приём идёт в чате с ботом
+        if (url.searchParams.get("in_bot") === "1") return json(await startInBot(env, uid, id));
+        return json(await user.startConsultation(id));
+      }
       if (action === "reject") return json(await user.rejectPatient(id));
       if (action === "reopen") return json(await user.reopenPatient(id));
       if (action === "message") return json(await user.doctorMessage(id, (await readJson(request)).text));

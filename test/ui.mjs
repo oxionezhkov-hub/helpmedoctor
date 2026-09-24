@@ -81,6 +81,23 @@ const desk = await page({ width: 1280, height: 800 });
 await desk.goto(`${BASE}/app`); await desk.waitForSelector(".hello"); await shot(desk, "13-home-desktop");
 await desk.goto(`${BASE}/app#/consult/${pid}`); await desk.waitForSelector(".messages"); await sleep(300); await shot(desk, "14-consult-desktop");
 
+// Ожидание нового пациента: прогресс с оценкой времени
+{
+  const u2 = await api(null, "POST", "/auth/telegram", { initData: initData(String(Number(uid) + 50)) });
+  const ctx2 = await browser.newContext({ viewport: phone, deviceScaleFactor: 2, hasTouch: true });
+  await ctx2.addInitScript((t) => localStorage.setItem("hmd_token", t), u2.token);
+  const w = await ctx2.newPage();
+  w.on("pageerror", (e) => errors.push(`wait: ${e.message}`));
+  await w.goto(`${BASE}/app`); await w.waitForSelector("#new-patient");
+  const before = await w.$eval("#new-patient", (el) => el.getBoundingClientRect().height);
+  await w.click("#new-patient");
+  await w.waitForSelector(".eta-card", { timeout: 5000 }).catch(() => {});
+  await sleep(700);
+  await shot(w, "17-waiting-patient");
+  const after = await w.$eval(".eta-card, #new-patient", (el) => el.getBoundingClientRect().height);
+  if (Math.abs(after - before) > 1) errors.push(`new-patient block height changed ${before} -> ${after}`);
+}
+
 // Логин-экран в браузере (без токена)
 const ctx = await browser.newContext({ viewport: phone, deviceScaleFactor: 2 });
 const lp = await ctx.newPage();
@@ -104,6 +121,20 @@ tp.on("pageerror", (e) => errors.push(`tg: ${e.message}`));
 await tp.goto(`${BASE}/app?go=${encodeURIComponent("/profile")}#tgWebAppData=x&tgWebAppVersion=8.0`);
 await tp.waitForSelector("#pf-save", { timeout: 15000 });
 await shot(tp, "16-telegram-profile");
+// В Telegram открытый приём ведётся в чате с ботом — в мини-приложении подсказка вместо поля ввода
+{
+  const t2 = (await api(null, "POST", "/auth/telegram", { initData: initData("902") })).token;
+  await api(t2, "POST", "/patients/new");
+  let m2; for (let i = 0; i < 50; i++) { m2 = await api(t2, "GET", "/me"); if (m2.patients.length) break; await sleep(200); }
+  const id2 = m2.patients[0].id;
+  await tp.goto(`${BASE}/app?go=${encodeURIComponent("/patient/" + id2)}#tgWebAppData=x`);
+  await tp.waitForSelector("[data-start]");
+  await shot(tp, "18-telegram-patient");
+  await api(t2, "POST", `/patients/${id2}/start`);
+  await tp.goto(`${BASE}/app?go=${encodeURIComponent("/consult/" + id2)}#tgWebAppData=x`);
+  await tp.waitForSelector("#to-chat");
+  await shot(tp, "19-telegram-consult");
+}
 const tgClass = await tp.evaluate(() => document.documentElement.classList.contains("tg"));
 if (!tgClass) errors.push("telegram mode not detected");
 
