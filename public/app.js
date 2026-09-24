@@ -146,32 +146,49 @@ function etaRecord(kind, ms) {
   if (ms < 300 || ms > 120000) return;
   store(`hmd_eta_${kind}`, String(Math.round(etaEstimate(kind) * 0.6 + ms * 0.4)));
 }
-/** Блок прогресса: полоса + этап + «осталось ≈ N сек». Обновляется глобальным таймером. */
+// Доля выполнения: до оценки — почти линейно, после — медленно ползём к 97%. Никогда не убывает.
+const etaMax = new Map();
+function etaState(kind, start, est, now = Date.now()) {
+  const t = Math.max(0, now - start);
+  let frac = t < est ? 0.9 * (t / est) : 0.9 + 0.07 * (1 - Math.exp(-(t - est) / est));
+  const key = `${kind}:${start}`;
+  frac = Math.max(frac, etaMax.get(key) || 0);
+  etaMax.set(key, frac);
+  const sec = Math.ceil((est - t) / 1000);
+  const steps = ETA_STEPS[kind] || [];
+  const step = steps.length ? steps[Math.min(steps.length - 1, Math.floor((Math.min(frac, 0.9) / 0.9) * steps.length))] + "…" : "Загрузка…";
+  return { frac, left: sec > 0 ? `≈ ${sec} сек` : "ещё немного…", step };
+}
+/** Блок прогресса: полоса + этап + «осталось ≈ N сек». Сразу рисуется с актуальным заполнением. */
 function etaBox(kind, start, extraCls = "") {
-  return html`<div class="eta ${extraCls}" data-eta="${kind}" data-start="${start}" data-est="${etaEstimate(kind)}">
-    <div class="eta-top"><span class="eta-step">${ETA_STEPS[kind]?.[0] || "Загрузка"}</span><span class="eta-left"></span></div>
-    <div class="eta-bar"><i></i></div></div>`;
+  const est = etaEstimate(kind);
+  const st = etaState(kind, start, est);
+  return html`<div class="eta ${extraCls}" id="eta-${kind}-${start}" data-eta="${kind}" data-start="${start}" data-est="${est}">
+    <div class="eta-top"><span class="eta-step">${st.step}</span><span class="eta-left">${st.left}</span></div>
+    <div class="eta-bar"><i style="transform:scaleX(${st.frac.toFixed(4)})"></i></div></div>`;
 }
+// Полоса — каждый кадр (плавно), текст — не чаще 4 раз в секунду
+let etaTextAt = 0;
 function tickEta() {
-  const now = Date.now();
-  document.querySelectorAll("[data-eta]").forEach((el) => {
-    const start = Number(el.dataset.start), est = Number(el.dataset.est);
-    const t = Math.max(0, now - start);
-    // до оценки — почти линейно, после — медленно ползём к 97%
-    const frac = t < est ? 0.9 * (t / est) : 0.9 + 0.07 * (1 - Math.exp(-(t - est) / est));
-    const bar = el.querySelector(".eta-bar i");
-    if (bar) bar.style.width = `${Math.round(frac * 1000) / 10}%`;
-    const left = el.querySelector(".eta-left");
-    if (left) {
-      const sec = Math.ceil((est - t) / 1000);
-      left.textContent = sec > 0 ? `≈ ${sec} сек` : "ещё немного…";
-    }
-    const steps = ETA_STEPS[el.dataset.eta] || [];
-    const stepEl = el.querySelector(".eta-step");
-    if (stepEl && steps.length) stepEl.textContent = steps[Math.min(steps.length - 1, Math.floor(Math.min(frac, 0.95) / 0.95 * steps.length))] + "…";
-  });
+  const els = document.querySelectorAll("[data-eta]");
+  if (els.length) {
+    const now = Date.now();
+    const updText = now - etaTextAt > 250;
+    if (updText) etaTextAt = now;
+    els.forEach((el) => {
+      const st = etaState(el.dataset.eta, Number(el.dataset.start), Number(el.dataset.est), now);
+      const bar = el.firstElementChild?.nextElementSibling?.firstElementChild;
+      if (bar) bar.style.transform = `scaleX(${st.frac.toFixed(4)})`;
+      if (updText) {
+        const step = el.querySelector(".eta-step"), left = el.querySelector(".eta-left");
+        if (step && step.textContent !== st.step) step.textContent = st.step;
+        if (left && left.textContent !== st.left) left.textContent = st.left;
+      }
+    });
+  }
+  requestAnimationFrame(tickEta);
 }
-setInterval(tickEta, 250);
+requestAnimationFrame(tickEta);
 
 // ---------- Кнопка в состоянии загрузки: размер не меняется ----------
 function btnBusy(btn, on = true) {
@@ -225,7 +242,6 @@ function patchRoot(markup) {
     tpl.innerHTML = markup;
     morphChildren(root, tpl);
   }
-  tickEta();
 }
 
 function store(key, val) {

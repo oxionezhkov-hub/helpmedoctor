@@ -92,7 +92,18 @@ await desk.goto(`${BASE}/app#/consult/${pid}`); await desk.waitForSelector(".mes
   const before = await w.$eval("#new-patient", (el) => el.getBoundingClientRect().height);
   await w.click("#new-patient");
   await w.waitForSelector(".eta-card", { timeout: 5000 }).catch(() => {});
-  await sleep(700);
+  // Полоса ожидания должна идти только вперёд, без сбросов и скачков
+  const samples = [];
+  for (let k = 0; k < 20; k++) {
+    samples.push(await w.$eval(".eta-bar i", (el) => new DOMMatrix(getComputedStyle(el).transform).a).catch(() => null));
+    await sleep(100);
+  }
+  const vals = samples.filter((v) => v != null);
+  for (let k = 1; k < vals.length; k++) {
+    if (vals[k] + 0.001 < vals[k - 1]) errors.push(`eta bar went back: ${vals[k - 1]} -> ${vals[k]}`);
+    if (vals[k] - vals[k - 1] > 0.1) errors.push(`eta bar jumped: ${vals[k - 1]} -> ${vals[k]}`);
+  }
+  if (vals.length < 10) errors.push(`eta bar samples: ${vals.length}`);
   await shot(w, "17-waiting-patient");
   const after = await w.$eval(".eta-card, #new-patient", (el) => el.getBoundingClientRect().height);
   if (Math.abs(after - before) > 1) errors.push(`new-patient block height changed ${before} -> ${after}`);

@@ -424,19 +424,14 @@ button.chip:active { transform: scale(.97); }
 .eta { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .eta-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
 .eta-step { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.eta-left { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.eta-left { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 7.5ch; text-align: right; }
 .eta-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; position: relative; }
 .eta-bar i {
-  display: block; height: 100%; width: 0; border-radius: 3px; transition: width .25s linear;
-  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #7dd3fc));
-  position: relative; overflow: hidden;
+  /* Заполнение через transform — плавно и без перерасчёта раскладки */
+  display: block; height: 100%; width: 100%; border-radius: 3px; transform-origin: left center; transform: scaleX(0);
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #7dd3fc));
+  will-change: transform;
 }
-.eta-bar i::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .45), transparent);
-  animation: shimmer 1.8s ease-in-out infinite;
-}
-@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 .eta.mini { max-width: 220px; gap: 5px; }
 .eta.mini .eta-top { font-size: 12px; }
 .eta.mini .eta-step { font-weight: 500; color: var(--muted); }
