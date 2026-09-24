@@ -1,0 +1,46 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "helpmedoctor",
+  "main": "src/index.js",
+  "compatibility_date": "2025-09-01",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+
+  // Веб-приложение (public/) отдаёт этот же воркер. Воркер запускается первым,
+  // чтобы /api, вебхуки и редиректы не перехватывались статикой.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+
+  "ai": { "binding": "AI" },
+
+  // Старое хранилище: из него при первом входе переносятся данные пользователей
+  "kv_namespaces": [
+    { "binding": "HELPMEDOCTOR", "id": "4667ee0d1a1e48e596a7a254d4799031" }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "USER", "class_name": "UserDO" },
+      { "name": "HUB", "class_name": "HubDO" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["UserDO", "HubDO"] }
+  ],
+
+  // 10:00 и 20:00 по Москве
+  "triggers": { "crons": ["0 7 * * *", "0 17 * * *"] },
+
+  // Не секретные настройки. Секреты — через `wrangler secret put` (см. README)
+  "vars": {
+    "PUBLIC_URL": "https://helpmedoctor.oxion-ezhkov.workers.dev",
+    "BOT_USERNAME": "helpmedoctor_aibot",
+    "ADMIN_ID": "1326867567",
+    "TOCHKA_MERCHANT": "200000000029805",
+    "TOCHKA_CUSTOMER": "305372573"
+  }
+}
