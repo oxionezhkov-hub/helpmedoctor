@@ -73,3 +73,6 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         run: node scripts/set-webhook.mjs --menu-only
+      # Быстрая индексация в Яндексе и Bing (IndexNow): отправляем адреса из sitemap.xml
+      - name: IndexNow
+        run: node scripts/indexnow.mjs || true
