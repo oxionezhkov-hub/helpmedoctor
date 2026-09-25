@@ -38,12 +38,19 @@ export default {
         return env.ASSETS.fetch(new Request(`${url.origin}/admin/`, request));
       }
 
-      // Старые ссылки мини-приложения ведут в новое
-      if (path === "/" || path.startsWith("/mini-app")) {
-        // Относительный адрес: за прокси (helpmedoctor.ru → workers.dev) хост у воркера другой
+      // Старые ссылки мини-приложения ведут в новое.
+      // Адрес относительный: за прокси (helpmedoctor.ru → workers.dev) хост у воркера другой
+      if (path.startsWith("/mini-app")) {
         return new Response(null, { status: 302, headers: { Location: "/app" } });
       }
-      return env.ASSETS.fetch(request);
+      const canonicalHost = isCanonicalHost(request);
+      if (path === "/robots.txt") return robotsTxt(canonicalHost);
+      const res = await env.ASSETS.fetch(request);
+      // Запасной адрес *.workers.dev не должен попадать в поиск — только helpmedoctor.ru
+      if (canonicalHost) return res;
+      const out = new Response(res.body, res);
+      out.headers.set("X-Robots-Tag", "noindex");
+      return out;
     } catch (e) {
       console.error("fetch error", path, e);
       return json({ error: "Внутренняя ошибка" }, 500);
@@ -240,4 +247,23 @@ async function readJson(request) {
   } catch {
     return {};
   }
+}
+
+// ---------------------------------------------------
+// Поисковики: индексируется только основной домен
+// ---------------------------------------------------
+const MAIN_HOST = "helpmedoctor.ru";
+
+/** helpmedoctor.ru приходит через прокси на VPS: nginx передаёт исходный хост в X-Forwarded-Host */
+function isCanonicalHost(request) {
+  const fwd = (request.headers.get("X-Forwarded-Host") || "").toLowerCase();
+  const host = new URL(request.url).hostname.toLowerCase();
+  return fwd === MAIN_HOST || host === MAIN_HOST;
+}
+
+function robotsTxt(canonicalHost) {
+  const body = canonicalHost
+    ? `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\n\nSitemap: https://${MAIN_HOST}/sitemap.xml\n`
+    : "User-agent: *\nDisallow: /\n";
+  return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
 }

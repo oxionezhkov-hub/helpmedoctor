@@ -138,3 +138,18 @@ test("сложность пациентов: выбранная или по ро
   assert.equal(G.complexityFor({ level: "студент", difficulty: "hard" }), "hard");
   assert.equal(G.complexityFor({ level: "врач", difficulty: "нет такой" }), "medium_hard");
 });
+
+test("страницы сайта пересобраны после изменений (node scripts/build-site.mjs)", async () => {
+  const { execFileSync } = await import("node:child_process");
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "site-"));
+  execFileSync(process.execPath, ["scripts/build-site.mjs"], { env: { ...process.env, SITE_OUT: dir } });
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+  for (const f of walk(dir)) {
+    const rel = path.relative(dir, f);
+    assert.equal(fs.readFileSync(path.join("public", rel), "utf8"), fs.readFileSync(f, "utf8"), `public/${rel} устарел — запустите node scripts/build-site.mjs`);
+  }
+  fs.rmSync(dir, { recursive: true });
+});

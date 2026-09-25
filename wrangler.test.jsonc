@@ -4,7 +4,7 @@
   "main": "src/index.js",
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_als"],
-  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "single-page-application" },
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "404-page" },
   "kv_namespaces": [{ "binding": "HELPMEDOCTOR", "id": "test-kv" }],
   "durable_objects": { "bindings": [{ "name": "USER", "class_name": "UserDO" }, { "name": "HUB", "class_name": "HubDO" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["UserDO", "HubDO"] }],

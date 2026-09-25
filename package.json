@@ -10,7 +10,8 @@
     "check": "wrangler deploy --dry-run --outdir .wrangler/check",
     "test": "node --test test/unit.test.mjs",
     "test:e2e": "scripts/local-test.sh",
-    "webhook": "node scripts/set-webhook.mjs"
+    "webhook": "node scripts/set-webhook.mjs",
+    "site": "node scripts/build-site.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.137.0"
