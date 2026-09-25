@@ -9,25 +9,39 @@ import { faceSvg } from "../src/lib/face.js";
 const HEART = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M2.5 12h5l2-3.5 3 7 2-3.5h7"/></svg>`;
 const FONT = `system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif`;
 
-const og = `<html><body style="margin:0;width:1200px;height:630px;font-family:${FONT};background:linear-gradient(135deg,#0b4f4a 0%,#0f766e 45%,#14b8a6 100%);color:#fff;position:relative;overflow:hidden">
-<div style="position:absolute;right:-120px;top:-140px;width:620px;height:620px;border-radius:50%;background:rgba(255,255,255,.08)"></div>
-<div style="position:absolute;right:120px;bottom:-220px;width:480px;height:480px;border-radius:50%;background:rgba(255,255,255,.06)"></div>
-<div style="position:absolute;left:80px;top:72px;display:flex;align-items:center;gap:18px">
-  <div style="width:72px;height:72px;border-radius:20px;background:rgba(255,255,255,.18);display:grid;place-items:center"><div style="width:46px;height:46px">${HEART}</div></div>
-  <div style="font-size:34px;font-weight:800;letter-spacing:-.01em">Help me, Doctor</div>
+// Превью для соцсетей — в стиле сайта: бумага, Literata, карта приёма со штампом разбора
+const fontData = (f) => `data:font/woff2;base64,${fs.readFileSync(`public/fonts/${f}`).toString("base64")}`;
+const og = `<html><head><style>
+@font-face{font-family:L;font-weight:500 800;src:url(${fontData("literata-cyrillic.woff2")}) format("woff2");unicode-range:U+0400-045F}
+@font-face{font-family:L;font-weight:500 800;src:url(${fontData("literata-latin.woff2")}) format("woff2");unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:L;font-style:italic;font-weight:500 700;src:url(${fontData("literata-italic-cyrillic.woff2")}) format("woff2");unicode-range:U+0400-045F}
+@font-face{font-family:L;font-style:italic;font-weight:500 700;src:url(${fontData("literata-italic-latin.woff2")}) format("woff2");unicode-range:U+0000-00FF,U+2000-206F}
+body{margin:0;width:1200px;height:630px;background:#f6f4ee;color:#191c1b;font-family:${FONT};position:relative;overflow:hidden}
+.mono{font-family:'DejaVu Sans Mono',Menlo,monospace;text-transform:uppercase;letter-spacing:.06em;font-size:15px;color:#5f6662}
+dl{margin:0;display:grid;grid-template-columns:120px 1fr;font-size:19px;line-height:40px}
+dt{font-family:'DejaVu Sans Mono',monospace;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#5f6662}
+dd{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.i{font-family:L;font-style:italic;color:#1e3a8a}
+</style></head><body>
+<div style="position:absolute;left:72px;right:72px;top:54px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #191c1b;padding-bottom:18px">
+  <div style="display:flex;align-items:center;gap:14px;font:700 30px L"><svg width="40" height="40" viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="26" height="26" rx="4" stroke="#191c1b" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8" stroke="#b3391f"/></svg>Help me, Doctor</div>
+  <span class="mono">helpmedoctor.ru</span>
 </div>
-<div style="position:absolute;left:80px;top:210px;width:760px">
-  <div style="font-size:66px;font-weight:800;line-height:1.05;letter-spacing:-.03em">Тренажёр врача<br>с ИИ-пациентами</div>
-  <div style="margin-top:26px;font-size:28px;line-height:1.35;opacity:.92">Расспрос, осмотр, анализы, диагноз —<br>и разбор приёма от эксперта</div>
+<div style="position:absolute;left:72px;top:170px;width:520px">
+  <div class="mono" style="color:#b3391f;margin-bottom:18px">Тренажёр клинического мышления</div>
+  <div style="font:700 58px/1.04 L;letter-spacing:-.015em">Тренажёр врача с&nbsp;виртуальными пациентами</div>
+  <div style="margin-top:24px;font-size:24px;line-height:1.4;color:#353a38">Расспрос, анализы, диагноз — и разбор приёма сразу после. Первый пациент в день бесплатно.</div>
 </div>
-<div style="position:absolute;left:80px;bottom:64px;display:flex;gap:14px;font-size:22px;font-weight:700">
-  <span style="background:#fff;color:#0f766e;padding:12px 22px;border-radius:14px">helpmedoctor.ru</span>
-  <span style="background:rgba(255,255,255,.16);padding:12px 22px;border-radius:14px">Telegram · браузер</span>
-</div>
-<div style="position:absolute;right:80px;top:170px;width:300px;display:flex;flex-direction:column;gap:12px;font-size:19px;line-height:1.35">
-  <div style="background:#fff;color:#0f1f1d;padding:14px 16px;border-radius:18px 18px 18px 6px">Доктор, жжёт под ложечкой третью неделю…</div>
-  <div style="background:#0b4f4a;padding:14px 16px;border-radius:18px 18px 6px 18px;align-self:flex-end">Натощак или после еды?</div>
-  <div style="background:rgba(255,255,255,.95);color:#0f1f1d;padding:14px 16px;border-radius:16px"><b style="color:#0f766e">★ 4,5</b> · разбор эксперта</div>
+<div style="position:absolute;right:72px;top:168px;width:440px;background:#fffdf8;border:1.5px solid #c7c0ae;border-radius:4px;padding:22px 24px 16px;transform:rotate(1deg);box-shadow:0 20px 40px -24px rgba(0,0,0,.35);background-image:repeating-linear-gradient(transparent 0 39px,#e6e1d4 39px 40px);background-position:0 72px">
+  <div style="display:flex;justify-content:space-between;border-bottom:2px solid #191c1b;padding-bottom:10px;margin-bottom:10px" class="mono"><span style="font-size:12px">Карта приёма № 0147</span><span style="font-size:12px">гастро</span></div>
+  <dl>
+    <dt>Жалобы</dt><dd class="i">«Жжёт под ложечкой»</dd>
+    <dt>Вопрос</dt><dd class="i">натощак или после еды?</dd>
+    <dt>Лекарства</dt><dd class="i">«ибупрофен, месяц»</dd>
+    <dt>ФГДС</dt><dd>язва луковицы ДПК</dd>
+    <dt>Диагноз</dt><dd class="i">язва ДПК на фоне НПВП</dd>
+  </dl>
+  <div style="position:absolute;right:18px;bottom:18px;transform:rotate(-9deg);border:3px solid #b3391f;color:#b3391f;border-radius:8px;padding:6px 14px;text-align:center;font-family:'DejaVu Sans Mono',monospace;font-size:13px;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,253,248,.85)">Разбор<div style="font:700 34px/1.05 L;letter-spacing:0">4,5</div>из 5</div>
 </div>
 </body></html>`;
 
@@ -35,7 +49,9 @@ const icon = `<html><body style="margin:0;width:180px;height:180px;background:#0
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
 const page = await browser.newPage();
-const only = process.argv.slice(2);
+// --og — только превью и иконка, без обложек статей
+const ogOnly = process.argv[2] === "--og";
+const only = ogOnly ? [] : process.argv.slice(2);
 if (!only.length) {
   await page.setViewportSize({ width: 1200, height: 630 });
   await page.setContent(og);
@@ -75,7 +91,7 @@ ${withTitle ? `<div style="position:absolute;left:64px;top:64px;width:500px;colo
 
 import fs from "node:fs";
 await page.setViewportSize({ width: 1200, height: 630 });
-for (const a of ARTICLES) {
+for (const a of ogOnly ? [] : ARTICLES) {
   if (!a.cover || (only.length && !only.includes(a.slug))) continue;
   fs.mkdirSync(`public/blog/${a.slug}`, { recursive: true });
   await page.setContent(scene(a.cover, false));

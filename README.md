@@ -29,7 +29,8 @@ Telegram ──webhook──►┐
 
 - **ИИ** — только Workers AI (binding `AI`), без внешних ключей. Промпты короткие, у каждого вызова свой лимит токенов, история диалога сжимается в резюме, результаты анализов кэшируются в рамках приёма, разбор и «что было дальше» — один вызов вместо двух.
 - **Старые данные** из KV `HELPMEDOCTOR` переносятся в UserDO автоматически при первом обращении пользователя (или при утренней рассылке). KV после этого только читается.
-- **Вход на сайт**: внутри Telegram — по подписи `initData`; в браузере — кнопка «Войти через Telegram» открывает бота с одноразовым кодом.
+- **Вход на сайт**: внутри Telegram — по подписи `initData`; в браузере — «Войти через Telegram» (бот с одноразовым кодом), «Войти через Яндекс ID» или «Войти через Google» (OAuth 2.0, `src/lib/oauth.js`).
+  Вошедший без Telegram получает веб-аккаунт (uid вида `w123…`, бот ему не пишет). В профиле → «Способы входа» можно привязать Telegram (бот спросит подтверждение, прогресс, подписка и платежи склеятся в Telegram-аккаунт, старые сессии продолжат работать) и второй сервис входа.
 - **Оплата**: вебхуку Точки не доверяем — статус платежа перепроверяется запросом к API Точки.
 
 ```
@@ -61,6 +62,13 @@ GitHub → Settings → Secrets and variables → Actions → New repository sec
 | `TELEGRAM_TOKEN` | токен бота от @BotFather |
 | `TOCHKA_TOKEN` | JWT-токен API Точки |
 | `SESSION_SECRET` | любая длинная случайная строка (подпись сессий сайта) |
+
+Для входа через Google и Яндекс (по желанию — без ключей кнопки просто не показываются):
+
+| Секрет | Где взять |
+|---|---|
+| `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET` | [oauth.yandex.ru](https://oauth.yandex.ru/) → Создать приложение → «Веб-сервисы», права: доступ к логину, имени и почте. Redirect URI: `https://helpmedoctor.ru/api/auth/oauth/yandex/callback` и `https://helpmedoctor.oxion-ezhkov.workers.dev/api/auth/oauth/yandex/callback` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth consent screen (External, scopes: openid, email, profile) → Credentials → OAuth client ID → Web application. Authorized redirect URIs: `https://helpmedoctor.ru/api/auth/oauth/google/callback` и `https://helpmedoctor.oxion-ezhkov.workers.dev/api/auth/oauth/google/callback` |
 
 > ⚠️ Токены из старой версии лежали прямо в коде. Выпустите новые: @BotFather → `/revoke`, новый токен в интернет-банке Точки, а ключ сервисного аккаунта Google удалите — он больше не нужен.
 
@@ -96,6 +104,12 @@ npm run test:e2e    # сквозной тест: бот + сайт + мигра�
                     # (локальный wrangler dev, ИИ и Telegram подменены заглушками)
 npm run check       # сборка воркера без деплоя
 scripts/dev-local.sh && node test/ui.mjs   # скриншоты экранов в .wrangler/shots (нужен playwright)
+node scripts/build-site.mjs  # пересобрать сайт: главная, демо, посадочные, блог, sitemap.xml, llms.txt
+node scripts/build-pdf.mjs   # PDF-материалы из content/telegram-channel/pdf/*.html (нужен playwright)
 ```
+
+Сайт (`public/*.html`) — статичные страницы из `scripts/build-site.mjs`; тексты посадочных — `scripts/site/landings.mjs`, статьи — `scripts/site/posts/`. Все кнопки сайта ведут в веб-версию `/app?from=<место>`; метка уходит в Метрику, а при входе через Google или Яндекс сохраняется как источник регистрации (ref). Демо-приём, липкая кнопка, окно при уходе и живые цифры — `public/site.js`.
+
+Материалы для Telegram-канала: `content/telegram-channel/resources.md` (подборка ресурсов с правовым статусом и контент-план), PDF в фирменном стиле — `content/telegram-channel/pdf/` (общий стиль `_brand.css`, готовые файлы — `out/`).
 
 Настройки без секретов — в `wrangler.jsonc` (`vars`). Модель ИИ меняется в `src/config.js` (`AI_MODEL`).
