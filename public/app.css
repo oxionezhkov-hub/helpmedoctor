@@ -349,8 +349,7 @@ html:has(.consult) { scrollbar-gutter: auto; overflow: hidden; }
 .plan .price { font-size: 24px; font-weight: 800; margin: 6px 0 10px; }
 
 /* ---------- Логин ---------- */
-@font-face { font-family: "Literata"; font-weight: 500 800; font-display: swap; src: url(/fonts/literata-cyrillic.woff2) format("woff2"); unicode-range: U+0400-045F; }
-@font-face { font-family: "Literata"; font-weight: 500 800; font-display: swap; src: url(/fonts/literata-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F; }
+@font-face { font-family: "Literata"; font-weight: 700 800; font-display: swap; src: url(/fonts/literata-700.woff2) format("woff2"); }
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
 .login .card { max-width: 420px; width: 100%; text-align: center; padding: 28px 20px; }
 .login .logo { font-size: 64px; }

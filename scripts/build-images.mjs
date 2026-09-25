@@ -12,10 +12,8 @@ const FONT = `system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif`;
 // Превью для соцсетей — в стиле сайта: бумага, Literata, карта приёма со штампом разбора
 const fontData = (f) => `data:font/woff2;base64,${fs.readFileSync(`public/fonts/${f}`).toString("base64")}`;
 const og = `<html><head><style>
-@font-face{font-family:L;font-weight:500 800;src:url(${fontData("literata-cyrillic.woff2")}) format("woff2");unicode-range:U+0400-045F}
-@font-face{font-family:L;font-weight:500 800;src:url(${fontData("literata-latin.woff2")}) format("woff2");unicode-range:U+0000-00FF,U+2000-206F}
-@font-face{font-family:L;font-style:italic;font-weight:500 700;src:url(${fontData("literata-italic-cyrillic.woff2")}) format("woff2");unicode-range:U+0400-045F}
-@font-face{font-family:L;font-style:italic;font-weight:500 700;src:url(${fontData("literata-italic-latin.woff2")}) format("woff2");unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:L;font-weight:700 800;src:url(${fontData("literata-700.woff2")}) format("woff2")}
+@font-face{font-family:L;font-style:italic;font-weight:400 700;src:url(${fontData("literata-italic-500.woff2")}) format("woff2")}
 body{margin:0;width:1200px;height:630px;background:#f6f4ee;color:#191c1b;font-family:${FONT};position:relative;overflow:hidden}
 .mono{font-family:'DejaVu Sans Mono',Menlo,monospace;text-transform:uppercase;letter-spacing:.06em;font-size:15px;color:#5f6662}
 dl{margin:0;display:grid;grid-template-columns:120px 1fr;font-size:19px;line-height:40px}
@@ -64,24 +62,29 @@ if (!only.length) {
 // ---------- Обложки статей: врач и пациент (Open Peeps, CC0) с репликами ----------
 // Лица Open Peeps смотрят вправо, поэтому врача (справа) отражаем — собеседники смотрят друг на друга.
 const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
-const STETH = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3H5v6a5 5 0 0 0 10 0V3h-1"/><path d="M10 14v1a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="11" r="2"/></svg>`;
+// const STETH = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3H5v6a5 5 0 0 0 10 0V3h-1"/><path d="M10 14v1a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="11" r="2"/></svg>`;
 function scene(c, withTitle, title) {
-  const h = c.hue;
-  const size = withTitle ? 210 : 250;
+  // Стиль сайта: бумага с линовкой, рамки чернилами, реплики — как записи в карте приёма
+  const size = withTitle ? 200 : 240;
   const person = (p, doctor) => `<div style="position:relative;width:${size}px;height:${size}px">
-    <div style="width:100%;height:100%;border-radius:${size / 4}px;overflow:hidden;background:hsl(${doctor ? h : (h + 40) % 360} 60% ${doctor ? 88 : 92}%);box-shadow:0 18px 40px hsl(${h} 40% 30% / .18)"><div style="${doctor ? "transform:scaleX(-1)" : ""}">${faceSvg({ ...p, clean: true })}</div></div>
-    ${doctor ? `<div style="position:absolute;right:-12px;bottom:-12px;width:62px;height:62px;border-radius:20px;background:#0f766e;display:grid;place-items:center;box-shadow:0 8px 20px rgba(0,0,0,.2)"><div style="width:36px;height:36px">${STETH}</div></div>` : ""}</div>`;
-  const bubble = (t, mine) => `<div style="width:max-content;max-width:${withTitle ? 250 : 320}px;padding:14px 18px;border-radius:22px;${mine ? "border-bottom-right-radius:8px;background:#0f766e;color:#fff" : "border-bottom-left-radius:8px;background:#fff;color:#0f1f1d"};font-size:${withTitle ? 21 : 25}px;line-height:1.3;box-shadow:0 10px 30px hsl(${h} 40% 30% / .15)">${esc(t)}</div>`;
-  // Без заголовка: пациент слева, врач справа, реплики над ними. С заголовком — сцена справа от текста.
-  const L = withTitle ? { pat: [640, 330], doc: [915, 330], b1: [600, 120], b2: [860, 205] } : { pat: [170, 280], doc: [780, 280], b1: [150, 110], b2: [650, 170] };
-  return `<html><body style="margin:0;width:1200px;height:630px;font-family:${FONT};background:linear-gradient(135deg,hsl(${h} 70% 96%) 0%,hsl(${h} 60% 88%) 100%);position:relative;overflow:hidden">
-<div style="position:absolute;right:-160px;top:-180px;width:560px;height:560px;border-radius:50%;background:hsl(${h} 70% 80% / .35)"></div>
-<div style="position:absolute;left:-120px;bottom:-200px;width:460px;height:460px;border-radius:50%;background:hsl(${(h + 40) % 360} 70% 85% / .35)"></div>
-${withTitle ? `<div style="position:absolute;left:64px;top:64px;width:500px;color:#0f1f1d">
-  <div style="display:inline-block;background:#0f766e;color:#fff;font-weight:700;font-size:20px;padding:8px 16px;border-radius:12px">${esc(c.tag)}</div>
-  <div style="margin-top:26px;font-size:${title.length > 26 || title.split(" ").some((w) => w.length > 14) ? 38 : 44}px;font-weight:800;line-height:1.1;letter-spacing:-.02em;hyphens:auto" lang="ru">${esc(title)}</div>
+    <div style="width:100%;height:100%;border-radius:4px;overflow:hidden;background:${doctor ? "#dceae5" : "#eeebe2"};border:2px solid #191c1b"><div style="${doctor ? "transform:scaleX(-1)" : ""}">${faceSvg({ ...p, clean: true })}</div></div>
+    <div style="position:absolute;left:0;bottom:-34px;font-family:'DejaVu Sans Mono',monospace;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:#5f6662">${doctor ? "Врач" : "Пациент"}</div></div>`;
+  const labels = c.labels || ["Пациент", "Врач"];
+  const bubble = (t, mine) => `<div style="width:max-content;max-width:${withTitle ? 250 : 330}px;padding:12px 16px 13px;border-radius:4px;background:#fffdf8;border:1.5px solid ${mine ? "#0d5c55" : "#c7c0ae"};box-shadow:0 12px 26px -18px rgba(0,0,0,.4)">
+    <div style="font-family:'DejaVu Sans Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:${mine ? "#0d5c55" : "#b3391f"};margin-bottom:4px">${mine ? labels[1] : labels[0]}</div>
+    <div style="font-family:L;font-style:italic;font-size:${withTitle ? 22 : 26}px;line-height:1.25;color:${mine ? "#1e3a8a" : "#191c1b"}">${esc(t)}</div></div>`;
+  const L = withTitle ? { pat: [640, 330], doc: [915, 330], b1: [600, 118], b2: [860, 205] } : { pat: [170, 270], doc: [790, 270], b1: [150, 90], b2: [650, 160] };
+  return `<html><head><style>
+@font-face{font-family:L;font-weight:700 800;src:url(${fontData("literata-700.woff2")}) format("woff2")}
+@font-face{font-family:L;font-style:italic;font-weight:400 700;src:url(${fontData("literata-italic-500.woff2")}) format("woff2")}
+</style></head><body style="margin:0;width:1200px;height:630px;font-family:${FONT};background:#f6f4ee;background-image:repeating-linear-gradient(transparent 0 41px,#e4dfd2 41px 42px);position:relative;overflow:hidden">
+<div style="position:absolute;left:${withTitle ? 560 : 96}px;top:0;bottom:0;width:1.5px;background:rgba(179,57,31,.35)"></div>
+${withTitle ? `<div style="position:absolute;left:0;top:0;bottom:0;width:560px;background:#f6f4ee"></div>
+<div style="position:absolute;left:64px;top:60px;width:450px;color:#191c1b">
+  <div style="font-family:'DejaVu Sans Mono',monospace;font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:#b3391f">${esc(c.tag)}</div>
+  <div style="margin-top:22px;font:700 ${title.length > 26 || title.split(" ").some((w) => w.length > 14) ? 42 : 50}px/1.08 L;letter-spacing:-.015em;hyphens:auto" lang="ru">${esc(title)}</div>
 </div>
-<div style="position:absolute;left:64px;bottom:56px;font-size:22px;font-weight:700;color:#0f766e">helpmedoctor.ru · блог</div>` : ""}
+<div style="position:absolute;left:64px;bottom:52px;display:flex;align-items:center;gap:12px;font:700 22px L;color:#191c1b"><svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="26" height="26" rx="4" stroke="#191c1b" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8" stroke="#b3391f"/></svg>Help me, Doctor · блог</div>` : ""}
 <div style="position:absolute;left:${L.pat[0]}px;top:${L.pat[1]}px">${person(c.patient, false)}</div>
 <div style="position:absolute;left:${L.doc[0]}px;top:${L.doc[1]}px">${person(c.doctor, true)}</div>
 <div style="position:absolute;left:${L.b1[0]}px;top:${L.b1[1]}px">${bubble(c.says[0], false)}</div>

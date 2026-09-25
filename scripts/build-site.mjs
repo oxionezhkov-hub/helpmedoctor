@@ -9,7 +9,7 @@ import { EARLY_UNTIL, FREE_DAILY_LIMIT, PACKS, PLANS, SPECIALIZATIONS, TRIAL } f
 import { ARTICLES } from "./site/articles.mjs";
 import { withFigures } from "./site/figures.mjs";
 import { AUDIENCES, INTENTS, SPECIALTIES } from "./site/landings.mjs";
-import { LEGAL_UPDATED, OFFER, PRIVACY } from "./site/legal.mjs";
+import { LEGAL_UPDATED, OFFER, PRIVACY, SELLER } from "./site/legal.mjs";
 
 const SITE = "https://helpmedoctor.ru";
 const BOT = "https://t.me/helpmedoctor_aibot";
@@ -44,12 +44,20 @@ const LOGO = `<svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-lin
 const BURGER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
 const ARR = `<span class="arr" aria-hidden="true">→</span>`;
 
+const ORG_SCHEMA = {
+  "@context": "https://schema.org", "@type": "Organization", name: NAME, url: SITE, logo: `${SITE}/apple-touch-icon.png`, sameAs: [BOT],
+  legalName: SELLER.name, email: SELLER.email,
+  contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: SELLER.email, availableLanguage: "ru" },
+};
 const SPEC_LIST = Object.entries(SPECIALTIES).map(([key, s]) => ({ key, ...s, sections: SPECIALIZATIONS[key] || [] }));
 const EARLY_DATE = new Date(EARLY_UNTIL - 1).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
 const MONTH = PLANS.month;
 
 // ---------------------------------------------------------------- каркас
+const withBrand = (t) => (t.includes(NAME) || `${t} — ${NAME}`.length > 70 ? t : `${t} — ${NAME}`);
+
 function head({ title, description, canonical, type = "website", extra = "", image = `${SITE}/og.png`, noindex = false }) {
+  title = withBrand(title);
   return `<!doctype html>
 <html lang="ru">
 <head>
@@ -57,8 +65,7 @@ function head({ title, description, canonical, type = "website", extra = "", ima
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
-<link rel="canonical" href="${canonical}">
-<meta name="robots" content="${noindex ? "noindex" : "index, follow, max-image-preview:large"}">
+${noindex ? "" : `<link rel="canonical" href="${canonical}">\n`}<meta name="robots" content="${noindex ? "noindex" : "index, follow, max-image-preview:large"}">
 <meta name="theme-color" content="#f6f4ee" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121514" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
@@ -74,7 +81,7 @@ function head({ title, description, canonical, type = "website", extra = "", ima
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="preload" href="/fonts/literata-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/literata-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
 <script src="/site.js" defer></script>
 ${extra}
@@ -82,7 +89,7 @@ ${METRIKA_HEAD}
 </head>`;
 }
 
-const bodyOpen = (page) => `<body data-page="${page}" data-early-until="${EARLY_UNTIL}">
+const bodyOpen = (page) => `<body data-page="${page}" data-early-until="${EARLY_UNTIL}"${page.startsWith("blog_") ? ' data-popup="read"' : ""}>
 ${METRIKA_NOSCRIPT}`;
 
 const promo = () => `<div class="promo" data-early hidden><div class="wrap"><span class="long">Ранние цены до ${EARLY_DATE}: премиум — <b>${rub(MONTH.early)} ₽</b> в месяц вместо ${rub(MONTH.price)} ₽, первые 7 дней — ${rub(TRIAL.price)} ₽.</span><span class="short">Премиум <b>7 дней за ${rub(TRIAL.price)} ₽</b>, потом ${rub(MONTH.early)} ₽/мес</span> <a href="${app("promo")}">Попробовать</a><button class="promo-x" type="button" aria-label="Скрыть">×</button></div></div>`;
@@ -120,6 +127,7 @@ const footer = () => `<footer><div class="wrap">
       <li><a href="/demo/">Демо-приём</a></li>
       <li><a href="/#pricing">Тарифы</a></li>
       <li><a href="/materialy/">Материалы</a></li>
+      <li><a href="/o-proekte/">О проекте и контакты</a></li>
       <li><a href="/#faq">Вопросы и ответы</a></li>
       <li><a href="${BOT}" rel="noopener">Бот в Telegram</a></li>
     </ul></div>
@@ -140,21 +148,21 @@ const footer = () => `<footer><div class="wrap">
   </div>
 </div></footer>`;
 
-const stickyCta = (from, text = "Первый пациент каждый день — бесплатно") =>
-  `<div class="sticky-cta" role="complementary" aria-label="Быстрый старт"><p>${esc(text)}</p><a class="btn btn-primary" href="${app(from)}">Принять пациента ${ARR}</a></div>`;
+const stickyCta = (from, text = "Первый пациент каждый день — бесплатно, без карты") =>
+  `<div class="sticky-cta" role="complementary" aria-label="Быстрый старт"><p data-sticky-text>${esc(text)}</p><a class="btn btn-primary" href="${app(`sticky_${from}`.slice(0, 40))}" data-sticky-btn>Принять пациента ${ARR}</a></div>`;
 
 /** Окно при уходе со страницы: чек-лист в PDF и бесплатный пациент */
 const exitPopup = (from) => `<dialog class="pop" aria-labelledby="pop-t"><div class="pop-in">
   <button class="pop-x" type="button" data-close aria-label="Закрыть">×</button>
-  <p class="mono">Подарок перед уходом</p>
-  <h2 id="pop-t">Чек-лист сбора анамнеза — в PDF</h2>
+  <p class="mono">Бесплатно · PDF · 2 страницы</p>
+  <h2 id="pop-t">Чек-лист сбора анамнеза</h2>
   <p>Две страницы, которые удобно держать в телефоне на практике и перед аккредитацией:</p>
   <ul><li>порядок расспроса по разделам</li><li>OPQRST для боли и «красные флаги»</li><li>фразы для начала и резюме приёма</li></ul>
   <a class="btn btn-primary" href="${CHECKLIST.href}" download data-close autofocus>Скачать чек-лист (PDF)</a>
   <a class="btn btn-ghost" href="${app(`popup_${from}`)}">Или сразу потренироваться на пациенте ${ARR}</a>
 </div></dialog>`;
 
-function layout({ page, headOpts, main, sticky = true, popup = true, progress = false }) {
+function layout({ page, headOpts, main, sticky = true, popup = true, progress = false, stickyText }) {
   return `${head(headOpts)}
 ${bodyOpen(page)}
 ${progress ? '<div class="progress" aria-hidden="true"></div>' : ""}
@@ -163,7 +171,7 @@ ${header()}
 ${main}
 </main>
 ${footer()}
-${sticky ? stickyCta(page) : ""}
+${sticky ? stickyCta(page, stickyText) : ""}
 ${popup ? exitPopup(page) : ""}
 </body>
 </html>
@@ -185,8 +193,8 @@ const inlineCta = (title, text, from, label = "Попробовать беспл
 
 // ---------------------------------------------------------------- общие блоки
 function heroChart() {
-  return `<figure class="chart" role="img" aria-label="Пример карты приёма в тренажёре: жалобы пациента, вопросы врача, результат ФГДС, диагноз и оценка эксперта 4,5 из 5">
-  <div class="chart-h"><span>Карта приёма № 0147</span><span>Гастроэнтерология · средняя</span></div>
+  return `<figure class="chart" role="img" aria-label="Пример карты приёма в тренажёре: жалобы пациента, вопросы врача, результат ФГДС, диагноз и оценка приёма 4,5 из 5">
+  <div class="chart-h"><span>Пример приёма · карта № 0147</span><span>Гастроэнтерология · средняя</span></div>
   <dl>
     <dt>Пациент</dt><dd>Мирон Л., 47 лет, водитель</dd>
     <dt>Жалобы</dt><dd><q>Жжёт под ложечкой третью неделю</q></dd>
@@ -195,14 +203,14 @@ function heroChart() {
     <dt>ФГДС</dt><dd>язва луковицы ДПК, 8 мм</dd>
     <dt>Диагноз</dt><dd class="hand">язва ДПК на фоне НПВП</dd>
   </dl>
-  <div class="stamp">Разбор<b>4,5</b>из 5</div>
+  <div class="stamp">Ваш разбор<b>4,5</b>из 5</div>
 </figure>`;
 }
 
 function demoBlock() {
   return `<div class="demo" data-demo>
   <aside class="demo-side">
-    <div class="demo-pat"><img src="/api/face?v=3&amp;s=demo-miron&amp;g=m&amp;a=47" alt="" width="56" height="56" loading="lazy"><div><b>Мирон Лесков, 47 лет</b><span>водитель · жалобы на боль в животе</span></div></div>
+    <div class="demo-pat"><img src="/api/face?v=3&amp;s=demo-miron&amp;g=m&amp;a=47" alt="" width="56" height="56" loading="lazy"><div><b>Мирон Лесков, <span class="nw">47 лет</span></b><span>водитель · жалобы на боль в животе</span></div></div>
     <ol class="demo-steps"><li class="on">Расспрос</li><li>Обследование</li><li>Диагноз</li><li>Разбор</li></ol>
     <p class="small">Демо с готовым сценарием, без регистрации. В тренажёре пациент отвечает на любые ваши вопросы — текстом или голосом.</p>
   </aside>
@@ -241,7 +249,7 @@ function magnetBlock(from) {
   <div class="magnet-doc" aria-hidden="true"><b>Сбор анамнеза за 10 минут</b><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div>
     <p class="mono muted" style="margin:0 0 8px">Бесплатно · PDF · ${CHECKLIST.pages} страницы</p>
-    <h2>${esc(CHECKLIST.title)}</h2>
+    <p class="magnet-h">${esc(CHECKLIST.title)}</p>
     <p>Порядок расспроса, OPQRST для боли, «красные флаги» по системам и готовые фразы для начала и конца приёма. Удобно открыть с телефона на практике или перед станцией аккредитации.</p>
     <div class="cta" style="margin-bottom:0"><a class="btn btn-primary" href="${CHECKLIST.href}" download>Скачать чек-лист</a><a class="btn btn-ghost" href="${app(from)}">Отработать на пациенте ${ARR}</a></div>
   </div>
@@ -250,29 +258,35 @@ function magnetBlock(from) {
 
 // ---------------------------------------------------------------- главная
 const FAQ = [
-  ["Это медицинская консультация?", "Нет. «Help me, Doctor» — учебный тренажёр: все пациенты вымышлены и созданы искусственным интеллектом. Сервис не ставит диагнозы реальным людям и не заменяет обращение к врачу."],
+  ["Сколько это стоит и что будет после 1 ₽?", `${FREE_DAILY_LIMIT === 1 ? "Один пациент" : `${FREE_DAILY_LIMIT} пациента`} в день — бесплатно и без карты. Премиум — безлимит пациентов, полный ИИ-разбор, тесты по ошибкам и «Очень сложные» случаи: первые 7 дней за ${rub(TRIAL.price)} ₽, затем ${rub(MONTH.early)} ₽ в месяц для ранних пользователей (до ${EARLY_DATE}, потом ${rub(MONTH.price)} ₽; ранняя цена сохраняется, пока подписка активна). За сутки до конца пробного периода напомним в приложении и в Telegram. Есть тарифы на неделю, 3 месяца и год одним платежом. Оплата картой или через СБП.`],
+  ["Как отменить подписку и вернуть деньги?", "Автопродление отключается в профиле → «Подписка» одной кнопкой; до конца пробного периода — без оплаты, премиум остаётся до конца оплаченного срока. Если списание прошло ошибочно или вы не пользовались премиумом после него, в течение 14 дней можно запросить возврат — условия в оферте."],
+  ["Кто пишет разбор приёма?", "Разбор генерирует искусственный интеллект: он сравнивает ваш диалог и назначения со скрытой историей случая и оценивает диагностику, коммуникацию и лечение. ИИ может ошибаться — используйте разбор для самопроверки, а медицинские факты сверяйте с клиническими рекомендациями и учебниками."],
+  ["Чем это лучше, чем попросить чат-бота сыграть пациента?", "У пациента в тренажёре есть скрытый диагноз и история болезни, которые не меняются по ходу разговора; анализы и исследования дают результаты под этот диагноз; после приёма — разбор по разделам и тест по вашим ошибкам. Плюс уровни сложности под вашу роль, специальности, прогресс и статистика."],
+  ["Это медицинская консультация?", "Нет. «Help me, Doctor» — учебный тренажёр: все пациенты вымышлены. Сервис не ставит диагнозы реальным людям и не заменяет обращение к врачу."],
   ["Кому подходит тренажёр?", "Студентам медицинских вузов, ординаторам и практикующим врачам. При первом входе вы выбираете роль, специальность, разделы и сложность — пациенты подбираются под вас."],
+  ["Поможет ли подготовиться к аккредитации?", "Тренажёр отрабатывает то, что проверяют на станции сбора жалоб и анамнеза и в ситуационных задачах: полный расспрос и клиническое рассуждение. Банк тестов и паспорта станций публикует Методический центр аккредитации — используйте их параллельно."],
   ["Как войти?", "Откройте веб-версию и войдите через Яндекс ID, Google или Telegram — это занимает несколько секунд. Если начали без Telegram, привязать его можно позже в профиле: прогресс объединится."],
-  ["Нужно ли что-то устанавливать?", "Нет. Тренажёр работает в браузере на телефоне и компьютере. Есть и Telegram-бот: прогресс общий, начатый на сайте приём можно продолжить в боте."],
-  ["Сколько это стоит?", `${FREE_DAILY_LIMIT === 1 ? "Один пациент" : `${FREE_DAILY_LIMIT} пациента`} в день — бесплатно, с оценкой и выводом эксперта. Премиум — безлимит пациентов, полный разбор, тесты по ошибкам и «Очень сложные» случаи: 7 дней за ${rub(TRIAL.price)} ₽, дальше ${rub(MONTH.early)} ₽ в месяц для ранних пользователей (до ${EARLY_DATE}, потом ${rub(MONTH.price)} ₽). Автопродление отключается в любой момент. Есть тарифы на неделю, 3 месяца и год. Оплата картой или через СБП.`],
   ["Можно ли общаться с пациентом голосом?", "Да. В веб-версии и в Telegram можно отправлять голосовые сообщения — они распознаются и превращаются в вопрос пациенту."],
-  ["Можно ли доверять ответам ИИ?", "Случаи и разборы генерирует искусственный интеллект, он может ошибаться. Используйте тренажёр для отработки клинического мышления и коммуникации, а медицинские факты сверяйте с клиническими рекомендациями и учебниками."],
+  ["Какие данные вы храните?", "Имя и идентификатор аккаунта, через который вы вошли (Telegram, Яндекс или Google, для последних — ещё почту), анкету и историю приёмов. Данные карты мы не получаем. Подробно — в политике обработки персональных данных; удалить аккаунт можно по запросу."],
   ["Даёт ли тренажёр баллы НМО?", "Нет. Это инструмент самостоятельной практики, а не образовательная программа в системе непрерывного медицинского образования."],
 ];
 
 function pricingBlock(from) {
-  const rows = Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([k, p]) => {
+  const visible = Object.entries(PLANS).filter(([, p]) => !p.hidden);
+  const perMonth = (p) => Math.round((Number(p.early || p.price) / p.days) * 30);
+  const cheapest = visible.reduce((a, b) => (perMonth(b[1]) < perMonth(a[1]) ? b : a))[0];
+  const rows = visible.map(([k, p]) => {
     const price = Number(p.early || p.price);
-    const perMonth = Math.round((price / p.days) * 30);
-    return `<tr${p.best ? ' class="best"' : ""}><td>${esc(p.label)}${p.best ? '<span class="tag">выгодно</span>' : ""}<div class="per">${k === "month" ? "автопродление, отключается в любой момент" : "одним платежом"}${p.days > 30 ? ` · ≈ ${rub(perMonth)} ₽/мес` : ""}</div></td>
+    const best = k === cheapest;
+    return `<tr${best ? ' class="best"' : ""}><td>${esc(p.label)}${best ? '<span class="tag">дешевле всего</span>' : ""}<div class="per">${k === "month" ? "автопродление, отключается в любой момент" : k === "week" ? "одним платежом, без подписки" : "одним платежом"} · ≈ ${rub(perMonth(p))} ₽/мес</div></td>
       <td class="price">${rub(price)} ₽${p.early ? `<s data-early>${rub(p.price)} ₽</s>` : ""}</td><td><a href="${app(`${from}_${k}`)}">Выбрать</a></td></tr>`;
   }).join("");
   return `<div class="pricing">
   <div class="trial">
     <span class="mono">Премиум на пробу</span>
     <h3>7 дней за ${rub(TRIAL.price)} ₽</h3>
-    <ul><li>безлимит пациентов</li><li>полный разбор эксперта</li><li>тесты «работа над ошибками»</li><li>«Очень сложные» случаи</li></ul>
-    <p>Дальше — ${rub(MONTH.early)} ₽ в месяц${MONTH.early ? ` вместо ${rub(MONTH.price)} ₽` : ""}. Отключить продление можно в профиле в один клик.</p>
+    <ul><li>безлимит пациентов</li><li>полный ИИ-разбор</li><li>тесты «работа над ошибками»</li><li>«Очень сложные» случаи</li></ul>
+    <p>Дальше — ${rub(MONTH.early)} ₽ в месяц${MONTH.early ? ` вместо ${rub(MONTH.price)} ₽, и эта цена остаётся за вами, пока подписка активна` : ""}. Напомним за сутки до списания; отключить продление — одна кнопка в профиле.</p>
     <a class="btn btn-primary btn-lg" href="${app(`${from}_trial`)}">Попробовать за ${rub(TRIAL.price)} ₽ ${ARR}</a>
     <p class="countdown" data-countdown hidden></p>
   </div>
@@ -280,7 +294,7 @@ function pricingBlock(from) {
     <table class="plans-t">
       <thead><tr><th>Срок</th><th>Цена</th><th></th></tr></thead>
       <tbody>
-        <tr><td>Бесплатно<div class="per">${FREE_DAILY_LIMIT} ${FREE_DAILY_LIMIT === 1 ? "пациент" : "пациента"} в день, оценка и вывод эксперта</div></td><td class="price">0 ₽</td><td><a href="${app(`${from}_free`)}">Начать</a></td></tr>
+        <tr><td>Бесплатно<div class="per">${FREE_DAILY_LIMIT} ${FREE_DAILY_LIMIT === 1 ? "пациент" : "пациента"} в день, оценка и краткий ИИ-разбор</div></td><td class="price">0 ₽</td><td><a href="${app(`${from}_free`)}">Начать</a></td></tr>
         ${rows}
       </tbody>
     </table>
@@ -290,14 +304,18 @@ function pricingBlock(from) {
 }
 
 function landing() {
-  const title = "Тренажёр врача с виртуальными пациентами онлайн — Help me, Doctor";
-  const description = "Онлайн-тренажёр клинического мышления: расспрашивайте ИИ-пациента текстом или голосом, назначайте обследования, ставьте диагноз и получайте разбор. Для студентов-медиков, ординаторов и врачей. Первый пациент в день — бесплатно.";
-  const offers = Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([, p]) => ({ "@type": "Offer", name: `Премиум — ${p.label}`, price: Number(p.early || p.price).toFixed(2), priceCurrency: "RUB" }));
+  const title = "Тренажёр врача с виртуальными пациентами — Help me, Doctor";
+  const description = "Тренажёр для студентов-медиков, ординаторов и врачей: расспрос ИИ-пациента, обследования, диагноз и ИИ-разбор приёма. Один пациент в день бесплатно.";
+  const validUntil = new Date(EARLY_UNTIL - 1).toISOString().slice(0, 10);
+  const offers = [
+    { "@type": "Offer", name: `Премиум — ${TRIAL.label.toLowerCase()}`, price: Number(TRIAL.price).toFixed(2), priceCurrency: "RUB" },
+    ...Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([, p]) => ({ "@type": "Offer", name: `Премиум — ${p.label}`, price: Number(p.early || p.price).toFixed(2), priceCurrency: "RUB", ...(p.early ? { priceValidUntil: validUntil } : {}) })),
+  ];
   const schema = [
-    { "@context": "https://schema.org", "@type": "Organization", name: NAME, url: SITE, logo: `${SITE}/apple-touch-icon.png`, sameAs: [BOT] },
+    ORG_SCHEMA,
     { "@context": "https://schema.org", "@type": "WebSite", name: NAME, url: SITE, inLanguage: "ru" },
     {
-      "@context": "https://schema.org", "@type": "WebApplication", name: NAME, url: `${SITE}/app`,
+      "@context": "https://schema.org", "@type": "WebApplication", name: NAME, url: `${SITE}/`,
       applicationCategory: "EducationalApplication", operatingSystem: "Web, Telegram", inLanguage: "ru", description,
       audience: { "@type": "EducationalAudience", educationalRole: ["student", "professional"] },
       offers: [{ "@type": "Offer", name: "Бесплатный доступ", price: "0", priceCurrency: "RUB" }, ...offers],
@@ -309,19 +327,19 @@ function landing() {
   <div>
     <p class="kicker"><span>Тренажёр клинического мышления</span><span>студентам, ординаторам, врачам</span></p>
     <h1>Тренажёр врача с виртуальными пациентами</h1>
-    <p class="lead">Расспрашиваете пациента текстом или голосом, назначаете анализы, ставите диагноз — и сразу получаете разбор: что спросили точно, что упустили и чем всё закончилось для пациента.</p>
+    <p class="lead">Приём от жалобы до диагноза за 10 минут: расспрашиваете пациента текстом или голосом, назначаете анализы, ставите диагноз — и сразу видите разбор: что спросили точно, что упустили и чем всё закончилось.</p>
     <div class="cta">
-      <a class="btn btn-primary btn-lg" href="${app("hero")}">Принять первого пациента ${ARR}</a>
+      <a class="btn btn-primary btn-lg" href="${app("hero")}">Принять пациента бесплатно ${ARR}</a>
       <a class="btn btn-ghost btn-lg" href="#demo">Демо за минуту</a>
     </div>
-    <ul class="cta-note"><li>бесплатно, без установки</li><li>вход через Яндекс, Google или Telegram</li><li>${Object.keys(SPECIALIZATIONS).length} специальностей</li></ul>
+    <ul class="cta-note"><li>без карты и установки</li><li>вход через Яндекс, Google или Telegram</li><li>${Object.keys(SPECIALIZATIONS).length} специальностей</li></ul>
     <p class="live" data-live hidden><i></i><span></span></p>
   </div>
   ${heroChart()}
 </div></section>
 
 <section><div class="wrap">
-  <div class="sec-head"><div class="sec-no">01 — Зачем</div><div><h2>Знать болезнь и&nbsp;узнать её у&nbsp;пациента — разные навыки</h2><p>На экзамене и в клинике спросят не «что такое язва», а «что с этим пациентом». Второму учит только практика с обратной связью.</p></div></div>
+  <div class="sec-head"><div class="sec-no">Зачем</div><div><h2>Знать болезнь и&nbsp;узнать её у&nbsp;пациента — разные навыки</h2><p>На экзамене и в клинике спросят не «что такое язва», а «что с этим пациентом». Второму учит только практика с обратной связью.</p></div></div>
   <div class="versus">
     <div class="bad"><h3>Как обычно учатся</h3><ul>
       <li>ситуационные задачи, где все данные уже собраны за вас</li>
@@ -339,28 +357,28 @@ function landing() {
 </div></section>
 
 <section id="how" class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">02 — Как это работает</div><div><h2>Приём от жалобы до разбора</h2><p>Как на настоящем приёме — только без риска для пациента и с обратной связью сразу после.</p></div></div>
+  <div class="sec-head"><div class="sec-no">Как это работает</div><div><h2>Приём от жалобы до разбора</h2><p>Как на настоящем приёме — только без риска для пациента и с обратной связью сразу после.</p></div></div>
   <ol class="steps">
     <li><span class="n">1</span><h3>Пациент с жалобой</h3><p>ИИ создаёт новый случай по вашей специальности, разделам и уровню сложности. У пациента свой характер и манера речи.</p></li>
     <li><span class="n">2</span><h3>Расспрос и осмотр</h3><p>Вопросы текстом или голосом. Пациент отвечает только на заданное и может что-то забыть или скрыть.</p></li>
     <li><span class="n">3</span><h3>Обследования</h3><p>Анализы, УЗИ, КТ, ЭКГ, эндоскопия — результаты соответствуют методу и скрытому диагнозу.</p></li>
-    <li><span class="n">4</span><h3>Диагноз и разбор</h3><p>Лечение или направление к специалисту — эксперт разберёт решение и расскажет, что стало с пациентом.</p></li>
+    <li><span class="n">4</span><h3>Диагноз и разбор</h3><p>Лечение или направление к специалисту — ИИ разберёт решение и расскажет, что стало с пациентом.</p></li>
   </ol>
 </div></section>
 
-<section id="demo"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">03 — Демо</div><div><h2>Попробуйте прямо здесь</h2><p>Короткий приём с готовым сценарием: задайте вопросы, назначьте обследования и поставьте диагноз. Регистрация не нужна.</p></div></div>
+<section id="demo" class="airy"><div class="wrap">
+  <div class="sec-head"><div class="sec-no">Демо</div><div><h2>Попробуйте прямо здесь</h2><p>Короткий приём с готовым сценарием: задайте вопросы, назначьте обследования и поставьте диагноз. Регистрация не нужна.</p></div></div>
   ${demoBlock()}
 </div></section>
 
 <section class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">04 — Разбор</div><div><h2>После каждого приёма — разбор эксперта</h2><p>Не просто «верно / неверно»: оценка по разделам, ваши же формулировки и конкретный совет на следующий раз.</p></div></div>
+  <div class="sec-head"><div class="sec-no">Разбор</div><div><h2>После каждого приёма — подробный ИИ-разбор</h2><p>Не просто «верно / неверно»: оценка по разделам, ваши же формулировки и конкретный совет на следующий раз.</p></div></div>
   <div class="review-wrap">
     ${sampleReview()}
     <ul class="feat">
       <li><span class="k">01</span><div><b>Живые пациенты</b><span>Тревожные, ворчливые, немногословные — у каждого свой характер и манера речи.</span></div></li>
       <li><span class="k">02</span><div><b>Голосовой расспрос</b><span>Говорите с пациентом, как на приёме: речь распознаётся автоматически.</span></div></li>
-      <li><span class="k">03</span><div><b>Честные обследования</b><span>Каждый метод показывает только то, что может показать. Лишние назначения эксперт тоже заметит.</span></div></li>
+      <li><span class="k">03</span><div><b>Честные обследования</b><span>Каждый метод показывает только то, что может показать. Лишние назначения разбор тоже отметит.</span></div></li>
       <li><span class="k">04</span><div><b>Работа над ошибками</b><span>Короткий тест по пробелам конкретного приёма — повторение там, где оно нужно.</span></div></li>
       <li><span class="k">05</span><div><b>Сайт и Telegram вместе</b><span>Начните в браузере, продолжите в боте. Уровни, стрики и задания дня держат в ритме.</span></div></li>
     </ul>
@@ -368,19 +386,19 @@ function landing() {
 </div></section>
 
 <section id="for"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">05 — Для кого</div><div><h2>Сложность подстраивается под вас</h2><p>При первом входе вы указываете роль, специальность и разделы — пациенты подбираются под этот профиль.</p></div></div>
+  <div class="sec-head"><div class="sec-no">Для кого</div><div><h2>Сложность подстраивается под вас</h2><p>При первом входе вы указываете роль, специальность и разделы — пациенты подбираются под этот профиль.</p></div></div>
   <div class="who">
     ${AUDIENCES.map((a) => `<a href="/${a.slug}/"><span class="role">${esc(a.navHint)}</span><h3>${esc(a.nav)}</h3><ul>${a.points.slice(0, 3).map((p) => `<li>${esc(p)}</li>`).join("")}</ul><span class="more">Подробнее ${ARR}</span></a>`).join("")}
   </div>
 </div></section>
 
 <section class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">06 — Специальности</div><div><h2>Случаи по ${Object.keys(SPECIALIZATIONS).length} специальностям</h2><p>Выберите свою или впишите любую другую — разделы для неё подберёт ИИ.</p></div></div>
+  <div class="sec-head"><div class="sec-no">Специальности</div><div><h2>Случаи по ${Object.keys(SPECIALIZATIONS).length} специальностям</h2><p>Выберите свою или впишите любую другую — разделы для неё подберёт ИИ.</p></div></div>
   <div class="specs">${SPEC_LIST.map((s) => `<a href="/specialnosti/${s.slug}/"><b>${esc(s.name)}</b><span>${esc(s.sections.join(", "))}</span></a>`).join("")}</div>
 </div></section>
 
 <section><div class="wrap">
-  <div class="sec-head"><div class="sec-no">07 — Сравнение</div><div><h2>Чем тренажёр отличается от задачника</h2><p>Каждый формат полезен по-своему. Тренажёр закрывает то, чего не дают остальные: свободный расспрос с быстрой обратной связью.</p></div></div>
+  <div class="sec-head"><div class="sec-no">Сравнение</div><div><h2>Чем тренажёр отличается от задачника</h2><p>Каждый формат полезен по-своему. Тренажёр закрывает то, чего не дают остальные: свободный расспрос с быстрой обратной связью.</p></div></div>
   <div class="table-wrap"><table class="cmp">
     <thead><tr><th>Что нужно для навыка</th><th class="us">Тренажёр</th><th>Ситуационные задачи</th><th>Учебник</th><th>Практика в клинике</th></tr></thead>
     <tbody>
@@ -395,41 +413,41 @@ function landing() {
 </div></section>
 
 <section id="pricing" class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">08 — Тарифы</div><div><h2>Начните бесплатно</h2><p>Один пациент в день — без оплаты. Если хочется больше практики — безлимит на удобный срок.</p></div></div>
+  <div class="sec-head"><div class="sec-no">Тарифы</div><div><h2>Начните бесплатно</h2><p>Один пациент в день — без оплаты. Если хочется больше практики — безлимит на удобный срок.</p></div></div>
   ${pricingBlock("pricing")}
 </div></section>
 
-<section id="materials"><div class="wrap">${magnetBlock("magnet_home")}</div></section>
+<section id="materials" class="tight"><div class="wrap">${magnetBlock("magnet_home")}</div></section>
 
 <section id="blog" class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">09 — Блог</div><div><h2>Статьи для студентов и ординаторов</h2><p>Коротко и по делу о навыках, которые нужны на практике и на аккредитации.</p></div></div>
+  <div class="sec-head"><div class="sec-no">Блог</div><div><h2>Статьи для студентов и ординаторов</h2><p>Коротко и по делу о навыках, которые нужны на практике и на аккредитации.</p></div></div>
   <div class="posts">${ARTICLES.slice(0, 3).map(postCard).join("")}</div>
   <p style="margin-top:24px"><a href="/blog/"><b>Все статьи →</b></a></p>
 </div></section>
 
 <section id="faq"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">10 — Вопросы</div><div><h2>Вопросы и ответы</h2></div></div>
+  <div class="sec-head"><div class="sec-no">Вопросы</div><div><h2>Вопросы и ответы</h2></div></div>
   ${faqBlock(FAQ)}
 </div></section>
 
 <section class="final"><div class="wrap">
-  <div><h2>Первый пациент уже ждёт</h2><p>Ответьте на четыре вопроса о себе — и тренажёр подберёт случай под вашу специальность и уровень. Это бесплатно.</p></div>
+  <div><p class="final-h">Первый пациент уже ждёт</p><p>Ответьте на четыре вопроса о себе — и тренажёр подберёт случай под вашу специальность и уровень. Это бесплатно.</p></div>
   <div class="cta"><a class="btn btn-primary btn-lg" href="${app("final")}">Открыть тренажёр ${ARR}</a></div>
 </div></section>`;
   return layout({ page: "home", headOpts: { title, description, canonical: `${SITE}/`, extra: schema.map(ldjson).join("\n") }, main });
 }
 
 // ---------------------------------------------------------------- посадочные страницы
-function sideCta(from, title = "Первый пациент — бесплатно", points = ["без установки, в браузере", "вход через Яндекс, Google или Telegram", "разбор эксперта после приёма"]) {
+function sideCta(from, title = "Первый пациент — бесплатно", points = ["без установки, в браузере", "вход через Яндекс, Google или Telegram", "ИИ-разбор после приёма"]) {
   return `<aside class="aside-sticky"><div class="side-cta">
-  <h3>${esc(title)}</h3>
+  <p class="side-h">${esc(title)}</p>
   <ul>${points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
   <a class="btn btn-primary" href="${app(from)}">Открыть тренажёр ${ARR}</a>
   <p style="margin:12px 0 0;font-size:14px"><a href="/demo/">или пройти демо за минуту</a></p>
 </div></aside>`;
 }
 
-function landingPage({ slug, page, crumbsItems, title, description, kicker, h1, lead, points, body, faq = [], extraSchema = [], afterBody = "" }) {
+function landingPage({ slug, page, crumbsItems, title, description, kicker, h1, lead, points, body, faq = [], extraSchema = [], afterBody = "", stickyText }) {
   const url = `${SITE}/${slug}/`;
   const c = crumbs(crumbsItems);
   const schema = [c.schema, { "@context": "https://schema.org", "@type": "WebPage", name: h1, url, description, inLanguage: "ru", isPartOf: { "@type": "WebSite", name: NAME, url: SITE } }, ...(faq.length ? [faqSchema(faq)] : []), ...extraSchema];
@@ -447,17 +465,17 @@ function landingPage({ slug, page, crumbsItems, title, description, kicker, h1, 
 <section style="padding-top:56px"><div class="wrap two">
   <div class="prose">
     ${body.trim()}
-    ${inlineCta("Проверьте себя на пациенте", "Расспрос, обследования и диагноз — а затем разбор эксперта. Один пациент в день бесплатно.", `${page}_inline`)}
+    ${inlineCta("Проверьте себя на пациенте", "Расспрос, обследования и диагноз — а затем ИИ-разбор. Один пациент в день бесплатно.", `${page}_inline`)}
     ${faq.length ? `<h2>Частые вопросы</h2>${faqBlock(faq)}` : ""}
     ${afterBody}
   </div>
   ${sideCta(`${page}_side`)}
 </div></section>
 <section class="final"><div class="wrap">
-  <div><h2>Практика, а не ещё один конспект</h2><p>10 минут на пациента, разбор сразу после. Начните с бесплатного приёма.</p></div>
+  <div><p class="final-h">Практика, а не ещё один конспект</p><p>10 минут на пациента, разбор сразу после. Начните с бесплатного приёма.</p></div>
   <div class="cta"><a class="btn btn-primary btn-lg" href="${app(`${page}_final`)}">Открыть тренажёр ${ARR}</a></div>
 </div></section>`;
-  return layout({ page, headOpts: { title: `${title} — ${NAME}`.length > 90 ? title : `${title} — ${NAME}`, description, canonical: url, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page, stickyText, headOpts: { title, description, canonical: url, extra: schema.map(ldjson).join("\n") }, main });
 }
 
 const relatedLinks = (items) => `<h2>Смотрите также</h2><ul class="links-list">${items.map(([t, u]) => `<li><a href="${u}">${esc(t)}</a></li>`).join("")}</ul>`;
@@ -492,25 +510,19 @@ function specialtyPage(s) {
   const faq = [
     [`Какие разделы ${s.gen} есть в тренажёре?`, `Сейчас: ${s.sections.join(", ")}. Разделы можно отметить при первом входе или в настройках — пациенты будут подбираться по ним. Можно выбрать несколько специальностей и сложность от лёгкой до очень сложной.`],
     [`Подойдут ли случаи по ${s.gen} студенту?`, "Да. На лёгком уровне картина болезни типичная, и разбор объясняет, какие вопросы и обследования были ключевыми. Ординаторам и врачам подойдут средний и сложный уровни с отвлекающими симптомами."],
-    ["Откуда берутся случаи?", "Каждый случай создаёт ИИ под ваш профиль: пациент, история болезни, характер, скрытый диагноз и находки. Случаи не повторяются. Это учебные ситуации — медицинские факты сверяйте с клиническими рекомендациями."],
   ];
   const body = `
 <h2>Пример случая: ${esc(s.case.complaint.split(/[,:—]/)[0].toLowerCase())}</h2>
 <p>Так выглядит случай, собранный целиком. В тренажёре вы получите только жалобу — остальное нужно выяснить самому.</p>
 ${caseHtml(s)}
 <p class="note">Учебный пример. Тактика лечения зависит от клинической ситуации — ориентируйтесь на действующие клинические рекомендации Минздрава РФ.</p>
-<h2>Как проходит приём по ${esc(s.gen)}</h2>
-<ol>
-  <li>При первом входе выберите специальность «${esc(s.key)}» и разделы: <strong>${esc(s.sections.join(", "))}</strong> — или впишите свои.</li>
-  <li>Пациент приходит с одной жалобой. Расспрашивайте текстом или голосом — он отвечает только на заданный вопрос.</li>
-  <li>Назначайте осмотр и обследования: результаты соответствуют методу и скрытому диагнозу.</li>
-  <li>Поставьте диагноз и выберите тактику — лечение или направление. Эксперт разберёт приём и расскажет, что стало с пациентом.</li>
-</ol>`;
-  const others = SPEC_LIST.filter((x) => x.slug !== s.slug).slice(0, 5).map((x) => [`Клинические случаи: ${x.name.toLowerCase()}`, `/specialnosti/${x.slug}/`]);
+<h2>Разделы специальности в тренажёре</h2>
+<p>При выборе специальности «${esc(s.key)}» пациенты подбираются по разделам: <strong>${esc(s.sections.join(", "))}</strong>. Можно отметить часть из них, добавить смежные специальности или вписать свои разделы.</p>`;
+  const others = SPEC_LIST.filter((x) => x.slug !== s.slug).map((x) => [`Клинические случаи: ${x.name.toLowerCase()}`, `/specialnosti/${x.slug}/`]);
   return landingPage({
     slug, page: `spec_${s.slug}`, crumbsItems: [["Главная", "/"], ["Специальности", "/specialnosti/"], [s.name, `/${slug}/`]],
-    title: s.title, description: s.description, kicker: s.sections.join(" · "), h1: `Клинические случаи по ${s.gen}`, lead: s.intro,
-    points: s.skills, body, faq, afterBody: relatedLinks([...others, ["Все специальности", "/specialnosti/"]]),
+    title: `Клинические случаи по ${s.gen} онлайн`, description: s.description, kicker: s.sections.join(" · "), h1: `Клинические случаи по ${s.gen}`, lead: s.intro,
+    points: s.skills, body, faq, stickyText: `Случай по ${s.gen} — бесплатно`, afterBody: relatedLinks([...others, ["Все специальности", "/specialnosti/"]]),
   });
 }
 
@@ -528,7 +540,7 @@ function specialtiesIndex() {
   <div class="specs">${SPEC_LIST.map((s) => `<a href="/specialnosti/${s.slug}/"><b>${esc(s.name)}</b><span>Пример: ${esc(s.case.complaint.split(/[,:—]/)[0].toLowerCase())} · ${esc(s.sections.join(", "))}</span></a>`).join("")}</div>
   ${inlineCta("Не нашли свою специальность?", "Впишите её при первом входе — разделы и пациентов подберёт ИИ.", "specs_index", "Открыть тренажёр")}
 </div></section>`;
-  return layout({ page: "specialnosti", headOpts: { title: `Клинические случаи по специальностям — ${NAME}`, description: `Клинические случаи онлайн по ${SPEC_LIST.length} специальностям: ${SPEC_LIST.map((s) => s.name.toLowerCase()).join(", ")}. Виртуальный пациент и разбор эксперта.`, canonical: url, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page: "specialnosti", headOpts: { title: "Клинические случаи по специальностям", description: `Клинические случаи онлайн по ${SPEC_LIST.length} специальностям — от терапии и кардиологии до неотложной помощи. Пример случая и разделы для каждой.`, canonical: url, extra: schema.map(ldjson).join("\n") }, main });
 }
 
 function demoPage() {
@@ -538,17 +550,17 @@ function demoPage() {
 <section class="page-hero solo" data-hero style="padding-bottom:32px"><div class="wrap" style="max-width:var(--maxw)">
   ${c.html}
   <h1>Демо-приём: виртуальный пациент за минуту</h1>
-  <p class="lead">Пациент с болью в животе. Задайте вопросы, назначьте обследования, поставьте диагноз — и посмотрите, как выглядит разбор эксперта. Без регистрации.</p>
+  <p class="lead">Пациент с болью в животе. Задайте вопросы, назначьте обследования, поставьте диагноз — и посмотрите, как выглядит ИИ-разбор. Без регистрации.</p>
 </div></section>
 <section style="padding-top:8px"><div class="wrap">
   ${demoBlock()}
   <div class="prose" style="margin-top:48px">
     <h2>Чем демо отличается от настоящего приёма</h2>
-    <p>В демо вопросы и обследования выбираются из списка, а сценарий заранее написан. В тренажёре пациента играет языковая модель: вы задаёте любые вопросы своими словами — текстом или голосом, — назначаете любые обследования, а эксперт разбирает именно ваш диалог. Каждый случай новый и подобран под вашу специальность и уровень.</p>
+    <p>В демо вопросы и обследования выбираются из списка, а сценарий заранее написан. В тренажёре пациента играет языковая модель: вы задаёте любые вопросы своими словами — текстом или голосом, — назначаете любые обследования, а ИИ разбирает именно ваш диалог. Каждый случай новый и подобран под вашу специальность и уровень.</p>
     ${inlineCta("Готовы к настоящему пациенту?", "Первый приём — бесплатно. Вход через Яндекс, Google или Telegram.", "demo_page")}
   </div>
 </div></section>`;
-  return layout({ page: "demo", headOpts: { title: `Демо: виртуальный пациент онлайн — ${NAME}`, description: "Пройдите демо-приём виртуального пациента без регистрации: расспрос, обследования, диагноз и разбор эксперта. Посмотрите, как работает тренажёр врача.", canonical: url, extra: ldjson(c.schema) }, main });
+  return layout({ page: "demo", headOpts: { title: "Демо: виртуальный пациент онлайн без регистрации", description: "Пройдите демо-приём виртуального пациента без регистрации: расспрос, обследования, диагноз и ИИ-разбор. Посмотрите, как работает тренажёр врача.", canonical: url, extra: ldjson(c.schema) }, main });
 }
 
 function materialsPage() {
@@ -584,17 +596,17 @@ function materialsPage() {
     <ul class="links-list">${links.map(([t, u, d]) => `<li><a href="${u}" rel="noopener" target="_blank"><span><b>${esc(t)}</b><br><span class="muted" style="font-size:15px">${esc(d)}</span></span></a></li>`).join("")}</ul>
   </div>
 </div></section>`;
-  return layout({ page: "materialy", headOpts: { title: `Материалы для студентов-медиков: чек-листы в PDF — ${NAME}`, description: "Бесплатный чек-лист сбора анамнеза в PDF и подборка первоисточников: клинические рекомендации, материалы аккредитации, справочники для студентов-медиков и ординаторов.", canonical: url, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page: "materialy", headOpts: { title: "Чек-лист сбора анамнеза в PDF и материалы для студентов", description: "Бесплатный чек-лист сбора анамнеза в PDF и подборка первоисточников: клинические рекомендации, материалы аккредитации, справочники для студентов-медиков и ординаторов.", canonical: url, extra: schema.map(ldjson).join("\n") }, main });
 }
 
 // ---------------------------------------------------------------- блог
 // Контекстный призыв по темам статьи
 function articleCta(a) {
   const t = a.tags.join(" ").toLowerCase();
-  if (/анамнез|коммуникац|общени/.test(t)) return ["Отработайте расспрос на пациенте, который не выкладывает всё сразу", "Виртуальный пациент отвечает только на заданный вопрос. После приёма эксперт покажет, что вы упустили."];
+  if (/анамнез|коммуникац|общени/.test(t)) return ["Отработайте расспрос на пациенте, который не выкладывает всё сразу", "Виртуальный пациент отвечает только на заданный вопрос. После приёма ИИ-разбор покажет, что вы упустили."];
   if (/аккредит|оскэ|экзамен/.test(t)) return ["Потренируйте станцию анамнеза без стандартизированного пациента", "Полный приём за 10 минут и разбор: какие обязательные вопросы вы пропустили."];
   if (/анализ|лаборатор/.test(t)) return ["Интерпретируйте анализы на живом случае", "Назначьте обследования виртуальному пациенту и сопоставьте результаты с клинической картиной."];
-  return ["Проверьте клиническое мышление на новом случае", "Расспрос, обследования, диагноз — и разбор эксперта с вашими же формулировками."];
+  return ["Проверьте клиническое мышление на новом случае", "Расспрос, обследования, диагноз — и ИИ-разбор с вашими же формулировками."];
 }
 
 /** id для заголовков h2 (оглавление) */
@@ -618,8 +630,21 @@ function insertMidCta(html, cta) {
   return html.replace(/<h2 id=/g, (m) => (++n === 3 ? `${cta}\n${m}` : m));
 }
 
+/** Контекстные ссылки из статьи на посадочные страницы по её темам */
+function topicLinks(a) {
+  const t = `${a.tags.join(" ")} ${a.h1}`.toLowerCase();
+  const links = [];
+  if (/анамнез|коммуникац|общени|пропедевт/.test(t)) links.push(["Тренажёр к аккредитации: станция сбора анамнеза", "/akkreditaciya/"], ["Тренажёр для студентов-медиков", "/dlya-studentov/"]);
+  if (/аккредит|оскэ|экзамен/.test(t)) links.push(["Тренажёр к аккредитации: сбор анамнеза и клиническое мышление", "/akkreditaciya/"], ["Клинические задачи онлайн с ответами", "/klinicheskie-zadachi/"]);
+  if (/диагноз|мышлени/.test(t)) links.push(["Клинические задачи онлайн с ответами", "/klinicheskie-zadachi/"], ["Клинические случаи по кардиологии", "/specialnosti/kardiologiya/"], ["Сложные клинические случаи для врачей", "/dlya-vrachej/"]);
+  if (/анализ|лаборатор/.test(t)) links.push(["Клинические случаи по терапии", "/specialnosti/terapiya/"], ["Клинические задачи онлайн с ответами", "/klinicheskie-zadachi/"]);
+  links.push(["Виртуальный пациент: что это и как на нём учиться", "/virtualnyj-pacient/"]);
+  const uniq = [...new Map(links.map((l) => [l[1], l])).values()].slice(0, 4);
+  return `<nav class="topic-links" aria-label="По теме"><b>По теме</b><ul>${uniq.map(([n, u]) => `<li><a href="${u}">${esc(n)}</a></li>`).join("")}</ul></nav>`;
+}
+
 function blogIndex() {
-  const title = `Блог для студентов-медиков и ординаторов — ${NAME}`;
+  const title = "Блог для студентов-медиков и ординаторов";
   const description = "Статьи для студентов-медиков и ординаторов: сбор анамнеза, дифференциальный диагноз, общий анализ крови, подготовка к аккредитации, общение с пациентом.";
   const c = crumbs([["Главная", "/"], ["Блог", "/blog/"]]);
   const schema = [
@@ -654,9 +679,9 @@ function articlePage(a) {
     ...(a.faq?.length ? [faqSchema(a.faq)] : []),
   ];
   const [ctaTitle, ctaText] = articleCta(a);
-  const from = `blog_${a.slug}`.slice(0, 40);
+  const from = `b_${a.slug}`.slice(0, 34);
   const { html: bodyHtml, toc } = withHeadingIds(withFigures(a.body.trim()));
-  let body = insertMidCta(bodyHtml, inlineCta(ctaTitle, ctaText, `${from}_mid`.slice(0, 40)));
+  let body = insertMidCta(bodyHtml, inlineCta(ctaTitle, ctaText, `${from}_mid`));
   // Оглавление — после вводного абзаца
   const tocHtml = toc.length >= 4 ? `<nav class="toc" aria-label="Содержание"><b>Содержание</b><ol>${toc.map(([id, t]) => `<li><a href="#${id}">${esc(t)}</a></li>`).join("")}</ol></nav>` : "";
   const leadEnd = body.startsWith('<p class="lead">') ? body.indexOf("</p>") + 4 : 0;
@@ -671,18 +696,19 @@ function articlePage(a) {
   ${body}
   ${a.faq?.length ? `<h2 id="faq">Частые вопросы</h2><div class="faq article-faq">${a.faq.map(([q, ans]) => `<details><summary>${esc(q)}</summary><p>${esc(ans)}</p></details>`).join("")}</div>` : ""}
   ${a.sources?.length ? `<h2 id="istochniki">Источники</h2><ol class="sources">${a.sources.map(([t, u]) => `<li>${u ? `<a href="${esc(u)}" rel="noopener nofollow" target="_blank">${esc(t)}</a>` : esc(t)}</li>`).join("")}</ol>` : ""}
+  ${topicLinks(a)}
   <ul class="tags" aria-label="Темы">${a.tags.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
   <aside class="cta-box">
-    <h2>Потренируйтесь на виртуальном пациенте</h2>
-    <ul><li>расспрос текстом или голосом — пациент отвечает только на заданное</li><li>анализы, УЗИ, ЭКГ, эндоскопия — результаты под скрытый диагноз</li><li>разбор эксперта и тест по вашим ошибкам</li></ul>
+    <p class="cta-h">Потренируйтесь на виртуальном пациенте</p>
+    <ul><li>расспрос текстом или голосом — пациент отвечает только на заданное</li><li>анализы, УЗИ, ЭКГ, эндоскопия — результаты под скрытый диагноз</li><li>ИИ-разбор и тест по вашим ошибкам</li></ul>
     <p>Первый пациент каждый день — бесплатно. Вход через Яндекс, Google или Telegram.</p>
-    <div class="cta" style="margin:0"><a class="btn btn-primary btn-lg" href="${app(`${from}_end`.slice(0, 40))}">Принять пациента ${ARR}</a><a class="btn btn-ghost btn-lg" href="${CHECKLIST.href}" download>Чек-лист анамнеза (PDF)</a></div>
+    <div class="cta" style="margin:0"><a class="btn btn-primary btn-lg" href="${app(`${from}_end`)}">Принять пациента ${ARR}</a><a class="btn btn-ghost btn-lg" href="/demo/">Демо за минуту</a></div>
   </aside>
 </article>
 <div class="related"><h2 style="font-size:26px">Читайте также</h2><div class="posts">${others.map(postCard).join("")}</div></div>`;
   return layout({
     page: from, progress: true,
-    headOpts: { title: `${a.title} — ${NAME}`, description: a.description, canonical: url, type: "article", image: a.cover ? `${SITE}/blog/${a.slug}/og.jpg` : undefined,
+    headOpts: { title: a.title, description: a.description, canonical: url, type: "article", image: a.cover ? `${SITE}/blog/${a.slug}/og.jpg` : undefined,
       extra: `<meta property="article:published_time" content="${a.date}">\n${schema.map(ldjson).join("\n")}` },
     main,
   });
@@ -699,13 +725,42 @@ function legalPage(doc) {
   <div class="meta"><span>Редакция от ${fmtDate(LEGAL_UPDATED)}</span></div>
   ${doc.body.trim()}
 </article>`;
-  return layout({ page: doc.slug, sticky: false, popup: false, headOpts: { title: `${doc.title} — ${NAME}`, description: doc.description, canonical: url }, main });
+  return layout({ page: doc.slug, sticky: false, popup: false, headOpts: { title: doc.title, description: doc.description, canonical: url }, main });
+}
+
+function aboutPage() {
+  const url = `${SITE}/o-proekte/`;
+  const c = crumbs([["Главная", "/"], ["О проекте", "/o-proekte/"]]);
+  const schema = [c.schema, ORG_SCHEMA, { "@context": "https://schema.org", "@type": "AboutPage", name: "О проекте Help me, Doctor", url, inLanguage: "ru" }];
+  const main = `
+<section class="page-hero solo" data-hero><div class="wrap">
+  ${c.html}
+  <h1>О проекте</h1>
+  <p class="lead">«Help me, Doctor» — учебный тренажёр клинического мышления для студентов-медиков, ординаторов и врачей. Здесь можно спокойно провести десятки приёмов от жалобы до диагноза и после каждого увидеть, что получилось, а что стоит подтянуть.</p>
+</div></section>
+<section style="padding-top:48px"><div class="wrap"><div class="prose">
+  <h2>Как устроены пациенты</h2>
+  <p>Каждый случай создаёт языковая модель под профиль пользователя: специальность, разделы и сложность. У пациента есть скрытая история болезни, диагноз, характер и находки, которые проявятся при осмотре и обследованиях. Пациент отвечает только на заданный вопрос и не знает медицинских терминов. Результаты анализов и исследований генерируются под скрытый диагноз и показывают только то, что может показать конкретный метод.</p>
+  <h2>Кто пишет разбор</h2>
+  <p>Разбор приёма тоже генерирует ИИ: он сравнивает диалог и назначения со скрытой историей случая и оценивает три блока — диагностику, коммуникацию и лечение, — приводит цитаты из диалога, называет пропущенные вопросы и описывает, что стало с пациентом при выбранной тактике. По пробелам формируется короткий тест.</p>
+  <p class="note">ИИ может ошибаться. Тренажёр развивает навык расспроса и клинического рассуждения; медицинские факты, дозы и тактику сверяйте с действующими клиническими рекомендациями Минздрава РФ и учебниками. Пациенты вымышлены, сервис не консультирует реальных людей и не начисляет баллы НМО.</p>
+  <h2>Материалы сайта</h2>
+  <p>Статьи блога и учебные случаи на страницах специальностей опираются на клинические рекомендации Минздрава РФ и международные руководства; источники указаны в статьях. Если вы нашли неточность — напишите нам, исправим. Если вы врач-преподаватель и готовы рецензировать материалы — тоже напишите: мы ищем рецензентов.</p>
+  <h2>Контакты</h2>
+  <ul>
+    <li>Почта: <a href="mailto:${SELLER.email}">${SELLER.email}</a></li>
+    <li>Telegram-бот: <a href="${BOT}" rel="noopener">@${BOT.split("/").pop()}</a> — можно написать в поддержку прямо в чате</li>
+    <li>${esc(SELLER.name)} · ИНН ${SELLER.inn} · ОГРНИП ${SELLER.ogrnip}</li>
+  </ul>
+  <p><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика обработки персональных данных</a></p>
+</div></div></section>`;
+  return layout({ page: "about", headOpts: { title: "О проекте: как устроен тренажёр и кто его делает", description: "Как устроены ИИ-пациенты и разбор приёма в «Help me, Doctor», ограничения ИИ, источники материалов, контакты и реквизиты.", canonical: url, extra: schema.map(ldjson).join("\n") }, main });
 }
 
 function notFound() {
   const main = `<div class="notfound"><p class="mono muted">Ошибка 404</p><h1>Страница не найдена</h1><p class="muted">Возможно, ссылка устарела. Начните с главной, пройдите демо или загляните в блог.</p>
 <div class="cta" style="justify-content:center"><a class="btn btn-primary" href="/">На главную</a><a class="btn btn-ghost" href="/demo/">Демо</a><a class="btn btn-ghost" href="/blog/">Блог</a></div></div>`;
-  return layout({ page: "404", sticky: false, popup: false, headOpts: { title: `Страница не найдена — ${NAME}`, description: "Такой страницы нет.", canonical: `${SITE}/`, noindex: true }, main });
+  return layout({ page: "404", sticky: false, popup: false, headOpts: { title: "Страница не найдена", description: "Такой страницы нет.", canonical: `${SITE}/`, noindex: true }, main });
 }
 
 // ---------------------------------------------------------------- sitemap и llms.txt
@@ -716,6 +771,7 @@ const PAGES = [
   { loc: "/specialnosti/", pr: "0.7" },
   ...SPEC_LIST.map((s) => ({ loc: `/specialnosti/${s.slug}/`, pr: "0.7" })),
   { loc: "/materialy/", pr: "0.6" },
+  { loc: "/o-proekte/", pr: "0.5" },
 ];
 
 function sitemap() {
@@ -737,13 +793,14 @@ ${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod><pri
 function llmsTxt() {
   return `# ${NAME}
 
-> Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей: ИИ-пациенты с жалобами и характером, расспрос текстом и голосом, осмотр, анализы, диагноз и лечение, затем разбор приёма экспертом с оценкой и тестом по ошибкам. Работает в браузере и в Telegram, вход через Яндекс ID, Google или Telegram. Первый пациент каждый день бесплатно; премиум — 7 дней за ${rub(TRIAL.price)} ₽, затем от ${rub(MONTH.early)} ₽ в месяц.
+> Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей: ИИ-пациенты с жалобами и характером, расспрос текстом и голосом, осмотр, анализы, диагноз и лечение, затем разбор приёма (его генерирует ИИ, сверяясь со скрытой историей случая) с оценкой и тестом по ошибкам. Работает в браузере и в Telegram, вход через Яндекс ID, Google или Telegram. Первый пациент каждый день бесплатно; премиум — 7 дней за ${rub(TRIAL.price)} ₽, затем от ${rub(MONTH.early)} ₽ в месяц.
 
 ## Продукт
 - [Главная](${SITE}/): как работает тренажёр, цены, вопросы и ответы
 - [Демо-приём](${SITE}/demo/): интерактивный пример приёма без регистрации
 - [Веб-приложение](${SITE}/app): тренажёр в браузере
 - [Материалы](${SITE}/materialy/): бесплатный чек-лист сбора анамнеза (PDF) и первоисточники
+- [О проекте](${SITE}/o-proekte/): как устроены ИИ-пациенты и ИИ-разбор, ограничения, контакты
 - [Публичная оферта](${SITE}/oferta/)
 - [Политика обработки данных](${SITE}/privacy/)
 
@@ -772,6 +829,7 @@ for (const i of INTENTS) write(`${i.slug}/index.html`, intentPage(i));
 write("specialnosti/index.html", specialtiesIndex());
 for (const s of SPEC_LIST) write(`specialnosti/${s.slug}/index.html`, specialtyPage(s));
 write("materialy/index.html", materialsPage());
+write("o-proekte/index.html", aboutPage());
 write("blog/index.html", blogIndex());
 for (const a of ARTICLES) write(`blog/${a.slug}/index.html`, articlePage(a));
 for (const d of [OFFER, PRIVACY]) write(`${d.slug}/index.html`, legalPage(d));

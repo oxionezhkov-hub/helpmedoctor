@@ -1,9 +1,8 @@
 /* Фирменный стиль PDF-материалов Help me, Doctor: A4, бумага, шрифт с засечками в заголовках, моно для пометок.
    Используется всеми файлами в content/telegram-channel/pdf/*.html — сборка: node scripts/build-pdf.mjs */
-@font-face { font-family: "Literata"; font-weight: 500 800; src: url(../../../public/fonts/literata-cyrillic.woff2) format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
-@font-face { font-family: "Literata"; font-weight: 500 800; src: url(../../../public/fonts/literata-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2116, U+2122, U+2212; }
-@font-face { font-family: "Literata"; font-style: italic; font-weight: 500 700; src: url(../../../public/fonts/literata-italic-cyrillic.woff2) format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
-@font-face { font-family: "Literata"; font-style: italic; font-weight: 500 700; src: url(../../../public/fonts/literata-italic-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2116, U+2122, U+2212; }
+@font-face { font-family: "Literata"; font-weight: 600; src: url(../../../public/fonts/literata-600.woff2) format("woff2"); }
+@font-face { font-family: "Literata"; font-weight: 700 800; src: url(../../../public/fonts/literata-700.woff2) format("woff2"); }
+@font-face { font-family: "Literata"; font-style: italic; font-weight: 400 700; src: url(../../../public/fonts/literata-italic-500.woff2) format("woff2"); }
 @page { size: A4; margin: 0; }
 :root {
   --paper: #f6f4ee; --paper-2: #eeebe2; --card: #fffdf8; --ink: #191c1b; --ink-2: #353a38; --muted: #5f6662;

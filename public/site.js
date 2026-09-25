@@ -12,6 +12,8 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const plural = (n, a, b, c) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? b : c; };
   const page = document.body.dataset.page || "page";
+  // Уже вошёл в тренажёр (токен веб-версии в этом браузере) — не продаём, а зовём продолжить
+  const loggedIn = !!ls.get("hmd_token");
 
   // Клики по кнопкам «в приложение» — цель в Метрике
   document.addEventListener("click", (e) => {
@@ -36,7 +38,8 @@
   if (promo) {
     if (left <= 0 || ls.get("hmd_promo_x") === String(until)) promo.hidden = true;
     else promo.hidden = false;
-    $(".promo-x", promo)?.addEventListener("click", () => { promo.hidden = true; ls.set("hmd_promo_x", String(until)); });
+    if (loggedIn) promo.hidden = true;
+    $(".promo-x", promo)?.addEventListener("click", () => { promo.hidden = true; ls.set("hmd_promo_x", String(until)); goal("promo_close"); });
   }
   $$("[data-countdown]").forEach((el) => {
     if (left <= 0) return;
@@ -64,18 +67,28 @@
 
   // ---------- Липкая кнопка внизу: после первого экрана, скрыта у финального призыва ----------
   const sticky = $(".sticky-cta");
+  if (sticky && loggedIn) {
+    const t = $("[data-sticky-text]", sticky);
+    const b = $("[data-sticky-btn]", sticky);
+    if (t) t.textContent = "Пациенты ждут в очереди";
+    if (b) b.innerHTML = 'Продолжить тренировку <span class="arr">→</span>';
+  }
   if (sticky) {
     const hero = $("[data-hero]") || $("main > :first-child");
     const final = $(".final") || $("footer");
-    let heroOut = false, finalIn = false;
-    const upd = () => sticky.classList.toggle("show", heroOut && !finalIn);
+    const demoEl = $("[data-demo]");
+    let heroOut = false, finalIn = false, demoIn = false;
+    // Пока на экране демо — своя кнопка у демо, липкая не нужна (и не закрывает варианты ответа)
+    const upd = () => sticky.classList.toggle("show", heroOut && !finalIn && !demoIn);
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (e.target === hero) heroOut = !e.isIntersecting && e.boundingClientRect.top < 0;
       if (e.target === final) finalIn = e.isIntersecting;
+      if (e.target === demoEl) demoIn = e.isIntersecting;
       upd();
     }));
     if (hero) io.observe(hero);
     if (final) io.observe(final);
+    if (demoEl) io.observe(demoEl);
   }
 
   // ---------- Прогресс чтения статьи ----------
@@ -91,12 +104,15 @@
     onScroll();
   }
 
-  // ---------- Окно при уходе: раз в 3 дня, не раньше 20 секунд на странице ----------
+  // ---------- Окно при уходе: раз в 3 дня, не раньше 20 секунд, не тем, кто уже вошёл ----------
+  // На компьютере — при уводе курсора к вкладкам. На телефоне — только в статьях, после 60% прочтения и резкой прокрутки вверх.
   const dlg = $("dialog.pop");
-  if (dlg && typeof dlg.showModal === "function") {
+  if (dlg && typeof dlg.showModal === "function" && !loggedIn) {
     const KEY = "hmd_pop_at";
     const t0 = Date.now();
-    const allowed = () => Date.now() - Number(ls.get(KEY) || 0) > 3 * 86400000 && Date.now() - t0 > 20000 && !document.querySelector("dialog[open]");
+    const readMode = document.body.dataset.popup === "read";
+    const readShare = () => { const a = $(".article"); if (!a) return 1; const r = a.getBoundingClientRect(); return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight))); };
+    const allowed = () => Date.now() - Number(ls.get(KEY) || 0) > 3 * 86400000 && Date.now() - t0 > 20000 && !document.querySelector("dialog[open]") && (!readMode || readShare() > 0.6);
     const show = (why) => {
       if (!allowed()) return;
       ls.set(KEY, String(Date.now()));
@@ -104,15 +120,20 @@
       goal("popup_show", { why, page });
     };
     document.addEventListener("mouseout", (e) => { if (!e.relatedTarget && e.clientY <= 0) show("exit"); });
-    // На телефоне «ухода мышью» нет: показываем после быстрой прокрутки вверх ближе к концу страницы
-    let lastY = scrollY, lastT = Date.now();
-    addEventListener("scroll", () => {
-      const now = Date.now();
-      const v = (lastY - scrollY) / Math.max(1, now - lastT);
-      if (v > 2.5 && scrollY > innerHeight * 1.5 && matchMedia("(pointer: coarse)").matches) show("scroll_up");
-      lastY = scrollY; lastT = now;
-    }, { passive: true });
-    dlg.addEventListener("click", (e) => { if (e.target === dlg || e.target.closest("[data-close]")) dlg.close(); });
+    if (readMode && matchMedia("(pointer: coarse)").matches) {
+      let lastY = scrollY, lastT = Date.now();
+      addEventListener("scroll", () => {
+        const now = Date.now();
+        const v = (lastY - scrollY) / Math.max(1, now - lastT);
+        if (v > 4 && scrollY > innerHeight * 2) show("scroll_up");
+        lastY = scrollY; lastT = now;
+      }, { passive: true });
+    }
+    dlg.addEventListener("click", (e) => {
+      const a = e.target.closest("a");
+      if (a) goal("popup_click", { to: a.getAttribute("href"), page });
+      if (e.target === dlg || e.target.closest("[data-close]")) dlg.close();
+    });
   }
 
   // ---------- Демо-приём ----------
@@ -130,7 +151,7 @@
         { id: "sleep", q: "Как вы спите?", a: "Плохо. Часа в три ночи просыпаюсь от этой боли." },
       ],
       tests: [
-        { id: "egd", n: "ФГДС", r: "Язвенный дефект 8 мм на передней стенке луковицы двенадцатиперстной кишки, дно покрыто фибрином. Признаков продолжающегося кровотечения нет. Уреазный тест на H. pylori — отрицательный.", key: true },
+        { id: "egd", n: "ФГДС", r: "Язвенный дефект 8 мм на передней стенке луковицы двенадцатиперстной кишки, дно покрыто фибрином (Forrest III). Признаков продолжающегося кровотечения нет. Быстрый уреазный тест на H. pylori — отрицательный.", key: true },
         { id: "cbc", n: "Общий анализ крови", r: "Гемоглобин 118 г/л ↓, MCV 82 фл, лейкоциты 7,1×10⁹/л, тромбоциты 290×10⁹/л." },
         { id: "fobt", n: "Кал на скрытую кровь", r: "Положительный." },
         { id: "ecg", n: "ЭКГ", r: "Синусовый ритм, 76 в минуту. Острых ишемических изменений нет." },
@@ -139,7 +160,7 @@
       ],
       dx: [
         { id: "gerd", n: "ГЭРБ", s: 2 },
-        { id: "pud", n: "Язва луковицы ДПК на фоне приёма НПВП, скрытое кровотечение", s: 5 },
+        { id: "pud", n: "Язва луковицы ДПК на фоне приёма НПВП, осложнённая кровотечением", s: 5 },
         { id: "panc", n: "Острый панкреатит", s: 1 },
         { id: "angina", n: "Нестабильная стенокардия", s: 1 },
         { id: "fd", n: "Функциональная диспепсия", s: 2 },
@@ -185,10 +206,16 @@
       await say("doc", esc(q.q));
       await typing();
       await say("pat", esc(q.a));
-      if (S.asked.size === D.qs.length) return renderTests();
-      renderAsk();
+      if (S.asked.size === D.qs.length) renderTests();
+      else renderAsk();
+      focusFirst();
+    }
+    function focusFirst() {
+      const b = act.querySelector(".opt:not([disabled])") || act.querySelector(".btn");
+      if (b && root.contains(document.activeElement)) b.focus({ preventScroll: true });
     }
     function renderTests() {
+      if (S.step !== 1) goal("demo_tests", { page });
       setStep(1);
       act.innerHTML = `<div class="lbl"><span>Назначьте обследования</span><span>выбрано: ${S.tests.size}</span></div>
         <div class="opts">${D.tests.map((t) => `<button class="opt${S.tests.has(t.id) ? " pick" : ""}" type="button" data-t="${t.id}" ${S.tests.has(t.id) ? "disabled" : ""}>${esc(t.n)}</button>`).join("")}</div>
@@ -200,8 +227,10 @@
       act.querySelectorAll("button").forEach((b) => (b.disabled = true));
       await say("res", `<b>${esc(t.n)}</b>${esc(t.r)}`, 350);
       renderTests();
+      focusFirst();
     }
     function renderDx() {
+      goal("demo_dx", { page });
       setStep(2);
       act.innerHTML = `<div class="lbl"><span>Ваш диагноз</span></div>
         <div class="opts">${D.dx.map((d) => `<button class="opt" type="button" data-d="${d.id}">${esc(d.n)}</button>`).join("")}</div>`;
@@ -210,7 +239,7 @@
       S.dx = D.dx.find((x) => x.id === id);
       act.querySelectorAll("button").forEach((b) => (b.disabled = true));
       await say("doc", `Диагноз: ${esc(S.dx.n)}`);
-      await say("res", "<b>Эксперт</b>Изучаю ваш приём…", 300);
+      await say("res", "<b>ИИ-разбор</b>Сравниваю ваш приём с историей случая…", 300);
       setTimeout(renderResult, 900);
     }
     function renderResult() {
@@ -234,18 +263,20 @@
       if (S.tests.has("egd")) good.push("ФГДС назначена — это главный метод при подозрении на язву.");
       else miss.push("Без ФГДС язву не подтвердить: это ключевое обследование.");
       if (S.tests.size > 4) miss.push("Назначено много лишнего — в реальной практике это время и деньги пациента.");
-      if (S.dx.id !== "pud") miss.push("Диагноз не совпал. Верный: язва луковицы ДПК на фоне приёма НПВП со скрытым кровотечением.");
+      if (S.dx.id !== "pud") miss.push("Диагноз не совпал. Верный: язва луковицы ДПК на фоне приёма НПВП, осложнённая кровотечением (тёмный стул, снижение гемоглобина).");
       const bar = (label, v) => `<div><span>${label}</span><i style="--w:${(v / 5) * 100}%"></i><span>${String(v).replace(".", ",")}</span></div>`;
+      const missed = miss.length;
       $(".demo-main", root).innerHTML = `<div class="result">
+        <div class="result-top"><p><strong>${missed ? `Упущено: ${missed}. ` : "Чистый приём. "}</strong>Проверьте себя на новом пациенте — каждый раз другой случай.</p><a class="btn btn-primary" href="/app?from=demo_top">Принять пациента бесплатно <span class="arr">→</span></a></div>
         <div class="review">
           <div class="review-h"><b>Разбор приёма</b><span>${String(total).replace(".", ",")} / 5</span></div>
           <div class="scores">${bar("Расспрос", aScore)}${bar("Обследование", tScore)}${bar("Диагноз", dScore)}</div>
           ${good.length ? `<p><strong>Что получилось</strong></p><ul>${good.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : ""}
           ${miss.length ? `<p style="margin-top:12px"><strong>Что упустили</strong></p><ul>${miss.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : ""}
-          <p class="outcome"><strong>Что было дальше.</strong> Ибупрофен отменили, назначили ингибитор протонной помпы на 8 недель и подобрали обезболивание для спины без НПВП. Через два месяца на контрольной ФГДС язва зарубцевалась.</p>
+          <p class="outcome"><strong>Что было дальше.</strong> Из-за тёмного стула и снижения гемоглобина пациента госпитализировали под наблюдение. Ибупрофен отменили, назначили ингибитор протонной помпы, спину стали лечить без НПВП. Уреазный тест при кровотечении бывает ложноотрицательным, поэтому H. pylori перепроверили дыхательным тестом — отрицательно. Через два месяца язва зарубцевалась.</p><p class="small muted" style="margin:10px 0 0">Учебный сценарий. Тактика у реального пациента — по клиническим рекомендациям и решению врача.</p>
         </div>
-        <p style="margin:20px 0 0;font-size:16px">Это демо с готовым сценарием. В тренажёре пациенты каждый раз новые, отвечают на любые вопросы — текстом или голосом, — а эксперт разбирает именно ваш диалог.</p>
-        <div class="cta"><a class="btn btn-primary btn-lg" href="/app?from=demo_result">Принять настоящего пациента — бесплатно <span class="arr">→</span></a><button class="btn btn-ghost" type="button" data-restart>Пройти демо ещё раз</button></div>
+        <p style="margin:20px 0 0;font-size:16px">Это демо с готовым сценарием. В тренажёре пациенты каждый раз новые, отвечают на любые вопросы — текстом или голосом, — а ИИ разбирает именно ваш диалог.</p>
+        <div class="cta"><a class="btn btn-primary btn-lg" href="/app?from=demo_result">Принять настоящего пациента <span class="arr">→</span></a><button class="btn btn-ghost" type="button" data-restart>Пройти демо ещё раз</button></div>
       </div>`;
       goal("demo_done", { score: total, page });
     }
@@ -258,7 +289,7 @@
       else if (b.dataset.t) order(b.dataset.t);
       else if ("toDx" in b.dataset) renderDx();
       else if (b.dataset.d) diagnose(b.dataset.d);
-      else if ("restart" in b.dataset) location.reload();
+      else if ("restart" in b.dataset) { location.hash = "demo"; location.reload(); }
     });
     root.classList.add("ready");
     log.innerHTML = "";

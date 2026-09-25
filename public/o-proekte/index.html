@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Страница не найдена — Help me, Doctor</title>
-<meta name="description" content="Такой страницы нет.">
-<meta name="robots" content="noindex">
+<title>О проекте: как устроен тренажёр и кто его делает — Help me, Doctor</title>
+<meta name="description" content="Как устроены ИИ-пациенты и разбор приёма в «Help me, Doctor», ограничения ИИ, источники материалов, контакты и реквизиты.">
+<link rel="canonical" href="https://helpmedoctor.ru/o-proekte/">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#f6f4ee" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121514" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
@@ -14,9 +15,9 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Help me, Doctor">
 <meta property="og:locale" content="ru_RU">
-<meta property="og:title" content="Страница не найдена — Help me, Doctor">
-<meta property="og:description" content="Такой страницы нет.">
-<meta property="og:url" content="https://helpmedoctor.ru/">
+<meta property="og:title" content="О проекте: как устроен тренажёр и кто его делает — Help me, Doctor">
+<meta property="og:description" content="Как устроены ИИ-пациенты и разбор приёма в «Help me, Doctor», ограничения ИИ, источники материалов, контакты и реквизиты.">
+<meta property="og:url" content="https://helpmedoctor.ru/o-proekte/">
 <meta property="og:image" content="https://helpmedoctor.ru/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -24,7 +25,9 @@
 <link rel="preload" href="/fonts/literata-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
 <script src="/site.js" defer></script>
-
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://helpmedoctor.ru/"},{"@type":"ListItem","position":2,"name":"О проекте","item":"https://helpmedoctor.ru/o-proekte/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Help me, Doctor","url":"https://helpmedoctor.ru","logo":"https://helpmedoctor.ru/apple-touch-icon.png","sameAs":["https://t.me/helpmedoctor_aibot"],"legalName":"Индивидуальный предприниматель Ежков Олег Михайлович","email":"oxion.ezhkov@gmail.com","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"oxion.ezhkov@gmail.com","availableLanguage":"ru"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"О проекте Help me, Doctor","url":"https://helpmedoctor.ru/o-proekte/","inLanguage":"ru"}</script>
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
     (function(m,e,t,r,i,k,a){
@@ -38,7 +41,7 @@
 </script>
 <!-- /Yandex.Metrika counter -->
 </head>
-<body data-page="404" data-early-until="1793480400000">
+<body data-page="about" data-early-until="1793480400000">
 <noscript><div><img src="https://mc.yandex.ru/watch/113057442" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 
 <a class="skip" href="#main">Перейти к содержанию</a>
@@ -63,8 +66,28 @@
   <a class="btn btn-primary" href="/app?from=header">Открыть тренажёр</a>
 </div></header>
 <main id="main">
-<div class="notfound"><p class="mono muted">Ошибка 404</p><h1>Страница не найдена</h1><p class="muted">Возможно, ссылка устарела. Начните с главной, пройдите демо или загляните в блог.</p>
-<div class="cta" style="justify-content:center"><a class="btn btn-primary" href="/">На главную</a><a class="btn btn-ghost" href="/demo/">Демо</a><a class="btn btn-ghost" href="/blog/">Блог</a></div></div>
+
+<section class="page-hero solo" data-hero><div class="wrap">
+  <nav class="crumbs" aria-label="Навигация"><ol><li><a href="/">Главная</a></li><li>О проекте</li></ol></nav>
+  <h1>О проекте</h1>
+  <p class="lead">«Help me, Doctor» — учебный тренажёр клинического мышления для студентов-медиков, ординаторов и врачей. Здесь можно спокойно провести десятки приёмов от жалобы до диагноза и после каждого увидеть, что получилось, а что стоит подтянуть.</p>
+</div></section>
+<section style="padding-top:48px"><div class="wrap"><div class="prose">
+  <h2>Как устроены пациенты</h2>
+  <p>Каждый случай создаёт языковая модель под профиль пользователя: специальность, разделы и сложность. У пациента есть скрытая история болезни, диагноз, характер и находки, которые проявятся при осмотре и обследованиях. Пациент отвечает только на заданный вопрос и не знает медицинских терминов. Результаты анализов и исследований генерируются под скрытый диагноз и показывают только то, что может показать конкретный метод.</p>
+  <h2>Кто пишет разбор</h2>
+  <p>Разбор приёма тоже генерирует ИИ: он сравнивает диалог и назначения со скрытой историей случая и оценивает три блока — диагностику, коммуникацию и лечение, — приводит цитаты из диалога, называет пропущенные вопросы и описывает, что стало с пациентом при выбранной тактике. По пробелам формируется короткий тест.</p>
+  <p class="note">ИИ может ошибаться. Тренажёр развивает навык расспроса и клинического рассуждения; медицинские факты, дозы и тактику сверяйте с действующими клиническими рекомендациями Минздрава РФ и учебниками. Пациенты вымышлены, сервис не консультирует реальных людей и не начисляет баллы НМО.</p>
+  <h2>Материалы сайта</h2>
+  <p>Статьи блога и учебные случаи на страницах специальностей опираются на клинические рекомендации Минздрава РФ и международные руководства; источники указаны в статьях. Если вы нашли неточность — напишите нам, исправим. Если вы врач-преподаватель и готовы рецензировать материалы — тоже напишите: мы ищем рецензентов.</p>
+  <h2>Контакты</h2>
+  <ul>
+    <li>Почта: <a href="mailto:oxion.ezhkov@gmail.com">oxion.ezhkov@gmail.com</a></li>
+    <li>Telegram-бот: <a href="https://t.me/helpmedoctor_aibot" rel="noopener">@helpmedoctor_aibot</a> — можно написать в поддержку прямо в чате</li>
+    <li>Индивидуальный предприниматель Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</li>
+  </ul>
+  <p><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика обработки персональных данных</a></p>
+</div></div></section>
 </main>
 <footer><div class="wrap">
   <div class="cols">
@@ -97,7 +120,15 @@
     <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></span>
   </div>
 </div></footer>
-
-
+<div class="sticky-cta" role="complementary" aria-label="Быстрый старт"><p data-sticky-text>Первый пациент каждый день — бесплатно, без карты</p><a class="btn btn-primary" href="/app?from=sticky_about" data-sticky-btn>Принять пациента <span class="arr" aria-hidden="true">→</span></a></div>
+<dialog class="pop" aria-labelledby="pop-t"><div class="pop-in">
+  <button class="pop-x" type="button" data-close aria-label="Закрыть">×</button>
+  <p class="mono">Бесплатно · PDF · 2 страницы</p>
+  <h2 id="pop-t">Чек-лист сбора анамнеза</h2>
+  <p>Две страницы, которые удобно держать в телефоне на практике и перед аккредитацией:</p>
+  <ul><li>порядок расспроса по разделам</li><li>OPQRST для боли и «красные флаги»</li><li>фразы для начала и резюме приёма</li></ul>
+  <a class="btn btn-primary" href="/files/chek-list-sbor-anamneza.pdf" download data-close autofocus>Скачать чек-лист (PDF)</a>
+  <a class="btn btn-ghost" href="/app?from=popup_about">Или сразу потренироваться на пациенте <span class="arr" aria-hidden="true">→</span></a>
+</div></dialog>
 </body>
 </html>
