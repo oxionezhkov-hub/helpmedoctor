@@ -20,7 +20,7 @@ const CHECKLIST = { href: "/files/chek-list-sbor-anamneza.pdf", title: "Чек-�
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const rub = (p) => Number(p).toLocaleString("ru-RU", { maximumFractionDigits: 0 });
-const ldjson = (obj) => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, "\\u003c")}</script>`;
+const ldjson = (obj) => !obj ? "" : `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, "\\u003c")}</script>`;
 const fmtDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 const app = (from) => `/app?from=${from}`;
 const stripTags = (s) => String(s).replace(/<[^>]+>/g, "");
@@ -178,11 +178,8 @@ ${popup ? exitPopup(page) : ""}
 `;
 }
 
-const crumbs = (items) => {
-  const html = `<nav class="crumbs" aria-label="Навигация"><ol>${items.map(([n, u], i) => `<li>${u && i < items.length - 1 ? `<a href="${u}">${esc(n)}</a>` : esc(n)}</li>`).join("")}</ol></nav>`;
-  const schema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items.map(([n, u], i) => ({ "@type": "ListItem", position: i + 1, name: n, item: `${SITE}${u}` })) };
-  return { html, schema };
-};
+// Хлебные крошки на страницах не показываем — и разметку BreadcrumbList не отдаём
+const crumbs = () => ({ html: "", schema: null });
 const faqSchema = (faq) => ({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: stripTags(a) } })) });
 const faqBlock = (faq) => `<div class="faq">${faq.map(([q, a], i) => `<details${i === 0 ? " open" : ""}><summary>${esc(q)}</summary><p>${a}</p></details>`).join("")}</div>`;
 
@@ -278,7 +275,7 @@ function pricingBlock(from) {
   const rows = visible.map(([k, p]) => {
     const price = Number(p.early || p.price);
     const best = k === cheapest;
-    return `<tr${best ? ' class="best"' : ""}><td>${esc(p.label)}${best ? '<span class="tag">дешевле всего</span>' : ""}<div class="per">${k === "month" ? "автопродление, отключается в любой момент" : k === "week" ? "одним платежом, без подписки" : "одним платежом"} · ≈ ${rub(perMonth(p))} ₽/мес</div></td>
+    return `<tr${best ? ' class="best"' : ""}><td>${esc(p.label)}${best ? '<span class="tag">дешевле всего</span>' : ""}<div class="per">${k === "month" ? "автопродление, отключается в любой момент" : k === "week" ? "одним платежом, без подписки" : `одним платежом · ≈ ${rub(perMonth(p))} ₽/мес`}</div></td>
       <td class="price">${rub(price)} ₽${p.early ? `<s data-early>${rub(p.price)} ₽</s>` : ""}</td><td><a href="${app(`${from}_${k}`)}">Выбрать</a></td></tr>`;
   }).join("");
   return `<div class="pricing">
@@ -298,7 +295,10 @@ function pricingBlock(from) {
         ${rows}
       </tbody>
     </table>
-    <p class="pay-note">Цены для ранних пользователей действуют до ${EARLY_DATE}. Разово: ${esc(PACKS.patients3.label)} — ${rub(PACKS.patients3.price)} ₽, ${esc(PACKS.freeze.label.toLowerCase())} — ${rub(PACKS.freeze.price)} ₽. Оплата картой или через СБП; подробности — в <a href="/oferta/">оферте</a>.</p>
+    <div class="plans-perks">
+      <p class="kicker"><span>Тренажёр клинического мышления</span><span>студентам, ординаторам, врачам</span></p>
+      <ul class="cta-note"><li>без карты и установки</li><li>вход через Яндекс, Google или Telegram</li><li>${Object.keys(SPECIALIZATIONS).length} специальностей</li></ul>
+    </div>
   </div>
 </div>`;
 }
@@ -325,21 +325,19 @@ function landing() {
   const main = `
 <section class="hero" data-hero><div class="wrap">
   <div>
-    <p class="kicker"><span>Тренажёр клинического мышления</span><span>студентам, ординаторам, врачам</span></p>
     <h1>Тренажёр врача с виртуальными пациентами</h1>
     <p class="lead">Приём от жалобы до диагноза за 10 минут: расспрашиваете пациента текстом или голосом, назначаете анализы, ставите диагноз — и сразу видите разбор: что спросили точно, что упустили и чем всё закончилось.</p>
     <div class="cta">
       <a class="btn btn-primary btn-lg" href="${app("hero")}">Принять пациента бесплатно ${ARR}</a>
-      <a class="btn btn-ghost btn-lg" href="#demo">Демо за минуту</a>
+      <a class="btn btn-ghost btn-lg" href="#demo">Демо</a>
     </div>
-    <ul class="cta-note"><li>без карты и установки</li><li>вход через Яндекс, Google или Telegram</li><li>${Object.keys(SPECIALIZATIONS).length} специальностей</li></ul>
     <p class="live" data-live hidden><i></i><span></span></p>
   </div>
   ${heroChart()}
 </div></section>
 
 <section><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Зачем</div><div><h2>Знать болезнь и&nbsp;узнать её у&nbsp;пациента — разные навыки</h2><p>На экзамене и в клинике спросят не «что такое язва», а «что с этим пациентом». Второму учит только практика с обратной связью.</p></div></div>
+  <div class="sec-head"><div><h2>Знать болезнь и&nbsp;узнать её у&nbsp;пациента — разные навыки</h2><p>На экзамене и в клинике спросят не «что такое язва», а «что с этим пациентом». Второму учит только практика с обратной связью.</p></div></div>
   <div class="versus">
     <div class="bad"><h3>Как обычно учатся</h3><ul>
       <li>ситуационные задачи, где все данные уже собраны за вас</li>
@@ -357,7 +355,7 @@ function landing() {
 </div></section>
 
 <section id="how" class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Как это работает</div><div><h2>Приём от жалобы до разбора</h2><p>Как на настоящем приёме — только без риска для пациента и с обратной связью сразу после.</p></div></div>
+  <div class="sec-head"><div><h2>Приём от жалобы до разбора</h2><p>Как на настоящем приёме — только без риска для пациента и с обратной связью сразу после.</p></div></div>
   <ol class="steps">
     <li><span class="n">1</span><h3>Пациент с жалобой</h3><p>ИИ создаёт новый случай по вашей специальности, разделам и уровню сложности. У пациента свой характер и манера речи.</p></li>
     <li><span class="n">2</span><h3>Расспрос и осмотр</h3><p>Вопросы текстом или голосом. Пациент отвечает только на заданное и может что-то забыть или скрыть.</p></li>
@@ -367,12 +365,12 @@ function landing() {
 </div></section>
 
 <section id="demo" class="airy"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Демо</div><div><h2>Попробуйте прямо здесь</h2><p>Короткий приём с готовым сценарием: задайте вопросы, назначьте обследования и поставьте диагноз. Регистрация не нужна.</p></div></div>
+  <div class="sec-head"><div><h2>Попробуйте прямо здесь</h2><p>Короткий приём с готовым сценарием: задайте вопросы, назначьте обследования и поставьте диагноз. Регистрация не нужна.</p></div></div>
   ${demoBlock()}
 </div></section>
 
 <section class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Разбор</div><div><h2>После каждого приёма — подробный ИИ-разбор</h2><p>Не просто «верно / неверно»: оценка по разделам, ваши же формулировки и конкретный совет на следующий раз.</p></div></div>
+  <div class="sec-head"><div><h2>После каждого приёма — подробный ИИ-разбор</h2><p>Не просто «верно / неверно»: оценка по разделам, ваши же формулировки и конкретный совет на следующий раз.</p></div></div>
   <div class="review-wrap">
     ${sampleReview()}
     <ul class="feat">
@@ -386,19 +384,19 @@ function landing() {
 </div></section>
 
 <section id="for"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Для кого</div><div><h2>Сложность подстраивается под вас</h2><p>При первом входе вы указываете роль, специальность и разделы — пациенты подбираются под этот профиль.</p></div></div>
+  <div class="sec-head"><div><h2>Сложность подстраивается под вас</h2><p>При первом входе вы указываете роль, специальность и разделы — пациенты подбираются под этот профиль.</p></div></div>
   <div class="who">
     ${AUDIENCES.map((a) => `<a href="/${a.slug}/"><span class="role">${esc(a.navHint)}</span><h3>${esc(a.nav)}</h3><ul>${a.points.slice(0, 3).map((p) => `<li>${esc(p)}</li>`).join("")}</ul><span class="more">Подробнее ${ARR}</span></a>`).join("")}
   </div>
 </div></section>
 
 <section class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Специальности</div><div><h2>Случаи по ${Object.keys(SPECIALIZATIONS).length} специальностям</h2><p>Выберите свою или впишите любую другую — разделы для неё подберёт ИИ.</p></div></div>
+  <div class="sec-head"><div><h2>Случаи по ${Object.keys(SPECIALIZATIONS).length} специальностям</h2><p>Выберите свою или впишите любую другую — разделы для неё подберёт ИИ.</p></div></div>
   <div class="specs">${SPEC_LIST.map((s) => `<a href="/specialnosti/${s.slug}/"><b>${esc(s.name)}</b><span>${esc(s.sections.join(", "))}</span></a>`).join("")}</div>
 </div></section>
 
 <section><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Сравнение</div><div><h2>Чем тренажёр отличается от задачника</h2><p>Каждый формат полезен по-своему. Тренажёр закрывает то, чего не дают остальные: свободный расспрос с быстрой обратной связью.</p></div></div>
+  <div class="sec-head"><div><h2>Чем тренажёр отличается от задачника</h2><p>Каждый формат полезен по-своему. Тренажёр закрывает то, чего не дают остальные: свободный расспрос с быстрой обратной связью.</p></div></div>
   <div class="table-wrap"><table class="cmp">
     <thead><tr><th>Что нужно для навыка</th><th class="us">Тренажёр</th><th>Ситуационные задачи</th><th>Учебник</th><th>Практика в клинике</th></tr></thead>
     <tbody>
@@ -413,20 +411,20 @@ function landing() {
 </div></section>
 
 <section id="pricing" class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Тарифы</div><div><h2>Начните бесплатно</h2><p>Один пациент в день — без оплаты. Если хочется больше практики — безлимит на удобный срок.</p></div></div>
+  <div class="sec-head"><div><h2>Начните бесплатно</h2><p>Один пациент в день — без оплаты. Если хочется больше практики — безлимит на удобный срок.</p></div></div>
   ${pricingBlock("pricing")}
 </div></section>
 
 <section id="materials" class="tight"><div class="wrap">${magnetBlock("magnet_home")}</div></section>
 
 <section id="blog" class="tint"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Блог</div><div><h2>Статьи для студентов и ординаторов</h2><p>Коротко и по делу о навыках, которые нужны на практике и на аккредитации.</p></div></div>
+  <div class="sec-head"><div><h2>Статьи для студентов и ординаторов</h2><p>Коротко и по делу о навыках, которые нужны на практике и на аккредитации.</p></div></div>
   <div class="posts">${ARTICLES.slice(0, 3).map(postCard).join("")}</div>
   <p style="margin-top:24px"><a href="/blog/"><b>Все статьи →</b></a></p>
 </div></section>
 
 <section id="faq"><div class="wrap">
-  <div class="sec-head"><div class="sec-no">Вопросы</div><div><h2>Вопросы и ответы</h2></div></div>
+  <div class="sec-head"><div><h2>Вопросы и ответы</h2></div></div>
   ${faqBlock(FAQ)}
 </div></section>
 
@@ -434,7 +432,7 @@ function landing() {
   <div><p class="final-h">Первый пациент уже ждёт</p><p>Ответьте на четыре вопроса о себе — и тренажёр подберёт случай под вашу специальность и уровень. Это бесплатно.</p></div>
   <div class="cta"><a class="btn btn-primary btn-lg" href="${app("final")}">Открыть тренажёр ${ARR}</a></div>
 </div></section>`;
-  return layout({ page: "home", headOpts: { title, description, canonical: `${SITE}/`, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page: "home", headOpts: { title, description, canonical: `${SITE}/`, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
 }
 
 // ---------------------------------------------------------------- посадочные страницы
@@ -455,7 +453,6 @@ function landingPage({ slug, page, crumbsItems, title, description, kicker, h1, 
 <section class="page-hero" data-hero style="border-bottom:1px solid var(--rule)"><div class="wrap">
   <div>
     ${c.html}
-    ${kicker ? `<p class="kicker"><span>${esc(kicker)}</span></p>` : ""}
     <h1>${esc(h1)}</h1>
     <p class="lead">${esc(lead)}</p>
     <div class="cta"><a class="btn btn-primary btn-lg" href="${app(`${page}_hero`)}">Принять пациента бесплатно ${ARR}</a><a class="btn btn-ghost btn-lg" href="/demo/">Демо</a></div>
@@ -475,7 +472,7 @@ function landingPage({ slug, page, crumbsItems, title, description, kicker, h1, 
   <div><p class="final-h">Практика, а не ещё один конспект</p><p>10 минут на пациента, разбор сразу после. Начните с бесплатного приёма.</p></div>
   <div class="cta"><a class="btn btn-primary btn-lg" href="${app(`${page}_final`)}">Открыть тренажёр ${ARR}</a></div>
 </div></section>`;
-  return layout({ page, stickyText, headOpts: { title, description, canonical: url, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page, stickyText, headOpts: { title, description, canonical: url, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
 }
 
 const relatedLinks = (items) => `<h2>Смотрите также</h2><ul class="links-list">${items.map(([t, u]) => `<li><a href="${u}">${esc(t)}</a></li>`).join("")}</ul>`;
@@ -540,7 +537,7 @@ function specialtiesIndex() {
   <div class="specs">${SPEC_LIST.map((s) => `<a href="/specialnosti/${s.slug}/"><b>${esc(s.name)}</b><span>Пример: ${esc(s.case.complaint.split(/[,:—]/)[0].toLowerCase())} · ${esc(s.sections.join(", "))}</span></a>`).join("")}</div>
   ${inlineCta("Не нашли свою специальность?", "Впишите её при первом входе — разделы и пациентов подберёт ИИ.", "specs_index", "Открыть тренажёр")}
 </div></section>`;
-  return layout({ page: "specialnosti", headOpts: { title: "Клинические случаи по специальностям", description: `Клинические случаи онлайн по ${SPEC_LIST.length} специальностям — от терапии и кардиологии до неотложной помощи. Пример случая и разделы для каждой.`, canonical: url, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page: "specialnosti", headOpts: { title: "Клинические случаи по специальностям", description: `Клинические случаи онлайн по ${SPEC_LIST.length} специальностям — от терапии и кардиологии до неотложной помощи. Пример случая и разделы для каждой.`, canonical: url, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
 }
 
 function demoPage() {
@@ -596,7 +593,7 @@ function materialsPage() {
     <ul class="links-list">${links.map(([t, u, d]) => `<li><a href="${u}" rel="noopener" target="_blank"><span><b>${esc(t)}</b><br><span class="muted" style="font-size:15px">${esc(d)}</span></span></a></li>`).join("")}</ul>
   </div>
 </div></section>`;
-  return layout({ page: "materialy", headOpts: { title: "Чек-лист сбора анамнеза в PDF и материалы для студентов", description: "Бесплатный чек-лист сбора анамнеза в PDF и подборка первоисточников: клинические рекомендации, материалы аккредитации, справочники для студентов-медиков и ординаторов.", canonical: url, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page: "materialy", headOpts: { title: "Чек-лист сбора анамнеза в PDF и материалы для студентов", description: "Бесплатный чек-лист сбора анамнеза в PDF и подборка первоисточников: клинические рекомендации, материалы аккредитации, справочники для студентов-медиков и ординаторов.", canonical: url, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
 }
 
 // ---------------------------------------------------------------- блог
@@ -662,7 +659,7 @@ function blogIndex() {
   <div class="posts">${ARTICLES.map(postCard).join("")}</div>
   <div style="margin-top:56px">${magnetBlock("magnet_blog")}</div>
 </div></section>`;
-  return layout({ page: "blog", headOpts: { title, description, canonical: `${SITE}/blog/`, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page: "blog", headOpts: { title, description, canonical: `${SITE}/blog/`, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
 }
 
 function articlePage(a) {
@@ -709,7 +706,7 @@ function articlePage(a) {
   return layout({
     page: from, progress: true,
     headOpts: { title: a.title, description: a.description, canonical: url, type: "article", image: a.cover ? `${SITE}/blog/${a.slug}/og.jpg` : undefined,
-      extra: `<meta property="article:published_time" content="${a.date}">\n${schema.map(ldjson).join("\n")}` },
+      extra: `<meta property="article:published_time" content="${a.date}">\n${schema.filter(Boolean).map(ldjson).join("\n")}` },
     main,
   });
 }
@@ -754,7 +751,7 @@ function aboutPage() {
   </ul>
   <p><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика обработки персональных данных</a></p>
 </div></div></section>`;
-  return layout({ page: "about", headOpts: { title: "О проекте: как устроен тренажёр и кто его делает", description: "Как устроены ИИ-пациенты и разбор приёма в «Help me, Doctor», ограничения ИИ, источники материалов, контакты и реквизиты.", canonical: url, extra: schema.map(ldjson).join("\n") }, main });
+  return layout({ page: "about", headOpts: { title: "О проекте: как устроен тренажёр и кто его делает", description: "Как устроены ИИ-пациенты и разбор приёма в «Help me, Doctor», ограничения ИИ, источники материалов, контакты и реквизиты.", canonical: url, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
 }
 
 function notFound() {
