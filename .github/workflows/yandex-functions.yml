@@ -1,0 +1,47 @@
+# Выкладка функций Yandex Cloud (сейчас — посредник для API Точки).
+# Запускается при изменении yandex/** в main и вручную (Actions → «Yandex Cloud Functions» → Run workflow).
+# Секреты репозитория:
+#   YC_SA_JSON_CREDENTIALS — авторизованный ключ сервисного аккаунта (JSON целиком), роль functions.editor на каталог
+#   YC_FOLDER_ID           — ID каталога, где лежит функция
+#   TOCHKA_PROXY_SECRET    — тот же общий секрет, что у воркера (станет PROXY_SECRET функции)
+name: Yandex Cloud Functions
+
+on:
+  push:
+    branches: [main]
+    paths: ["yandex/**", ".github/workflows/yandex-functions.yml"]
+  workflow_dispatch:
+
+jobs:
+  tochka-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Проверка секретов
+        env:
+          YC_SA_JSON_CREDENTIALS: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+          YC_FOLDER_ID: ${{ secrets.YC_FOLDER_ID }}
+          TOCHKA_PROXY_SECRET: ${{ secrets.TOCHKA_PROXY_SECRET }}
+        run: |
+          missing=""
+          [ -z "$YC_SA_JSON_CREDENTIALS" ] && missing="$missing YC_SA_JSON_CREDENTIALS"
+          [ -z "$YC_FOLDER_ID" ] && missing="$missing YC_FOLDER_ID"
+          [ -z "$TOCHKA_PROXY_SECRET" ] && missing="$missing TOCHKA_PROXY_SECRET"
+          if [ -n "$missing" ]; then echo "::error::Нет секретов:$missing"; exit 1; fi
+          node --check yandex/tochka-proxy/index.js
+      - name: Выкладка tochka-proxy
+        uses: yc-actions/yc-sls-function@v5
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+          folder-id: ${{ secrets.YC_FOLDER_ID }}
+          function-name: tochka-proxy
+          runtime: nodejs22
+          entrypoint: index.handler
+          memory: 128Mb
+          execution-timeout: 30
+          source-root: yandex/tochka-proxy
+          include: |
+            ./index.js
+            ./package.json
+          environment: |
+            PROXY_SECRET=${{ secrets.TOCHKA_PROXY_SECRET }}
