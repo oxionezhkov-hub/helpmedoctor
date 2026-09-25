@@ -18,12 +18,43 @@ export const FREE_DAILY_LIMIT = 1; // пациентов в день беспл�
 export const HISTORY_WINDOW = 8;
 export const HISTORY_SUMMARIZE_AT = 14;
 
+// Тарифы. early — цена для ранних пользователей до EARLY_UNTIL. month — подписка с автопродлением
+// (карта привязывается в Точке, дальше списываем сами раз в 30 дней по цене, зафиксированной при оформлении).
+// hidden — старые тарифы: их больше не продаём, но старые оплаты и вебхуки должны распознаваться.
 export const PLANS = {
-  day:     { label: "1 день",   days: 1,     price: "30.00" },
-  week:    { label: "1 неделя", days: 7,     price: "150.00" },
-  month:   { label: "1 месяц",  days: 30,    price: "350.00" },
-  forever: { label: "Навсегда", days: 36500, price: "1990.00" },
+  week:    { label: "1 неделя", days: 7,     price: "149.00",  early: "99.00" },
+  month:   { label: "1 месяц",  days: 30,    price: "390.00",  early: "249.00", recurring: true },
+  quarter: { label: "3 месяца", days: 91,    price: "890.00",  early: "590.00", best: true },
+  year:    { label: "1 год",    days: 365,   price: "2490.00", early: "1490.00" },
+  day:     { label: "1 день",   days: 1,     price: "30.00",   hidden: true },
+  forever: { label: "Навсегда", days: 36500, price: "1990.00", hidden: true },
 };
+// Ранние цены действуют до конца 31 октября 2026 (МСК)
+export const EARLY_UNTIL = Date.parse("2026-10-31T21:00:00Z");
+// Пробный премиум: 1 ₽ с привязкой карты, через 7 дней — автопродление на месяц
+export const TRIAL = { key: "trial", label: "Премиум на 7 дней", days: 7, price: "1.00", then: "month" };
+// Разовые покупки без подписки
+export const PACKS = {
+  patients3: { label: "+3 пациента", price: "39.00", patients: 3 },
+  freeze:    { label: "Заморозка стрика", price: "29.00", freezes: 1 },
+};
+// Сколько раз пробуем списать продление, прежде чем отключить автоплатёж
+export const AUTOPAY_MAX_FAILS = 3;
+
+/** Цена тарифа на момент покупки (ранняя — до EARLY_UNTIL) */
+export function planPrice(key, now = Date.now()) {
+  if (key === TRIAL.key) return TRIAL.price;
+  if (PACKS[key]) return PACKS[key].price;
+  const p = PLANS[key];
+  if (!p) return null;
+  return p.early && now < EARLY_UNTIL ? p.early : p.price;
+}
+
+/** Название покупки для чеков, уведомлений и отчётов */
+export function productLabel(key) {
+  if (key === TRIAL.key) return TRIAL.label;
+  return PLANS[key]?.label || PACKS[key]?.label || key;
+}
 
 export const SPECIALIZATIONS = {
   "Онколог": ["маммология", "онкогинекология", "онкоурология", "опухоли ЖКТ", "опухоли лёгких"],

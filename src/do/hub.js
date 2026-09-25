@@ -4,7 +4,8 @@
 // платежи, коды входа, задачи, рассылки и настройки админки. Хранилище — SQLite Durable Object.
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
-import { adminIds, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, PLANS } from "../config.js";
+import { adminIds, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel } from "../config.js";
+import { cancelSubscription, chargeSubscription } from "../lib/tochka.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
 import { tg, btn } from "../lib/telegram.js";
 import * as A from "../lib/analytics.js";
@@ -69,6 +70,8 @@ export class HubDO extends DurableObject {
 
       CREATE TABLE IF NOT EXISTS broadcasts (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at INTEGER, admin TEXT, text TEXT, buttons TEXT, filter TEXT,
         status TEXT, scheduled_at INTEGER, total INTEGER DEFAULT 0, sent INTEGER DEFAULT 0, failed INTEGER DEFAULT 0, started_at INTEGER, finished_at INTEGER);
+      CREATE TABLE IF NOT EXISTS autopay (uid TEXT PRIMARY KEY, op TEXT, plan TEXT, price REAL, next_at INTEGER, status TEXT,
+        fails INTEGER DEFAULT 0, trial INTEGER DEFAULT 0, notified INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER, last_charge_at INTEGER, last_error TEXT);
       CREATE TABLE IF NOT EXISTS bc_targets (bid INTEGER, uid TEXT, status TEXT, ts INTEGER, err TEXT, clicked INTEGER DEFAULT 0, tg_mid INTEGER DEFAULT 0, PRIMARY KEY (bid, uid));
     `);
     // Миграции: новые колонки в старых таблицах
@@ -298,11 +301,11 @@ export class HubDO extends DurableObject {
   // ---------------------------------------------------
   // Платежи
   // ---------------------------------------------------
-  async savePayment(op, uid, plan) {
+  async savePayment(op, uid, plan, amount = planPrice(plan)) {
     const now = Date.now();
     this.sql.exec(
       "INSERT OR IGNORE INTO payments (op, uid, plan, created_at, amount, status, updated_at) VALUES (?, ?, ?, ?, ?, 'link', ?)",
-      op, String(uid), plan, now, Number(PLANS[plan]?.price || 0), now,
+      op, String(uid), plan, now, Number(amount || 0), now,
     );
     this.bump("payment_links");
   }
@@ -311,12 +314,98 @@ export class HubDO extends DurableObject {
     const now = Date.now();
     this.sql.exec(
       "INSERT INTO payments (op, uid, plan, created_at, amount, status, error, updated_at) VALUES (?, ?, ?, ?, ?, 'error', ?, ?)",
-      `err_${uid}_${now}`, String(uid), plan, now, Number(PLANS[plan]?.price || 0), String(error).slice(0, 800), now,
+      `err_${uid}_${now}`, String(uid), plan, now, Number(planPrice(plan) || 0), String(error).slice(0, 800), now,
     );
   }
 
   async getPayment(op) {
-    return this.one("SELECT op, uid, plan, done, status FROM payments WHERE op = ?", op);
+    return this.one("SELECT op, uid, plan, done, status, amount FROM payments WHERE op = ?", op);
+  }
+
+  // ---------------------------------------------------
+  // Автопродление (подписка Точки с сохранённой картой)
+  // ---------------------------------------------------
+  /** Подписка оформлена или продлена вручную: следующее списание — next_at по цене price */
+  async autopaySet(uid, { op, plan = "month", price, next_at, trial = false }) {
+    const now = Date.now();
+    this.sql.exec(
+      `INSERT INTO autopay (uid, op, plan, price, next_at, status, fails, trial, notified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'active', 0, ?, 0, ?, ?)
+       ON CONFLICT(uid) DO UPDATE SET op = excluded.op, plan = excluded.plan, price = excluded.price, next_at = excluded.next_at,
+         status = 'active', fails = 0, trial = excluded.trial, notified = 0, updated_at = excluded.updated_at`,
+      String(uid), op, plan, Number(price), next_at, trial ? 1 : 0, now, now,
+    );
+  }
+
+  async autopayGet(uid) {
+    return this.one("SELECT * FROM autopay WHERE uid = ?", String(uid));
+  }
+
+  /** Пользователь отключил автопродление: доступ остаётся до конца оплаченного срока */
+  async autopayCancel(uid, reason = "user") {
+    const row = this.one("SELECT op, status FROM autopay WHERE uid = ?", String(uid));
+    if (!row || row.status !== "active") return false;
+    this.sql.exec("UPDATE autopay SET status = 'cancelled', updated_at = ?, last_error = ? WHERE uid = ?", Date.now(), reason, String(uid));
+    try {
+      await cancelSubscription(this.env, row.op);
+    } catch (e) {
+      console.error("tochka cancel", e);
+      await this.notifyAdmin(`⚠️ Не удалось отключить подписку в Точке (uid ${esc(uid)}, ${esc(row.op)}): ${esc(e.message)}. Списаний с нашей стороны не будет.`, "payment_error");
+    }
+    return true;
+  }
+
+  /**
+   * Списание продлений: утром и вечером (cron). Перед концом пробного периода — предупреждение за сутки.
+   * Неудачное списание повторяем на следующий день; после AUTOPAY_MAX_FAILS — отключаем автопродление.
+   */
+  async chargeDueSubs(now = Date.now()) {
+    const bot = tg(this.env, { kind: "system" });
+    // Предупреждение: завтра закончится пробный период и спишется месяц
+    for (const r of this.all("SELECT * FROM autopay WHERE status = 'active' AND trial = 1 AND notified = 0 AND next_at > ? AND next_at <= ?", now, now + 36 * HOUR)) {
+      this.sql.exec("UPDATE autopay SET notified = 1 WHERE uid = ?", r.uid);
+      const when = new Date(r.next_at).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+      await bot.send(r.uid, `⏳ <b>Пробный премиум заканчивается ${when}</b>\n\nДальше подписка продлится автоматически: <b>${fmtRub(r.price)} ₽ в месяц</b>. Отключить автопродление можно в любой момент в профиле → «Подписка».`,
+        [[{ text: "💎 Управлять подпиской", web_app: { url: this.appUrl("/plans") } }]]).catch(() => {});
+    }
+    let charged = 0;
+    for (const r of this.all("SELECT * FROM autopay WHERE status = 'active' AND next_at <= ? LIMIT 200", now)) {
+      let res;
+      try {
+        res = await chargeSubscription(this.env, r.op, r.price);
+      } catch (e) {
+        res = { ok: false, status: "ERROR", error: String(e.message || e).slice(0, 300) };
+      }
+      const user = this.env.USER.get(this.env.USER.idFromName(r.uid));
+      if (res.ok) {
+        const op = res.operationId || `${r.op}:${mskDate(now)}`;
+        this.sql.exec("INSERT OR IGNORE INTO payments (op, uid, plan, created_at, amount, status, done, updated_at, note) VALUES (?, ?, ?, ?, ?, 'paid', 1, ?, 'автопродление')",
+          op, r.uid, r.plan, now, r.price, now);
+        this.bump("payments");
+        this.bump("revenue", Math.round(r.price));
+        const next = Math.max(r.next_at, now) + (PLANS[r.plan]?.days || 30) * 86400000;
+        this.sql.exec("UPDATE autopay SET next_at = ?, fails = 0, trial = 0, notified = 0, last_charge_at = ?, last_error = NULL, updated_at = ? WHERE uid = ?", next, now, now, r.uid);
+        await user.renewSubscription({ plan: r.plan, op, amount: r.price, until: next, wasTrial: !!r.trial }).catch((e) => console.error("renew", e));
+        await this.notifyAdmin(`🔁 Автопродление: uid ${esc(r.uid)} · ${esc(productLabel(r.plan))} · ${fmtRub(r.price)} ₽${r.trial ? " (после пробного)" : ""}`, "payment");
+        charged++;
+      } else {
+        const fails = (r.fails || 0) + 1;
+        const err = res.error || res.status || "отказ";
+        if (fails >= AUTOPAY_MAX_FAILS) {
+          this.sql.exec("UPDATE autopay SET status = 'failed', fails = ?, last_error = ?, updated_at = ? WHERE uid = ?", fails, err, now, r.uid);
+          await cancelSubscription(this.env, r.op).catch(() => {});
+          await user.autopayEnded("failed").catch(() => {});
+          await this.notifyAdmin(`⚠️ Автопродление отключено после ${fails} неудачных списаний: uid ${esc(r.uid)} · ${esc(err)}`, "payment_error");
+        } else {
+          // Пробуем снова через сутки; доступ пока не продлеваем
+          this.sql.exec("UPDATE autopay SET fails = ?, next_at = ?, last_error = ?, updated_at = ? WHERE uid = ?", fails, now + 22 * HOUR, err, now, r.uid);
+          if (fails === 1) {
+            await bot.send(r.uid, `⚠️ <b>Не получилось продлить подписку</b>\n\nБанк не провёл списание ${fmtRub(r.price)} ₽. Проверьте карту — попробуем ещё раз завтра. Или оплатите вручную.`,
+              [[{ text: "💎 Тарифы", web_app: { url: this.appUrl("/plans") } }]]).catch(() => {});
+          }
+        }
+      }
+    }
+    return { charged };
   }
 
   async markPaymentDone(op, amount) {
@@ -379,6 +468,12 @@ export class HubDO extends DurableObject {
   // ---------------------------------------------------
   // Уведомления админам
   // ---------------------------------------------------
+  /** Ссылка на экран приложения (в Telegram открывается как мини-приложение) */
+  appUrl(path = "") {
+    const base = (this.env.PUBLIC_URL || "").replace(/\/$/, "");
+    return `${base}/app${path ? `?go=${encodeURIComponent(path)}` : ""}`;
+  }
+
   adminUrl(path = "") {
     const base = (this.env.PUBLIC_URL || "").replace(/\/$/, "");
     return `${base}/admin${path ? `#${path}` : ""}`;
@@ -750,6 +845,8 @@ export class HubDO extends DurableObject {
 // ---------------------------------------------------
 // Вспомогательное
 // ---------------------------------------------------
+const fmtRub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
+
 export function esc(t) {
   return String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

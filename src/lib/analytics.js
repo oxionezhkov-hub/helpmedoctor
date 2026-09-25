@@ -951,6 +951,9 @@ export const ADMIN_OPS = {
   record_gift: (h, a, admin) => { h.recordGift(a.uid, a.days, admin, a.reason); return { ok: true }; },
   cf_cache_set: (h, a) => { h.setSetting("cf_ai_cache", a.value); return { ok: true }; },
   cf_cache_get: (h) => h.getSetting("cf_ai_cache", null),
+  // Автопродления: список и запуск списаний вручную (в тестах можно передать now)
+  autopay_list: (h) => ({ rows: h.all("SELECT a.*, u.name, u.username FROM autopay a LEFT JOIN users u ON u.uid = a.uid ORDER BY a.next_at") }),
+  autopay_run: (h, a) => h.chargeDueSubs(h.env.AI_MOCK === "1" && a.now ? Number(a.now) : Date.now()),
   ai_models_get: (h) => aiModels(h),
   ai_models_set: (h, a, admin) => {
     const routing = {};

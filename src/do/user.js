@@ -8,7 +8,7 @@ import { DurableObject } from "cloudflare:workers";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   DIFFICULTIES, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
-  MAX_ACTIVE_PATIENTS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES,
+  EARLY_UNTIL, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel,
 } from "../config.js";
 import { SYSTEM_TEXTS } from "../lib/analytics.js";
 import { aiJson, aiText, transcribe } from "../lib/ai.js";
@@ -171,8 +171,9 @@ export class UserDO extends DurableObject {
       profile: publicProfile(prof),
       active_patient_id: st.active_patient_id,
       patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => patientSummary(p)),
-      quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map(quizSummary),
-      plans: PLANS,
+      quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map((q) => ({ ...quizSummary(q), locked: !G.isPremium(prof) })),
+      plans: offerPlans().plans,
+      offer: offerPlans(),
       config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, difficulties: DIFFICULTIES, tests: TEST_TYPES, exams: PHYSICAL_EXAMPLES, max_active: MAX_ACTIVE_PATIENTS },
     };
   }
@@ -180,7 +181,8 @@ export class UserDO extends DurableObject {
   async patientView(id) {
     const pat = await this.patient(id);
     const quiz = await this.ctx.storage.get(quizKey(id));
-    return { patient: publicPatient(pat), quiz: quiz ? publicQuiz(quiz) : null };
+    const premium = G.isPremium(await this.profile());
+    return { patient: publicPatient(pat, premium), quiz: quiz ? { ...quizSummary(quiz), locked: !premium } : null };
   }
 
   // ---------------------------------------------------
@@ -291,7 +293,9 @@ export class UserDO extends DurableObject {
     }
     if (!G.canAcceptPatient(prof)) {
       await this.track("limit_hit");
-      throw new UserError("Бесплатный лимит на сегодня исчерпан. Лимит сбрасывается в полночь по Москве — или оформите подписку.", "limit");
+      throw new UserError(prof.trial_used
+        ? `Бесплатный пациент на сегодня уже принят. Новый — после полуночи по Москве. Или безлимит в «Тарифах», или +3 пациента за ${Number(PACKS.patients3.price)} ₽.`
+        : "Бесплатный пациент на сегодня уже принят. Попробуйте премиум: 7 дней безлимита за 1 ₽ — в «Тарифах».", "limit");
     }
     prof.generating_patient = Date.now();
     await this.ctx.storage.put(PROFILE, prof);
@@ -349,6 +353,11 @@ export class UserDO extends DurableObject {
     const prof = await this.profile();
     prof.patient_counter = counter;
     prof.active_patient_ids = [...prof.active_patient_ids, id];
+    // Бесплатный лимит исчерпан, подписки нет — списываем купленного пациента
+    if (G.needsPatientCredit(prof, now)) {
+      prof.patient_credits -= 1;
+      await this.track("patient_credit_used", { left: prof.patient_credits });
+    }
     prof.daily_patients = [...prof.daily_patients.filter((ts) => ts >= now - 2 * 86400000), now];
     prof.stats.patients_total = (prof.stats.patients_total || 0) + 1;
     delete prof.generating_patient;
@@ -538,7 +547,7 @@ export class UserDO extends DurableObject {
     await this.track("consult_start", { patient: patId, name: pat.name, new: isNewConsultation, n: (pat.consultations || []).length + 1 });
     const lastPatientMsg = [...pat.conversation_history].reverse().find((m) => m.role === "patient");
     return {
-      patient: publicPatient(pat),
+      patient: publicPatient(pat, G.isPremium(await this.profile())),
       paused_other: prevId && prevId !== patId ? prevId : null,
       is_new_consultation: isNewConsultation,
       consultation_number: (pat.consultations || []).length + 1,
@@ -812,6 +821,8 @@ export class UserDO extends DurableObject {
       level: lvlAfter, level_up: lvlAfter > lvlBefore ? { from: lvlBefore, to: lvlAfter } : null,
       task_done: taskDone ? prof.daily_task : null, consultation_number: fresh.consultations.length,
     };
+    // Без премиума: оценка и вывод эксперта; цитаты из диалога и «что было дальше» — закрыты
+    if (!G.isPremium(prof)) Object.assign(result, { dialog_moments: [], post_story: null, locked: true, trial_available: !prof.trial_used });
     this.broadcast("evaluation", result);
     const evSource = { source: job.source || (job.origin === "bot" ? "bot" : "web") };
     await this.track("evaluation", {
@@ -869,9 +880,20 @@ export class UserDO extends DurableObject {
   // Тесты «работа над ошибками»
   // ---------------------------------------------------
 
+  /** Тест по ошибкам — в премиуме (сам тест готовится для всех: после оплаты он сразу доступен) */
+  async requirePremium(what) {
+    const prof = await this.profile();
+    if (G.isPremium(prof)) return prof;
+    await this.track("paywall", { what });
+    throw new UserError(prof.trial_used
+      ? "Тест по вашим ошибкам — в премиуме. Оформите подписку в «Тарифах»."
+      : "Тест по вашим ошибкам — в премиуме. Попробуйте 7 дней за 1 ₽ в «Тарифах».", "premium");
+  }
+
   async quiz(patId) {
     const q = await this.ctx.storage.get(quizKey(patId));
     if (!q) throw new UserError("Тест ещё готовится — загляните через минуту", "quiz_pending");
+    await this.requirePremium("quiz");
     if (q.status !== "done") await this.track("quiz_open", { patient: patId, answered: q.answers.length });
     return publicQuiz(q);
   }
@@ -880,6 +902,7 @@ export class UserDO extends DurableObject {
   async answerQuiz(patId, index, chosen) {
     const q = await this.ctx.storage.get(quizKey(patId));
     if (!q) throw new UserError("Тест не найден");
+    await this.requirePremium("quiz");
     if (q.status === "done") return { done: true, quiz: publicQuiz(q) };
     if (index !== q.answers.length) {
       // Ответ на уже отвеченный/будущий вопрос (двойной клик, вторая вкладка) — просто отдаём состояние
@@ -922,27 +945,111 @@ export class UserDO extends DurableObject {
   // Подписка
   // ---------------------------------------------------
 
-  async activateSubscription(planKey, operationId) {
-    const plan = PLANS[planKey];
-    if (!plan) return null;
+  /** Оплата прошла (вебхук Точки): тариф, пробный период с автопродлением или разовая покупка */
+  async activateSubscription(planKey, operationId, amount = null) {
+    const product = planKey === TRIAL.key ? TRIAL : PLANS[planKey] || PACKS[planKey];
+    if (!product) return null;
     const prof = await this.profile();
     prof.payments = prof.payments || [];
     if (operationId && prof.payments.some((p) => p.op === operationId)) return publicProfile(prof);
+    const price = Number(amount || planPrice(planKey));
+    prof.payments.push({ op: operationId, plan: planKey, ts: Date.now(), amount: price });
+    prof.payments = prof.payments.slice(-20);
+    const bot = tg(this.env);
+
+    // Разовые покупки: пациенты сверх лимита и заморозки стрика
+    if (PACKS[planKey]) {
+      const pack = PACKS[planKey];
+      if (pack.patients) prof.patient_credits = (prof.patient_credits || 0) + pack.patients;
+      if (pack.freezes) prof.streak_freezes = (prof.streak_freezes || 0) + pack.freezes;
+      await this.ctx.storage.put(PROFILE, prof);
+      this.broadcast("profile", { paid: planKey });
+      await this.track("paid", { plan: planKey, op: operationId }, { val: price });
+      await bot.send(prof.uid, pack.patients
+        ? `✅ <b>+${pack.patients} пациента</b> — можно принимать сверх бесплатного лимита в любой день.`
+        : `❄️ <b>Заморозка стрика</b> добавлена. Если пропустите день, серия не сгорит.`, [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
+      return publicProfile(prof);
+    }
+
+    const days = product.days;
     if (planKey === "forever") prof.sub_until = -1;
     else if (prof.sub_until !== -1) {
       const from = prof.sub_until && prof.sub_until > Date.now() ? prof.sub_until : Date.now();
-      prof.sub_until = from + plan.days * 86400000;
+      prof.sub_until = from + days * 86400000;
     }
     prof.sub_plan = planKey;
     prof.sub_activated_at = Date.now();
-    prof.payments.push({ op: operationId, plan: planKey, ts: Date.now() });
-    prof.payments = prof.payments.slice(-20);
+    // Пробный период и месячный тариф — с автопродлением: цена фиксируется на момент оформления
+    const recurring = planKey === TRIAL.key || PLANS[planKey]?.recurring;
+    if (planKey === TRIAL.key) prof.trial_used = true;
+    if (recurring && operationId && prof.sub_until !== -1) {
+      const renewPlan = planKey === TRIAL.key ? TRIAL.then : planKey;
+      const renewPrice = Number(planKey === TRIAL.key ? planPrice(TRIAL.then) : price);
+      prof.autopay = { op: operationId, plan: renewPlan, price: renewPrice, next_at: prof.sub_until, status: "active", trial: planKey === TRIAL.key };
+      await this.hub().autopaySet(prof.uid, { op: operationId, plan: renewPlan, price: renewPrice, next_at: prof.sub_until, trial: planKey === TRIAL.key });
+    }
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile", { paid: planKey });
-    await this.track("paid", { plan: planKey, op: operationId }, { val: Number(plan.price) });
-    const until = planKey === "forever" || prof.sub_until === -1 ? "навсегда" : new Date(prof.sub_until).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
-    await tg(this.env).send(prof.uid, `✅ <b>Подписка активирована!</b>\n\nТариф: ${plan.label}\nДоступ: ${until}\n\nТеперь можно принимать сколько угодно пациентов.`);
+    await this.track(planKey === TRIAL.key ? "trial_start" : "paid", { plan: planKey, op: operationId }, { val: price });
+    const until = prof.sub_until === -1 ? "навсегда" : fmtDay(prof.sub_until);
+    const renewNote = prof.autopay?.status === "active" && recurring
+      ? `\n\nДальше — автопродление: ${fmtRub(prof.autopay.price)} ₽ в месяц, первое списание ${fmtDay(prof.autopay.next_at)}. Отключить можно в профиле → «Подписка».` : "";
+    await bot.send(prof.uid, planKey === TRIAL.key
+      ? `🎉 <b>Премиум на 7 дней включён!</b>\n\nБезлимит пациентов, полный разбор эксперта, тесты по ошибкам и «Очень сложные» случаи — до ${until}.${renewNote}`
+      : `✅ <b>Подписка активирована!</b>\n\nТариф: ${productLabel(planKey)}\nДоступ: ${until}${renewNote}\n\nТеперь можно принимать сколько угодно пациентов.`,
+    [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
     return publicProfile(prof);
+  }
+
+  /** Можно ли купить: пробный период — один раз и без действующей подписки; вторую подписку с автопродлением не оформляем */
+  async checkPurchase(key) {
+    const prof = await this.profile();
+    if (key === TRIAL.key && (prof.trial_used || G.hasActiveSub(prof))) {
+      throw new UserError(prof.trial_used ? "Пробный период уже использован" : "Премиум уже активен", "trial_used");
+    }
+    if ((key === TRIAL.key || PLANS[key]?.recurring) && prof.autopay?.status === "active") {
+      throw new UserError("Подписка с автопродлением уже оформлена — она продлится сама", "autopay_active");
+    }
+    if (prof.sub_until === -1 && !PACKS[key]) throw new UserError("У вас бессрочный доступ — докупать ничего не нужно", "forever");
+    return { price: planPrice(key) };
+  }
+
+  /** Автопродление прошло (списание из HubDO): доступ до until */
+  async renewSubscription({ plan, op, amount, until, wasTrial = false }) {
+    const prof = await this.profile();
+    prof.payments = [...(prof.payments || []), { op, plan, ts: Date.now(), amount, renew: true }].slice(-20);
+    if (prof.sub_until !== -1) prof.sub_until = Math.max(prof.sub_until || 0, until);
+    prof.sub_plan = plan;
+    prof.autopay = { ...(prof.autopay || {}), next_at: until, status: "active", trial: false };
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track(wasTrial ? "trial_converted" : "renewed", { plan, op }, { val: Number(amount), source: "system" });
+    await tg(this.env, { kind: "system" }).send(prof.uid, `💳 <b>Подписка продлена</b>: списано ${fmtRub(amount)} ₽, доступ до ${fmtDay(until)}.\nОтключить автопродление можно в профиле → «Подписка».`);
+    return publicProfile(prof);
+  }
+
+  /** Автопродление выключено (пользователем или после неудачных списаний) */
+  async autopayEnded(reason = "user") {
+    const prof = await this.profile();
+    if (!prof.autopay) return publicProfile(prof);
+    prof.autopay = { ...prof.autopay, status: reason === "failed" ? "failed" : "cancelled" };
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track("autopay_off", { reason }, { source: reason === "failed" ? "system" : undefined });
+    if (reason === "failed") {
+      await tg(this.env, { kind: "system" }).send(prof.uid, "⚠️ <b>Автопродление отключено</b>: банк трижды отклонил списание. Премиум действует до конца оплаченного срока, продлить можно вручную в «Тарифах».");
+    }
+    return publicProfile(prof);
+  }
+
+  /** Пользователь отключает автопродление */
+  async cancelAutopay() {
+    const prof = await this.profile();
+    if (prof.autopay?.status !== "active") throw new UserError("Автопродление уже отключено");
+    await this.hub().autopayCancel(prof.uid, "user");
+    const res = await this.autopayEnded("user");
+    await tg(this.env, { kind: "system" }).send(prof.uid, `Автопродление отключено. Премиум действует ${prof.sub_until === -1 ? "бессрочно" : `до ${fmtDay(prof.sub_until)}`}, дальше — бесплатный тариф.`);
+    return res;
   }
 
   /**
@@ -980,6 +1087,11 @@ export class UserDO extends DurableObject {
 
   /** Отмена подписки админом (сразу) */
   async adminCancelSubscription({ admin = "", notify = false, text = "" } = {}) {
+    // Вместе с доступом отключаем и автопродление — иначе карта продолжит списываться
+    if ((await this.profile()).autopay?.status === "active") {
+      await this.hub().autopayCancel((await this.profile()).uid, `admin ${admin}`);
+      await this.autopayEnded("admin");
+    }
     const prof = await this.profile();
     prof.sub_until = Date.now() - 1;
     prof.payments = [...(prof.payments || []), { op: `cancel_${Date.now()}`, plan: "cancel", ts: Date.now(), admin }].slice(-20);
@@ -1102,9 +1214,10 @@ export class UserDO extends DurableObject {
     const payments = [];
     for (const pay of prof.payments || []) {
       if (pay.plan === "gift") { add(pay.ts, "gift", { days: pay.days }); continue; }
-      if (!PLANS[pay.plan]) continue;
-      add(pay.ts, "paid", { plan: pay.plan, op: pay.op }, { val: Number(PLANS[pay.plan].price) });
-      if (pay.op) payments.push({ op: pay.op, plan: pay.plan, ts: pay.ts, amount: Number(PLANS[pay.plan].price), status: "paid" });
+      if (!(PLANS[pay.plan] || PACKS[pay.plan] || pay.plan === TRIAL.key)) continue;
+      const amount = Number(pay.amount ?? (PLANS[pay.plan]?.price || planPrice(pay.plan) || 0));
+      add(pay.ts, "paid", { plan: pay.plan, op: pay.op }, { val: amount });
+      if (pay.op) payments.push({ op: pay.op, plan: pay.plan, ts: pay.ts, amount, status: "paid" });
     }
     return { summary: this.summary(prof), events: events.filter((e) => e.ts > 0), payments };
   }
@@ -1198,14 +1311,14 @@ export class UserDO extends DurableObject {
       }
       if (gap === 0) return "active";
       if (gap === 1 && streak >= 2) return send("reminder", "streak_reminder", R.streakReminder(this.env, streak).kb);
-      if (gap === 2 && !prof.streak_broken_notified && (prof.streak_before_break || streak) >= 2) {
+      if (gap === 2 && !(prof.streak_freezes > 0) && !prof.streak_broken_notified && (prof.streak_before_break || streak) >= 2) {
         prof.streak_broken_notified = true;
         await this.ctx.storage.put(PROFILE, prof);
         const lost = prof.streak_before_break || streak;
         return send("lost", "streak_lost", R.streakLost(this.env, lost).kb, { ...vars, стрик: lost, дней: declDays(lost) });
       }
     }
-    if (kind === "evening" && gap === 1 && streak >= 3) return send("warning", "streak_warning", R.streakWarning(this.env, streak).kb);
+    if (kind === "evening" && gap === 1 && streak >= 3) return send("warning", "streak_warning", R.streakWarning(this.env, streak, { freezes: prof.streak_freezes || 0 }).kb);
     return "none";
   }
 
@@ -1497,6 +1610,18 @@ function onboardingNote(prof, title) {
     (prof.expectations ? `\nОжидания: ${e(prof.expectations)}` : "");
 }
 
+/** Что продаём сейчас: тарифы с ранними ценами, пробный период и разовые покупки */
+export function offerPlans(now = Date.now()) {
+  const early = now < EARLY_UNTIL;
+  const plans = Object.fromEntries(Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([k, p]) => [k, {
+    label: p.label, days: p.days, price: planPrice(k, now), regular: p.price, recurring: !!p.recurring, best: !!p.best,
+  }]));
+  return { plans, early, early_until: EARLY_UNTIL, trial: { ...TRIAL, then_price: planPrice(TRIAL.then, now) }, packs: PACKS };
+}
+
+const fmtDay = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+const fmtRub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
+
 export function publicProfile(prof) {
   const lvl = G.levelInfo(prof.xp || 0);
   const { payments, daily_patients, ...rest } = prof;
@@ -1506,6 +1631,16 @@ export function publicProfile(prof) {
     level_label: G.levelMeta(prof.level).label,
     complexity: G.complexityFor(prof),
     has_sub: G.hasActiveSub(prof),
+    premium: G.isPremium(prof),
+    // Пробный премиум — один раз и только тем, у кого сейчас нет подписки
+    trial_available: !prof.trial_used && !G.hasActiveSub(prof),
+    autopay: prof.autopay ? { plan: prof.autopay.plan, price: prof.autopay.price, next_at: prof.autopay.next_at, status: prof.autopay.status, trial: !!prof.autopay.trial } : null,
+    patient_credits: prof.patient_credits || 0,
+    streak_freezes: prof.streak_freezes || 0,
+    // Слабые места и советы эксперта — в премиуме; бесплатным показываем, сколько их накопилось
+    weaknesses: G.isPremium(prof) ? prof.weaknesses || [] : [],
+    recommendations: G.isPremium(prof) ? prof.recommendations || [] : [],
+    locked_insights: G.isPremium(prof) ? 0 : (prof.weaknesses || []).length + (prof.recommendations || []).length,
     today_patients: G.todayPatientsCount(prof),
     can_accept: G.canAcceptPatient(prof),
     generating_patient: !!(prof.generating_patient && Date.now() - prof.generating_patient < 120000),
@@ -1528,12 +1663,19 @@ export function patientSummary(p) {
   };
 }
 
-export function publicPatient(p) {
+export function publicPatient(p, premium = true) {
   const closed = p.status === "closed";
   const { full_history, key_findings, findings, personality, last_facts, summary, ...rest } = p;
+  // Без премиума: оценка, оси и вывод эксперта; цитаты, совет и «что было дальше» — закрыты
+  const lock = (c) => (premium || !c.feedback ? c : {
+    ...c, post_story: null, locked: true,
+    feedback: { axes: c.feedback.axes, expert_text: c.feedback.expert_text, diagnosis_correct: c.feedback.diagnosis_correct },
+  });
   // Старые пациенты могли сохраниться с иероглифами от ИИ — чистим при показе
   return stripForeignDeep({
     ...rest,
+    consultations: (p.consultations || []).map(lock),
+    post_story: premium ? p.post_story : null,
     true_diagnosis: closed ? p.true_diagnosis : null,
     current: p.current,
   });

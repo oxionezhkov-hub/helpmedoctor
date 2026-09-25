@@ -6,7 +6,7 @@ import { adminIds, AI_FREE_NEURONS_PER_DAY, PLANS } from "./config.js";
 import { ADMIN_SESSION_TTL_MS, bearer, createSession, loginLinks, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
 import { aiText } from "./lib/ai.js";
 import { declDays, esc, json, toTelegramHtml, userError } from "./lib/util.js";
-import { fetchPayment } from "./lib/tochka.js";
+import { fetchPayment, isPaidStatus } from "./lib/tochka.js";
 import { tg, stripHtml } from "./lib/telegram.js";
 import { hubStub, userStub } from "./bot/handlers.js";
 import { buildKeyboard } from "./do/hub.js";
@@ -16,7 +16,7 @@ const HUB_OPS = new Set([
   "dashboard", "live", "report", "users", "chat", "events", "subscriptions", "payments", "inbox", "broadcasts", "broadcast",
   "segment_count", "broadcast_create", "broadcast_stop", "broadcast_test", "templates", "template_save", "template_delete", "texts", "texts_save",
   "feedback", "feedback_status", "onboarding", "notes_add", "notes_delete", "tasks", "task", "task_create", "task_update", "task_delete",
-  "task_comment", "payment_status", "audit_log", "notify_get", "notify_save", "backfill_status", "counts", "ai_models_get", "ai_models_set",
+  "task_comment", "payment_status", "audit_log", "notify_get", "notify_save", "backfill_status", "counts", "ai_models_get", "ai_models_set", "autopay_list", "autopay_run",
 ]);
 
 const ADMIN_NAMES = { "1326867567": "Олег", "1062804986": "Саша" };
@@ -124,8 +124,9 @@ export async function adminApi(request, env, url, ctx) {
         return json({ error: `Точка не ответила: ${e.message}` }, 502);
       }
       let activated = false;
-      if (pay.status === "APPROVED" && (await hub.markPaymentDone(op, pay.amount || PLANS[row.plan]?.price))) {
-        await userStub(env, row.uid, "admin").activateSubscription(row.plan, op);
+      const amount = pay.amount || row.amount || PLANS[row.plan]?.price;
+      if (isPaidStatus(pay.status) && (await hub.markPaymentDone(op, amount))) {
+        await userStub(env, row.uid, "admin").activateSubscription(row.plan, op, amount);
         activated = true;
       }
       await hub.admin("audit", { action: "payment_check", target: op, details: { status: pay.status, activated } }, admin);
