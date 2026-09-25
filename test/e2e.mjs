@@ -61,20 +61,32 @@ await waitFor(() => sent(U).some((m) => m.text.includes("Добро пожало
 step("бот: /start регистрирует нового пользователя и начинает анкету");
 
 await press(U, "ob_lvl_студент");
-await waitFor(() => sent(U).some((m) => m.text.includes("На каком вы курсе")), "onboarding q2");
-await text(U, "4 курс, Сеченовский");
-await waitFor(() => sent(U).some((m) => m.text.includes("Чего вы ждёте")), "onboarding q3");
-await text(U, "Хочу научиться ставить диагноз");
-await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо!") && m.text.includes("Студент")), "onboarding done");
-await waitFor(() => sent("1326867567").some((m) => m.text.includes("Анкета") && m.text.includes("4 курс")), "admin onboarding");
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета") && m.text.includes("4 курс")), "second admin onboarding");
-step("бот: анкета (кто вы, где учитесь, ожидания) сохраняется, оба админа получают ответы");
+await waitFor(() => sent(U).some((m) => m.text.includes("2/4") && m.text.includes("специальность")), "onboarding q2");
+await press(U, "ob_pr_1"); // Терапевт
+const q3 = await waitFor(() => sent(U).find((m) => m.text.includes("3/4") && m.text.includes("Терапевт")), "onboarding q3");
+assert.ok(q3.reply_markup.inline_keyboard.flat().some((b) => b.text.includes("гастроэнтерология")));
+await press(U, "ob_in_0", 55);
+await text(U, "гастро");
+await waitFor(() => sent(U).some((m) => m.text.includes("Отметьте разделы кнопками")), "interests hint");
+await waitFor(() => tgCalls().some((c) => c.method === "editMessageReplyMarkup" && JSON.stringify(c.reply_markup || {}).includes("✅ гастроэнтерология")), "interest toggled");
+await press(U, "ob_in_ok"); // отметка «гастроэнтерология» пережила текстовое сообщение
+const q4 = await waitFor(() => sent(U).find((m) => m.text.includes("4/4") && m.text.includes("сложность")), "onboarding q4");
+assert.ok(q4.reply_markup.inline_keyboard.flat().some((b) => b.text.includes("Лёгкая ⭐")), "для студента рекомендуем лёгкую");
+await press(U, "ob_df_medium");
+await waitFor(() => sent(U).some((m) => m.text.includes("Профиль готов") && m.text.includes("гастроэнтерология") && m.text.includes("средняя")), "onboarding done");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("Анкета") && m.text.includes("Терапевт") && m.text.includes("Сложность: Средняя")), "admin onboarding");
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета") && m.text.includes("гастроэнтерология")), "second admin onboarding");
+await waitFor(() => sent(U).some((m) => m.text.includes("Пока пациент готовится")), "about ask");
+await text(U, "4 курс, Сеченовский, хочу научиться ставить диагноз");
+await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо! Пациент уже на подходе")), "about saved");
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета дополнена") && m.text.includes("4 курс")), "admin about");
+step("бот: анкета (роль, специальность, разделы, сложность, о себе) → профиль, оба админа получают ответы");
 
-await press(U, "new");
+// Первый пациент приходит сам — по выбранному профилю, без нажатия «Новый пациент»
 const ready = await waitFor(() => sent(U).find((m) => m.text.includes("Новый пациент готов")), "new patient");
 const patId = ready.reply_markup.inline_keyboard[0][0].callback_data.slice(3);
 assert.match(patId, /^pat_777_/);
-step("бот: пациент создаётся через очередь (alarm) и приходит сообщением");
+step("бот: первый пациент создаётся сразу после анкеты (очередь, alarm) и приходит сообщением");
 
 await press(U, `sp_${patId}`);
 await waitFor(() => sent(U).some((m) => m.text.includes("Мирон") && m.text.includes("живот крутит")), "opening phrase");
@@ -83,6 +95,9 @@ step("бот: приём начат, пациент говорит первую 
 // Одновременно открываем сайт — должен видеть тот же приём
 const webToken = await login(U);
 let me = (await api(webToken, "GET", "/me")).data;
+assert.equal(me.profile.difficulty, "medium");
+assert.equal(me.profile.complexity, "medium");
+assert.deepEqual(me.profile.specializations, ["гастроэнтерология"]);
 assert.equal(me.active_patient_id, patId);
 assert.ok(me.patients.find((p) => p.id === patId).in_consultation);
 step("сайт: видит тот же активный приём (синхронизация)");

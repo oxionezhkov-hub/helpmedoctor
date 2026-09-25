@@ -47,6 +47,14 @@ export const DOCTOR_LEVELS = [
   { key: "специалист", label: "Опытный специалист", complexity: "hard",        xpMult: 2.0 },
 ];
 
+// Сложность пациентов: выбирается в анкете и в профиле; по умолчанию — по роли (DOCTOR_LEVELS.complexity)
+export const DIFFICULTIES = [
+  { key: "easy",        label: "Лёгкая",        emoji: "🟢", hint: "типичная картина болезни" },
+  { key: "medium",      label: "Средняя",       emoji: "🟡", hint: "нетипичное начало, отвлекающий симптом" },
+  { key: "medium_hard", label: "Сложная",       emoji: "🟠", hint: "маскирующиеся симптомы, два похожих диагноза" },
+  { key: "hard",        label: "Очень сложная", emoji: "🔴", hint: "редкая патология, противоречивые данные" },
+];
+
 export const TEST_TYPES = ["КТ", "МРТ", "УЗИ", "Биопсия", "Анализ крови", "ЭКГ", "Онкомаркеры", "Эхо-КГ"];
 
 export const PHYSICAL_EXAMPLES = [

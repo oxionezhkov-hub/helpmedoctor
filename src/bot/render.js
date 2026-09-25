@@ -1,5 +1,5 @@
 // Тексты и клавиатуры бота
-import { PHYSICAL_EXAMPLES, TEST_TYPES } from "../config.js";
+import { DIFFICULTIES, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
 import { declDays, esc, firstName } from "../lib/util.js";
 import { appBtn, btn } from "../lib/telegram.js";
 
@@ -70,7 +70,7 @@ export function onboardingStart(name) {
   return {
     text: `👩‍⚕️ <b>Добро пожаловать в «Help me, Doctor», ${esc(name)}!</b>\n\n` +
       `Это тренажёр врача: ИИ-пациенты с настоящими жалобами, обследования, осмотр, диагноз — и разбор от эксперта.\n\n` +
-      `Давайте познакомимся — 3 коротких вопроса, чтобы пациенты были вам по уровню.\n\n<b>1/3. Кто вы?</b>`,
+      `Настроим тренажёр под вас — 4 коротких вопроса, и я сразу подберу первого пациента.\n\n<b>1/4. Кто вы?</b>`,
     kb: [
       ONBOARDING_ROLES.slice(0, 2).map(([k, l]) => btn(l, `ob_lvl_${k}`)),
       ONBOARDING_ROLES.slice(2).map(([k, l]) => btn(l, `ob_lvl_${k}`)),
@@ -79,24 +79,66 @@ export function onboardingStart(name) {
   };
 }
 
-export function onboardingAbout(level) {
-  const q = level === "студент" ? "На каком вы курсе и в каком вузе?"
-    : level === "ординатор" ? "Какая специальность ординатуры и какой год?"
-      : "Кем и где вы работаете? Специальность и стаж.";
-  return { text: `<b>2/3.</b> ${q}\n<i>Напишите ответ сообщением.</i>`, kb: [[btn("Пропустить →", "ob_next")]] };
+export const ONBOARDING_PROFESSIONS = Object.keys(SPECIALIZATIONS);
+
+export function onboardingProfession() {
+  const rows = [];
+  for (let i = 0; i < ONBOARDING_PROFESSIONS.length; i += 2) {
+    rows.push(ONBOARDING_PROFESSIONS.slice(i, i + 2).map((p, j) => btn(p, `ob_pr_${i + j}`)));
+  }
+  rows.push([btn("✍️ Другая — напишу", "ob_pr_other")]);
+  return { text: "<b>2/4. Какая специальность вам интересна?</b>\nПациенты будут из этой области.", kb: rows };
 }
 
-export const onboardingExpectations = () => ({
-  text: "<b>3/3. Чего вы ждёте от тренажёра?</b>\nЧто хотите прокачать: диагностику, общение с пациентами, подготовку к экзамену…\n<i>Напишите ответ сообщением.</i>",
-  kb: [[btn("Пропустить →", "ob_done")]],
+export const onboardingProfessionAsk = () => ({
+  text: "✍️ Напишите специальность одним-двумя словами, например: <i>эндокринолог</i>, <i>гинеколог</i>, <i>ЛОР</i>.",
+  kb: [[btn("← Выбрать из списка", "ob_pr_list")]],
 });
 
-export function onboardingDone(env, profile) {
+/** Разделы специальности: можно отметить несколько; sel — индексы выбранных */
+export function onboardingInterests(profession, options, sel) {
+  const rows = [];
+  for (let i = 0; i < options.length; i += 2) {
+    rows.push(options.slice(i, i + 2).map((o, j) => btn(`${sel.includes(i + j) ? "✅" : "▫️"} ${o}`, `ob_in_${i + j}`)));
+  }
+  rows.push([btn("Все разделы", "ob_in_all"), btn(sel.length ? `Готово (${sel.length}) →` : "Готово →", "ob_in_ok")]);
   return {
-    text: `✅ <b>Спасибо!</b> Вы — ${esc(profile.level_label)} (${esc(profile.profession)}). Специальность и разделы можно поменять в приложении, в профиле.\n\nНачнём с первого пациента?`,
-    kb: [[btn("➕ Принять первого пациента", "new")], [appBtn("🏥 Открыть приложение", appUrl(env))]],
+    text: `<b>3/4. Какие разделы интересны?</b>\n${esc(profession)}: отметьте один или несколько — пациенты будут из них. Без отметок — из всех.`,
+    kb: rows,
   };
 }
+
+export function onboardingDifficulty(recommended) {
+  return {
+    text: "<b>4/4. Какая сложность пациентов?</b>\n\n" +
+      DIFFICULTIES.map((d) => `${d.emoji} <b>${d.label}</b> — ${d.hint}${d.key === recommended ? " ⭐" : ""}`).join("\n") +
+      "\n\n⭐ — рекомендуем для вашего уровня. Поменять можно в любой момент в профиле.",
+    kb: [0, 2].map((i) => DIFFICULTIES.slice(i, i + 2).map((d) => btn(`${d.emoji} ${d.label}${d.key === recommended ? " ⭐" : ""}`, `ob_df_${d.key}`))),
+  };
+}
+
+export function onboardingDone(env, profile) {
+  const diff = DIFFICULTIES.find((d) => d.key === profile.complexity) || DIFFICULTIES[1];
+  return {
+    text: `✅ <b>Профиль готов!</b>\n\n` +
+      `👤 ${esc(profile.level_label)}\n` +
+      `🩺 ${esc(profile.profession)}\n` +
+      `📚 ${esc((profile.specializations || []).join(", "))}\n` +
+      `${diff.emoji} Сложность: ${esc(diff.label.toLowerCase())}\n\n` +
+      `Изменить можно в приложении → Профиль.`,
+    kb: [[appBtn("🏥 Открыть приложение", appUrl(env))]],
+  };
+}
+
+export const onboardingAboutAsk = () => ({
+  text: "Пока пациент готовится — пара слов о себе: где учитесь или работаете и что хотите прокачать? Это поможет сделать тренажёр лучше.\n<i>Напишите сообщением — или пропустите.</i>",
+  kb: [[btn("Пропустить", "ob_ab_skip")]],
+});
+
+export const onboardingSkipped = (env) => ({
+  text: "Хорошо! Сейчас пациенты — по терапии, средней сложности. Специальность, разделы и сложность можно выбрать в приложении → Профиль.\n\nНачнём?",
+  kb: [[btn("➕ Принять первого пациента", "new")], [appBtn("🏥 Открыть приложение", appUrl(env))]],
+});
 
 // ---------- Отзыв ----------
 export const kbRating = () => [[1, 2, 3, 4, 5].map((n) => btn(`${n} ⭐`, `rv_${n}`))];

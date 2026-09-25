@@ -111,3 +111,30 @@ test("из ответа ИИ убираются иероглифы", async () =>
   assert.equal(cleanText("как мы можем一起 работать."), "как мы можем работать.");
   assert.equal(cleanText("Норма: 3,3–5,5 ммоль/л"), "Норма: 3,3–5,5 ммоль/л");
 });
+
+test("из ответов ИИ убираются иероглифы и другие чужие письменности", async () => {
+  const { stripForeignScripts: f } = await import("../src/lib/util.js");
+  assert.equal(f("можем一起 работать"), "можем работать");
+  assert.equal(f("Да，конечно。").trim(), "Да, конечно.");
+  assert.equal(f("Пациент จะ жалуется"), "Пациент жалуется");
+  assert.equal(f("β-блокатор, HbA1c 7%, t° 38,5 👋"), "β-блокатор, HbA1c 7%, t° 38,5 👋");
+});
+
+test("обследование: эндоскопия отдельно от КТ/УЗИ, находки не переносятся на другой орган", async () => {
+  const { methodKind, testResultPrompt } = await import("../src/lib/prompts.js");
+  assert.equal(methodKind("Фгдс").kind, "endoscopy");
+  assert.equal(methodKind("Колоноскопия").kind, "endoscopy");
+  assert.equal(methodKind("КТ").kind, "imaging");
+  const pat = { name: "А", age: 40, sex: "female", chief_complaint: "", true_diagnosis: "Узловой зоб", findings: { imaging: "УЗИ щитовидной железы: узел 12 мм", endoscopy: "" } };
+  const p = testResultPrompt(pat, "ФГДС").prompt;
+  assert.ok(!p.includes("узел 12 мм"), "находки щитовидки не попадают в ФГДС");
+  assert.ok(p.includes("НОРМУ именно этой области"));
+  const old = { ...pat, true_diagnosis: "Язва ДПК", findings: { imaging: "ФГДС: язва 8 мм" } };
+  assert.ok(testResultPrompt(old, "ФГДС").prompt.includes("язва 8 мм"), "старые пациенты: эндоскопия из визуализации");
+});
+
+test("сложность пациентов: выбранная или по роли", () => {
+  assert.equal(G.complexityFor({ level: "студент", difficulty: "" }), "easy");
+  assert.equal(G.complexityFor({ level: "студент", difficulty: "hard" }), "hard");
+  assert.equal(G.complexityFor({ level: "врач", difficulty: "нет такой" }), "medium_hard");
+});

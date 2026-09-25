@@ -1,6 +1,7 @@
 // Минимальный клиент Telegram Bot API.
 // Каждое отправленное сообщение записывается в переписку пользователя (для админки),
 // кроме служебных уведомлений админам — их HubDO отправляет с log: false.
+import { stripForeignScripts } from "./util.js";
 
 export function tg(env, { log = true, kind = "bot", admin = null, ref = null } = {}) {
   // TG_API_BASE — только для локальных тестов (подмена API Telegram)
@@ -44,6 +45,7 @@ export function tg(env, { log = true, kind = "bot", admin = null, ref = null } =
       return last;
     },
     async send(chatId, text, keyboard, extra = {}) {
+      text = stripForeignScripts(text); // страховка: иероглифы из старых данных или ответов ИИ
       const body = { chat_id: chatId, text, parse_mode: "HTML", link_preview_options: { is_disabled: true }, ...extra };
       if (keyboard) body.reply_markup = { inline_keyboard: keyboard };
       const res = await call("sendMessage", body);
@@ -51,6 +53,7 @@ export function tg(env, { log = true, kind = "bot", admin = null, ref = null } =
       return res?.message_id || 0;
     },
     async sendPhoto(chatId, blob, caption, keyboard) {
+      caption = caption ? stripForeignScripts(caption) : caption;
       const fd = new FormData();
       fd.append("chat_id", String(chatId));
       fd.append("photo", blob, "image.jpg");
@@ -71,6 +74,7 @@ export function tg(env, { log = true, kind = "bot", admin = null, ref = null } =
       return d.result?.message_id || 0;
     },
     async edit(chatId, messageId, text, keyboard) {
+      text = stripForeignScripts(text);
       if (!messageId) return;
       const body = { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML", link_preview_options: { is_disabled: true } };
       body.reply_markup = { inline_keyboard: keyboard || [] };

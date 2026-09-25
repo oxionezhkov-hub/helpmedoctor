@@ -659,11 +659,11 @@ function viewHome(fresh) {
       <div class="avatar">${initials(p.name)}</div>
       <div class="grow">
         <h1 class="ellipsis">Доктор ${p.name}</h1>
-        <div class="muted small">${p.level_label} · ${p.profession}${p.has_sub ? html` · <span class="badge accent">${ic("gem")} Безлимит</span>` : ""}</div>
+        <div class="muted small">${!p.onboarding_done ? "Настройка профиля" : html`${p.level_label} · ${p.profession}`}${p.has_sub ? html` · <span class="badge accent">${ic("gem")} Безлимит</span>` : ""}</div>
       </div>
     </div>
 
-    <div class="card stack">
+    ${p.onboarding_done ? html`<div class="card stack">
       <div class="row between"><b>Уровень ${lvl.level}</b><span class="small muted">${p.xp || 0}${lvl.to ? ` / ${lvl.to}` : ""} XP</span></div>
       <div class="xp-bar"><i style="width:${xpPct}%"></i></div>
       <div class="stats">
@@ -671,11 +671,11 @@ function viewHome(fresh) {
         <div class="stat"><b>${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}</b><span>средняя оценка</span></div>
         <div class="stat"><b>${p.stats.consultations_total || 0}</b><span>${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")}</span></div>
       </div>
-    </div>
+    </div>` : ""}
 
-    ${!p.onboarding_done ? onboardingCard(p) : ""}
+    ${!p.onboarding_done ? onboardingCard() : ""}
 
-    ${task ? html`<div class="card task">
+    ${task && p.onboarding_done ? html`<div class="card task">
       <div class="tile ${task.done ? "ok" : "accent"}">${ic(task.done ? "checkCircle" : "target")}</div>
       <div class="grow">
         <div class="tiny muted">ЗАДАНИЕ ДНЯ · +${task.xp} XP</div>
@@ -684,7 +684,7 @@ function viewHome(fresh) {
       </div>
     </div>` : ""}
 
-    ${newPatientBlock()}
+    ${p.onboarding_done ? newPatientBlock() : ""}
 
     ${inConsult.length ? html`<div class="section-title">Идёт приём</div>
       ${inConsult.map((x) => patientCard(x, `/consult/${x.id}`, "Продолжить приём"))}` : ""}
@@ -697,7 +697,7 @@ function viewHome(fresh) {
       <span class="badge warn">${pendingQuiz.answered}/${pendingQuiz.total}</span>
     </a>` : ""}
 
-    ${!active.length && !patients.length ? html`<div class="card stack center">
+    ${p.onboarding_done && !active.length && !patients.length ? html`<div class="card stack center">
       <div class="tile accent lg">${ic("steth")}</div>
       <b>Как это работает</b>
       <p class="small muted">Примите пациента, расспросите его текстом или голосом, назначьте обследования и осмотр, поставьте диагноз. Эксперт разберёт приём, а вы получите опыт и тест по своим ошибкам.</p>
@@ -709,47 +709,145 @@ function viewHome(fresh) {
 }
 
 // ---------- Анкета нового пользователя ----------
+// Роль → специальность → разделы → сложность (+ пара слов о себе) → профиль и сразу первый пациент
 let onb = null;
-const ONB_ABOUT = {
-  "студент": ["На каком вы курсе и в каком вузе?", "Например: 4 курс, Сеченовский университет"],
-  "ординатор": ["Какая специальность ординатуры и какой год?", "Например: терапия, 1-й год"],
-  "врач": ["Кем и где вы работаете?", "Например: терапевт в поликлинике, стаж 3 года"],
-  "специалист": ["Кем и где вы работаете?", "Например: кардиолог, стаж 12 лет"],
-};
-function onboardingCard(p) {
-  onb = onb || { level: null };
-  const [q, ph] = ONB_ABOUT[onb.level] || ["Где вы учитесь или работаете?", "Курс и вуз или специальность и стаж"];
+const ONB_STEPS = 4;
+function onbState() {
+  if (!onb) onb = { step: 1, level: null, profession: null, custom: "", options: [], specs: new Set(), difficulty: null, about: "", suggesting: false };
+  return onb;
+}
+function onbRecommended() {
+  const lvl = S.me.config.levels.find((l) => l.key === onb.level);
+  return lvl?.complexity || "medium";
+}
+
+function onboardingCard() {
+  const o = onbState();
+  const cfg = S.me.config;
+  const back = o.step > 1 ? html`<button class="btn ghost" id="onb-back">${ic("back")}<span>Назад</span></button>` : html`<button class="btn ghost" id="onb-skip">Пропустить</button>`;
+  let body = "";
+  let next = "";
+  if (o.step === 1) {
+    body = html`<h3>Кто вы?</h3>
+      <div class="stack-sm">${cfg.levels.map((l) => html`<button class="onb-opt ${o.level === l.key ? "on" : ""}" data-onb-level="${l.key}"><b>${l.label}</b></button>`)}</div>`;
+  } else if (o.step === 2) {
+    const custom = o.profession === "__custom";
+    body = html`<h3>Какая специальность вам интересна?</h3><p class="small muted">Пациенты будут из этой области.</p>
+      <div class="row wrap" style="gap:6px">${Object.keys(cfg.specializations).map((x) => html`<button class="chip ${o.profession === x ? "on" : ""}" data-onb-prof="${x}">${x}</button>`)}<button class="chip ${custom ? "on" : ""}" data-onb-prof="__custom">Другая…</button></div>
+      ${custom ? html`<input class="input" id="onb-custom" value="${o.custom}" placeholder="Например: эндокринолог" maxlength="40">` : ""}`;
+    next = html`<button class="btn" id="onb-next" ${o.profession && (!custom || o.custom.length >= 3) ? "" : "disabled"}>${o.suggesting ? html`<span class="spin"></span>` : ""}<span>Далее</span></button>`;
+  } else if (o.step === 3) {
+    body = html`<h3>Какие разделы интересны?</h3><p class="small muted">${o.custom || o.profession}: отметьте один или несколько — пациенты будут из них. Без отметок — из всех.</p>
+      <div class="row wrap" style="gap:6px">${o.options.map((x) => html`<button class="chip ${o.specs.has(x) ? "on" : ""}" data-onb-spec="${x}">${x}</button>`)}</div>`;
+    next = html`<button class="btn" id="onb-next"><span>${o.specs.size ? `Далее · ${o.specs.size}` : "Далее · все разделы"}</span></button>`;
+  } else {
+    const rec = onbRecommended();
+    const cur = o.difficulty || rec;
+    body = html`<h3>Какая сложность пациентов?</h3>
+      <div class="stack-sm">${cfg.difficulties.map((d) => html`<button class="onb-opt ${cur === d.key ? "on" : ""}" data-onb-diff="${d.key}">
+        <b>${d.emoji} ${d.label}${d.key === rec ? html` <span class="badge accent">рекомендуем</span>` : ""}</b><span class="small muted">${d.hint}</span></button>`)}</div>
+      <div class="field"><label>Пара слов о себе <span class="muted">— необязательно</span></label>
+        <textarea id="onb-about" maxlength="600" placeholder="Где учитесь или работаете, что хотите прокачать">${o.about}</textarea></div>`;
+    next = html`<button class="btn" id="onb-finish">${ic("steth")}<span>Получить первого пациента</span></button>`;
+  }
   return html`<div class="card stack onb" id="onb">
-    <div><h3>Расскажите о себе</h3><p class="small muted">3 коротких вопроса — чтобы пациенты были вам по уровню.</p></div>
-    <div class="field"><label>1. Кто вы?</label>
-      <div class="row wrap" style="gap:6px">${S.me.config.levels.map((l) => html`<button class="chip ${onb.level === l.key ? "on" : ""}" data-onb-level="${l.key}">${l.label}</button>`)}</div></div>
-    <div class="field"><label>2. ${q}</label><input class="input" id="onb-about" placeholder="${ph}" maxlength="200"></div>
-    <div class="field"><label>3. Чего ждёте от тренажёра? Что хотите прокачать?</label><textarea id="onb-exp" placeholder="Например: подготовиться к аккредитации, научиться собирать анамнез" maxlength="600"></textarea></div>
-    <div class="grid-2"><button class="btn ghost" id="onb-skip">Пропустить</button><button class="btn" id="onb-save">Готово</button></div>
+    <div class="row between"><span class="tiny muted">НАСТРОЙКА ПОД ВАС · ${o.step}/${ONB_STEPS}</span></div>
+    <div class="onb-dots">${[1, 2, 3, 4].map((i) => html`<i class="${i <= o.step ? "on" : ""}"></i>`)}</div>
+    ${body}
+    <div class="grid-2">${back}${next || html`<span></span>`}</div>
   </div>`;
 }
+
+async function onbSuggest() {
+  const o = onb;
+  const known = Object.keys(S.me.config.specializations).find((k) => k.toLowerCase() === o.custom.toLowerCase());
+  if (known) { o.profession = known; o.custom = ""; o.options = [...S.me.config.specializations[known]]; return true; }
+  o.suggesting = true;
+  viewHome();
+  try {
+    const { sections } = await api("POST", "/sections/suggest", { profession: o.custom });
+    o.options = sections.length ? sections : [o.custom.toLowerCase()];
+    return true;
+  } catch (e) {
+    toast(e.message, "error");
+    return false;
+  } finally {
+    o.suggesting = false;
+  }
+}
+
 function bindOnboarding() {
-  if (!$("#onb")) return;
-  root.querySelectorAll("[data-onb-level]").forEach((b) => (b.onclick = () => { onb.level = b.dataset.onbLevel; viewHome(); }));
-  const send = async (btn, patch) => {
-    btnBusy(btn);
+  if (!$("#onb") || !onb) return;
+  const o = onb;
+  const cfg = S.me.config;
+  const redraw = () => { viewHome(); $("#onb")?.scrollIntoView({ block: "nearest" }); };
+  const skip = $("#onb-skip");
+  if (skip) skip.onclick = async (e) => {
+    btnBusy(e.currentTarget);
     try {
-      const { profile } = await api("PATCH", "/profile", { ...patch, onboarding_done: true });
+      const { profile } = await api("PATCH", "/profile", { onboarding_done: true, skipped: true });
       S.me.profile = profile;
       onb = null;
-      if (patch.about || patch.expectations) toast("Спасибо! Приятной практики", "ok");
       viewHome();
+    } catch (err) { toast(err.message, "error"); btnBusy(e.currentTarget, false); }
+  };
+  const back = $("#onb-back");
+  if (back) back.onclick = () => { o.step -= 1; redraw(); };
+  root.querySelectorAll("[data-onb-level]").forEach((b) => (b.onclick = () => { o.level = b.dataset.onbLevel; o.difficulty = null; o.step = 2; haptic(); redraw(); }));
+  root.querySelectorAll("[data-onb-prof]").forEach((b) => (b.onclick = () => {
+    o.profession = b.dataset.onbProf;
+    if (o.profession !== "__custom") { o.custom = ""; o.options = [...cfg.specializations[o.profession]]; o.specs = new Set(); o.step = 3; }
+    redraw();
+    if (o.profession === "__custom") $("#onb-custom")?.focus();
+  }));
+  const ci = $("#onb-custom");
+  if (ci) ci.oninput = () => { o.custom = ci.value.trim(); const n = $("#onb-next"); if (n) n.disabled = o.custom.length < 3; };
+  root.querySelectorAll("[data-onb-spec]").forEach((b) => (b.onclick = () => {
+    const x = b.dataset.onbSpec;
+    if (o.specs.has(x)) o.specs.delete(x); else o.specs.add(x);
+    redraw();
+  }));
+  root.querySelectorAll("[data-onb-diff]").forEach((b) => (b.onclick = () => { o.difficulty = b.dataset.onbDiff; o.about = $("#onb-about")?.value || o.about; redraw(); }));
+  const about = $("#onb-about");
+  if (about) about.oninput = () => { o.about = about.value; };
+  const next = $("#onb-next");
+  if (next) next.onclick = async () => {
+    if (o.step === 2 && o.profession === "__custom") {
+      if (o.custom.length < 3 || o.suggesting) return;
+      o.specs = new Set();
+      if (!(await onbSuggest())) return redraw();
+    }
+    o.step += 1;
+    redraw();
+  };
+  const fin = $("#onb-finish");
+  if (fin) fin.onclick = async () => {
+    btnBusy(fin);
+    haptic("success");
+    const profession = o.profession === "__custom" ? o.custom[0].toUpperCase() + o.custom.slice(1) : o.profession;
+    const specs = o.specs.size ? o.options.filter((x) => o.specs.has(x)) : o.options;
+    try {
+      const { profile } = await api("PATCH", "/profile", {
+        level: o.level, profession, specializations: specs, difficulty: o.difficulty || onbRecommended(),
+        about: (o.about || "").trim(), onboarding_done: true,
+      });
+      S.me.profile = profile;
+      onb = null;
+      // Первый пациент — сразу, по только что выбранному профилю
+      try {
+        S.expectNewPatient = Date.now();
+        await api("POST", "/patients/new");
+        S.me.profile.generating_patient = true;
+      } catch (e) {
+        S.expectNewPatient = 0;
+        toast(e.message, "error");
+      }
+      toast("Профиль готов — подбираем первого пациента", "ok");
+      viewHome(true);
     } catch (e) {
       toast(e.message, "error");
-      btnBusy(btn, false);
+      btnBusy(fin, false);
     }
-  };
-  $("#onb-skip").onclick = (e) => send(e.currentTarget, {});
-  $("#onb-save").onclick = (e) => {
-    const patch = { about: $("#onb-about").value.trim(), expectations: $("#onb-exp").value.trim() };
-    if (onb.level) patch.level = onb.level;
-    if (!onb.level && !patch.about && !patch.expectations) return toast("Ответьте хотя бы на один вопрос — или нажмите «Пропустить»", "error");
-    send(e.currentTarget, patch);
   };
 }
 
@@ -1472,7 +1570,7 @@ function profileDraft(p, cfg) {
   const options = known ? [...new Set([...cfg.specializations[p.profession], ...own])] : own;
   let specs = new Set(p.specializations.filter((s) => options.includes(s)));
   if (!specs.size && known) specs = new Set(cfg.specializations[p.profession]);
-  return { name: p.name, level: p.level, profession: known ? p.profession : "__custom", custom: known ? "" : p.profession, options, specs, suggesting: false, suggested: known };
+  return { name: p.name, level: p.level, difficulty: p.difficulty || "", profession: known ? p.profession : "__custom", custom: known ? "" : p.profession, options, specs, suggesting: false, suggested: known };
 }
 
 let suggestTimer = null;
@@ -1540,8 +1638,11 @@ function viewProfile(fresh) {
     <div class="card stack" id="profile-form">
       <h3>Настройки</h3>
       <div class="field"><label>Имя</label><input class="input" id="pf-name" value="${pf.name}" maxlength="40"></div>
-      <div class="field"><label>Уровень подготовки — влияет на сложность пациентов</label>
+      <div class="field"><label>Кто вы</label>
         <div class="row wrap" style="gap:6px">${cfg.levels.map((l) => html`<button class="chip ${pf.level === l.key ? "on" : ""}" data-level="${l.key}">${l.label}</button>`)}</div></div>
+      <div class="field"><label>Сложность пациентов</label>
+        <div class="row wrap" style="gap:6px"><button class="chip ${!pf.difficulty ? "on" : ""}" data-diff="">По уровню</button>${cfg.difficulties.map((d) => html`<button class="chip ${pf.difficulty === d.key ? "on" : ""}" data-diff="${d.key}">${d.emoji} ${d.label}</button>`)}</div>
+        <span class="tiny muted">${(cfg.difficulties.find((d) => d.key === (pf.difficulty || cfg.levels.find((l) => l.key === pf.level)?.complexity)) || {}).hint || ""}</span></div>
       <div class="field"><label>Специальность</label>
         <div class="row wrap" style="gap:6px">${professions.map((x) => html`<button class="chip ${pf.profession === x ? "on" : ""}" data-prof="${x}">${x}</button>`)}<button class="chip ${custom ? "on" : ""}" data-prof="__custom">Другая…</button></div>
         <input class="input ${custom ? "" : "hidden"}" id="pf-prof-custom" value="${pf.custom}" placeholder="Ваша специальность, например: неонатолог" maxlength="40"></div>
@@ -1568,6 +1669,7 @@ function viewProfile(fresh) {
 
   $("#pf-name").oninput = (e) => { pf.name = e.target.value; };
   root.querySelectorAll("[data-level]").forEach((b) => (b.onclick = () => { pf.level = b.dataset.level; viewProfile(); }));
+  root.querySelectorAll("[data-diff]").forEach((b) => (b.onclick = () => { pf.difficulty = b.dataset.diff; viewProfile(); }));
   root.querySelectorAll("[data-prof]").forEach((b) => (b.onclick = () => {
     if (b.dataset.prof !== "__custom") return pickProfession(b.dataset.prof);
     if (custom) return;
@@ -1621,7 +1723,7 @@ function viewProfile(fresh) {
     btnBusy(btn);
     try {
       const { profile } = await api("PATCH", "/profile", {
-        name: pf.name, level: pf.level, profession, specializations: specs, notifications: $("#pf-notify").checked,
+        name: pf.name, level: pf.level, difficulty: pf.difficulty, profession, specializations: specs, notifications: $("#pf-notify").checked,
       });
       S.me.profile = profile;
       pf = null;
