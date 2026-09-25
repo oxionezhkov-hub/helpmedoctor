@@ -67,7 +67,8 @@ await waitFor(() => sent(U).some((m) => m.text.includes("Чего вы ждёт�
 await text(U, "Хочу научиться ставить диагноз");
 await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо!") && m.text.includes("Студент")), "onboarding done");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("Анкета") && m.text.includes("4 курс")), "admin onboarding");
-step("бот: анкета (кто вы, где учитесь, ожидания) сохраняется, админ получает ответы");
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета") && m.text.includes("4 курс")), "second admin onboarding");
+step("бот: анкета (кто вы, где учитесь, ожидания) сохраняется, оба админа получают ответы");
 
 await press(U, "new");
 const ready = await waitFor(() => sent(U).find((m) => m.text.includes("Новый пациент готов")), "new patient");
@@ -260,6 +261,8 @@ step("оплата: ошибка банка — понятный ответ по
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");
+await text("1062804986", "/admin");
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("дашборд")), "second admin");
 const cron = await fetch(`${BASE}/__scheduled?cron=0+17+*+*+*`);
 assert.equal(cron.status, 200);
 assert.equal((await fetch(`${BASE}/__scheduled?cron=0+7+*+*+*`)).status, 200);

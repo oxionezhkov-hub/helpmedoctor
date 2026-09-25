@@ -4,6 +4,11 @@
 // =====================================================
 
 export const ADMIN_ID = "1326867567";
+
+/** Админы: env.ADMIN_ID — список Telegram ID через запятую (Олег, Саша) */
+export function adminIds(env) {
+  return String(env?.ADMIN_ID || ADMIN_ID).split(",").map((s) => s.trim()).filter(Boolean);
+}
 export const BOT_USERNAME = "helpmedoctor_aibot";
 
 export const MAX_ACTIVE_PATIENTS = 6;

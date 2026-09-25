@@ -2,7 +2,7 @@
 // Telegram-бот: разбор апдейтов и отрисовка ответов.
 // Вся логика и данные — в UserDO (общие с сайтом), здесь только интерфейс.
 // =====================================================
-import { ADMIN_ID, PHYSICAL_EXAMPLES, TEST_TYPES } from "../config.js";
+import { adminIds, PHYSICAL_EXAMPLES, TEST_TYPES } from "../config.js";
 import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
 import { appBtn, btn, tg } from "../lib/telegram.js";
 import * as R from "./render.js";
@@ -85,7 +85,7 @@ async function onMessage(ctx, msg) {
     }
     if (command === "/feedback") return askFeedback(ctx);
     if (command === "/help") return help(ctx);
-    const isAdmin = uid === String(env.ADMIN_ID || ADMIN_ID);
+    const isAdmin = adminIds(env).includes(uid);
     if (command === "/admin" && isAdmin) return admin(ctx);
     if (command === "/grant" && isAdmin) return grant(ctx, text);
     return help(ctx);
