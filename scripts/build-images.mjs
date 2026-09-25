@@ -1,6 +1,7 @@
 // Картинки сайта: превью для соцсетей (og.png 1200×630), иконка iOS (apple-touch-icon.png 180×180)
 // и обложки статей блога (public/blog/<slug>/cover.jpg — сцена, og.jpg — сцена с заголовком для соцсетей).
 // Запуск: node scripts/build-images.mjs  (нужен Playwright с Chromium; результат коммитится в public/)
+// Только обложки выбранных статей: node scripts/build-images.mjs <slug> [<slug> …]
 import { chromium } from "playwright";
 import { ARTICLES } from "./site/articles.mjs";
 import { faceSvg } from "../src/lib/face.js";
@@ -34,12 +35,15 @@ const icon = `<html><body style="margin:0;width:180px;height:180px;background:#0
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
 const page = await browser.newPage();
-await page.setViewportSize({ width: 1200, height: 630 });
-await page.setContent(og);
-await page.screenshot({ path: "public/og.png" });
-await page.setViewportSize({ width: 180, height: 180 });
-await page.setContent(icon);
-await page.screenshot({ path: "public/apple-touch-icon.png" });
+const only = process.argv.slice(2);
+if (!only.length) {
+  await page.setViewportSize({ width: 1200, height: 630 });
+  await page.setContent(og);
+  await page.screenshot({ path: "public/og.png" });
+  await page.setViewportSize({ width: 180, height: 180 });
+  await page.setContent(icon);
+  await page.screenshot({ path: "public/apple-touch-icon.png" });
+}
 
 // ---------- Обложки статей: врач и пациент (Open Peeps, CC0) с репликами ----------
 // Лица Open Peeps смотрят вправо, поэтому врача (справа) отражаем — собеседники смотрят друг на друга.
@@ -72,7 +76,7 @@ ${withTitle ? `<div style="position:absolute;left:64px;top:64px;width:500px;colo
 import fs from "node:fs";
 await page.setViewportSize({ width: 1200, height: 630 });
 for (const a of ARTICLES) {
-  if (!a.cover) continue;
+  if (!a.cover || (only.length && !only.includes(a.slug))) continue;
   fs.mkdirSync(`public/blog/${a.slug}`, { recursive: true });
   await page.setContent(scene(a.cover, false));
   await page.screenshot({ path: `public/blog/${a.slug}/cover.jpg`, type: "jpeg", quality: 84 });
@@ -82,4 +86,4 @@ for (const a of ARTICLES) {
 }
 
 await browser.close();
-console.log("✓ public/og.png, public/apple-touch-icon.png");
+if (!only.length) console.log("✓ public/og.png, public/apple-touch-icon.png");
