@@ -42,13 +42,14 @@ await page.setContent(icon);
 await page.screenshot({ path: "public/apple-touch-icon.png" });
 
 // ---------- Обложки статей: врач и пациент (Open Peeps, CC0) с репликами ----------
+// Лица Open Peeps смотрят вправо, поэтому врача (справа) отражаем — собеседники смотрят друг на друга.
 const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 const STETH = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3H5v6a5 5 0 0 0 10 0V3h-1"/><path d="M10 14v1a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="11" r="2"/></svg>`;
 function scene(c, withTitle, title) {
   const h = c.hue;
   const size = withTitle ? 210 : 250;
   const person = (p, doctor) => `<div style="position:relative;width:${size}px;height:${size}px">
-    <div style="width:100%;height:100%;border-radius:${size / 4}px;overflow:hidden;background:hsl(${doctor ? h : (h + 40) % 360} 60% ${doctor ? 88 : 92}%);box-shadow:0 18px 40px hsl(${h} 40% 30% / .18)">${faceSvg({ ...p, clean: true })}</div>
+    <div style="width:100%;height:100%;border-radius:${size / 4}px;overflow:hidden;background:hsl(${doctor ? h : (h + 40) % 360} 60% ${doctor ? 88 : 92}%);box-shadow:0 18px 40px hsl(${h} 40% 30% / .18)"><div style="${doctor ? "transform:scaleX(-1)" : ""}">${faceSvg({ ...p, clean: true })}</div></div>
     ${doctor ? `<div style="position:absolute;right:-12px;bottom:-12px;width:62px;height:62px;border-radius:20px;background:#0f766e;display:grid;place-items:center;box-shadow:0 8px 20px rgba(0,0,0,.2)"><div style="width:36px;height:36px">${STETH}</div></div>` : ""}</div>`;
   const bubble = (t, mine) => `<div style="width:max-content;max-width:${withTitle ? 250 : 320}px;padding:14px 18px;border-radius:22px;${mine ? "border-bottom-right-radius:8px;background:#0f766e;color:#fff" : "border-bottom-left-radius:8px;background:#fff;color:#0f1f1d"};font-size:${withTitle ? 21 : 25}px;line-height:1.3;box-shadow:0 10px 30px hsl(${h} 40% 30% / .15)">${esc(t)}</div>`;
   // Без заголовка: пациент слева, врач справа, реплики над ними. С заголовком — сцена справа от текста.
