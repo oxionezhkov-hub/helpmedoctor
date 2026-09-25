@@ -119,8 +119,8 @@ const ICONS = {
 // Логотипы способов входа — в фирменных цветах
 const BRAND = {
   google: '<svg class="i brand" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
-  yandex: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#FC3F1D"/><text x="12" y="17" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="14" fill="#fff">Я</text></svg>',
-  telegram: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#2AABEE"/><path fill="#fff" d="M17.6 7.2 15.7 16.6c-.1.6-.5.8-1 .5l-2.9-2.1-1.4 1.3c-.2.2-.3.3-.6.3l.2-2.9 5.3-4.8c.2-.2 0-.3-.4-.1l-6.5 4.1-2.8-.9c-.6-.2-.6-.6.1-.9l11-4.2c.5-.2 1 .1.9.9Z"/></svg>',
+  yandex: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#FC3F1D"/><path fill="#fff" d="M13.32 7.666h-.924c-1.694 0-2.585.858-2.585 2.123 0 1.43.616 2.1 1.881 2.959l1.045.704-3.003 4.487H7.49l2.695-4.014c-1.55-1.111-2.42-2.19-2.42-4.015 0-2.288 1.595-3.85 4.62-3.85h3.003v11.868H13.32V7.666z"/></svg>',
+  telegram: '<svg class="i brand" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="120" fill="#2AABEE"/><path fill="#fff" d="M54.3 118.8c35-15.2 58.3-25.3 70-30.2 33.3-13.9 40.3-16.3 44.8-16.4 1 0 3.2.2 4.7 1.4 1.2 1 1.5 2.3 1.7 3.3s.4 3.1.2 4.7c-1.8 19-9.6 65.1-13.6 86.3-1.7 9-5 12-8.2 12.3-7 .6-12.3-4.6-19-9-10.6-6.9-16.5-11.2-26.8-18-11.9-7.8-4.2-12.1 2.6-19.1 1.8-1.8 32.5-29.8 33.1-32.3.1-.3.1-1.5-.6-2.1-.7-.6-1.7-.4-2.5-.2-1.1.2-17.9 11.4-50.6 33.5-4.8 3.3-9.1 4.9-13 4.8-4.3-.1-12.5-2.4-18.7-4.4-7.5-2.4-13.5-3.7-13-7.9.3-2.2 3.3-4.4 8.9-6.7z"/></svg>',
 };
 const PROVIDER_LABEL = { google: "Google", yandex: "Яндекс ID", telegram: "Telegram" };
 const brand = (name) => raw(BRAND[name] || "");
@@ -523,25 +523,22 @@ async function renderLogin() {
     api("POST", "/auth/login", { from: sessionStore("hmd_from") || "" }).catch((e) => ({ error: e.message })),
   ]);
   const providers = ["yandex", "google"].filter((p) => (cfg.providers || []).includes(p));
-  // На компьютере Telegram часто не установлен — первым предлагаем Яндекс ID; на телефоне — Telegram
-  const tgFirst = IS_TOUCH || !providers.length;
-  const tgBtn = html`<a class="btn lg block ${tgFirst ? "" : "oauth-btn"}" id="login-btn" href="${lr.tg || lr.url || "#"}">${brand("telegram")}<span>Войти через Telegram</span></a>`;
-  const oBtns = providers.map((p, i) => html`<button class="btn block ${!tgFirst && i === 0 ? "lg primary-oauth" : "oauth-btn"}" data-oauth="${p}" type="button">${brand(p)}<span>Войти через ${PROVIDER_LABEL[p]}</span></button>`);
+  // Порядок: Telegram (прогресс общий с ботом), затем Яндекс ID и Google
   root.innerHTML = html`<div class="login"><div class="card stack">
     <div class="logo">${ic("heart")}</div>
     <h1>Help me, Doctor</h1>
     <p class="muted">Войдите, чтобы принять первого пациента. Дальше — четыре вопроса о вас, около минуты.</p>
-    ${tgFirst ? tgBtn : oBtns[0] || ""}
-    <p class="tiny muted" id="login-hint">${tgFirst ? "Откроется бот — нажмите в нём «Запустить», и сайт войдёт сам." : "Без пароля: подтвердите вход в своём аккаунте Яндекса."}</p>
-    ${providers.length ? html`<div class="or"><span>или</span></div>` : ""}
-    <div class="stack-sm">${tgFirst ? oBtns : [...oBtns.slice(1), tgBtn]}</div>
-    <p class="tiny muted">Бесплатно, без карты. Прогресс общий на сайте и в Telegram — привязать способы входа можно в профиле.</p>
-    <p class="tiny muted">Входя, вы соглашаетесь с ${docLink("privacy", "политикой обработки персональных данных")}.</p>
+    <div class="stack-sm">
+      <a class="btn lg block oauth-btn" id="login-btn" href="${lr.tg || lr.url || "#"}">${brand("telegram")}<span>Войти через Telegram</span></a>
+      ${providers.map((p) => html`<button class="btn lg block oauth-btn" data-oauth="${p}" type="button">${brand(p)}<span>Войти через ${PROVIDER_LABEL[p]}</span></button>`)}
+    </div>
+    <p class="tiny muted" id="login-hint" hidden></p>
   </div></div>`[RAW];
   if (S.authNotice) toast(S.authNotice, S.authNoticeKind), (S.authNotice = null);
   root.querySelectorAll("[data-oauth]").forEach((b) => (b.onclick = () => oauthStart(b.dataset.oauth, "login", b)));
   if (lr.error) {
     $("#login-hint").textContent = lr.error;
+    $("#login-hint").hidden = false;
     return;
   }
   const code = lr.code;
@@ -552,6 +549,7 @@ async function renderLogin() {
     goal("auth_telegram");
     btn.innerHTML = html`${ic("clock")}<span>Ждём подтверждения…</span>`[RAW];
     $("#login-hint").innerHTML = html`Нажмите в боте «Запустить» и вернитесь сюда — сайт войдёт сам.<br>Telegram не открылся? <a href="${r.url}" target="_blank" rel="noopener">Открыть бота в браузере</a>`[RAW];
+    $("#login-hint").hidden = false;
   };
   // Опрашиваем сразу: пользователь может подтвердить вход с телефона
   const started = Date.now();

@@ -94,8 +94,8 @@ ${METRIKA_NOSCRIPT}`;
 
 const promo = () => `<div class="promo" data-early hidden><div class="wrap"><span class="long">Ранние цены до ${EARLY_DATE}: премиум — <b>${rub(MONTH.early)} ₽</b> в месяц вместо ${rub(MONTH.price)} ₽, первые 7 дней — ${rub(TRIAL.price)} ₽.</span><span class="short">Премиум <b>7 дней за ${rub(TRIAL.price)} ₽</b>, потом ${rub(MONTH.early)} ₽/мес</span> <a href="${app("promo")}">Попробовать</a><button class="promo-x" type="button" aria-label="Скрыть">×</button></div></div>`;
 
-const header = () => `<a class="skip" href="#main">Перейти к содержанию</a>
-${promo()}
+const header = (page) => `<a class="skip" href="#main">Перейти к содержанию</a>
+${page === "home" ? "" : promo()}
 <header class="top"><div class="wrap">
   <a class="brand" href="/" aria-label="${NAME} — на главную">${LOGO}${NAME}</a>
   <nav class="nav" aria-label="Основное меню">
@@ -166,7 +166,7 @@ function layout({ page, headOpts, main, sticky = true, popup = true, progress = 
   return `${head(headOpts)}
 ${bodyOpen(page)}
 ${progress ? '<div class="progress" aria-hidden="true"></div>' : ""}
-${header()}
+${header(page)}
 <main id="main">
 ${main}
 </main>
@@ -191,7 +191,7 @@ const inlineCta = (title, text, from, label = "Попробовать беспл
 // ---------------------------------------------------------------- общие блоки
 function heroChart() {
   return `<figure class="chart" role="img" aria-label="Пример карты приёма в тренажёре: жалобы пациента, вопросы врача, результат ФГДС, диагноз и оценка приёма 4,5 из 5">
-  <div class="chart-h"><span>Пример приёма · карта № 0147</span><span>Гастроэнтерология · средняя</span></div>
+  <div class="chart-h"><div><span class="chart-no">Карта приёма № 0147</span><span class="chart-sub">Гастроэнтерология · средняя сложность</span></div><span class="chart-tag">пример</span></div>
   <dl>
     <dt>Пациент</dt><dd>Мирон Л., 47 лет, водитель</dd>
     <dt>Жалобы</dt><dd><q>Жжёт под ложечкой третью неделю</q></dd>
@@ -200,7 +200,7 @@ function heroChart() {
     <dt>ФГДС</dt><dd>язва луковицы ДПК, 8 мм</dd>
     <dt>Диагноз</dt><dd class="hand">язва ДПК на фоне НПВП</dd>
   </dl>
-  <div class="stamp">Ваш разбор<b>4,5</b>из 5</div>
+  <div class="stamp"><span>Разбор</span><b>4,5</b><span>из 5</span></div>
 </figure>`;
 }
 
@@ -326,7 +326,8 @@ function landing() {
 <section class="hero" data-hero><div class="wrap">
   <div>
     <h1>Тренажёр врача с виртуальными пациентами</h1>
-    <p class="lead">Приём от жалобы до диагноза за 10 минут: расспрашиваете пациента текстом или голосом, назначаете анализы, ставите диагноз — и сразу видите разбор: что спросили точно, что упустили и чем всё закончилось.</p>
+    <p class="hero-sub">Приём от жалобы до&nbsp;диагноза — за&nbsp;10&nbsp;минут</p>
+    <p class="lead">Расспросите пациента текстом или голосом, назначьте анализы, поставьте диагноз. Сразу после — разбор: что вы спросили точно, что упустили и чем всё закончилось.</p>
     <div class="cta">
       <a class="btn btn-primary btn-lg" href="${app("hero")}">Принять пациента бесплатно ${ARR}</a>
       <a class="btn btn-ghost btn-lg" href="#demo">Демо</a>
