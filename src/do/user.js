@@ -1254,7 +1254,7 @@ export class UserDO extends DurableObject {
     const chunk = msgs.slice(upto, cut);
     const prev = pat.summary?.text ? [{ role: "patient", text: `(Ранее) ${pat.summary.text}` }] : [];
     const p = P.summaryPrompt([...prev, ...chunk]);
-    const text = await aiText(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature });
+    const text = await aiText(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "summarize", uid: pat.doctor_uid });
     const fresh = await this.patient(patId);
     fresh.summary = { text, upto: cut };
     await this.ctx.storage.put(patKey(patId), fresh);

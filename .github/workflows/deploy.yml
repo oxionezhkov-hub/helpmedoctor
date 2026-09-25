@@ -68,6 +68,16 @@ jobs:
           if [ -z "$TOCHKA_PROXY_URL" ] || [ -z "$TOCHKA_PROXY_SECRET" ]; then echo "Посредник Точки не настроен — пропускаю"; exit 0; fi
           printf '%s' "$TOCHKA_PROXY_URL" | npx wrangler secret put TOCHKA_PROXY_URL
           printf '%s' "$TOCHKA_PROXY_SECRET" | npx wrangler secret put TOCHKA_PROXY_SECRET
+      # Запасной ИИ на случай, когда бесплатные нейроны Cloudflare на сегодня кончились. Каждый ключ — по желанию.
+      - name: Ключи запасного ИИ
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ -n "$CEREBRAS_API_KEY" ]; then printf '%s' "$CEREBRAS_API_KEY" | npx wrangler secret put CEREBRAS_API_KEY; else echo "CEREBRAS_API_KEY не задан — пропускаю"; fi
+          if [ -n "$GROQ_API_KEY" ]; then printf '%s' "$GROQ_API_KEY" | npx wrangler secret put GROQ_API_KEY; else echo "GROQ_API_KEY не задан — пропускаю"; fi
       # Кнопка «Приложение» и меню команд бота — на актуальный адрес сайта (вебхук не трогаем)
       - name: Кнопка меню и команды бота
         env:

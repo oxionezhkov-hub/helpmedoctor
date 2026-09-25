@@ -286,7 +286,8 @@ const RENDER = {
     ], rows: d.by_plan, empty: "Оплат за период нет" })}</div>`,
   ai: (d) => {
     const cf = d.cloudflare;
-    return html`<div class="callout mb small">Цена Workers AI в нейронах: Llama 3.3 70B — 26 668 за 1 млн входных токенов и 204 805 за 1 млн выходных, Whisper — 46,63 за минуту аудио. Бесплатно 10 000 нейронов в сутки (UTC), сверх — $0.011 за 1000. Наш подсчёт — по токенам из каждого ответа модели${d.kinds.some((k) => k.estimated) ? " (часть запросов — по оценке длины текста)" : ""}.</div>
+    return html`<div class="card mb" id="ai-setup">${aiSetup(d.setup)}</div>
+      <div class="callout mb small">Цена Workers AI в нейронах за 1 млн токенов (вход / выход): Qwen3 30B — 4 625 / 30 475, Llama 3.3 70B — 26 668 / 204 805; Whisper — 46,63 за минуту аудио. Запасные провайдеры (Cerebras, Groq) бесплатны и нейронов не тратят. Бесплатно 10 000 нейронов в сутки (UTC), сверх — $0.011 за 1000. Наш подсчёт — по токенам из каждого ответа модели${d.kinds.some((k) => k.estimated) ? " (часть запросов — по оценке длины текста)" : ""}.</div>
       <div class="tiles">${stat("Нейронов за период", fNum(d.total_neurons))}${stat("Запросов к ИИ", fNum(d.total_requests))}${stat("Оплата сверх бесплатного", fUsd(d.usd_over_free), "по нашему подсчёту")}${stat("На одного пользователя", fNum(d.per_user, 1), "нейронов за период")}</div>
       <div class="card mt"><div class="card-head"><h2>Точные данные Cloudflare</h2><button class="btn soft sm" id="cf-load">${ic("refresh", "sm")}<span>Загрузить из Cloudflare</span></button></div>
         <div id="cf">${cfBlock(cf)}</div></div>
@@ -297,6 +298,11 @@ const RENDER = {
         { key: "ms", label: "Время", cls: "r", render: (r) => `${(r.ms / 1000).toFixed(1)} с` }, { key: "tin", label: "Токенов вход", cls: "r", render: (r) => fNum(r.tin) },
         { key: "tout", label: "Токенов выход", cls: "r", render: (r) => fNum(r.tout) }, { key: "neurons", label: "Нейроны", cls: "r", render: (r) => fNum(r.neurons, 1) }, { key: "usd", label: "≈ $", cls: "r", render: (r) => fUsd(r.usd) },
       ], rows: d.kinds, empty: "Запросов к ИИ не было" })}</div>
+      <div class="card mt"><div class="card-head"><h2>По моделям</h2></div>${table({ columns: [
+        { key: "model", label: "Модель", render: (r) => modelLabel(r.model) }, { key: "requests", label: "Запросов", cls: "r" },
+        { key: "error_pct", label: "Ошибок", cls: "r", render: (r) => pct(r.error_pct) }, { key: "ms", label: "Время", cls: "r", render: (r) => `${(r.ms / 1000).toFixed(1)} с` },
+        { key: "neurons", label: "Нейроны", cls: "r", render: (r) => fNum(r.neurons, 1) },
+      ], rows: d.models || [], empty: "Запросов к ИИ не было" })}</div>
       <div class="card mt"><div class="card-head"><h2>Кто больше всех расходует</h2></div>${table({ columns: [
         { key: "name", label: "Пользователь", render: (r) => html`<a href="#/users/${r.uid}">${r.name || r.uid}</a>` }, { key: "requests", label: "Запросов", cls: "r" }, { key: "neurons", label: "Нейроны", cls: "r", render: (r) => fNum(r.neurons, 1) },
       ], rows: d.users })}</div>`;
@@ -317,6 +323,48 @@ const RENDER = {
 
 const AI_KIND = { patient: "Новый пациент", reply: "Ответ пациента", test: "Обследование", exam: "Осмотр", farewell: "Прощание", evaluation: "Разбор эксперта", quiz: "Тест", voice: "Голос (Whisper)", sections: "Разделы специальности", summarize: "Сжатие диалога", admin_summary: "Сводка отзывов", other: "Прочее" };
 const ERR = { ai_error: "Сбой ИИ у пользователя", patient_failed: "Пациент не создан", pay_error: "Ошибка оплаты", stt_error: "Голос не распознан", bot_blocked: "Бот заблокирован", telegram: "Telegram не доставил" };
+
+const MODEL_NAMES = {
+  "@cf/qwen/qwen3-30b-a3b-fp8": "Qwen3 30B (Cloudflare)", "@cf/meta/llama-3.3-70b-instruct-fp8-fast": "Llama 3.3 70B (Cloudflare)",
+  "@cf/openai/whisper-large-v3-turbo": "Whisper (Cloudflare)", "cerebras:gpt-oss-120b": "GPT-OSS 120B (Cerebras, запасной)", "groq:openai/gpt-oss-120b": "GPT-OSS 120B (Groq, запасной)",
+};
+const modelLabel = (m) => MODEL_NAMES[m] || m;
+
+/** Модели по шагам приёма + порог перехода на запасной ИИ */
+function aiSetup(st) {
+  if (!st) return "";
+  const opts = (sel) => Object.entries(st.models).map(([k, m]) => html`<option value="${k}" ${sel === k ? "selected" : ""}>${m.label}</option>`);
+  return html`<div class="card-head"><h2>Модели по шагам</h2>
+      ${st.cf_blocked ? html`<span class="badge warn dot">Сегодня работает запасной ИИ</span>` : html`<span class="badge ok dot">Cloudflare · ${fNum(st.used_today)} нейронов сегодня</span>`}</div>
+    <p class="small muted mb">${Object.values(st.models).map((m) => `${m.label} — ${m.note}`).join(" · ")}. Изменения применяются в течение минуты.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
+      ${Object.entries(st.steps).map(([k, label]) => html`<label class="small"><span class="muted">${label}</span>
+        <select class="input" data-ai-step="${k}">${opts(st.routing[k])}</select></label>`)}
+    </div>
+    <div class="mt small" style="display:flex;flex-wrap:wrap;gap:10px;align-items:end">
+      <label><span class="muted">Порог нейронов в сутки для перехода на запасной ИИ (0 — не переходить)</span>
+        <input class="input" type="number" min="0" max="100000" step="100" id="ai-cap" value="${st.cap}" style="width:140px"></label>
+      <button class="btn sm" id="ai-save">Сохранить</button>
+      <button class="btn soft sm" id="ai-all" data-model="llama70">Всё на Llama 70B</button>
+      <button class="btn ghost sm" id="ai-reset">По умолчанию</button>
+    </div>
+    <div class="mt small">Запасной ИИ: ${st.fallbacks.map((f) => html`<span class="badge ${f.configured ? "ok" : ""}">${f.label} — ${f.configured ? "подключён" : html`нет ключа <span class="kbd">${f.secret}</span>`}</span> `)}</div>`;
+}
+
+function bindAiSetup(box, st) {
+  const el = $("#ai-setup", box);
+  if (!el || !st) return;
+  const save = (btn, routing, cap) => withBusy(btn, async () => {
+    const r = await q("ai_models_set", { routing, cap });
+    el.innerHTML = str(aiSetup(r));
+    bindAiSetup(box, r);
+    toast("Модели сохранены");
+  });
+  const current = () => Object.fromEntries($$("[data-ai-step]", el).map((s) => [s.dataset.aiStep, s.value]));
+  $("#ai-save", el).onclick = (e) => save(e.currentTarget, current(), $("#ai-cap", el).value);
+  $("#ai-all", el).onclick = (e) => save(e.currentTarget, Object.fromEntries(Object.keys(st.steps).map((k) => [k, e.currentTarget.dataset.model])), $("#ai-cap", el).value);
+  $("#ai-reset", el).onclick = (e) => save(e.currentTarget, st.defaults, st.cap_default);
+}
 
 function cfBlock(cf) {
   if (!S.info.cf_configured) {
@@ -349,6 +397,7 @@ const BIND = {
   money: (box, d) => bindCsv(box, { plans: () => ["revenue", [{ key: "label", label: "Тариф" }, { key: "count", label: "Оплат" }, { key: "sum", label: "Сумма" }], d.by_plan] }),
   ai: (box, d) => {
     bindCsv(box, { kinds: () => ["ai-kinds", [{ key: "kind", label: "Тип", value: (r) => AI_KIND[r.kind] || r.kind }, { key: "requests", label: "Запросов" }, { key: "errors", label: "Ошибок" }, { key: "ms", label: "Мс" }, { key: "tin", label: "Токенов вход" }, { key: "tout", label: "Токенов выход" }, { key: "neurons", label: "Нейроны" }, { key: "usd", label: "$" }], d.kinds] });
+    bindAiSetup(box, d.setup);
     const b = $("#cf-load", box);
     if (b) b.onclick = () => withBusy(b, async () => {
       const r = await api("POST", "/ai/cloudflare", { from: S.period.from, to: S.period.to });

@@ -153,3 +153,60 @@ test("страницы сайта пересобраны после измене
   }
   fs.rmSync(dir, { recursive: true });
 });
+
+test("ИИ: модель по шагу — умолчания и настройка админки", async () => {
+  const { modelFor } = await import("../src/lib/ai.js");
+  assert.equal(modelFor("reply").key, "qwen3");
+  assert.equal(modelFor("evaluation").key, "llama70");
+  assert.equal(modelFor("reply", { reply: "llama70" }).key, "llama70");
+  assert.equal(modelFor("reply", { reply: "нет такой" }).key, "qwen3", "неизвестная модель — умолчание");
+});
+
+test("ИИ: ответ в формате OpenAI и блок <think> у Qwen3", async () => {
+  const { responseToText } = await import("../src/lib/ai.js");
+  assert.equal(responseToText({ choices: [{ message: { content: "<think>\n\n</think>\n\nБолит справа." } }] }), "Болит справа.");
+  assert.equal(responseToText({ response: "Просто текст" }), "Просто текст");
+});
+
+test("ИИ: лимит Cloudflare → запасной провайдер, затем сразу запасной", async () => {
+  const { aiText, resetAiRoute } = await import("../src/lib/ai.js");
+  resetAiRoute();
+  const calls = { cf: 0, ext: [], blocked: 0, inputs: [] };
+  const hubState = { cf_blocked: false };
+  const hub = {
+    aiRoute: async () => ({ routing: {}, cf_blocked: hubState.cf_blocked }),
+    aiCfBlocked: async () => { calls.blocked++; hubState.cf_blocked = true; },
+    logAi: async () => {},
+  };
+  const env = {
+    AI: { run: async (model, input) => { calls.cf++; calls.inputs.push(input); throw new Error("AiError: 4006: you have used up your daily free allocation of 10,000 neurons"); } },
+    HUB: { idFromName: () => "hub", get: () => hub },
+    CEREBRAS_API_KEY: "test-key",
+  };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    calls.ext.push({ url, body: JSON.parse(init.body) });
+    return new Response(JSON.stringify({ choices: [{ message: { content: "«Болит второй день»" } }], usage: { prompt_tokens: 10, completion_tokens: 5 } }), { status: 200 });
+  };
+  try {
+    assert.equal(await aiText(env, { prompt: "Где болит?", kind: "reply" }), "Болит второй день");
+    assert.equal(calls.cf, 1, "при лимите Cloudflare не повторяем");
+    assert.match(calls.inputs[0].messages.at(-1).content, /\/no_think$/, "Qwen3 без рассуждений");
+    assert.equal(calls.blocked, 1);
+    assert.equal(calls.ext[0].url, "https://api.cerebras.ai/v1/chat/completions");
+    assert.equal(calls.ext[0].body.model, "gpt-oss-120b");
+    await aiText(env, { prompt: "Ещё вопрос", kind: "reply" });
+    assert.equal(calls.cf, 1, "до конца суток Cloudflare пропускаем");
+    assert.equal(calls.ext.length, 2);
+  } finally {
+    globalThis.fetch = realFetch;
+    resetAiRoute();
+  }
+});
+
+test("ИИ: без ключей запасного — ошибка Cloudflare пробрасывается", async () => {
+  const { aiText, resetAiRoute } = await import("../src/lib/ai.js");
+  resetAiRoute();
+  const env = { AI: { run: async () => { throw new Error("4006: daily free allocation"); } } };
+  await assert.rejects(aiText(env, { prompt: "x", kind: "reply" }), /4006/);
+});

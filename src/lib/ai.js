@@ -1,6 +1,7 @@
-// Workers AI: текст, JSON и распознавание речи.
-// Все вызовы идут через binding env.AI — без внешних ключей.
-import { AI_MODEL, AI_NEURONS, WHISPER_MODEL } from "../config.js";
+// ИИ: текст, JSON и распознавание речи.
+// Основной путь — Workers AI (binding env.AI), модель выбирается по шагу приёма (kind) — см. AI_MODELS в config.js.
+// Когда бесплатные нейроны Cloudflare на сегодня кончились или Workers AI отказал — запасные провайдеры (Cerebras, Groq).
+import { AI_DEFAULT_MODEL, AI_FALLBACKS, AI_MODELS, AI_NEURONS, AI_ROUTING_DEFAULT, WHISPER_MODEL } from "../config.js";
 import { mockAi } from "./mock-ai.js";
 import { stripForeignScripts } from "./util.js";
 
@@ -91,17 +92,85 @@ function ai(env) {
   throw new Error("Workers AI binding не настроен");
 }
 
-async function runWithRetry(env, input, meta = {}, attempts = 3) {
+// Настройки маршрутизации из HubDO (модели по шагам, «Cloudflare на сегодня исчерпан») — кэш на минуту в изоляте
+let routeCache = { at: 0, v: null };
+const ROUTE_TTL_MS = 60_000;
+
+async function route(env) {
+  if (routeCache.v && Date.now() - routeCache.at < ROUTE_TTL_MS) return routeCache.v;
+  let v = { routing: {}, cf_blocked: false };
+  if (env.HUB) {
+    try {
+      v = await env.HUB.get(env.HUB.idFromName("hub")).aiRoute();
+    } catch (e) {
+      console.error("aiRoute", e);
+    }
+  }
+  routeCache = { at: Date.now(), v };
+  return v;
+}
+
+/** Сбросить кэш маршрутизации (после смены настроек и в тестах) */
+export function resetAiRoute() {
+  routeCache = { at: 0, v: null };
+}
+
+/** Модель Workers AI для шага: настройка админки → умолчание шага → общая модель по умолчанию */
+export function modelFor(kind, routing = {}) {
+  const key = [routing?.[kind], AI_ROUTING_DEFAULT[kind], AI_DEFAULT_MODEL].find((k) => k && AI_MODELS[k]);
+  return { key, ...AI_MODELS[key] };
+}
+
+/** Запасные провайдеры, для которых задан ключ */
+export function fallbacksFor(env) {
+  return AI_FALLBACKS.filter((f) => env[f.secret]);
+}
+
+/** Workers AI отказал из-за исчерпанного лимита нейронов (на Free-плане — до конца суток UTC) */
+export function isQuotaError(e) {
+  return /4006|daily free allocation|used up your daily/i.test(String(e?.message || e));
+}
+
+async function runWithRetry(env, input, meta = {}) {
+  const r = await route(env);
+  const model = modelFor(meta.kind, r.routing);
+  const ext = fallbacksFor(env);
+  let lastErr;
+  if (!r.cf_blocked || !ext.length) {
+    try {
+      return await runCf(env, model, input, meta);
+    } catch (e) {
+      lastErr = e;
+      if (!ext.length) throw e;
+      if (isQuotaError(e)) await markCfBlocked(env, e);
+      console.warn(`Workers AI недоступен (${e.message}) — запасной провайдер`);
+    }
+  }
+  for (const f of ext) {
+    try {
+      return await runExternal(env, f, input, meta);
+    } catch (e) {
+      lastErr = e;
+      console.warn(`${f.key} недоступен: ${e.message}`);
+    }
+  }
+  // Запасные не ответили, а Cloudflare мы пропустили — последняя попытка через него
+  if (r.cf_blocked) return runCf(env, model, input, meta, 1);
+  throw lastErr;
+}
+
+async function runCf(env, model, input, meta, attempts = 3) {
   let lastErr;
   const promptText = (input.messages || []).map((m) => m.content).join("\n");
+  const payload = model.noThink ? { ...input, messages: noThink(input.messages) } : input;
   for (let i = 0; i < attempts; i++) {
     const t0 = Date.now();
     try {
-      const res = await ai(env).run(AI_MODEL, input);
+      const res = await ai(env).run(model.id, payload);
       const u = res?.usage || {};
       const exact = Number(u.prompt_tokens) > 0;
       await logUsage(env, {
-        uid: meta.uid || "", kind: meta.kind || "other", model: AI_MODEL, ms: Date.now() - t0, ok: 1,
+        uid: meta.uid || "", kind: meta.kind || "other", model: model.id, ms: Date.now() - t0, ok: 1,
         tin: exact ? Number(u.prompt_tokens) : estimateTokens(promptText),
         tout: exact ? Number(u.completion_tokens || 0) : estimateTokens(responseToText(res)),
         estimated: exact ? 0 : 1,
@@ -109,18 +178,75 @@ async function runWithRetry(env, input, meta = {}, attempts = 3) {
       return res;
     } catch (e) {
       lastErr = e;
-      await logUsage(env, { uid: meta.uid || "", kind: meta.kind || "other", model: AI_MODEL, ms: Date.now() - t0, ok: 0, err: String(e.message || e).slice(0, 300) });
+      await logUsage(env, { uid: meta.uid || "", kind: meta.kind || "other", model: model.id, ms: Date.now() - t0, ok: 0, err: String(e.message || e).slice(0, 300) });
       console.warn(`Workers AI attempt ${i + 1} failed: ${e.message}`);
+      if (isQuotaError(e)) break; // лимит — повторять бесполезно
       if (i < attempts - 1) await new Promise((r) => setTimeout(r, 800 * (i + 1)));
     }
   }
   throw lastErr;
 }
 
+/** Qwen3 по умолчанию «думает» вслух — отключаем мягким переключателем /no_think */
+function noThink(messages = []) {
+  const out = messages.map((m) => ({ ...m }));
+  const last = out.findLastIndex((m) => m.role === "user");
+  if (last >= 0) out[last].content = `${out[last].content}\n/no_think`;
+  return out;
+}
+
+/** OpenAI-совместимый запасной провайдер (Cerebras, Groq). Ответ приводим к виду Workers AI: { response, usage } */
+async function runExternal(env, f, input, meta) {
+  const t0 = Date.now();
+  const model = `${f.key}:${f.model}`;
+  try {
+    const res = await fetch(f.url, {
+      method: "POST",
+      headers: { authorization: `Bearer ${env[f.secret]}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        model: f.model,
+        messages: input.messages,
+        // GPT-OSS рассуждает перед ответом — даём запас токенов, но рассуждение держим коротким
+        max_completion_tokens: (input.max_tokens || 300) + 600,
+        temperature: input.temperature ?? 0.7,
+        reasoning_effort: "low",
+      }),
+      signal: AbortSignal.timeout(45_000),
+    });
+    if (!res.ok) throw new Error(`${f.key} HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const j = await res.json();
+    const text = j?.choices?.[0]?.message?.content;
+    if (!text) throw new Error(`${f.key}: пустой ответ`);
+    const u = j.usage || {};
+    await logUsage(env, { uid: meta.uid || "", kind: meta.kind || "other", model, ms: Date.now() - t0, ok: 1, tin: Number(u.prompt_tokens || 0), tout: Number(u.completion_tokens || 0) });
+    return { response: text, usage: u };
+  } catch (e) {
+    await logUsage(env, { uid: meta.uid || "", kind: meta.kind || "other", model, ms: Date.now() - t0, ok: 0, err: String(e.message || e).slice(0, 300) });
+    throw e;
+  }
+}
+
+/** Лимит Cloudflare кончился: запоминаем до конца суток UTC (у себя и в HubDO — для остальных изолятов) */
+async function markCfBlocked(env, e) {
+  if (routeCache.v) routeCache.v = { ...routeCache.v, cf_blocked: true };
+  if (!env.HUB) return;
+  try {
+    await env.HUB.get(env.HUB.idFromName("hub")).aiCfBlocked(String(e?.message || e).slice(0, 300));
+  } catch (err) {
+    console.error("aiCfBlocked", err);
+  }
+}
+
 export function responseToText(result) {
-  const r = result?.response;
+  // Workers AI отдаёт { response } у одних моделей и формат OpenAI { choices } — у других (Qwen3)
+  const r = result?.response ?? result?.choices?.[0]?.message?.content;
   if (r == null) return "";
-  return (typeof r === "string" ? r : JSON.stringify(r)).trim();
+  return stripThink(typeof r === "string" ? r : JSON.stringify(r)).trim();
+}
+
+/** Блок рассуждений <think>…</think> (Qwen3) — пользователю не показываем */
+export function stripThink(text) {
+  return String(text).replace(/<think>[\s\S]*?(<\/think>|$)/gi, "").replace(/<\/think>/gi, "");
 }
 
 /** Достаёт JSON-объект из ответа, даже если модель добавила текст или ``` вокруг */
