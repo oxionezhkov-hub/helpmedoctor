@@ -5,13 +5,8 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_als"],
   "workers_dev": true,
-  // Свой домен: зона helpmedoctor.ru должна быть добавлена в этот же аккаунт Cloudflare (NS у регистратора — Cloudflare).
-  // Российские провайдеры ограничивают сайты за Cloudflare (пропускают ~16 КБ на соединение),
-  // поэтому ссылки бота пока ведут на *.workers.dev (PUBLIC_URL), а домен ждёт прокси вне Cloudflare.
-  "routes": [
-    { "pattern": "helpmedoctor.ru", "custom_domain": true },
-    { "pattern": "www.helpmedoctor.ru", "custom_domain": true }
-  ],
+  // Свой домен helpmedoctor.ru обслуживает прокси на VPS вне Cloudflare (deploy/proxy-setup.sh):
+  // российские провайдеры режут трафик к Cloudflare (~16 КБ на соединение), к workers.dev — нет.
   "observability": { "enabled": true },
 
   // Веб-приложение (public/) отдаёт этот же воркер. Воркер запускается первым,

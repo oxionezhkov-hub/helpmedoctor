@@ -40,7 +40,8 @@ export default {
 
       // Старые ссылки мини-приложения ведут в новое
       if (path === "/" || path.startsWith("/mini-app")) {
-        return Response.redirect(`${url.origin}/app`, 302);
+        // Относительный адрес: за прокси (helpmedoctor.ru → workers.dev) хост у воркера другой
+        return new Response(null, { status: 302, headers: { Location: "/app" } });
       }
       return env.ASSETS.fetch(request);
     } catch (e) {
