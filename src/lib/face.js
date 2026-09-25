@@ -11,7 +11,7 @@ const SKIN = ["ffdbb4", "edb98a"];
 // Обычные очки чаще тёмных: пациент всё-таки на приёме
 const ACCESSORIES = { glasses: 3, glasses2: 3, glasses3: 3, glasses4: 3, glasses5: 3, sunglasses: 0.5, sunglasses2: 0.5 };
 // Естественные цвета волос (без розовых и рыжих оттенков из палитры стиля); седина — у пожилых
-const HAIR = ["2c1b18", "4a312c", "724133", "a55728", "b58143", "d6b370"];
+const HAIR = ["2c1b18", "4a312c", "724133", "a55728", "b58143"];
 const HAIR_OLD = ["e8e1e1", "ecdcbf"];
 const MASK_PROBABILITY = 13;
 
@@ -21,7 +21,7 @@ const HEAD_MALE = ["short1", "short2", "short3", "short4", "short5", "shaved1", 
   "flatTop", "pomp", "hatBeanie"];
 const HEAD_OLD_FEMALE = ["grayBun", "grayMedium", "hijab"];
 const HEAD_OLD_MALE = ["grayShort", "grayMedium", "noHair1", "noHair2", "noHair3"];
-const HEAD_CHILD = ["bangs", "bangs2", "buns", "short1", "short2", "short3", "medium1", "mediumBangs", "twists", "afro", "bear"];
+const HEAD_CHILD = ["bangs", "bangs2", "buns", "short1", "short2", "short3", "medium1", "mediumBangs", "twists", "afro"];
 
 // Пациенты чаще встревожены и устали; остальные выражения — изредка, для разнообразия
 const EXPRESSION = {
