@@ -8,6 +8,7 @@ import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
 import { createPayment, fetchPayment, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 import { adminApi } from "./admin-api.js";
+import { faceSvg } from "./lib/face.js";
 
 export { UserDO } from "./do/user.js";
 export { HubDO } from "./do/hub.js";
@@ -139,6 +140,18 @@ async function api(request, env, url) {
     if (res.status !== "ok") return json({ status: res.status });
     await userStub(env, res.uid).init(res.uid);
     return json({ status: "ok", token: await createSession(env, res.uid) });
+  }
+  // Лицо пациента (DiceBear Open Peeps): детерминировано параметрами, поэтому кэшируется навсегда
+  if (path === "/face" && method === "GET") {
+    const q = url.searchParams;
+    const params = { s: q.get("s") || "", g: q.get("g") === "f" ? "f" : "m", a: Math.max(0, Math.min(120, Number(q.get("a")) || 0)), m: ["good", "bad"].includes(q.get("m")) ? q.get("m") : "" };
+    const cacheKey = new Request(`https://face.cache/${params.s}/${params.g}/${params.a}/${params.m}/v1`);
+    const cache = typeof caches !== "undefined" ? caches.default : null;
+    const hit = cache && (await cache.match(cacheKey));
+    if (hit) return hit;
+    const res = new Response(faceSvg(params), { headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": "public, max-age=31536000, immutable" } });
+    if (cache) await cache.put(cacheKey, res.clone()).catch(() => {});
+    return res;
   }
   // Аватар по случайному id (без авторизации: <img> не умеет заголовки; id не угадать)
   let am = path.match(/^\/avatar\/([a-f0-9]{32})$/);

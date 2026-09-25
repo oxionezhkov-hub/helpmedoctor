@@ -156,7 +156,9 @@ section { padding: 72px 0; scroll-margin-top: 64px; }
 @media (max-width: 640px) { .plans { grid-template-columns: repeat(2, 1fr); } }
 
 .posts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.post-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; color: var(--text); text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; }
+.post-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; color: var(--text); text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; overflow: hidden; }
+.post-card .post-cover { display: block; width: calc(100% + 44px); max-width: none; height: auto; aspect-ratio: 1200 / 630; object-fit: cover; margin: -22px -22px 18px; border-bottom: 1px solid var(--border); }
+.post-card .post-body { display: flex; flex-direction: column; flex: 1; }
 .post-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
 .post-card h3 { font-size: 19px; }
 .post-card p { color: var(--muted); font-size: 15px; margin: 0 0 14px; flex: 1; }
@@ -212,3 +214,64 @@ footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
 .notfound { text-align: center; padding: 96px 20px; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* ---------- Обложка статьи ---------- */
+.article-cover { display: block; width: 100%; height: auto; aspect-ratio: 1200 / 630; border-radius: var(--radius); margin: 0 0 28px; box-shadow: var(--shadow); }
+
+/* ---------- Схемы внутри статей ---------- */
+.fig { margin: 28px 0; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.fig figcaption { margin-top: 14px; font-size: 14px; color: var(--muted); text-align: center; }
+.fig b { display: block; font-size: 15px; line-height: 1.3; }
+.fig span { font-size: 14px; color: var(--muted); line-height: 1.35; }
+/* Шаги */
+.fig-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; counter-reset: none; }
+.fig-steps.three { grid-template-columns: repeat(3, 1fr); }
+.fig-steps.four { grid-template-columns: repeat(4, 1fr); }
+.fig-steps li { position: relative; margin: 0; padding: 14px 14px 14px 52px; background: var(--surface-2); border-radius: 14px; min-height: 64px; display: flex; flex-direction: column; justify-content: center; }
+.fig-steps .n { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-contrast); font-weight: 800; font-size: 15px; display: grid; place-items: center; }
+.fig-steps.flow li:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 800; z-index: 1; }
+.fig-steps.flow:not(.three):not(.four) li:nth-child(3n)::after { content: none; }
+@media (max-width: 640px) {
+  .fig-steps, .fig-steps.three, .fig-steps.four { grid-template-columns: 1fr; }
+  .fig-steps.flow li::after { content: none !important; }
+}
+.fig-rails { display: grid; gap: 8px; margin-top: 12px; }
+.fig-rails span { display: block; text-align: center; padding: 10px; border-radius: 12px; border: 1.5px dashed var(--accent); color: var(--accent); font-weight: 700; font-size: 14px; }
+/* Плитки с буквами */
+.fig-grid { display: grid; gap: 12px; }
+.fig-grid.six { grid-template-columns: repeat(3, 1fr); }
+.fig-grid.three { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 640px) { .fig-grid.six { grid-template-columns: repeat(2, 1fr); } .fig-grid.three { grid-template-columns: 1fr; } }
+.fig-tile { padding: 14px; background: var(--surface-2); border-radius: 14px; display: flex; flex-direction: column; gap: 2px; }
+.fig-tile .big { font-size: 34px; font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 4px; }
+/* Воронка */
+.fig-funnel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.fig-funnel .lvl { width: calc(100% - var(--i) * 12%); padding: 12px 16px; border-radius: 12px; text-align: center; color: var(--text);
+  background: color-mix(in srgb, var(--accent) calc(12% + var(--i) * 10%), var(--surface)); }
+.fig-funnel .lvl:last-child { color: var(--accent-contrast); background: var(--accent); }
+.fig-funnel .lvl:last-child span { color: inherit; opacity: .85; }
+@media (max-width: 640px) { .fig-funnel .lvl { width: calc(100% - var(--i) * 6%); } }
+/* Колонки */
+.fig-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fig-split.three { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 640px) { .fig-split, .fig-split.three { grid-template-columns: 1fr; } }
+.fig-split .col { padding: 14px 16px; border-radius: 14px; background: var(--surface-2); }
+.fig-split .col.danger { background: color-mix(in srgb, #dc2626 12%, var(--surface)); }
+.fig-split .col.calm { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.fig-split h4 { margin: 0 0 6px; font-size: 16px; }
+.fig-split .k { margin: 0 0 6px; font-weight: 700; color: var(--accent); font-size: 15px; }
+.fig-split ul { margin: 0; padding-left: 18px; font-size: 15px; }
+.fig-split li { margin-bottom: 3px; }
+.fig-foot { grid-column: 1 / -1; font-size: 14px; color: var(--muted); padding: 10px 14px; border-radius: 12px; border: 1px dashed var(--border); }
+/* Полосы диапазонов */
+.fig-bars { display: flex; flex-direction: column; gap: 10px; }
+.fig-bars .bar { display: grid; grid-template-columns: 110px 1fr 76px; gap: 10px; align-items: center; }
+.fig-bars .name { color: var(--text); font-weight: 600; }
+.fig-bars .track { position: relative; height: 12px; border-radius: 6px; background: var(--surface-2); }
+.fig-bars .track i { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: var(--accent); min-width: 4px; }
+.fig-bars .v { text-align: right; font-variant-numeric: tabular-nums; }
+/* Таймлайн */
+.fig-timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 640px) { .fig-timeline { grid-template-columns: 1fr; } }
+.fig-timeline .tl { padding: 14px; border-radius: 14px; background: var(--surface-2); border-top: 4px solid var(--accent); }
+.fig-timeline .tl b { color: var(--accent); margin-bottom: 4px; }

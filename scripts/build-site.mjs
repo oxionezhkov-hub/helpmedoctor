@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { FREE_DAILY_LIMIT, PLANS, SPECIALIZATIONS } from "../src/config.js";
 import { ARTICLES } from "./site/articles.mjs";
+import { withFigures } from "./site/figures.mjs";
 
 const SITE = "https://helpmedoctor.ru";
 const BOT = "https://t.me/helpmedoctor_aibot";
@@ -43,7 +44,7 @@ const ICONS = {
   sync: `<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2M18 2v4h-4M6 22v-4h4"/></svg>`,
 };
 
-function head({ title, description, canonical, type = "website", extra = "" }) {
+function head({ title, description, canonical, type = "website", extra = "", image = `${SITE}/og.png` }) {
   return `<!doctype html>
 <html lang="ru">
 <head>
@@ -63,7 +64,7 @@ function head({ title, description, canonical, type = "website", extra = "" }) {
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${canonical}">
-<meta property="og:image" content="${SITE}/og.png">
+<meta property="og:image" content="${image}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -100,7 +101,7 @@ const footer = () => `<footer><div class="wrap">
   </ul></div>
 </div></footer>`;
 
-const postCard = (a) => `<a class="post-card" href="/blog/${a.slug}/"><h3>${esc(a.h1)}</h3><p>${esc(a.description)}</p><span class="meta">${a.minutes} мин чтения →</span></a>`;
+const postCard = (a) => `<a class="post-card" href="/blog/${a.slug}/">${a.cover ? `<img class="post-cover" src="/blog/${a.slug}/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async">` : ""}<div class="post-body"><h3>${esc(a.h1)}</h3><p>${esc(a.description)}</p><span class="meta">${a.minutes} мин чтения →</span></div></a>`;
 
 // ---------------------------------------------------------------- главная
 const FAQ = [
@@ -261,14 +262,14 @@ function articlePage(a) {
   const others = ARTICLES.filter((x) => x.slug !== a.slug).slice(0, 2);
   const schema = [
     { "@context": "https://schema.org", "@type": "BlogPosting", headline: a.h1, description: a.description, url, mainEntityOfPage: url,
-      datePublished: a.date, dateModified: a.updated || a.date, inLanguage: "ru", keywords: a.tags.join(", "), image: `${SITE}/og.png`,
+      datePublished: a.date, dateModified: a.updated || a.date, inLanguage: "ru", keywords: a.tags.join(", "), image: a.cover ? `${SITE}/blog/${a.slug}/og.jpg` : `${SITE}/og.png`,
       author: { "@type": "Organization", name: NAME, url: SITE }, publisher: { "@type": "Organization", name: NAME, logo: { "@type": "ImageObject", url: `${SITE}/apple-touch-icon.png` } } },
     { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
       { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE}/` },
       { "@type": "ListItem", position: 2, name: "Блог", item: `${SITE}/blog/` },
       { "@type": "ListItem", position: 3, name: a.h1, item: url }] },
   ];
-  return `${head({ title: `${a.title} — ${NAME}`, description: a.description, canonical: url, type: "article",
+  return `${head({ title: `${a.title} — ${NAME}`, description: a.description, canonical: url, type: "article", image: a.cover ? `${SITE}/blog/${a.slug}/og.jpg` : undefined,
     extra: `<meta property="article:published_time" content="${a.date}">\n${schema.map(ldjson).join("\n")}` })}
 <body>
 ${METRIKA_NOSCRIPT}
@@ -278,7 +279,8 @@ ${header()}
   <nav class="crumbs page-head" style="padding-bottom:0" aria-label="Навигация"><a href="/">Главная</a> / <a href="/blog/">Блог</a></nav>
   <h1>${esc(a.h1)}</h1>
   <div class="meta"><time datetime="${a.date}">${fmtDate(a.date)}</time><span>${a.minutes} мин чтения</span></div>
-  ${a.body.trim()}
+  ${a.cover ? `<img class="article-cover" src="/blog/${a.slug}/cover.jpg" alt="${esc(`${a.cover.says[0]} — ${a.cover.says[1]}`)}" width="1200" height="630" fetchpriority="high">` : ""}
+  ${withFigures(a.body.trim())}
   <ul class="tags" aria-label="Темы">${a.tags.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
   <aside class="cta-box">
     <h2>Потренируйтесь на виртуальном пациенте</h2>
