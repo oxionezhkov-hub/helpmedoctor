@@ -2,9 +2,10 @@
 // Telegram-бот: разбор апдейтов и отрисовка ответов.
 // Вся логика и данные — в UserDO (общие с сайтом), здесь только интерфейс.
 // =====================================================
-import { adminIds, PHYSICAL_EXAMPLES, TEST_TYPES } from "../config.js";
+import { adminIds, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
+import * as G from "../lib/game.js";
 import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
-import { appBtn, btn, tg } from "../lib/telegram.js";
+import { appBtn, btn, tg, urlBtn } from "../lib/telegram.js";
 import * as R from "./render.js";
 
 /**
@@ -186,10 +187,14 @@ async function onVoice(ctx, msg) {
 async function onStart(ctx, payload) {
   const { user, bot, uid, env, from } = ctx;
   if (payload.startsWith("login_")) {
-    const ok = await hubStub(env).confirmLogin(payload.slice(6), uid);
+    const code = payload.slice(6);
+    const ok = await hubStub(env).confirmLogin(code, uid);
+    const site = `${(env.PUBLIC_URL || "").replace(/\/$/, "")}${code.startsWith("adm-") ? "/admin" : "/app"}`;
     return bot.send(uid, ok
-      ? "✅ <b>Вход подтверждён.</b>\n\nВернитесь в браузер — сайт откроется сам через пару секунд."
-      : "⏰ Ссылка для входа устарела. Обновите страницу сайта и нажмите «Войти через Telegram» ещё раз.");
+      ? "✅ <b>Вход подтверждён.</b>\n\nВернитесь в браузер — сайт уже открыт и войдёт сам через пару секунд. Кнопка ниже откроет его, если вкладка потерялась."
+      : "⏰ Ссылка для входа устарела. Обновите страницу сайта и нажмите «Войти через Telegram» ещё раз.",
+    // Telegram принимает в кнопке только полноценный адрес сайта
+    ok && /^https?:\/\/[^/]+\.[^/]+/.test(site) ? [[urlBtn("↩️ Вернуться на сайт", site)]] : undefined);
   }
   await user.touch({ username: from.username });
   const { profile, waiting } = await user.waitingSummary();
@@ -263,13 +268,21 @@ async function onPendingInput(ctx, st, text) {
   const pending = st.bot.pending;
   const patId = st.active_patient_id;
   await user.setBotPending(null);
+  if (pending === "ob_prof") return onboardingCustomProfession(ctx, text);
+  if (pending === "ob_int") {
+    await user.setBotPending(st.bot); // отметки разделов не теряем
+    return bot.send(uid, "Отметьте разделы кнопками в сообщении выше и нажмите «Готово →».");
+  }
+  if (pending === "ob_ab") {
+    await user.saveOnboardingAbout(text);
+    return bot.send(uid, "🙏 Спасибо! Пациент уже на подходе.");
+  }
+  // Старая анкета (у тех, кто начал её до обновления)
   if (pending === "ob_about") {
     await user.updateProfile({ about: text });
-    await user.setBotPending({ pending: "ob_exp" });
-    const m = R.onboardingExpectations();
-    return bot.send(uid, m.text, m.kb);
+    return finishOnboardingLegacy(ctx, {});
   }
-  if (pending === "ob_exp") return finishOnboarding(ctx, { expectations: text });
+  if (pending === "ob_exp") return finishOnboardingLegacy(ctx, { expectations: text });
   if (pending === "fb_text") {
     await user.saveFeedback({ text }, "bot");
     return bot.send(uid, "🙏 Спасибо за отзыв! Мы читаем каждый.", R.kbMain(ctx.env));
@@ -350,22 +363,7 @@ async function onCallback(ctx, cb) {
   if (data.startsWith("qz_")) return startQuiz(ctx, data.slice(3));
 
   // Анкета нового пользователя
-  if (data.startsWith("ob_")) {
-    await bot.editKeyboard(uid, mid, []);
-    if (data.startsWith("ob_lvl_")) {
-      const level = data.slice(7);
-      await user.updateProfile({ level });
-      await user.setBotPending({ pending: "ob_about" });
-      const m = R.onboardingAbout(level);
-      return bot.send(uid, m.text, m.kb);
-    }
-    if (data === "ob_next") {
-      await user.setBotPending({ pending: "ob_exp" });
-      const m = R.onboardingExpectations();
-      return bot.send(uid, m.text, m.kb);
-    }
-    return finishOnboarding(ctx, {}); // ob_skip, ob_done
-  }
+  if (data.startsWith("ob_")) return onboardingCallback(ctx, data, mid);
 
   // Отзыв
   if (data === "fb") return askFeedback(ctx);
@@ -451,7 +449,7 @@ async function onCallback(ctx, cb) {
 // ---------------------------------------------------
 // Анкета и отзывы
 // ---------------------------------------------------
-const SOFT_PENDING = ["ob_about", "ob_exp", "fb_text"];
+const SOFT_PENDING = ["ob_about", "ob_exp", "ob_prof", "ob_int", "ob_ab", "fb_text"];
 
 /** Анкету и отзыв можно бросить на полпути — тогда следующий текст уйдёт пациенту, а не в анкету */
 async function clearSoftPending(ctx) {
@@ -459,11 +457,116 @@ async function clearSoftPending(ctx) {
   if (SOFT_PENDING.includes(st.bot?.pending)) await ctx.user.setBotPending(null);
 }
 
-async function finishOnboarding(ctx, patch) {
+// Анкета: роль → специальность → разделы → сложность → профиль и сразу первый пациент
+async function onboardingCallback(ctx, data, mid) {
+  const { user, bot, uid, env } = ctx;
+  const st = await user.state();
+
+  // Отметка раздела: меняем только клавиатуру этого сообщения
+  if (/^ob_in_\d+$/.test(data)) {
+    const { opts, sel } = await interestsState(ctx, st);
+    const i = Number(data.slice(6));
+    if (i >= opts.length) return;
+    const next = sel.includes(i) ? sel.filter((x) => x !== i) : [...sel, i];
+    await user.setBotPending({ pending: "ob_int", opts, sel: next });
+    const profile = await user.profile();
+    return bot.editKeyboard(uid, mid, R.onboardingInterests(profile.profession, opts, next).kb);
+  }
+
+  await bot.editKeyboard(uid, mid, []);
+  if (data.startsWith("ob_lvl_")) {
+    await user.updateProfile({ level: data.slice(7) });
+    const m = R.onboardingProfession();
+    return bot.send(uid, m.text, m.kb);
+  }
+  if (data === "ob_pr_other") {
+    await user.setBotPending({ pending: "ob_prof" });
+    const m = R.onboardingProfessionAsk();
+    return bot.send(uid, m.text, m.kb);
+  }
+  if (data === "ob_pr_list") {
+    await user.setBotPending(null);
+    const m = R.onboardingProfession();
+    return bot.send(uid, m.text, m.kb);
+  }
+  if (data.startsWith("ob_pr_")) {
+    const profession = R.ONBOARDING_PROFESSIONS[Number(data.slice(6))] || R.ONBOARDING_PROFESSIONS[0];
+    return askInterests(ctx, profession, SPECIALIZATIONS[profession]);
+  }
+  if (data === "ob_in_all" || data === "ob_in_ok") {
+    const { opts, sel } = await interestsState(ctx, st);
+    const specs = data === "ob_in_ok" && sel.length ? sel.map((i) => opts[i]).filter(Boolean) : opts;
+    await user.setBotPending(null);
+    const profile = await user.updateProfile({ specializations: specs });
+    const m = R.onboardingDifficulty(G.levelMeta(profile.level).complexity);
+    return bot.send(uid, m.text, m.kb);
+  }
+  if (data.startsWith("ob_df_")) return finishOnboarding(ctx, data.slice(6));
+  if (data === "ob_ab_skip") {
+    await user.setBotPending(null);
+    return;
+  }
+  if (data === "ob_skip") {
+    await user.setBotPending(null);
+    await user.updateProfile({ onboarding_done: true, skipped: true });
+    const m = R.onboardingSkipped(env);
+    return bot.send(uid, m.text, m.kb);
+  }
+  return finishOnboardingLegacy(ctx, {}); // ob_next, ob_done — кнопки старой анкеты
+}
+
+async function askInterests(ctx, profession, options) {
+  const { user, bot, uid } = ctx;
+  const opts = (options?.length ? options : [profession.toLowerCase()]).slice(0, 12);
+  await user.updateProfile({ profession });
+  await user.setBotPending({ pending: "ob_int", opts, sel: [] });
+  const m = R.onboardingInterests(profession, opts, []);
+  return bot.send(uid, m.text, m.kb);
+}
+
+/** Выбор разделов: из состояния, а если его сбросили — заново по специальности из профиля */
+async function interestsState(ctx, st) {
+  if (st.bot?.pending === "ob_int" && Array.isArray(st.bot.opts)) return { opts: st.bot.opts, sel: st.bot.sel || [] };
+  const profile = await ctx.user.profile();
+  const opts = (await ctx.user.suggestSections(profile.profession)) || [];
+  return { opts: opts.length ? opts : profile.specializations || [], sel: [] };
+}
+
+async function onboardingCustomProfession(ctx, text) {
+  const profession = text.trim().replace(/\s+/g, " ").slice(0, 40);
+  if (profession.length < 3) {
+    await ctx.user.setBotPending({ pending: "ob_prof" });
+    return ctx.bot.send(ctx.uid, "Напишите специальность словом, например: <i>эндокринолог</i>.");
+  }
+  const title = profession[0].toUpperCase() + profession.slice(1);
+  await ctx.bot.typing(ctx.uid);
+  const options = await ctx.user.suggestSections(title).catch(() => []);
+  return askInterests(ctx, title, options);
+}
+
+async function finishOnboarding(ctx, difficulty) {
   const { user, bot, uid, env } = ctx;
   await user.setBotPending(null);
-  const profile = await user.updateProfile({ ...patch, onboarding_done: true });
+  const profile = await user.updateProfile({ difficulty, onboarding_done: true });
   const m = R.onboardingDone(env, profile);
+  await bot.send(uid, m.text, m.kb);
+  // Первый пациент — сразу, по выбранной специальности, разделам и сложности
+  try {
+    await newPatient(ctx);
+  } catch (e) {
+    await bot.send(uid, e.message || "Не получилось подобрать пациента — нажмите «Новый пациент».", [[btn("➕ Новый пациент", "new")]]);
+    return;
+  }
+  await user.setBotPending({ pending: "ob_ab" });
+  const a = R.onboardingAboutAsk();
+  return bot.send(uid, a.text, a.kb);
+}
+
+async function finishOnboardingLegacy(ctx, patch) {
+  const { user, bot, uid, env } = ctx;
+  await user.setBotPending(null);
+  await user.updateProfile({ ...patch, onboarding_done: true });
+  const m = R.onboardingSkipped(env);
   return bot.send(uid, m.text, m.kb);
 }
 

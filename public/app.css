@@ -470,3 +470,10 @@ button.chip:active { transform: scale(.97); }
 .rate.on .i { color: var(--warn); fill: var(--warn); }
 
 .onb { border: 1.5px solid var(--accent); }
+
+/* Анкета нового пользователя */
+.onb-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; font: inherit; color: inherit; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface, transparent); cursor: pointer; }
+.onb-opt.on { border-color: var(--accent); background: var(--accent-soft); }
+.onb-dots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.onb-dots i { height: 4px; border-radius: 2px; background: var(--border); }
+.onb-dots i.on { background: var(--accent); }

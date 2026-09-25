@@ -3,7 +3,7 @@
 // Telegram-бот + веб-приложение (/app) на общих данных (Durable Objects)
 // =====================================================
 import { PLANS } from "./config.js";
-import { bearer, createSession, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
+import { bearer, createSession, loginLinks, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
 import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
 import { createPayment, fetchPayment, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
@@ -118,7 +118,7 @@ async function api(request, env, url) {
   if (path === "/auth/login" && method === "POST") {
     const code = newLoginCode();
     await hubStub(env).createLogin(code);
-    return json({ code, url: `https://t.me/${env.BOT_USERNAME}?start=login_${code}` });
+    return json({ code, ...loginLinks(env, code) });
   }
   if (path === "/auth/poll" && method === "GET") {
     const code = url.searchParams.get("code") || "";

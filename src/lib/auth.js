@@ -89,6 +89,15 @@ export async function verifyInitData(env, initData, maxAgeSec = 7 * 86400) {
 }
 
 // ---------- Вход по ссылке через бота ----------
+/** Ссылки на вход через бота: tg:// открывает приложение Telegram сразу, без новой вкладки; t.me — запасной вариант */
+export function loginLinks(env, code) {
+  const start = `login_${code}`;
+  return {
+    url: `https://t.me/${env.BOT_USERNAME}?start=${start}`,
+    tg: `tg://resolve?domain=${env.BOT_USERNAME}&start=${start}`,
+  };
+}
+
 export function newLoginCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(18));
   return b64url(bytes).replace(/[-_]/g, "x");

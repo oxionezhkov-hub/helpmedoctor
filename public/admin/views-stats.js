@@ -320,7 +320,7 @@ const ERR = { ai_error: "Сбой ИИ у пользователя", patient_fai
 
 function cfBlock(cf) {
   if (!S.info.cf_configured) {
-    return html`<div class="callout warn small">Доступ к API Cloudflare не настроен. Чтобы видеть точные цифры из биллинга: в Cloudflare → My Profile → API Tokens создайте токен с правом <b>Account Analytics: Read</b> и добавьте в GitHub → Settings → Secrets → Actions секрет <span class="kbd">CF_ANALYTICS_TOKEN</span>. ID аккаунта уже есть в секрете <span class="kbd">CLOUDFLARE_ACCOUNT_ID</span>. После следующего деплоя блок заработает.</div>`;
+    return html`<div class="callout warn small">Доступ к API Cloudflare не настроен. Нужен токен Cloudflare с правом <b>Account Analytics: Read</b>. По умолчанию используется деплойный <span class="kbd">CLOUDFLARE_API_TOKEN</span> — проверьте, что у него есть это право, и перезапустите деплой.</div>`;
   }
   if (!cf) return html`<p class="small muted">Нажмите «Загрузить из Cloudflare», чтобы получить точный расход за выбранный период.</p>`;
   if (cf.error) return html`<div class="callout warn small">${cf.error}</div>`;

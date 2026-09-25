@@ -61,20 +61,32 @@ await waitFor(() => sent(U).some((m) => m.text.includes("Добро пожало
 step("бот: /start регистрирует нового пользователя и начинает анкету");
 
 await press(U, "ob_lvl_студент");
-await waitFor(() => sent(U).some((m) => m.text.includes("На каком вы курсе")), "onboarding q2");
-await text(U, "4 курс, Сеченовский");
-await waitFor(() => sent(U).some((m) => m.text.includes("Чего вы ждёте")), "onboarding q3");
-await text(U, "Хочу научиться ставить диагноз");
-await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо!") && m.text.includes("Студент")), "onboarding done");
-await waitFor(() => sent("1326867567").some((m) => m.text.includes("Анкета") && m.text.includes("4 курс")), "admin onboarding");
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета") && m.text.includes("4 курс")), "second admin onboarding");
-step("бот: анкета (кто вы, где учитесь, ожидания) сохраняется, оба админа получают ответы");
+await waitFor(() => sent(U).some((m) => m.text.includes("2/4") && m.text.includes("специальность")), "onboarding q2");
+await press(U, "ob_pr_1"); // Терапевт
+const q3 = await waitFor(() => sent(U).find((m) => m.text.includes("3/4") && m.text.includes("Терапевт")), "onboarding q3");
+assert.ok(q3.reply_markup.inline_keyboard.flat().some((b) => b.text.includes("гастроэнтерология")));
+await press(U, "ob_in_0", 55);
+await text(U, "гастро");
+await waitFor(() => sent(U).some((m) => m.text.includes("Отметьте разделы кнопками")), "interests hint");
+await waitFor(() => tgCalls().some((c) => c.method === "editMessageReplyMarkup" && JSON.stringify(c.reply_markup || {}).includes("✅ гастроэнтерология")), "interest toggled");
+await press(U, "ob_in_ok"); // отметка «гастроэнтерология» пережила текстовое сообщение
+const q4 = await waitFor(() => sent(U).find((m) => m.text.includes("4/4") && m.text.includes("сложность")), "onboarding q4");
+assert.ok(q4.reply_markup.inline_keyboard.flat().some((b) => b.text.includes("Лёгкая ⭐")), "для студента рекомендуем лёгкую");
+await press(U, "ob_df_medium");
+await waitFor(() => sent(U).some((m) => m.text.includes("Профиль готов") && m.text.includes("гастроэнтерология") && m.text.includes("средняя")), "onboarding done");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("Анкета") && m.text.includes("Терапевт") && m.text.includes("Сложность: Средняя")), "admin onboarding");
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета") && m.text.includes("гастроэнтерология")), "second admin onboarding");
+await waitFor(() => sent(U).some((m) => m.text.includes("Пока пациент готовится")), "about ask");
+await text(U, "4 курс, Сеченовский, хочу научиться ставить диагноз");
+await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо! Пациент уже на подходе")), "about saved");
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета дополнена") && m.text.includes("4 курс")), "admin about");
+step("бот: анкета (роль, специальность, разделы, сложность, о себе) → профиль, оба админа получают ответы");
 
-await press(U, "new");
+// Первый пациент приходит сам — по выбранному профилю, без нажатия «Новый пациент»
 const ready = await waitFor(() => sent(U).find((m) => m.text.includes("Новый пациент готов")), "new patient");
 const patId = ready.reply_markup.inline_keyboard[0][0].callback_data.slice(3);
 assert.match(patId, /^pat_777_/);
-step("бот: пациент создаётся через очередь (alarm) и приходит сообщением");
+step("бот: первый пациент создаётся сразу после анкеты (очередь, alarm) и приходит сообщением");
 
 await press(U, `sp_${patId}`);
 await waitFor(() => sent(U).some((m) => m.text.includes("Мирон") && m.text.includes("живот крутит")), "opening phrase");
@@ -83,6 +95,9 @@ step("бот: приём начат, пациент говорит первую 
 // Одновременно открываем сайт — должен видеть тот же приём
 const webToken = await login(U);
 let me = (await api(webToken, "GET", "/me")).data;
+assert.equal(me.profile.difficulty, "medium");
+assert.equal(me.profile.complexity, "medium");
+assert.deepEqual(me.profile.specializations, ["гастроэнтерология"]);
 assert.equal(me.active_patient_id, patId);
 assert.ok(me.patients.find((p) => p.id === patId).in_consultation);
 step("сайт: видит тот же активный приём (синхронизация)");
@@ -222,6 +237,7 @@ step("отказ от пациента: пациент исчезает из о�
 r = await api(null, "POST", "/auth/login");
 const code = r.data.code;
 assert.ok(r.data.url.includes(`start=login_${code}`));
+assert.equal(r.data.tg, `tg://resolve?domain=helpmedoctor_aibot&start=login_${code}`, "ссылка сразу в приложение Telegram");
 assert.equal((await api(null, "GET", `/auth/poll?code=${code}`)).data.status, "pending");
 await text(U, `/start login_${code}`);
 await waitFor(() => sent(U).some((m) => m.text.includes("Вход подтверждён")), "login confirm");
@@ -278,6 +294,17 @@ assert.equal((await adm(admTok, "POST", "/q", { op: "set_setting", args: { k: "x
 const meAdm = (await adm(admTok, "GET", "/me")).data;
 assert.equal(meAdm.me.name, "Олег");
 assert.equal(meAdm.admins.length, 2);
+const al = await adm(null, "POST", "/auth/login");
+assert.ok(al.data.code.startsWith("adm-") && al.data.tg.startsWith("tg://resolve?domain="));
+await text(U, `/start login_${al.data.code}`);
+await waitFor(() => sent(U).filter((m) => m.text.includes("Вход подтверждён")).length >= 2, "admin login confirm by non-admin");
+assert.equal((await adm(null, "GET", `/auth/poll?code=${al.data.code}`)).status, 403, "не-админ не входит в админку через бота");
+const al2 = await adm(null, "POST", "/auth/login");
+await text("1062804986", `/start login_${al2.data.code}`);
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Вход подтверждён")), "admin login confirm");
+const ap = await adm(null, "GET", `/auth/poll?code=${al2.data.code}`);
+assert.equal(ap.data.status, "ok");
+assert.equal((await adm(ap.data.token, "GET", "/me")).data.me.name, "Саша");
 step("админка: вход только для Олега и Саши, внутренние операции закрыты");
 
 const nowTs = Date.now(), per = { from: nowTs - 30 * 86400000, to: nowTs + 60000 };
@@ -360,6 +387,10 @@ assert.ok(tfull.history.length >= 1);
 await text("1062804986", "/idea Добавить тёмную тему в тест");
 await waitFor(() => sent("1062804986").some((m) => m.text.includes("записана в бэклог")), "idea");
 const tasksAll = await aq("tasks", {});
+const imported = tasksAll.rows.filter((x) => x.labels.includes("созвон 24.09"));
+assert.equal(imported.length, 19, "задачи созвона 24.09 импортированы");
+assert.ok(imported.some((x) => x.assignee === "1062804986" && x.title.includes("паспортные данные")));
+assert.equal((await aq("tasks", {})).rows.filter((x) => x.labels.includes("созвон 24.09")).length, 19, "импорт не дублируется");
 assert.ok(tasksAll.rows.some((x) => x.title.includes("тёмную тему") && x.status === "idea"));
 await aq("task_delete", { id: t.id });
 step("админка: задачи — создание, назначение с уведомлением, комментарии, история, /idea из бота");

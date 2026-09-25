@@ -7,14 +7,14 @@
 import { DurableObject } from "cloudflare:workers";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
-  DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
+  DIFFICULTIES, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
   MAX_ACTIVE_PATIENTS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES,
 } from "../config.js";
 import { SYSTEM_TEXTS } from "../lib/analytics.js";
 import { aiJson, aiText, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
 import * as G from "../lib/game.js";
-import { clampStr, daysBetween, declDays, esc, mskDate, pick, UserError, userError } from "../lib/util.js";
+import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import * as R from "../bot/render.js";
 
@@ -170,7 +170,7 @@ export class UserDO extends DurableObject {
       patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => patientSummary(p)),
       quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map(quizSummary),
       plans: PLANS,
-      config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, tests: TEST_TYPES, exams: PHYSICAL_EXAMPLES, max_active: MAX_ACTIVE_PATIENTS },
+      config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, difficulties: DIFFICULTIES, tests: TEST_TYPES, exams: PHYSICAL_EXAMPLES, max_active: MAX_ACTIVE_PATIENTS },
     };
   }
 
@@ -196,24 +196,33 @@ export class UserDO extends DurableObject {
       const specs = patch.specializations.map((s) => clampStr(s, 60)).filter(Boolean).slice(0, 12);
       if (specs.length) prof.specializations = [...new Set(specs)];
     }
+    if (patch.difficulty !== undefined && (patch.difficulty === "" || DIFFICULTIES.some((d) => d.key === patch.difficulty))) prof.difficulty = patch.difficulty;
     if (patch.notifications !== undefined) prof.notifications = !!patch.notifications;
-    if (patch.about !== undefined) prof.about = clampStr(patch.about, 200);
+    if (patch.about !== undefined) prof.about = clampStr(patch.about, 600);
     if (patch.expectations !== undefined) prof.expectations = clampStr(patch.expectations, 600);
     const finishedOnboarding = patch.onboarding_done === true && !prof.onboarding_done;
     if (finishedOnboarding) prof.onboarding_done = true;
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile");
     const fields = Object.keys(patch).filter((k) => k !== "onboarding_done");
-    if (finishedOnboarding) await this.track("onboarding", { answered: !!(prof.about || prof.expectations), level: prof.level });
-    else if (fields.length) await this.track("profile_update", { fields, profession: prof.profession, notifications: prof.notifications !== false });
-    if (finishedOnboarding && (prof.about || prof.expectations)) {
-      await this.hub().notifyAdmin(
-        `📝 Анкета: ${prof.name}${prof.username ? " @" + prof.username : ""} (${prof.uid})\n` +
-        `Кто: ${G.levelMeta(prof.level).label}${prof.about ? ` — ${prof.about}` : ""}\n` +
-        `Ожидания: ${prof.expectations || "—"}`,
-        "onboarding",
-      );
-    }
+    if (finishedOnboarding) {
+      await this.track("onboarding", {
+        answered: !!(prof.about || prof.expectations), level: prof.level, profession: prof.profession,
+        specs: prof.specializations, difficulty: G.complexityFor(prof), skipped: !!patch.skipped,
+      });
+      if (!patch.skipped) await this.hub().notifyAdmin(onboardingNote(prof, "📝 Анкета"), "onboarding");
+    } else if (fields.length) await this.track("profile_update", { fields, profession: prof.profession, notifications: prof.notifications !== false });
+    return publicProfile(prof);
+  }
+
+  /** Ответ «о себе» после анкеты (в боте его спрашивают, пока готовится первый пациент) */
+  async saveOnboardingAbout(text) {
+    const prof = await this.profile();
+    prof.about = clampStr(text, 600);
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track("onboarding_about", { len: prof.about.length });
+    await this.hub().notifyAdmin(onboardingNote(prof, "📝 Анкета дополнена"), "onboarding");
     return publicProfile(prof);
   }
 
@@ -299,7 +308,7 @@ export class UserDO extends DurableObject {
     for (const p of pats.values()) if (p?.true_diagnosis) used.push(p.true_diagnosis);
 
     const p = P.patientPrompt({
-      spec, profession: prof0.profession, complexity: G.levelMeta(prof0.level).complexity, usedDiagnoses: used,
+      spec, profession: prof0.profession, complexity: G.complexityFor(prof0), usedDiagnoses: used,
     });
     const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: 0.95, kind: "patient", uid: prof0.uid });
     validatePatient(data);
@@ -1284,7 +1293,7 @@ function mergeList(fresh = [], old = [], max) {
 function normalizeFindings(f) {
   if (!f || typeof f !== "object") return null;
   const out = {};
-  for (const k of ["exam", "lab", "imaging", "ecg", "pathology"]) out[k] = clampStr(typeof f[k] === "string" ? f[k] : "", 500);
+  for (const k of ["exam", "lab", "imaging", "endoscopy", "ecg", "pathology"]) out[k] = clampStr(typeof f[k] === "string" ? f[k] : "", 500);
   return out;
 }
 
@@ -1366,6 +1375,18 @@ function normalizeQuiz(t) {
   };
 }
 
+/** Текст уведомления админам об анкете (HTML) */
+function onboardingNote(prof, title) {
+  const e = (x) => esc(String(x || ""));
+  return `${title}: ${e(prof.name)}${prof.username ? " @" + e(prof.username) : ""} (${prof.uid})\n` +
+    `Кто: ${e(G.levelMeta(prof.level).label)}\n` +
+    `Специальность: ${e(prof.profession)}\n` +
+    `Разделы: ${e((prof.specializations || []).join(", "))}\n` +
+    `Сложность: ${e(G.difficultyMeta(G.complexityFor(prof)).label)}` +
+    (prof.about ? `\nО себе: ${e(prof.about)}` : "") +
+    (prof.expectations ? `\nОжидания: ${e(prof.expectations)}` : "");
+}
+
 export function publicProfile(prof) {
   const lvl = G.levelInfo(prof.xp || 0);
   const { payments, daily_patients, ...rest } = prof;
@@ -1373,6 +1394,7 @@ export function publicProfile(prof) {
     ...rest,
     level_info: lvl,
     level_label: G.levelMeta(prof.level).label,
+    complexity: G.complexityFor(prof),
     has_sub: G.hasActiveSub(prof),
     today_patients: G.todayPatientsCount(prof),
     can_accept: G.canAcceptPatient(prof),
@@ -1399,11 +1421,12 @@ export function patientSummary(p) {
 export function publicPatient(p) {
   const closed = p.status === "closed";
   const { full_history, key_findings, findings, personality, last_facts, summary, ...rest } = p;
-  return {
+  // Старые пациенты могли сохраниться с иероглифами от ИИ — чистим при показе
+  return stripForeignDeep({
     ...rest,
     true_diagnosis: closed ? p.true_diagnosis : null,
     current: p.current,
-  };
+  });
 }
 
 function quizSummary(q) {

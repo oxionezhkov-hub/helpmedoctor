@@ -1,6 +1,6 @@
 // Игровая механика: уровни, опыт, стрики, задания дня, лимиты
 import {
-  DAILY_TASKS, DOCTOR_LEVELS, FREE_DAILY_LIMIT, MAX_LEVEL, SPECIALIZATIONS,
+  DAILY_TASKS, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, MAX_LEVEL, SPECIALIZATIONS,
 } from "../config.js";
 import { mskDate, mskMidnight, daysBetween, pick } from "./util.js";
 
@@ -37,7 +37,8 @@ export function newProfile(uid, { name, username } = {}) {
     level: "студент",
     profession: "Терапевт",
     specializations: [...SPECIALIZATIONS["Терапевт"]],
-    onboarding_done: false, // анкета: кто вы, где учитесь/работаете, чего ждёте
+    difficulty: "", // пусто — сложность по роли
+    onboarding_done: false, // анкета: роль, специальность, разделы, сложность → первый пациент
     about: "",
     expectations: "",
     review_asked: false,
@@ -77,6 +78,15 @@ export function normalizeProfile(p) {
   }
   if (!DOCTOR_LEVELS.some((l) => l.key === prof.level)) prof.level = "студент";
   return prof;
+}
+
+/** Сложность пациентов: выбранная пользователем или по его роли */
+export function complexityFor(prof) {
+  return DIFFICULTIES.some((d) => d.key === prof.difficulty) ? prof.difficulty : levelMeta(prof.level).complexity;
+}
+
+export function difficultyMeta(key) {
+  return DIFFICULTIES.find((d) => d.key === key) || DIFFICULTIES[1];
 }
 
 export function levelMeta(levelKey) {

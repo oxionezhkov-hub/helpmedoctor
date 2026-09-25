@@ -2,6 +2,7 @@
 // Все вызовы идут через binding env.AI — без внешних ключей.
 import { AI_MODEL, AI_NEURONS, WHISPER_MODEL } from "../config.js";
 import { mockAi } from "./mock-ai.js";
+import { stripForeignScripts } from "./util.js";
 
 const JSON_SYSTEM = "Отвечай ТОЛЬКО валидным JSON без markdown, без ``` и без пояснений. Все тексты внутри JSON — на русском языке.";
 
@@ -57,7 +58,8 @@ export async function transcribe(env, base64Audio, { uid = "" } = {}) {
   const estimated = !(sec > 0);
   if (estimated) sec = Math.max(1, Math.round((base64Audio.length * 0.75) / 4000));
   await logUsage(env, { uid, kind: "voice", model: WHISPER_MODEL, audio_sec: sec, ms: Date.now() - t0, ok: 1, estimated: estimated ? 1 : 0 });
-  return String(result?.text ?? "").trim();
+  // Whisper на шуме иногда «слышит» китайский — чистим так же, как ответы модели
+  return cleanText(result?.text ?? "");
 }
 
 /** Нейроны за запрос по тарифу модели (цены Cloudflare в нейронах) */
@@ -133,11 +135,9 @@ export function parseJsonLoose(text) {
   return JSON.parse(clean.slice(start, end + 1));
 }
 
-// Llama изредка вставляет в русский текст китайские/японские/корейские иероглифы («можем一起 работать»)
-const CJK = /[\u2e80-\u2fdf\u3000-\u30ff\u3100-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]+/g;
-
+// Иероглифы и другие чужие письменности в ответах модели — см. stripForeignScripts
 export function cleanText(text) {
-  return String(text).replace(CJK, " ").replace(/[ \t]{2,}/g, " ").replace(/ +([,.!?;:])/g, "$1").trim();
+  return stripForeignScripts(text).trim();
 }
 
 function cleanDeep(v) {

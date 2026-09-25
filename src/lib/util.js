@@ -104,3 +104,27 @@ export function toTelegramHtml(s) {
     .replace(/(^|[\s(«"])_([^_\n]+)_(?=[\s).,!?:;»"]|$)/gm, "$1<i>$2</i>")
     .replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, (m, t, u) => `<a href="${u.replace(/"/g, "&quot;")}">${t}</a>`);
 }
+
+// Llama изредка вставляет в русский текст символы других письменностей: китайские иероглифы («можем一起 работать»),
+// японскую, корейскую, тайскую вязь и т. п. Оставляем кириллицу, латиницу (термины, препараты) и греческий (α, β).
+const FOREIGN_PUNCT = /[\u3000-\u303f\uff00-\uffef\u2e80-\u2fdf]+/g;
+const LETTER = /[\p{L}\p{M}]/u;
+const ALLOWED_SCRIPT = /[\p{Script=Cyrillic}\p{Script=Latin}\p{Script=Greek}\p{Script=Common}\p{Script=Inherited}]/u;
+
+export function stripForeignScripts(text) {
+  const s = String(text ?? "");
+  // Быстрый путь: в обычном тексте нет символов за пределами базовых блоков
+  if (!/[^\u0000-\u04ff\u2000-\u27ff]/.test(s)) return s;
+  const PUNCT = { "，": ", ", "、": ", ", "。": ". ", "：": ": ", "；": "; ", "！": "! ", "？": "? ", "（": " (", "）": ") " };
+  let out = "";
+  for (const ch of s.replace(/[，、。：；！？（）]/g, (c) => PUNCT[c]).replace(FOREIGN_PUNCT, " ")) out += LETTER.test(ch) && !ALLOWED_SCRIPT.test(ch) ? " " : ch;
+  return out.replace(/[ \t]{2,}/g, " ").replace(/ +([,.!?;:])/g, "$1");
+}
+
+/** То же для вложенных объектов (данные пациента, ответы ИИ в JSON) */
+export function stripForeignDeep(v) {
+  if (typeof v === "string") return stripForeignScripts(v);
+  if (Array.isArray(v)) return v.map(stripForeignDeep);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, stripForeignDeep(x)]));
+  return v;
+}

@@ -621,7 +621,7 @@ async function surveys(el, ctx, head) {
 // Задачи
 // =====================================================
 const STATUSES = [["idea", "Идея"], ["backlog", "Бэклог"], ["doing", "В работе"], ["review", "На проверке"], ["done", "Готово"], ["rejected", "Отклонено"]];
-const TYPES = [["idea", "Идея"], ["feature", "Фича"], ["bug", "Баг"], ["marketing", "Маркетинг"], ["content", "Контент"]];
+const TYPES = [["idea", "Идея"], ["feature", "Фича"], ["bug", "Баг"], ["marketing", "Маркетинг"], ["content", "Контент"], ["org", "Организационное"]];
 const PRIOS = [["urgent", "Срочно"], ["high", "Высокий"], ["medium", "Средний"], ["low", "Низкий"]];
 const TF = { view: "board", assignee: "", type: "", q: "" };
 const label = (list, k) => list.find(([v]) => v === k)?.[1] || k || "—";
@@ -847,7 +847,7 @@ export async function viewSettings(el, ctx) {
       <div class="stack-sm">${Object.entries(n.kinds).map(([k, l]) => html`<label class="switch"><input type="checkbox" data-nk="${k}" ${n.prefs[k] !== false ? "checked" : ""}><span class="track"></span><span>${l}</span></label>`)}</div>
       <button class="btn mt" id="n-save">Сохранить</button></div>
     <div class="card"><div class="card-head"><h2>Расход ИИ из Cloudflare</h2><span class="badge ${S.info.cf_configured ? "ok" : "warn"}">${S.info.cf_configured ? "подключено" : "не настроено"}</span></div>
-      <p class="small">${S.info.cf_configured ? "Точные цифры подтягиваются в «Аналитика → Расход ИИ» кнопкой «Загрузить из Cloudflare»." : html`Нужен токен с правом <b>Account Analytics: Read</b>: Cloudflare → My Profile → API Tokens → Create Token. Добавьте его в GitHub → Settings → Secrets and variables → Actions как <span class="kbd">CF_ANALYTICS_TOKEN</span> и перезапустите деплой. Без токена админка считает расход сама по токенам каждого ответа модели.`}</p></div>
+      <p class="small">${S.info.cf_configured ? "Точные цифры подтягиваются в «Аналитика → Расход ИИ» кнопкой «Загрузить из Cloudflare»." : html`Нужен токен Cloudflare с правом <b>Account Analytics: Read</b>. По умолчанию используется деплойный <span class="kbd">CLOUDFLARE_API_TOKEN</span> — проверьте, что у него есть это право, и перезапустите деплой. Без доступа админка считает расход сама по токенам каждого ответа модели.`}</p></div>
     <div class="card"><div class="card-head"><h2>История данных</h2></div>
       <p class="small">События в реальном времени пишутся с момента запуска админки. Прошлое восстановлено из профилей пользователей: регистрации, пациенты, вопросы, обследования, приёмы, оценки, тесты, оплаты.</p>
       <p class="small muted mt">${bf ? (bf.done ? `Восстановлено: ${bf.processed} пользователей, ${fDT(bf.finished_at)}` : `Идёт восстановление: ${bf.processed} из ${bf.total}`) : "Ещё не запускалось"}</p>
