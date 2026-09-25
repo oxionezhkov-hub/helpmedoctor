@@ -6,7 +6,8 @@
   "compatibility_flags": ["nodejs_als"],
   "workers_dev": true,
   // Свой домен: зона helpmedoctor.ru должна быть добавлена в этот же аккаунт Cloudflare (NS у регистратора — Cloudflare).
-  // Старый адрес *.workers.dev продолжает работать как запасной.
+  // Российские провайдеры ограничивают сайты за Cloudflare (пропускают ~16 КБ на соединение),
+  // поэтому ссылки бота пока ведут на *.workers.dev (PUBLIC_URL), а домен ждёт прокси вне Cloudflare.
   "routes": [
     { "pattern": "helpmedoctor.ru", "custom_domain": true },
     { "pattern": "www.helpmedoctor.ru", "custom_domain": true }
@@ -44,7 +45,7 @@
 
   // Не секретные настройки. Секреты — через `wrangler secret put` (см. README)
   "vars": {
-    "PUBLIC_URL": "https://helpmedoctor.ru",
+    "PUBLIC_URL": "https://helpmedoctor.oxion-ezhkov.workers.dev",
     "BOT_USERNAME": "helpmedoctor_aibot",
     "ADMIN_ID": "1326867567,1062804986",
     "TOCHKA_MERCHANT": "200000000029805",
