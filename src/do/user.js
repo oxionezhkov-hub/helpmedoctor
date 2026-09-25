@@ -21,6 +21,7 @@ import * as R from "../bot/render.js";
 const PROFILE = "profile";
 const STATE = "state";
 const JOBS = "jobs";
+const TOMBSTONE = "merged_into";
 const patKey = (id) => `pat:${id}`;
 const quizKey = (patId) => `quiz:${patId}`;
 
@@ -44,6 +45,10 @@ export class UserDO extends DurableObject {
       throw new Error(`unknown method ${method}`);
     }
     try {
+      // Аккаунт склеен с Telegram: данные переехали, здесь только «надгробие» — ничего не создаём заново
+      if (method !== "absorb" && (await this.ctx.storage.get(TOMBSTONE))) {
+        throw new UserError("Аккаунт объединён с Telegram — обновите страницу", "merged");
+      }
       if (BLOCKED_METHODS.has(method)) {
         const prof = await this.ctx.storage.get(PROFILE);
         if (prof?.blocked) throw new UserError("Доступ к тренажёру ограничен. Если это ошибка — напишите в поддержку.", "blocked");
@@ -84,6 +89,93 @@ export class UserDO extends DurableObject {
       if (changed) await this.ctx.storage.put(PROFILE, prof);
     }
     return { profile: prof, isNew };
+  }
+
+  // ---------------------------------------------------
+  // Склейка аккаунтов: веб-аккаунт (Google/Яндекс) + Telegram
+  // ---------------------------------------------------
+  /** Все данные аккаунта для переноса в другой UserDO */
+  async exportData() {
+    const prof = await this.ctx.storage.get(PROFILE);
+    if (!prof) return null;
+    const jobs = (await this.ctx.storage.get(JOBS)) || [];
+    if (jobs.length || (prof.generating_patient && Date.now() - prof.generating_patient < 120000)) {
+      throw new UserError("Сейчас готовится пациент или разбор приёма — подождите минуту, привязка продолжится сама", "busy");
+    }
+    const entries = {};
+    for (const prefix of ["pat:", "quiz:"]) {
+      for (const [k, v] of await this.ctx.storage.list({ prefix })) entries[k] = v;
+    }
+    return { profile: prof, state: await this.state(), entries };
+  }
+
+  /**
+   * Принимает данные другого аккаунта. Пустой профиль (только что открыл бота) заменяется целиком,
+   * иначе прогресс складывается: приёмы, опыт, подписка и покупки не теряются.
+   */
+  async absorb(dump, uid) {
+    if (!dump?.profile) return { ok: true };
+    uid = String(uid);
+    const src = G.normalizeProfile(dump.profile);
+    let prof = await this.ctx.storage.get(PROFILE);
+    // Повторная склейка того же аккаунта (сбой после absorb) ничего не удваивает
+    if (prof?.merged_from?.includes(String(dump.profile.uid))) return { ok: true, repeated: true };
+    const empty = !prof || (!prof.active_patient_ids?.length && !prof.closed_patient_ids?.length && !prof.xp && !G.hasActiveSub(prof) && !prof.payments?.length);
+    if (empty) {
+      prof = { ...src, uid, username: prof?.username || src.username || "", ref: src.ref || prof?.ref || "", blocked: !!(src.blocked || prof?.blocked) };
+      await this.ctx.storage.put(STATE, dump.state || { active_patient_id: null, bot: null });
+    } else {
+      prof = G.normalizeProfile(prof);
+      const st = prof.stats;
+      const ss = src.stats;
+      const ratings = (st.ratings_count || 0) + (ss.ratings_count || 0);
+      st.avg_rating = ratings ? ((st.avg_rating || 0) * (st.ratings_count || 0) + (ss.avg_rating || 0) * (ss.ratings_count || 0)) / ratings : 0;
+      st.ratings_count = ratings;
+      for (const k of ["patients_total", "consultations_total", "quizzes_done"]) st[k] = (st[k] || 0) + (ss[k] || 0);
+      prof.xp = (prof.xp || 0) + (src.xp || 0);
+      prof.streak = Math.max(prof.streak || 0, src.streak || 0);
+      prof.active_patient_ids = [...prof.active_patient_ids, ...src.active_patient_ids];
+      prof.closed_patient_ids = [...prof.closed_patient_ids, ...src.closed_patient_ids];
+      prof.test_ids = [...prof.test_ids, ...src.test_ids];
+      prof.daily_patients = [...prof.daily_patients, ...src.daily_patients];
+      prof.patient_counter = (prof.patient_counter || 0) + (src.patient_counter || 0);
+      // Подписка: оплаченные дни веб-аккаунта добавляются к сроку Telegram-аккаунта
+      const now = Date.now();
+      if (src.sub_until === -1 || prof.sub_until === -1) prof.sub_until = -1;
+      else if ((src.sub_until || 0) > now) {
+        prof.sub_until = Math.max(prof.sub_until || 0, now) + (src.sub_until - now);
+        prof.sub_plan = prof.sub_plan || src.sub_plan;
+      }
+      prof.blocked = !!(prof.blocked || src.blocked);
+      prof.trial_used = !!(prof.trial_used || src.trial_used);
+      prof.patient_credits = (prof.patient_credits || 0) + (src.patient_credits || 0);
+      prof.streak_freezes = (prof.streak_freezes || 0) + (src.streak_freezes || 0);
+      prof.payments = [...(prof.payments || []), ...(src.payments || [])];
+      if (!prof.autopay && src.autopay) prof.autopay = src.autopay;
+      for (const k of ["strengths", "weaknesses", "recommendations"]) prof[k] = [...new Set([...prof[k], ...src[k]])].slice(0, 20);
+      if (!prof.onboarding_done && src.onboarding_done) {
+        Object.assign(prof, { onboarding_done: true, level: src.level, profession: src.profession, specializations: src.specializations, difficulty: src.difficulty });
+      }
+      prof.registered_at = Math.min(prof.registered_at || Date.now(), src.registered_at || Date.now());
+    }
+    // Пациенты и тесты: id содержат старый uid и уникальны, ключи не пересекаются
+    const entries = Object.entries(dump.entries || {}).map(([k, v]) => [k, k.startsWith("pat:") && v ? { ...v, doctor_uid: uid } : v]);
+    for (let i = 0; i < entries.length; i += 100) await this.ctx.storage.put(Object.fromEntries(entries.slice(i, i + 100)));
+    prof.merged_from = [...new Set([...(prof.merged_from || []), String(dump.profile.uid)])];
+    G.ensureDailyTask(prof);
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.track("account_merge", { from: dump.profile.uid, into_empty: empty });
+    this.broadcast("profile");
+    return { ok: true, into_empty: empty };
+  }
+
+  /** Аккаунт перенесён в другой: очищаем хранилище, открытые вкладки перезайдут */
+  async wipe(into) {
+    this.broadcast("merged");
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
+    await this.ctx.storage.put(TOMBSTONE, { into: String(into || ""), at: Date.now() });
+    return { ok: true };
   }
 
   async migrateFromKv(uid) {
@@ -463,6 +555,8 @@ export class UserDO extends DurableObject {
     const prof = await this.profile();
     if (!force && (prof.avatar || prof.avatar_off)) return prof.avatar || null;
     if (!force && prof.avatar_checked && Date.now() - prof.avatar_checked < 7 * 86400000) return null;
+    // Вошёл через Google/Яндекс без Telegram — фото из Telegram брать неоткуда
+    if (!/^\d+$/.test(String(prof.uid))) return null;
     prof.avatar_checked = Date.now();
     await this.ctx.storage.put(PROFILE, prof);
     const bot = tg(this.env, { log: false });
@@ -1377,6 +1471,7 @@ export class UserDO extends DurableObject {
   }
 
   async alarm() {
+    if (await this.ctx.storage.get(TOMBSTONE)) return;
     for (let guard = 0; guard < 20; guard++) {
       const jobs = (await this.ctx.storage.get(JOBS)) || [];
       const job = jobs[0];

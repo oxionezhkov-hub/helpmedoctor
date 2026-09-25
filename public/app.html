@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Help me, Doctor</title>
   <meta name="robots" content="noindex">
-  <link rel="canonical" href="https://helpmedoctor.ru/">
   <meta name="description" content="Тренажёр врача: ИИ-пациенты, обследования, диагноз и разбор от эксперта">
   <meta name="theme-color" content="#0f766e">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,6 +12,11 @@
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/app.css">
+  <script>
+    // Параметры входа (?login=…) забираем до Метрики и убираем из адреса — одноразовый код не должен попасть в аналитику
+    window.__hmdQs = location.search;
+    if (location.search) history.replaceState(null, "", location.pathname + location.hash);
+  </script>
   <script type="module" src="/app.js"></script>
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">

@@ -3,7 +3,8 @@
 // Telegram-бот + веб-приложение (/app) на общих данных (Durable Objects)
 // =====================================================
 import { PACKS, PLANS, TRIAL, productLabel } from "./config.js";
-import { bearer, createSession, loginLinks, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
+import { bearer, createSession, loginLinks, newLoginCode, randomToken, readSignedData, signData, verifyInitData, verifySession } from "./lib/auth.js";
+import { authorizeUrl, enabledProviders, fetchIdentity, isTelegramUid, newWebUid, PROVIDERS, redirectUri } from "./lib/oauth.js";
 import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
 import { createPayment, createSubscription, fetchPayment, isPaidStatus, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
@@ -42,7 +43,7 @@ export default {
       // Старые ссылки мини-приложения ведут в новое.
       // Адрес относительный: за прокси (helpmedoctor.ru → workers.dev) хост у воркера другой
       if (path.startsWith("/mini-app")) {
-        return new Response(null, { status: 302, headers: { Location: "/app" } });
+        return new Response(null, { status: 301, headers: { Location: "/app" } });
       }
       const canonicalHost = isCanonicalHost(request);
       if (path === "/robots.txt") return robotsTxt(canonicalHost);
@@ -102,7 +103,9 @@ async function paymentCallback(request, env) {
   });
   if (!pay) return new Response("retry", { status: 503 });
   if (!isPaidStatus(pay.status)) return new Response("OK");
-  const uid = known?.uid || pay.consumerId || (/uid(\d+)/.exec(pay.purpose) || [])[1];
+  let uid = known?.uid || pay.consumerId || (/uid(w?\d+)/.exec(pay.purpose) || [])[1];
+  // Оплата веб-аккаунта, который потом склеили с Telegram
+  if (uid && !isTelegramUid(uid)) uid = (await hub.aliasGet(uid)) || uid;
   const plan = known?.plan || planFromPurpose(pay.purpose);
   if (!uid || !(PLANS[plan] || PACKS[plan] || plan === TRIAL.key)) {
     console.error("payment without uid/plan", op, pay);
@@ -139,12 +142,14 @@ async function api(request, env, url) {
   }
   if (path === "/auth/login" && method === "POST") {
     const code = newLoginCode();
-    await hubStub(env).createLogin(code);
+    const { from = "" } = await readJson(request);
+    await hubStub(env).createLogin(code, { ref: String(from).replace(/[^\w-]/g, "").slice(0, 40) });
     return json({ code, ...loginLinks(env, code) });
   }
   if (path === "/auth/poll" && method === "GET") {
     const code = url.searchParams.get("code") || "";
-    const res = await hubStub(env).pollLogin(code);
+    // cn — nonce браузера, начавшего вход через Google/Яндекс (без него такой код не забрать)
+    const res = await hubStub(env).pollLogin(code, { owner: url.searchParams.get("cn") || null });
     if (res.status !== "ok") return json({ status: res.status });
     await userStub(env, res.uid).init(res.uid);
     return json({ status: "ok", token: await createSession(env, res.uid) });
@@ -169,17 +174,46 @@ async function api(request, env, url) {
     return new Response(value, { headers: { "Content-Type": metadata?.type || "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" } });
   }
   if (path === "/config" && method === "GET") {
-    return json({ bot_username: env.BOT_USERNAME });
+    return json({ bot_username: env.BOT_USERNAME, providers: enabledProviders(env) });
+  }
+  // Живые цифры для сайта (без личных данных), кэш 10 минут
+  if (path === "/public-stats" && method === "GET") {
+    const cache = typeof caches !== "undefined" ? caches.default : null;
+    const key = new Request("https://stats.cache/public/v1");
+    const hit = cache && (await cache.match(key));
+    if (hit) return hit;
+    const res = json(await hubStub(env).publicStats(), 200, { "Cache-Control": "public, max-age=600" });
+    if (cache) await cache.put(key, res.clone()).catch(() => {});
+    return res;
+  }
+
+  // --- Вход через Google / Яндекс ---
+  let om = path.match(/^\/auth\/oauth\/(\w+)\/callback$/);
+  if (om && method === "GET" && PROVIDERS[om[1]]) return oauthCallback(request, env, url, om[1]);
+  if (path === "/auth/oauth/start" && method === "POST") {
+    const { provider, mode = "login", from = "", cn = "" } = await readJson(request);
+    if (!enabledProviders(env).includes(provider)) return json({ error: "Этот способ входа сейчас недоступен" }, 400);
+    let owner = null;
+    if (mode === "link") {
+      owner = await sessionUid(env, bearer(request));
+      if (!owner) return json({ error: "Нужно войти", code: "auth" }, 401);
+    }
+    const nonce = randomToken(16);
+    const state = await signData(env, { p: provider, m: mode === "link" ? "link" : "login", u: owner, n: nonce, c: String(cn).replace(/[^\w-]/g, "").slice(0, 40), r: String(from).replace(/[^\w-]/g, "").slice(0, 40), exp: Date.now() + 10 * 60000 });
+    const secure = siteOrigin(request, env).startsWith("https:") ? "; Secure" : "";
+    return json({ url: authorizeUrl(env, provider, state, redirectUri(provider, siteOrigin(request, env))) }, 200, {
+      "Set-Cookie": `${OAUTH_COOKIE}=${nonce}; Path=/api/auth/oauth/; Max-Age=600; HttpOnly; SameSite=Lax${secure}`,
+    });
   }
 
   // --- WebSocket синхронизации (токен в query: браузер не умеет заголовки для WS) ---
   if (path === "/ws") {
-    const uid = await verifySession(env, url.searchParams.get("token"));
+    const uid = await sessionUid(env, url.searchParams.get("token"));
     if (!uid) return new Response("unauthorized", { status: 401 });
     return userStub(env, uid).fetch(request);
   }
 
-  const uid = await verifySession(env, bearer(request));
+  const uid = await sessionUid(env, bearer(request));
   if (!uid) return json({ error: "Нужно войти", code: "auth" }, 401);
   // Мини-приложение в Telegram или сайт в браузере — для аналитики каналов
   const source = request.headers.get("X-Client") === "miniapp" ? "miniapp" : "web";
@@ -200,6 +234,34 @@ async function api(request, env, url) {
       await hubStub(env).confirmLogin(code, uid);
       const base = (env.PUBLIC_URL || new URL(request.url).origin).replace(/\/$/, "");
       return json({ url: `${base}/app?login=${encodeURIComponent(code)}` });
+    }
+    // --- Способы входа: Telegram, Google, Яндекс ---
+    if (path === "/accounts" && method === "GET") return json(await accountsInfo(env, uid));
+    let lm = path.match(/^\/accounts\/(\w+)$/);
+    if (lm && method === "DELETE" && PROVIDERS[lm[1]]) {
+      const r = await hubStub(env).identityUnlink(uid, lm[1], { hasTelegram: isTelegramUid(uid) });
+      if (r.error) return json({ error: "Это единственный способ входа — сначала привяжите другой" }, 409);
+      return json(await accountsInfo(env, uid));
+    }
+    if (path === "/auth/link-telegram" && method === "POST") {
+      if (isTelegramUid(uid)) return json({ error: "Telegram уже привязан" }, 409);
+      const code = newLoginCode();
+      await hubStub(env).createLogin(code, { purpose: "link", owner: uid });
+      return json({ code, ...loginLinks(env, code, "link") });
+    }
+    if (path === "/auth/link-telegram/poll" && method === "GET") {
+      const code = url.searchParams.get("code") || "";
+      // Код удаляем только после успешной склейки: если склейка отложилась (busy), следующий опрос повторит её
+      const res = await hubStub(env).pollLogin(code, { owner: uid, link: true, keep: true });
+      if (res.status !== "ok") return json({ status: res.status });
+      const check = await hubStub(env).mergeCheck(uid, res.uid);
+      if (check.error) {
+        await hubStub(env).deleteLogin(code);
+        return json({ error: "У этого Telegram и у аккаунта сайта обе подписки с автопродлением. Отключите одну из них в «Подписке» и привяжите снова.", code: "two_autopays" }, 409);
+      }
+      await mergeAccounts(env, uid, res.uid);
+      await hubStub(env).deleteLogin(code);
+      return json({ status: "ok", token: await createSession(env, res.uid) });
     }
     if (path === "/avatar" && method === "POST") {
       const buf = await request.arrayBuffer();
@@ -293,6 +355,103 @@ async function api(request, env, url) {
   }
 }
 
+// ---------------------------------------------------
+// Сессии и способы входа
+// ---------------------------------------------------
+const OAUTH_COOKIE = "hmd_oa";
+// Веб-аккаунт, склеенный с Telegram: старые токены ведут в новый uid (кэш на время жизни изолята)
+const aliasCache = new Map();
+
+async function sessionUid(env, token) {
+  const uid = await verifySession(env, token);
+  if (!uid || isTelegramUid(uid)) return uid;
+  const hit = aliasCache.get(uid);
+  if (hit && hit.exp > Date.now()) return hit.to || uid;
+  const to = await hubStub(env).aliasGet(uid);
+  aliasCache.set(uid, { to, exp: Date.now() + (to ? 3600000 : 5000) });
+  if (aliasCache.size > 5000) aliasCache.clear();
+  return to || uid;
+}
+
+async function accountsInfo(env, uid) {
+  const identities = await hubStub(env).identitiesOf(uid);
+  return {
+    telegram: isTelegramUid(uid),
+    identities: identities.map((i) => ({ provider: i.provider, label: PROVIDERS[i.provider]?.label || i.provider, email: i.email, name: i.name, linked_at: i.created_at })),
+    providers: enabledProviders(env),
+  };
+}
+
+/** Веб-аккаунт from → Telegram-аккаунт to: данные, подписка, способы входа; from очищается */
+async function mergeAccounts(env, from, to) {
+  if (String(from) === String(to)) return;
+  const src = userStub(env, from, "web");
+  const dump = await src.exportData();
+  await userStub(env, to, "web").absorb(dump, to);
+  await hubStub(env).mergeUsers(from, to);
+  aliasCache.set(String(from), { to: String(to), exp: Date.now() + 3600000 });
+  await src.wipe(to);
+}
+
+/** Адрес сайта для пользователя: helpmedoctor.ru приходит через прокси, у воркера в этом случае другой хост */
+function siteOrigin(request, env) {
+  return isCanonicalHost(request) && env.PUBLIC_URL ? env.PUBLIC_URL.replace(/\/$/, "") : new URL(request.url).origin;
+}
+
+function readCookie(request, name) {
+  const m = (request.headers.get("Cookie") || "").match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return m ? m[1] : null;
+}
+
+/** Возврат от Google / Яндекса. Итог — редирект в приложение: ?login=<одноразовый код> или ?auth_error=… */
+async function oauthCallback(request, env, url, provider) {
+  const back = (query, hash = "") => new Response(null, {
+    status: 302,
+    headers: { Location: `/app?${query}${hash}`, "Cache-Control": "no-store", "Set-Cookie": `${OAUTH_COOKIE}=; Path=/api/auth/oauth/; Max-Age=0; HttpOnly; SameSite=Lax` },
+  });
+  const st = await readSignedData(env, url.searchParams.get("state"));
+  const nonce = readCookie(request, OAUTH_COOKIE);
+  if (url.searchParams.get("error")) return back("auth_error=cancel");
+  if (!st || st.p !== provider || !nonce || nonce !== st.n) return back("auth_error=state");
+  const code = url.searchParams.get("code");
+  if (!code) return back("auth_error=cancel");
+  let id;
+  try {
+    id = await fetchIdentity(env, provider, code, redirectUri(provider, siteOrigin(request, env)));
+  } catch (e) {
+    console.error("oauth", provider, e.message);
+    return back("auth_error=provider");
+  }
+  const hub = hubStub(env);
+  const meta = { email: id.email, name: id.name };
+
+  if (st.m === "link") {
+    if (!st.u) return back("auth_error=state");
+    // Пока шёл вход, веб-аккаунт могли склеить с Telegram — привязываем к актуальному
+    const owner = isTelegramUid(st.u) ? st.u : (await hub.aliasGet(st.u)) || st.u;
+    const r = await hub.identityLink(provider, id.sub, owner, meta);
+    if (r.error) return back(`link_error=${r.error}&p=${provider}`, "#/profile/accounts");
+    await userStub(env, owner, "web").track("account_link", { provider }).catch(() => {});
+    return back(`linked=${provider}`, "#/profile/accounts");
+  }
+
+  let uid = (await hub.identityGet(provider, id.sub))?.uid;
+  if (uid) {
+    await hub.identityLink(provider, id.sub, uid, meta); // свежие имя и почта
+  } else {
+    uid = newWebUid();
+    const r = await hub.identityLink(provider, id.sub, uid, meta);
+    if (r.error) uid = (await hub.identityGet(provider, id.sub)).uid; // параллельный вход тем же аккаунтом
+    else await userStub(env, uid, "web").init(uid, { first_name: id.name || "Доктор", ref: st.r || `oauth_${provider}` });
+  }
+  // Код привязан к браузеру, начавшему вход (nonce в sessionStorage): чужую ссылку ?login= подсунуть нельзя
+  if (!st.c) return back("auth_error=state");
+  const lc = newLoginCode();
+  await hub.createLogin(lc, { purpose: "oauth", owner: st.c });
+  await hub.confirmLogin(lc, uid, "oauth");
+  return back(`login=${encodeURIComponent(lc)}`);
+}
+
 async function readJson(request) {
   try {
     return (await request.json()) || {};
@@ -315,7 +474,7 @@ function isCanonicalHost(request) {
 
 function robotsTxt(canonicalHost) {
   const body = canonicalHost
-    ? `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\n\nSitemap: https://${MAIN_HOST}/sitemap.xml\n`
+    ? `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nDisallow: /app\n\nUser-agent: Yandex\nAllow: /\nDisallow: /api/\nDisallow: /admin\nDisallow: /app\nClean-param: from /app\n\nSitemap: https://${MAIN_HOST}/sitemap.xml\n`
     : "User-agent: *\nDisallow: /\n";
   return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
 }

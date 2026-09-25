@@ -49,7 +49,9 @@ export async function handleUpdate(env, update) {
     if (await user.seenUpdate(update.update_id)) return;
     // Метка источника из ссылки t.me/<бот>?start=<метка> (кроме входа на сайт)
     const payload = /^\/start\s+(\S+)/.exec(msg?.text || "")?.[1] || "";
-    const ref = payload && !payload.startsWith("login_") ? payload.slice(0, 64) : "";
+    // Вход на сайт через бота: метка источника пришла с сайта вместе с кодом входа
+    let ref = payload && !/^(login|link)_/.test(payload) ? payload.slice(0, 64) : "";
+    if (payload.startsWith("login_")) ref = await hubStub(env).loginRef(payload.slice(6)).catch(() => "");
     const { isNew } = await user.init(uid, { first_name: from.first_name, username: from.username, ref });
     ctx.isNew = isNew;
     ctx.adminReply = await logIncoming(ctx, msg, cb);
@@ -186,6 +188,16 @@ async function onVoice(ctx, msg) {
 
 async function onStart(ctx, payload) {
   const { user, bot, uid, env, from } = ctx;
+  if (payload.startsWith("link_")) {
+    // Привязка Telegram к аккаунту сайта (вход через Google/Яндекс). Сначала спрашиваем: ссылку могли прислать чужую
+    const code = payload.slice(5);
+    const pv = await hubStub(env).linkPreview(code);
+    if (!pv) return bot.send(uid, "⏰ Ссылка для привязки устарела. Откройте на сайте «Профиль → Способы входа» и нажмите «Привязать Telegram» ещё раз.");
+    const who = pv.accounts.map((a) => `${a.provider === "google" ? "Google" : "Яндекс"}${a.email ? ` — ${esc(a.email)}` : ""}`).join("\n") || esc(pv.name);
+    return bot.send(uid,
+      `🔗 <b>Привязать этот Telegram к аккаунту сайта?</b>\n\n${who}\n\nПрогресс объединится, входить можно будет любым способом. Если вы не нажимали «Привязать Telegram» на сайте — откажитесь.`,
+      [[{ text: "✅ Привязать", callback_data: `lk_${code}` }, { text: "Отмена", callback_data: "lk_no" }]]);
+  }
   if (payload.startsWith("login_")) {
     const code = payload.slice(6);
     const ok = await hubStub(env).confirmLogin(code, uid);
@@ -354,6 +366,16 @@ async function onCallback(ctx, cb) {
     await hubStub(env).bcClick(Number(bid), uid);
     if (action === "new") return newPatient(ctx);
     return;
+  }
+  if (data === "lk_no") return bot.edit(uid, mid, "Привязка отменена.");
+  if (data.startsWith("lk_")) {
+    const ok = await hubStub(env).confirmLogin(data.slice(3), uid, "link");
+    const site = `${(env.PUBLIC_URL || "").replace(/\/$/, "")}/app`;
+    await bot.editKeyboard(uid, mid, []);
+    return bot.send(uid, ok
+      ? "✅ <b>Telegram привязан.</b>\n\nВернитесь в браузер — через пару секунд прогресс объединится. Дальше данные общие: принимайте пациентов и здесь, и на сайте."
+      : "⏰ Ссылка для привязки устарела. Откройте на сайте «Профиль → Способы входа» и нажмите «Привязать Telegram» ещё раз.",
+    ok && /^https?:\/\/[^/]+\.[^/]+/.test(site) ? [[urlBtn("↩️ Вернуться на сайт", site)]] : undefined);
   }
   if (data === "list") return listPatients(ctx);
   if (data.startsWith("sp_")) {

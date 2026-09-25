@@ -7,7 +7,8 @@
 <meta name="description" content="Условия использования сервиса «Help me, Doctor»: бесплатный доступ, премиум-подписка, пробный период, автопродление, отмена и возврат.">
 <link rel="canonical" href="https://helpmedoctor.ru/oferta/">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#f6f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121514" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -21,7 +22,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="/fonts/literata-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
+<script src="/site.js" defer></script>
 
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
@@ -36,19 +39,34 @@
 </script>
 <!-- /Yandex.Metrika counter -->
 </head>
-<body>
+<body data-page="oferta" data-early-until="1793480400000">
 <noscript><div><img src="https://mc.yandex.ru/watch/113057442" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+
 <a class="skip" href="#main">Перейти к содержанию</a>
+<div class="promo" data-early hidden><div class="wrap"><span class="long">Ранние цены до 31 октября: премиум — <b>249 ₽</b> в месяц вместо 390 ₽, первые 7 дней — 1 ₽.</span><span class="short">Премиум <b>7 дней за 1 ₽</b>, потом 249 ₽/мес</span> <a href="/app?from=promo">Попробовать</a><button class="promo-x" type="button" aria-label="Скрыть">×</button></div></div>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/"><span class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M2.5 12h5l2-3.5 3 7 2-3.5h7"/></svg></span>Help me, Doctor</a>
+  <a class="brand" href="/" aria-label="Help me, Doctor — на главную"><svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8"/></svg>Help me, Doctor</a>
   <nav class="nav" aria-label="Основное меню">
-    <a href="/#how">Как это работает</a><a href="/#features">Возможности</a><a href="/#pricing">Тарифы</a><a href="/blog/">Блог</a>
+    <a href="/#how">Как это работает</a>
+    <a href="/demo/">Демо</a>
+    <details><summary>Для кого</summary><div class="menu">
+      <a href="/dlya-studentov/">Студентам-медикам<small>3–6 курс, практика и экзамены</small></a><a href="/dlya-ordinatorov/">Ординаторам<small>Кейсы по своей специальности</small></a><a href="/dlya-vrachej/">Практикующим врачам<small>Сложные случаи и смежные области</small></a>
+      <a href="/akkreditaciya/">Тренажёр к аккредитации<small>Станция анамнеза и кейсы</small></a><a href="/klinicheskie-zadachi/">Клинические задачи онлайн<small>Интерактивно, с разбором</small></a><a href="/virtualnyj-pacient/">Виртуальный пациент<small>Что это и как работает</small></a>
+    </div></details>
+    <details><summary>Специальности</summary><div class="menu">
+      <a href="/specialnosti/terapiya/">Терапия</a><a href="/specialnosti/kardiologiya/">Кардиология</a><a href="/specialnosti/hirurgiya/">Хирургия</a><a href="/specialnosti/pediatriya/">Педиатрия</a><a href="/specialnosti/nevrologiya/">Неврология</a><a href="/specialnosti/onkologiya/">Онкология</a><a href="/specialnosti/psihiatriya/">Психиатрия</a><a href="/specialnosti/dermatologiya/">Дерматология</a><a href="/specialnosti/anesteziologiya-reanimatologiya/">Анестезиология и реаниматология</a><a href="/specialnosti/skoraya-pomoshch/">Скорая и неотложная помощь</a>
+      <a href="/specialnosti/"><b>Все специальности</b></a>
+    </div></details>
+    <a href="/#pricing">Тарифы</a>
+    <a href="/blog/">Блог</a>
   </nav>
-  <a class="btn btn-primary" href="https://t.me/helpmedoctor_aibot" rel="noopener">Начать</a>
+  <button class="burger" type="button" aria-label="Меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <a class="btn btn-primary" href="/app?from=header">Открыть тренажёр</a>
 </div></header>
 <main id="main">
+
 <article class="article legal">
-  <nav class="crumbs page-head" style="padding-bottom:0" aria-label="Навигация"><a href="/">Главная</a></nav>
+  <div class="page-head" style="padding-bottom:0"><nav class="crumbs" aria-label="Навигация"><ol><li><a href="/">Главная</a></li><li>Публичная оферта</li></ol></nav></div>
   <h1>Публичная оферта</h1>
   <div class="meta"><span>Редакция от 25 сентября 2026 г.</span></div>
   <p>Настоящий документ — публичная оферта Индивидуальный предприниматель Ежков Олег Михайлович (далее — «Исполнитель») любому дееспособному лицу (далее — «Пользователь») заключить договор на изложенных ниже условиях (ст. 435, 437 ГК РФ).</p>
@@ -119,22 +137,37 @@ Telegram: <a href="https://t.me/helpmedoctor_aibot">@helpmedoctor_aibot</a> · �
 </article>
 </main>
 <footer><div class="wrap">
-  <div>
-    <a class="brand" href="/"><span class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M2.5 12h5l2-3.5 3 7 2-3.5h7"/></svg></span>Help me, Doctor</a>
-    <p style="margin-top:12px">Учебный тренажёр для студентов-медиков, ординаторов и врачей. Пациенты вымышлены, сервис не оказывает медицинских услуг и не заменяет консультацию врача.</p>
-    <p>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</p>
-    <p><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></p>
+  <div class="cols">
+    <div>
+      <a class="brand" href="/"><svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8"/></svg>Help me, Doctor</a>
+      <p style="margin-top:14px">Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей. Пациенты вымышлены; сервис не оказывает медицинских услуг и не заменяет консультацию врача.</p>
+    </div>
+    <div><b>Тренажёр</b><ul>
+      <li><a href="/app?from=footer">Веб-версия</a></li>
+      <li><a href="/demo/">Демо-приём</a></li>
+      <li><a href="/#pricing">Тарифы</a></li>
+      <li><a href="/materialy/">Материалы</a></li>
+      <li><a href="/o-proekte/">О проекте и контакты</a></li>
+      <li><a href="/#faq">Вопросы и ответы</a></li>
+      <li><a href="https://t.me/helpmedoctor_aibot" rel="noopener">Бот в Telegram</a></li>
+    </ul></div>
+    <div><b>Для кого</b><ul>
+      <li><a href="/dlya-studentov/">Студентам-медикам</a></li><li><a href="/dlya-ordinatorov/">Ординаторам</a></li><li><a href="/dlya-vrachej/">Практикующим врачам</a></li><li><a href="/akkreditaciya/">Тренажёр к аккредитации</a></li><li><a href="/klinicheskie-zadachi/">Клинические задачи онлайн</a></li><li><a href="/virtualnyj-pacient/">Виртуальный пациент</a></li>
+    </ul></div>
+    <div><b>Специальности</b><ul>
+      <li><a href="/specialnosti/terapiya/">Терапия</a></li><li><a href="/specialnosti/kardiologiya/">Кардиология</a></li><li><a href="/specialnosti/hirurgiya/">Хирургия</a></li><li><a href="/specialnosti/pediatriya/">Педиатрия</a></li><li><a href="/specialnosti/nevrologiya/">Неврология</a></li><li><a href="/specialnosti/onkologiya/">Онкология</a></li><li><a href="/specialnosti/psihiatriya/">Психиатрия</a></li><li><a href="/specialnosti/dermatologiya/">Дерматология</a></li><li><a href="/specialnosti/anesteziologiya-reanimatologiya/">Анестезиология и реаниматология</a></li><li><a href="/specialnosti/skoraya-pomoshch/">Скорая и неотложная помощь</a></li>
+    </ul></div>
+    <div><b>Блог</b><ul>
+      <li><a href="/blog/biohimiya-krovi-rasshifrovka/">Биохимический анализ крови</a></li><li><a href="/blog/oam-rasshifrovka/">Общий анализ мочи</a></li><li><a href="/blog/rasshifrovka-ekg/">Как расшифровать ЭКГ</a></li><li><a href="/blog/sbor-anamneza/">Как собрать анамнез</a></li><li><a href="/blog/differencialnyj-diagnoz/">Дифференциальный диагноз</a></li><li><a href="/blog/obshchij-analiz-krovi/">Общий анализ крови</a></li>
+      <li><a href="/blog/">Все статьи</a></li>
+    </ul></div>
   </div>
-  <div><b>Тренажёр</b><ul>
-    <li><a href="https://t.me/helpmedoctor_aibot" rel="noopener">Telegram-бот</a></li>
-    <li><a href="/app">Веб-версия</a></li>
-    <li><a href="/#pricing">Тарифы</a></li>
-    <li><a href="/#faq">Вопросы и ответы</a></li>
-  </ul></div>
-  <div><b>Блог</b><ul>
-    <li><a href="/blog/biohimiya-krovi-rasshifrovka/">Биохимический анализ крови</a></li><li><a href="/blog/oam-rasshifrovka/">Общий анализ мочи</a></li><li><a href="/blog/rasshifrovka-ekg/">Как расшифровать ЭКГ</a></li><li><a href="/blog/sbor-anamneza/">Как собрать анамнез</a></li>
-    <li><a href="/blog/">Все статьи</a></li>
-  </ul></div>
+  <div class="legal-line">
+    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</span>
+    <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></span>
+  </div>
 </div></footer>
+
+
 </body>
 </html>

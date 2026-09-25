@@ -61,6 +61,32 @@ export async function verifySession(env, token, scope = "user") {
   }
 }
 
+// ---------- Подписанные данные (state для OAuth) ----------
+export async function signData(env, obj) {
+  const payload = b64url(enc.encode(JSON.stringify(obj)));
+  return `${payload}.${b64url(await hmac(env.SESSION_SECRET, `data:${payload}`))}`;
+}
+
+/** Данные из signData или null, если подпись не сходится или срок (exp) истёк */
+export async function readSignedData(env, token) {
+  if (!token || typeof token !== "string") return null;
+  const [payload, sig] = token.split(".");
+  if (!payload || !sig) return null;
+  if (!safeEqual(sig, b64url(await hmac(env.SESSION_SECRET, `data:${payload}`)))) return null;
+  try {
+    const data = JSON.parse(new TextDecoder().decode(Uint8Array.from(b64urlDecode(payload), (c) => c.charCodeAt(0))));
+    if (data.exp && data.exp < Date.now()) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/** Случайная строка для nonce / кодов */
+export function randomToken(bytes = 18) {
+  return b64url(crypto.getRandomValues(new Uint8Array(bytes)));
+}
+
 // ---------- Telegram Mini App initData ----------
 /**
  * Проверка initData по документации Telegram:
@@ -90,8 +116,8 @@ export async function verifyInitData(env, initData, maxAgeSec = 7 * 86400) {
 
 // ---------- Вход по ссылке через бота ----------
 /** Ссылки на вход через бота: tg:// открывает приложение Telegram сразу, без новой вкладки; t.me — запасной вариант */
-export function loginLinks(env, code) {
-  const start = `login_${code}`;
+export function loginLinks(env, code, kind = "login") {
+  const start = `${kind}_${code}`;
   return {
     url: `https://t.me/${env.BOT_USERNAME}?start=${start}`,
     tg: `tg://resolve?domain=${env.BOT_USERNAME}&start=${start}`,

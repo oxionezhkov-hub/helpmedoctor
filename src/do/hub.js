@@ -37,6 +37,9 @@ export class HubDO extends DurableObject {
         cons INTEGER DEFAULT 0, patients INTEGER DEFAULT 0, quizzes INTEGER DEFAULT 0, paid INTEGER DEFAULT 0, last_active INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS cron (id INTEGER PRIMARY KEY CHECK (id = 1), kind TEXT, cursor TEXT);
       CREATE TABLE IF NOT EXISTS logins (code TEXT PRIMARY KEY, uid TEXT, created_at INTEGER);
+      CREATE TABLE IF NOT EXISTS identities (provider TEXT, sub TEXT, uid TEXT, email TEXT, name TEXT, created_at INTEGER, PRIMARY KEY (provider, sub));
+      CREATE INDEX IF NOT EXISTS identities_uid ON identities (uid);
+      CREATE TABLE IF NOT EXISTS aliases (from_uid TEXT PRIMARY KEY, to_uid TEXT, created_at INTEGER);
       CREATE TABLE IF NOT EXISTS payments (op TEXT PRIMARY KEY, uid TEXT, plan TEXT, created_at INTEGER, done INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS daily (day TEXT, metric TEXT, value INTEGER, PRIMARY KEY (day, metric));
       CREATE TABLE IF NOT EXISTS active (day TEXT, uid TEXT, PRIMARY KEY (day, uid));
@@ -83,6 +86,10 @@ export class HubDO extends DurableObject {
     this.addColumn("payments", "admin", "TEXT");
     this.addColumn("payments", "note", "TEXT");
     this.addColumn("feedback", "status", "TEXT DEFAULT 'new'");
+    // Код входа для привязки Telegram к веб-аккаунту: purpose = 'link', owner — uid веб-аккаунта
+    this.addColumn("logins", "purpose", "TEXT");
+    this.addColumn("logins", "owner", "TEXT");
+    this.addColumn("logins", "ref", "TEXT");
     this.addColumn("feedback", "task_id", "INTEGER");
     for (const r of this.all("SELECT uid FROM users WHERE search IS NULL LIMIT 20000")) this.refreshSearch(r.uid);
     this.sql.exec("UPDATE payments SET status = 'paid' WHERE done = 1 AND (status IS NULL OR status = 'link')");
@@ -159,8 +166,9 @@ export class HubDO extends DurableObject {
   refreshSearch(uid) {
     const u = this.one("SELECT name, username, profession FROM users WHERE uid = ?", String(uid));
     if (!u) return;
+    const emails = this.all("SELECT email FROM identities WHERE uid = ?", String(uid)).map((r) => r.email || "").join(" ");
     this.sql.exec("UPDATE users SET search = ?, prof_lc = ? WHERE uid = ?",
-      `${u.name || ""} ${u.username || ""}`.toLowerCase(), String(u.profession || "").toLowerCase(), String(uid));
+      `${u.name || ""} ${u.username || ""} ${emails}`.trim().toLowerCase(), String(u.profession || "").toLowerCase(), String(uid));
   }
 
   async findByUsername(username) {
@@ -274,28 +282,55 @@ export class HubDO extends DurableObject {
   // ---------------------------------------------------
   // Вход на сайт и в админку через бота
   // ---------------------------------------------------
-  async createLogin(code) {
+  async createLogin(code, { purpose = null, owner = null, ref = "" } = {}) {
     this.sql.exec("DELETE FROM logins WHERE created_at < ?", Date.now() - LOGIN_TTL_MS);
-    this.sql.exec("INSERT INTO logins (code, uid, created_at) VALUES (?, NULL, ?)", code, Date.now());
+    this.sql.exec("INSERT INTO logins (code, uid, created_at, purpose, owner, ref) VALUES (?, NULL, ?, ?, ?, ?)", code, Date.now(), purpose, owner, String(ref || "").slice(0, 64));
   }
 
-  async confirmLogin(code, uid) {
-    const row = this.one("SELECT uid, created_at FROM logins WHERE code = ?", code);
-    if (!row || row.created_at < Date.now() - LOGIN_TTL_MS) return false;
+  /** Подтверждение кода из бота. Возвращает { purpose } или false, если код устарел или он для другого действия */
+  async confirmLogin(code, uid, purpose = "login") {
+    const row = this.one("SELECT uid, created_at, purpose FROM logins WHERE code = ?", code);
+    if (!row || row.created_at < Date.now() - LOGIN_TTL_MS || (row.purpose || "login") !== purpose) return false;
     this.sql.exec("UPDATE logins SET uid = ? WHERE code = ?", String(uid), code);
-    return true;
+    return { purpose: row.purpose || "login" };
   }
 
-  async pollLogin(code) {
-    const row = this.one("SELECT uid, created_at FROM logins WHERE code = ?", code);
+  /** Код привязки Telegram: к какому веб-аккаунту (почты) — бот показывает их перед подтверждением */
+  async linkPreview(code) {
+    const row = this.one("SELECT owner, created_at, purpose FROM logins WHERE code = ?", code);
+    if (!row || row.purpose !== "link" || row.created_at < Date.now() - LOGIN_TTL_MS) return null;
+    const ids = this.all("SELECT provider, email, name FROM identities WHERE uid = ?", row.owner);
+    const u = this.one("SELECT name FROM users WHERE uid = ?", row.owner);
+    return { owner: row.owner, name: u?.name || ids[0]?.name || "", accounts: ids.map((i) => ({ provider: i.provider, email: i.email })) };
+  }
+
+  /**
+   * Результат кода входа. Обычный код («login») забирает кто угодно — так работает вход через бота.
+   * Код после Google/Яндекса («oauth») — только браузер, начавший вход (owner = его nonce), чтобы чужую ссылку ?login= нельзя было подсунуть.
+   * Код привязки Telegram («link») — только владелец веб-аккаунта; keep — не удалять код до успешной склейки.
+   */
+  async pollLogin(code, { owner = null, link = false, keep = false } = {}) {
+    const row = this.one("SELECT uid, created_at, purpose, owner FROM logins WHERE code = ?", code);
     if (!row) return { status: "expired" };
+    const p = row.purpose || "login";
+    const allowed = link ? p === "link" && row.owner === String(owner) : p === "login" || (p === "oauth" && !!owner && row.owner === String(owner));
+    if (!allowed) return { status: "expired" };
     if (row.created_at < Date.now() - LOGIN_TTL_MS) {
       this.sql.exec("DELETE FROM logins WHERE code = ?", code);
       return { status: "expired" };
     }
     if (!row.uid) return { status: "pending" };
-    this.sql.exec("DELETE FROM logins WHERE code = ?", code);
+    if (!keep) this.sql.exec("DELETE FROM logins WHERE code = ?", code);
     return { status: "ok", uid: row.uid };
+  }
+
+  async deleteLogin(code) {
+    this.sql.exec("DELETE FROM logins WHERE code = ?", code);
+  }
+
+  /** Источник регистрации (метка from с сайта) для входа через бота */
+  async loginRef(code) {
+    return this.one("SELECT ref FROM logins WHERE code = ?", code)?.ref || "";
   }
 
   // ---------------------------------------------------
@@ -316,6 +351,78 @@ export class HubDO extends DurableObject {
       "INSERT INTO payments (op, uid, plan, created_at, amount, status, error, updated_at) VALUES (?, ?, ?, ?, ?, 'error', ?, ?)",
       `err_${uid}_${now}`, String(uid), plan, now, Number(planPrice(plan) || 0), String(error).slice(0, 800), now,
     );
+  }
+
+  // ---------------------------------------------------
+  // Способы входа: Google, Яндекс (provider + sub → uid) и склейка аккаунтов
+  // ---------------------------------------------------
+  async identityGet(provider, sub) {
+    return this.one("SELECT provider, sub, uid, email, name FROM identities WHERE provider = ? AND sub = ?", provider, String(sub));
+  }
+
+  /** Привязать вход к uid. Если он уже привязан к другому аккаунту — { error: "taken" } */
+  async identityLink(provider, sub, uid, { email = "", name = "" } = {}) {
+    const row = await this.identityGet(provider, sub);
+    if (row && row.uid !== String(uid)) return { error: "taken" };
+    const same = this.one("SELECT sub FROM identities WHERE provider = ? AND uid = ?", provider, String(uid));
+    if (same && same.sub !== String(sub)) return { error: "has_other" };
+    this.sql.exec(
+      "INSERT INTO identities (provider, sub, uid, email, name, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(provider, sub) DO UPDATE SET email = excluded.email, name = excluded.name",
+      provider, String(sub), String(uid), String(email).slice(0, 200), String(name).slice(0, 80), Date.now(),
+    );
+    this.refreshSearch(uid);
+    return { ok: true };
+  }
+
+  async identitiesOf(uid) {
+    return this.all("SELECT provider, email, name, created_at FROM identities WHERE uid = ? ORDER BY created_at", String(uid));
+  }
+
+  /** Отвязка: проверка «не последний способ входа» и удаление — одной операцией (без гонки двух запросов) */
+  async identityUnlink(uid, provider, { hasTelegram = false } = {}) {
+    const n = this.one("SELECT COUNT(*) AS n FROM identities WHERE uid = ?", String(uid)).n;
+    if (!hasTelegram && n <= 1) return { error: "last" };
+    this.sql.exec("DELETE FROM identities WHERE uid = ? AND provider = ?", String(uid), provider);
+    this.refreshSearch(uid);
+    return { ok: true };
+  }
+
+  /** Можно ли склеить веб-аккаунт from с Telegram-аккаунтом to: две активные автоподписки не склеиваем */
+  async mergeCheck(from, to) {
+    const a = this.one("SELECT status FROM autopay WHERE uid = ?", String(from));
+    const b = this.one("SELECT status FROM autopay WHERE uid = ?", String(to));
+    if (a?.status === "active" && b?.status === "active") return { error: "two_autopays" };
+    return { ok: true };
+  }
+
+  /** Веб-аккаунт склеен с Telegram: старые сессии веб-аккаунта ведут в новый uid */
+  async aliasGet(uid) {
+    return this.one("SELECT to_uid FROM aliases WHERE from_uid = ?", String(uid))?.to_uid || null;
+  }
+
+  /** Переносит служебные записи с веб-аккаунта from на аккаунт to (данные профиля переносит UserDO) */
+  async mergeUsers(from, to) {
+    from = String(from);
+    to = String(to);
+    this.sql.exec("UPDATE identities SET uid = ? WHERE uid = ?", to, from);
+    this.sql.exec("UPDATE payments SET uid = ? WHERE uid = ?", to, from);
+    // Автоподписка: активная переезжает; неактивная (отменённая, неудачная) строка у to ей не мешает
+    const fa = this.one("SELECT status FROM autopay WHERE uid = ?", from);
+    const ta = this.one("SELECT status FROM autopay WHERE uid = ?", to);
+    if (fa && (!ta || (fa.status === "active" && ta.status !== "active"))) {
+      this.sql.exec("DELETE FROM autopay WHERE uid = ?", to);
+      this.sql.exec("UPDATE autopay SET uid = ? WHERE uid = ?", to, from);
+    }
+    this.sql.exec("UPDATE aliases SET to_uid = ? WHERE to_uid = ?", to, from);
+    this.sql.exec("INSERT OR REPLACE INTO aliases (from_uid, to_uid, created_at) VALUES (?, ?, ?)", from, to, Date.now());
+    const src = this.one("SELECT ref, registered_at FROM users WHERE uid = ?", from);
+    if (src) {
+      this.sql.exec("UPDATE users SET ref = COALESCE(NULLIF(ref, ''), ?), registered_at = MIN(COALESCE(NULLIF(registered_at, 0), ?), ?) WHERE uid = ?",
+        src.ref || "", src.registered_at || Date.now(), src.registered_at || Date.now(), to);
+      this.sql.exec("DELETE FROM users WHERE uid = ?", from);
+    }
+    this.refreshSearch(to);
+    return { ok: true };
   }
 
   async getPayment(op) {
@@ -428,6 +535,28 @@ export class HubDO extends DurableObject {
 
   setPaymentStatus(op, status, note) {
     this.sql.exec("UPDATE payments SET status = ?, note = COALESCE(?, note), updated_at = ? WHERE op = ?", status, note || null, Date.now(), op);
+  }
+
+  /** Цифры для сайта: только агрегаты, без личных данных */
+  async publicStats() {
+    if (this._stats && Date.now() - this._stats.at < 10 * 60000) return this._stats.data;
+    this._stats = { at: Date.now(), data: this.computePublicStats() };
+    return this._stats.data;
+  }
+
+  computePublicStats() {
+    const today = mskDate();
+    const cons = (d) => this.one("SELECT COALESCE(SUM(value), 0) AS v FROM daily WHERE metric = 'consultations' AND day >= ?", d).v;
+    const weekAgo = mskDate(Date.now() - 7 * 86400000);
+    const fb = this.one("SELECT COUNT(*) AS n, AVG(rating) AS avg FROM feedback WHERE rating > 0");
+    return {
+      users: this.one("SELECT COUNT(*) AS v FROM users").v,
+      consultations_total: this.one("SELECT COALESCE(SUM(value), 0) AS v FROM daily WHERE metric = 'consultations'").v,
+      consultations_today: cons(today),
+      consultations_week: cons(weekAgo),
+      rating: fb.n >= 10 ? Math.round(fb.avg * 10) / 10 : null,
+      ratings: fb.n,
+    };
   }
 
   bump(metric, by = 1, day = mskDate()) {
@@ -690,7 +819,7 @@ export class HubDO extends DurableObject {
   /** Сегмент пользователей по фильтру (тот же, что в списке пользователей) */
   segment(filter = {}) {
     const { where, args } = A.userWhere(filter);
-    return this.all(`SELECT uid, name, username, streak, lvl, level FROM users u WHERE ${where} AND COALESCE(u.blocked, 0) = 0 AND COALESCE(u.bot_blocked, 0) = 0`, ...args);
+    return this.all(`SELECT uid, name, username, streak, lvl, level FROM users u WHERE ${where} AND COALESCE(u.blocked, 0) = 0 AND COALESCE(u.bot_blocked, 0) = 0 AND u.uid NOT GLOB 'w*'`, ...args);
   }
 
   createBroadcast({ admin, text, buttons = [], filter = {}, scheduled_at = null }) {

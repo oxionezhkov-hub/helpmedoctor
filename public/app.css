@@ -349,9 +349,20 @@ html:has(.consult) { scrollbar-gutter: auto; overflow: hidden; }
 .plan .price { font-size: 24px; font-weight: 800; margin: 6px 0 10px; }
 
 /* ---------- Логин ---------- */
+@font-face { font-family: "Literata"; font-weight: 700 800; font-display: swap; src: url(/fonts/literata-700.woff2) format("woff2"); }
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
 .login .card { max-width: 420px; width: 100%; text-align: center; padding: 28px 20px; }
 .login .logo { font-size: 64px; }
+.login .or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; margin: 4px 0; }
+.login .or::before, .login .or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.oauth-btn { background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--border); }
+.primary-oauth { background: var(--text); color: var(--bg); }
+.login h1 { font-family: "Literata", Georgia, "Times New Roman", serif; letter-spacing: -.01em; }
+.notice { align-items: center; gap: 12px; }
+.oauth-btn:hover { box-shadow: inset 0 0 0 1.5px var(--muted); }
+.i.brand { stroke: none; width: 22px; height: 22px; flex: none; }
+.tile.plain { background: var(--surface-2); }
+.acc-row { cursor: default; }
 
 /* ---------- Тосты ---------- */
 #toast-root { position: fixed; left: 0; right: 0; top: calc(12px + var(--safe-top)); z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 16px; }
@@ -563,3 +574,8 @@ img.avatar { object-fit: cover; background: var(--surface-2); padding: 0; }
 .premium-cta > .i { color: var(--accent); }
 .locked-teaser { position: relative; display: flex; flex-direction: column; gap: 6px; filter: blur(4px); opacity: .6; user-select: none; pointer-events: none; }
 .tile.lg.accent { background: var(--accent-soft); color: var(--accent); }
+/* Экран входа — в тонах сайта (бумага и чернила); внутри Telegram остаются цвета клиента */
+@media (prefers-color-scheme: light) {
+  html:not(.tg) .login { background: #f6f4ee; }
+  html:not(.tg) .login .card { background: #fffdf8; box-shadow: 0 1px 0 rgba(25, 28, 27, .04), 0 10px 30px -18px rgba(25, 28, 27, .28); border: 1px solid #dcd7ca; }
+}
