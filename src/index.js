@@ -18,6 +18,11 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
+    // www.helpmedoctor.ru → helpmedoctor.ru (один адрес для входа и сохранённой сессии)
+    if (url.hostname.startsWith("www.")) {
+      url.hostname = url.hostname.slice(4);
+      return Response.redirect(url.toString(), 301);
+    }
     try {
       // ---- Telegram webhook (старый адрес "/" тоже принимаем) ----
       if (request.method === "POST" && (path === "/tg/webhook" || path === "/")) {

@@ -1,9 +1,10 @@
 // Настройка бота после деплоя: вебхук с секретом, кнопка меню «Открыть приложение», список команд.
 // Запуск (токены не сохраняются в файлы):
 //   TELEGRAM_TOKEN=... WEBHOOK_SECRET=... node scripts/set-webhook.mjs
+// С флагом --menu-only вебхук не трогаем — только кнопка меню и команды (так запускает деплой).
 const token = process.env.TELEGRAM_TOKEN;
 const secret = process.env.WEBHOOK_SECRET;
-const base = (process.env.PUBLIC_URL || "https://helpmedoctor.oxion-ezhkov.workers.dev").replace(/\/$/, "");
+const base = (process.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "");
 if (!token) {
   console.error("Укажите TELEGRAM_TOKEN");
   process.exit(1);
@@ -15,7 +16,8 @@ async function call(method, body) {
   const d = await r.json();
   console.log(method, d.ok ? "✅" : `❌ ${d.description}`);
 }
-await call("setWebhook", {
+const menuOnly = process.argv.includes("--menu-only");
+if (!menuOnly) await call("setWebhook", {
   url: `${base}/tg/webhook`,
   allowed_updates: ["message", "callback_query"],
   drop_pending_updates: false,

@@ -68,3 +68,8 @@ jobs:
           if [ -z "$TOCHKA_PROXY_URL" ] || [ -z "$TOCHKA_PROXY_SECRET" ]; then echo "Посредник Точки не настроен — пропускаю"; exit 0; fi
           printf '%s' "$TOCHKA_PROXY_URL" | npx wrangler secret put TOCHKA_PROXY_URL
           printf '%s' "$TOCHKA_PROXY_SECRET" | npx wrangler secret put TOCHKA_PROXY_SECRET
+      # Кнопка «Приложение» и меню команд бота — на актуальный адрес сайта (вебхук не трогаем)
+      - name: Кнопка меню и команды бота
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: node scripts/set-webhook.mjs --menu-only
