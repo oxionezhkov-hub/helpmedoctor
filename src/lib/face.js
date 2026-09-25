@@ -18,7 +18,7 @@ const MASK_PROBABILITY = 13;
 const HEAD_FEMALE = ["bangs", "bangs2", "bantuKnots", "bun", "bun2", "buns", "hijab", "long", "longBangs", "medium1", "medium2", "medium3",
   "mediumBangs", "mediumBangs2", "mediumBangs3", "mediumStraight", "twists", "twists2", "afro"];
 const HEAD_MALE = ["short1", "short2", "short3", "short4", "short5", "shaved1", "shaved2", "shaved3", "noHair1", "noHair2", "noHair3",
-  "flatTop", "flatTopLong", "pomp", "cornrows", "hatBeanie"];
+  "flatTop", "pomp", "hatBeanie"];
 const HEAD_OLD_FEMALE = ["grayBun", "grayMedium", "hijab"];
 const HEAD_OLD_MALE = ["grayShort", "grayMedium", "noHair1", "noHair2", "noHair3"];
 const HEAD_CHILD = ["bangs", "bangs2", "buns", "short1", "short2", "short3", "medium1", "mediumBangs", "twists", "afro", "bear"];
@@ -30,11 +30,11 @@ const EXPRESSION = {
   angryWithFang: 0.5, rage: 0.5, veryAngry: 0.5, eatingHappy: 0.5,
 };
 const EXPRESSION_OLD = { ...EXPRESSION, old: 8 };
-const EXPRESSION_GOOD = { smile: 6, calm: 4, cute: 2, smileTeethGap: 2, explaining: 1 };
+const EXPRESSION_GOOD = { smile: 6, calm: 4, cute: 2, explaining: 1 };
 const EXPRESSION_BAD = { tired: 6, concernedFear: 4, fear: 3, eyesClosed: 3, concerned: 3, hectic: 2 };
 
-/** Параметры лица по пациенту: s — seed, g — пол (m/f), a — возраст, m — состояние (good/bad) */
-export function faceOptions({ s = "", g = "", a = 0, m = "" } = {}) {
+/** Параметры лица по пациенту: s — seed, g — пол (m/f), a — возраст, m — состояние (good/bad); clean — без маски и тёмных очков (обложки) */
+export function faceOptions({ s = "", g = "", a = 0, m = "", clean = false } = {}) {
   const age = Number(a) || 35;
   const female = g === "f";
   const child = age < 14;
@@ -50,7 +50,8 @@ export function faceOptions({ s = "", g = "", a = 0, m = "" } = {}) {
     accessoriesProbability: child ? 5 : old ? 45 : 20,
     facialHairProbability: female || child ? 0 : old ? 30 : 35,
     maskVariant: ["medicalMask"],
-    maskProbability: child ? 0 : MASK_PROBABILITY,
+    maskProbability: child || clean ? 0 : MASK_PROBABILITY,
+    ...(clean ? { accessoriesVariant: ["glasses", "glasses2", "glasses3", "glasses4", "glasses5"] } : {}),
   };
 }
 
