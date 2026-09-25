@@ -224,8 +224,11 @@ async function api(request, env, url) {
       return json(await user.trackEvent(type, typeof meta === "object" && meta ? meta : {}));
     }
     if (path === "/pay" && method === "POST") {
-      const { plan } = await readJson(request);
+      const { plan, consent } = await readJson(request);
       if (!(plan === TRIAL.key || PACKS[plan] || (PLANS[plan] && !PLANS[plan].hidden))) return json({ error: "Неизвестный тариф" }, 400);
+      // Согласие с офертой и на автосписания — обязательное условие оплаты; фиксируем его в истории пользователя
+      if (!consent) return json({ error: "Отметьте согласие с условиями оплаты", code: "consent" }, 400);
+      await user.trackEvent("consent", { plan, offer: "/oferta/", privacy: "/privacy/", recurring: plan === TRIAL.key || !!PLANS[plan]?.recurring });
       // Пробный период — один раз; вторую подписку с автопродлением не оформляем. Цена — на момент покупки.
       const { price } = await user.checkPurchase(plan);
       await user.trackEvent("pay_click", { plan });

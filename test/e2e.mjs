@@ -179,7 +179,8 @@ assert.ok(me.offer.early, "ранние цены до 31 октября");
 assert.equal(me.offer.plans.month.price, "249.00");
 assert.equal(me.offer.plans.month.regular, "390.00");
 assert.ok(!me.offer.plans.forever && !me.offer.plans.day, "старые тарифы не продаются");
-r = await api(webToken, "POST", "/pay", { plan: "trial" });
+assert.equal((await api(webToken, "POST", "/pay", { plan: "trial" })).data.code, "consent", "без согласия на автосписания оплата не создаётся");
+r = await api(webToken, "POST", "/pay", { plan: "trial", consent: true });
 assert.equal(r.status, 200, JSON.stringify(r.data));
 const trialOp = r.data.link.split("/").pop();
 const subReq = tgCalls().find((c) => c.method === "tochka POST /uapi/acquiring/v1.0/subscriptions" && c.consumerId === U);
@@ -195,7 +196,7 @@ assert.equal(me.profile.autopay.status, "active");
 assert.equal(me.profile.autopay.price, 249, "после пробного — месяц по ранней цене");
 assert.ok(Math.abs(me.profile.autopay.next_at - (Date.now() + 7 * 86400000)) < 120000, "первое списание через 7 дней");
 await waitFor(() => sent(U).some((m) => m.text.includes("Премиум на 7 дней включён")), "trial message");
-assert.equal((await api(webToken, "POST", "/pay", { plan: "trial" })).data.code, "trial_used");
+assert.equal((await api(webToken, "POST", "/pay", { plan: "trial", consent: true })).data.code, "trial_used");
 assert.ok((await api(webToken, "GET", `/patients/${patId}`)).data.patient.consultations[0].feedback.dialog_moments.length, "после оплаты разбор открыт");
 step("премиум: разбор и тест закрыты, пробный период 7 дней за 1 ₽ с привязкой карты");
 
@@ -308,7 +309,7 @@ await sleep(500);
 assert.ok(!sent(U).some((m) => m.text.includes("Подписка выдана")), "не-админ не может выдавать подписку");
 step("админ: /grant @username 7 — подписка выдана, пользователь уведомлён");
 
-r = await api(webToken, "POST", "/pay", { plan: "week" });
+r = await api(webToken, "POST", "/pay", { plan: "week", consent: true });
 assert.equal(r.status, 502);
 assert.equal(r.data.code, "payment");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("Оплата не создана")), "admin payment error");
@@ -371,7 +372,7 @@ await api(t2, "PATCH", "/profile", { level: "student", profession: "Терапе
 await api(t2, "POST", "/patients/new");
 await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 1, "p2 first patient");
 assert.equal((await api(t2, "GET", "/me")).data.profile.can_accept, false);
-r = await api(t2, "POST", "/pay", { plan: "patients3" });
+r = await api(t2, "POST", "/pay", { plan: "patients3", consent: true });
 const packOp = r.data.link.split("/").pop();
 assert.equal(tgCalls().find((c) => c.method === "tochka POST /uapi/acquiring/v1.0/payments" && c.consumerId === P2).amount, "39.00");
 await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: packOp }) });
@@ -382,7 +383,7 @@ assert.equal(p2.premium, false, "покупка пациентов не даёт
 await api(t2, "POST", "/patients/new");
 await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 2, "p2 second patient");
 assert.equal((await api(t2, "GET", "/me")).data.profile.patient_credits, 2);
-r = await api(t2, "POST", "/pay", { plan: "freeze" });
+r = await api(t2, "POST", "/pay", { plan: "freeze", consent: true });
 await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: r.data.link.split("/").pop() }) });
 assert.equal((await api(t2, "GET", "/me")).data.profile.streak_freezes, 1);
 step("разовые покупки: +3 пациента сверх лимита (39 ₽), заморозка стрика");

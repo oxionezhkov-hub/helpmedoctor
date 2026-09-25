@@ -6,6 +6,7 @@ import path from "node:path";
 import { EARLY_UNTIL, FREE_DAILY_LIMIT, PACKS, PLANS, SPECIALIZATIONS, TRIAL } from "../src/config.js";
 import { ARTICLES } from "./site/articles.mjs";
 import { withFigures } from "./site/figures.mjs";
+import { LEGAL_UPDATED, OFFER, PRIVACY } from "./site/legal.mjs";
 
 const SITE = "https://helpmedoctor.ru";
 const BOT = "https://t.me/helpmedoctor_aibot";
@@ -88,6 +89,7 @@ const footer = () => `<footer><div class="wrap">
     <a class="brand" href="/"><span class="brand-logo">${HEART}</span>${NAME}</a>
     <p style="margin-top:12px">Учебный тренажёр для студентов-медиков, ординаторов и врачей. Пациенты вымышлены, сервис не оказывает медицинских услуг и не заменяет консультацию врача.</p>
     <p>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</p>
+    <p><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></p>
   </div>
   <div><b>Тренажёр</b><ul>
     <li><a href="${BOT}" rel="noopener">Telegram-бот</a></li>
@@ -301,6 +303,27 @@ ${footer()}
 `;
 }
 
+/** Оферта и политика: простая текстовая страница */
+function legalPage(doc) {
+  const url = `${SITE}/${doc.slug}/`;
+  return `${head({ title: `${doc.title} — ${NAME}`, description: doc.description, canonical: url })}
+<body>
+${METRIKA_NOSCRIPT}
+${header()}
+<main id="main">
+<article class="article legal">
+  <nav class="crumbs page-head" style="padding-bottom:0" aria-label="Навигация"><a href="/">Главная</a></nav>
+  <h1>${esc(doc.title)}</h1>
+  <div class="meta"><span>Редакция от ${fmtDate(LEGAL_UPDATED)}</span></div>
+  ${doc.body.trim()}
+</article>
+</main>
+${footer()}
+</body>
+</html>
+`;
+}
+
 function notFound() {
   return `${head({ title: `Страница не найдена — ${NAME}`, description: "Такой страницы нет.", canonical: `${SITE}/` }).replace('content="index, follow, max-image-preview:large"', 'content="noindex"')}
 <body>
@@ -319,6 +342,7 @@ function sitemap() {
     { loc: `${SITE}/`, lastmod: SITE_UPDATED, pr: "1.0" },
     { loc: `${SITE}/blog/`, lastmod: ARTICLES.map((a) => a.updated || a.date).sort().pop(), pr: "0.8" },
     ...ARTICLES.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, lastmod: a.updated || a.date, pr: "0.7" })),
+    ...[OFFER, PRIVACY].map((d) => ({ loc: `${SITE}/${d.slug}/`, lastmod: LEGAL_UPDATED, pr: "0.2" })),
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -337,5 +361,6 @@ const write = (rel, content) => {
 write("index.html", landing());
 write("blog/index.html", blogIndex());
 for (const a of ARTICLES) write(`blog/${a.slug}/index.html`, articlePage(a));
+for (const d of [OFFER, PRIVACY]) write(`${d.slug}/index.html`, legalPage(d));
 write("404.html", notFound());
 write("sitemap.xml", sitemap());

@@ -260,7 +260,9 @@ function morph(from, to) {
     return;
   }
   if (from.nodeType !== 1) return;
-  for (const a of [...from.attributes]) if (!to.hasAttribute(a.name) && a.name !== "style") from.removeAttribute(a.name);
+  // style, выставленный из JS (полоса прогресса, высота поля ввода), не трогаем; устаревший из разметки — убираем
+  const liveStyle = from.tagName === "TEXTAREA" || from.closest?.("[data-eta]");
+  for (const a of [...from.attributes]) if (!to.hasAttribute(a.name) && !(a.name === "style" && liveStyle)) from.removeAttribute(a.name);
   for (const a of [...to.attributes]) if (from.getAttribute(a.name) !== a.value) from.setAttribute(a.name, a.value);
   if (to.hasAttribute("data-eta")) return; // прогресс обновляет таймер
   if (from.tagName === "TEXTAREA" || from.tagName === "INPUT") return; // не трогаем ввод пользователя
@@ -457,6 +459,7 @@ async function renderLogin() {
     <p class="muted">Тренажёр врача: ИИ-пациенты, обследования, диагноз и разбор от эксперта. Прогресс общий с Telegram-ботом.</p>
     <a class="btn lg block busy" id="login-btn" aria-disabled="true"><span>Войти через Telegram</span></a>
     <p class="tiny muted" id="login-hint">Откроется бот — нажмите в нём «Запустить», и сайт войдёт сам.</p>
+    <p class="tiny muted">Входя, вы соглашаетесь с ${docLink("privacy", "политикой обработки персональных данных")}.</p>
   </div></div>`[RAW];
   let code;
   try {
@@ -673,8 +676,7 @@ function renderShell(content, withNav = true) {
   const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings"].includes(r)) ? "active" : ""}">
     ${ic(ico, "nav-i")}<span>${label}</span>${badge ? html`<span class="dot">${badge}</span>` : ""}</a>`;
   const scrollY = window.scrollY;
-  const siteBar = IN_TG && ROOT_TABS.includes(r) ? html`<div class="site-bar"><button class="site-btn" data-open-site>${ic("external")}<span>Открыть на сайте</span></button></div>` : "";
-  patchRoot(html`${siteBar}${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
+  patchRoot(html`${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
     ${tab("home", "/", "home", "Главная")}
     ${tab("patients", "/patients", "users", "Пациенты", queue)}
     ${tab("quizzes", "/quizzes", "quiz", "Тесты", pendingQuizzes)}
@@ -703,6 +705,7 @@ function viewHome(fresh) {
         <h1 class="ellipsis">Доктор ${p.name}</h1>
         <div class="muted small">${!p.onboarding_done ? "Настройка профиля" : html`${p.level_label} · ${p.profession}`}${p.has_sub ? html` · <span class="badge accent">${ic("gem")} Безлимит</span>` : ""}</div>
       </div>
+      ${IN_TG ? html`<button class="icon-btn site-btn" data-open-site aria-label="Открыть на сайте" title="Открыть на сайте">${ic("external")}</button>` : ""}
     </div>
 
     ${p.onboarding_done ? html`<div class="card stack">
@@ -911,7 +914,7 @@ function newPatientBlock() {
       <b>Бесплатный пациент на сегодня принят</b>
       <p class="small muted">Новый — завтра после полуночи (МСК).${p.trial_available ? " Или 7 дней безлимита за 1 ₽." : ""}</p>
       <a class="btn block" href="#/plans">${ic("gem")}<span>${p.trial_available ? "Премиум 7 дней за 1 ₽" : "Безлимитный доступ"}</span></a>
-      ${pack ? html`<a class="btn block ghost" href="#/plans">${ic("plus")}<span>${pack.label} — ${rub(pack.price)} ₽</span></a>` : ""}
+      ${pack ? html`<a class="btn block ghost" href="#/plans">${ic("plus")}<span>${pack.label.replace(/^\+/, "")} — ${rub(pack.price)} ₽</span></a>` : ""}
     </div>`;
   }
   return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>`;
@@ -1635,7 +1638,7 @@ async function viewQuiz(fresh) {
       quizState = { id, quiz, index: Math.min(quiz.answered, quiz.total - 1), answer: null };
     } catch (e) {
       renderShell(html`<div class="page"><div class="page-head"><button class="back" data-go="/quizzes" aria-label="Назад">${ic("back")}</button><h2>Тест</h2></div>
-        ${e.code === "premium" ? html`<div class="empty"><div class="tile lg accent">${ic("quiz")}</div>Тест по вашим ошибкам готов</div>${premiumCta("Откройте тест и полный разбор приёма")}`
+        ${e.code === "premium" ? lockedQuiz(id)
           : html`<div class="empty"><div class="tile lg">${ic("clock")}</div>${e.message}</div>`}</div>`);
       return;
     }
@@ -1699,6 +1702,20 @@ async function viewQuiz(fresh) {
     viewQuiz();
     window.scrollTo(0, 0);
   };
+}
+
+/** Тест без подписки: что внутри и как открыть */
+function lockedQuiz(id) {
+  const q = (S.me.quizzes || []).find((x) => x.pat_id === id) || {};
+  return html`<div class="card stack">
+      <div class="row"><div class="tile warn">${ic("quiz")}</div><div class="grow"><div class="tiny muted">РАБОТА НАД ОШИБКАМИ</div><b>${q.pat_diagnosis || "Тест по приёму"}</b></div></div>
+      <p class="small muted">Эксперт составил ${q.total || 5} ${plural(q.total || 5, "вопрос", "вопроса", "вопросов")} по пробелам, которые заметил в вашем приёме${q.pat_name ? ` с пациентом ${q.pat_name}` : ""}. За каждый верный ответ — +5 XP.</p>
+      <div class="locked-teaser" aria-hidden="true">
+        <b>Какое исследование первым подтвердит диагноз?</b>
+        <div class="quiz-opt">А. ФГДС с биопсией</div><div class="quiz-opt">Б. УЗИ органов брюшной полости</div>
+      </div>
+    </div>
+    ${premiumCta("Откройте тест и полный разбор приёма")}`;
 }
 
 function renderQuizResult() {
@@ -1977,6 +1994,7 @@ function viewProfile() {
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
       ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что нравится, что мешает, чего не хватает")}
       ${item({ a: `href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener"` }, "accent", "telegram", "Бот в Telegram", "Приёмы в чате и напоминания", ic("external", "c-muted"))}
+      ${item({ a: `href="${DOCS.offer}" target="_blank" rel="noopener"` }, "", "book", "Документы", "Оферта и политика конфиденциальности", ic("external", "c-muted"))}
       ${!IN_TG ? item({ tag: "button", a: 'id="logout" type="button"', cls: "danger" }, "", "logout", "Выйти", "") : ""}
     </div>
   </div>`);
@@ -2087,6 +2105,10 @@ const PREMIUM_PERKS = [
   ["chart", "Слабые места и советы эксперта"],
 ];
 
+// Документы: публичная оферта и политика обработки персональных данных (статичные страницы сайта)
+const DOCS = { offer: "/oferta/", privacy: "/privacy/" };
+const docLink = (key, text) => html`<a href="${DOCS[key]}" target="_blank" rel="noopener">${text}</a>`;
+
 function viewPlans(fresh) {
   const p = S.me.profile;
   const o = S.me.offer || { plans: S.me.plans, packs: {}, trial: null };
@@ -2100,13 +2122,14 @@ function viewPlans(fresh) {
     const monthly = x.days >= 60 ? Math.round(Number(x.price) / (x.days / 30)) : null;
     const disabled = x.recurring && ap?.status === "active";
     return html`<div class="plan ${x.best ? "best" : ""}">
-      <div class="small muted">${x.label}${x.recurring ? " · автопродление" : ""}</div>
-      <div class="price">${rub(x.price)} ₽${o.early && x.regular !== x.price ? html` <s>${rub(x.regular)}</s>` : ""}</div>
-      <div class="tiny muted plan-sub">${monthly ? `≈ ${monthly} ₽ в месяц` : x.recurring ? "каждые 30 дней" : "одним платежом"}</div>
+      <b class="plan-name">${x.label}</b>
+      <span class="tiny muted">${x.recurring ? "автопродление" : "разовый платёж"}</span>
+      <div class="price">${rub(x.price)} ₽</div>
+      <div class="tiny muted plan-sub">${o.early && x.regular !== x.price ? html`<s>${rub(x.regular)} ₽</s> · ` : ""}${monthly ? `≈ ${monthly} ₽/мес` : x.recurring ? "каждые 30 дней" : `${x.days} дней`}</div>
       <button class="btn block sm" data-plan="${k}" ${disabled ? "disabled" : ""}>${disabled ? "Оформлено" : "Оплатить"}</button></div>`;
   };
   renderShell(html`<div class="page">
-    <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2>Премиум</h2></div>
+    ${!IN_TG ? html`<div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button></div>` : ""}
 
     ${p.has_sub ? html`<div class="card stack-sm">
       <b class="row-c">${ic("gem", "c-accent")}Премиум активен ${p.sub_until === -1 ? "навсегда" : `до ${dateText(p.sub_until)}`}</b>
@@ -2116,29 +2139,41 @@ function viewPlans(fresh) {
     </div>` : ""}
 
     ${p.trial_available && o.trial ? html`<div class="card trial-card stack">
-      <div class="row-c"><span class="badge accent">${ic("zap")} Попробуйте</span></div>
       <h2>Премиум 7 дней за ${rub(o.trial.price)} ₽</h2>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div>
       <button class="btn lg block" data-plan="trial">Попробовать за ${rub(o.trial.price)} ₽</button>
-      <p class="tiny muted">Карта привязывается для продления. Через 7 дней — ${rub(o.trial.then_price)} ₽ в месяц автоматически${o.early ? " (цена ранних пользователей сохранится, пока подписка активна)" : ""}. Отключить можно в любой момент здесь же, до конца пробного периода — бесплатно.</p>
+      <p class="tiny muted">Через 7 дней — ${rub(o.trial.then_price)} ₽ в месяц автоматически${o.early ? " (цена ранних пользователей сохранится, пока подписка активна)" : ""}. Отключить можно в любой момент здесь же, до конца пробного периода — бесплатно.</p>
     </div>` : !p.has_sub ? html`<div class="card stack-sm">
       <b>Бесплатно — 1 пациент в день</b><span class="small muted">с оценкой и выводом эксперта. В премиуме:</span>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div></div>` : ""}
 
     ${o.early ? html`<div class="early-note">${ic("zap")}<span>Цены для ранних пользователей — до ${earlyDate}</span></div>` : ""}
     <div class="plans">${order.map(planCard)}</div>
-    <p class="tiny muted center">Месячный тариф продлевается автоматически, остальные — разовый платёж. Карта или СБП. Доступ включается сразу — и в боте, и на сайте.</p>
+
+    <label class="consent"><input type="checkbox" id="consent" ${store("hmd_consent") === "1" ? "checked" : ""}>
+      <span>Принимаю ${docLink("offer", "условия оферты")} и ${docLink("privacy", "политику обработки данных")}, согласен на автоматические списания по подписке — их можно отключить в любой момент.</span></label>
 
     ${Object.keys(o.packs || {}).length ? html`<div class="section-title">Разовые покупки</div>
-      <div class="grid-2">${Object.entries(o.packs).map(([k, x]) => html`<button class="card tap pack" data-plan="${k}">
+      <div class="card packs">${Object.entries(o.packs).map(([k, x]) => html`<div class="pack-row">
         <div class="tile ${k === "freeze" ? "accent" : "warn"}">${ic(k === "freeze" ? "flame" : "users")}</div>
-        <b>${x.label}</b><span class="small muted">${k === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · есть: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · есть: ${p.patient_credits}` : ""}`}</span>
-        <span class="price-sm">${rub(x.price)} ₽</span></button>`)}</div>` : ""}
+        <div class="grow"><b>${x.label}</b><div class="small muted">${k === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}`}</div></div>
+        <button class="btn sm" data-plan="${k}">${rub(x.price)} ₽</button></div>`)}</div>` : ""}
+
+    <p class="tiny muted center">Карта или СБП. Доступ включается сразу — и в боте, и на сайте.<br>${docLink("offer", "Оферта")} · ${docLink("privacy", "Политика конфиденциальности")}</p>
   </div>`);
+  const consent = $("#consent");
+  consent.onchange = () => { store("hmd_consent", consent.checked ? "1" : null); consent.closest(".consent").classList.remove("need"); };
   root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = async () => {
+    // Согласие с офертой и на автосписания — обязательно перед оплатой
+    if (!consent.checked) {
+      const box = consent.closest(".consent");
+      box.classList.add("need");
+      box.scrollIntoView({ block: "center", behavior: "smooth" });
+      return toast("Отметьте согласие с условиями оплаты", "error");
+    }
     btnBusy(b);
     try {
-      const { link } = await api("POST", "/pay", { plan: b.dataset.plan });
+      const { link } = await api("POST", "/pay", { plan: b.dataset.plan, consent: true });
       if (IN_TG && tg.openLink) tg.openLink(link);
       else location.href = link;
     } catch (e) {
