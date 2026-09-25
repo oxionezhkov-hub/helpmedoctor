@@ -252,3 +252,21 @@ test("лимит: купленные пациенты сверх бесплат�
   assert.equal(G.needsPatientCredit(p, now), true);
   assert.equal(G.needsPatientCredit({ ...p, sub_until: now + 1000 }, now), false, "с подпиской кредиты не тратятся");
 });
+
+test("оценка приёма считается формулой и не спорит с верностью диагноза", () => {
+  const facts = (n, o = {}) => ({ doctorMessages: Array(n).fill("вопрос"), tests: ["КТ"], physicals: ["осмотр"], diagnosis: "д", treatment: "л", referrals: [], ...o });
+  const ev = (dx, d, c, t, extra = {}) => ({ axes: { diagnosis: d, communication: c, treatment: t }, diagnosis_correct: dx, ...extra });
+  assert.equal(G.scoreConsultation(ev("yes", 5, 4, 4), facts(5)).rating, 4.5);
+  assert.equal(G.scoreConsultation(ev("yes", 5, 5, 5), facts(5)).rating, 5);
+  // Неверный диагноз — не выше 2.5, даже если модель завысила оси; ось «диагностика» ≤ 2
+  const wrong = G.scoreConsultation(ev("no", 5, 5, 5), facts(6));
+  assert.equal(wrong.rating, 2.5);
+  assert.equal(wrong.axes.diagnosis, 2);
+  // Верный диагноз — не ниже 3.5
+  assert.equal(G.scoreConsultation(ev("yes", 3, 1, 0), facts(1, { physicals: [], tests: [] })).rating, 3.5);
+  assert.ok(G.scoreConsultation(ev("partial", 3, 4, 3), facts(6)).rating <= 4);
+  assert.equal(G.scoreConsultation(ev("yes", 5, 5, 1, { critical_error: "вредное назначение" }), facts(6)).rating, 2);
+  assert.equal(G.scoreConsultation(ev("none", 0, 3, 0), facts(4, { diagnosis: "" })).rating <= 2, true);
+  // Мало вопросов — минус полбалла
+  assert.equal(G.scoreConsultation(ev("yes", 5, 4, 4), facts(2)).rating, 4);
+});

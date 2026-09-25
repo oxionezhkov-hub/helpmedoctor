@@ -218,7 +218,7 @@ export function evaluation(env, r) {
     text: t,
     kb: [
       r.locked
-        ? [appBtn(r.trial_available ? "💎 Премиум 7 дней за 1 ₽" : "💎 Открыть полный разбор", appUrl(env, "/plans"))]
+        ? [appBtn(r.trial_available ? "💎 Премиум 7 дней за 1 ₽" : "💎 Открыть полный разбор", appUrl(env, r.trial_available ? "/plans?buy=trial" : "/plans"))]
         : [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)],
       [btn("➕ Новый пациент", "new"), appBtn("📋 Карточка", appUrl(env, `/patient/${r.patient_id}`))],
     ],
@@ -262,6 +262,6 @@ export function streakWarning(env, streak, { freezes = 0 } = {}) {
   return {
     text: `⚠️ <b>Осталось 4 часа!</b>\n\n🔥 Стрик ${streak} ${declDays(streak)} сгорит в полночь. Один короткий приём — и серия сохранена.` +
       (freezes ? `\n❄️ У вас есть заморозка — если не успеете, серия не сгорит.` : ""),
-    kb: [[btn("➕ Принять пациента", "new")], ...(freezes ? [] : [[appBtn("❄️ Заморозка стрика", appUrl(env, "/plans"))]])],
+    kb: [[btn("➕ Принять пациента", "new")], ...(freezes ? [] : [[appBtn("❄️ Заморозка стрика", appUrl(env, "/plans?buy=freeze"))]])],
   };
 }
