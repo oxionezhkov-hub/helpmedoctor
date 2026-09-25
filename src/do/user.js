@@ -6,13 +6,13 @@
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
 import {
-  ALIEN_PATIENT_EVERY, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
+  DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
   MAX_ACTIVE_PATIENTS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES,
 } from "../config.js";
 import { aiJson, aiText, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
 import * as G from "../lib/game.js";
-import { clampStr, daysBetween, mskDate, pick, UserError, userError } from "../lib/util.js";
+import { clampStr, daysBetween, declDays, mskDate, pick, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import * as R from "../bot/render.js";
 
@@ -273,14 +273,13 @@ export class UserDO extends DurableObject {
     const prof0 = await this.profile();
     const spec = pick(prof0.specializations);
     const counter = (prof0.patient_counter || 0) + 1;
-    const isAlien = counter % ALIEN_PATIENT_EVERY === 0;
     const used = [];
     const ids = [...prof0.active_patient_ids, ...prof0.closed_patient_ids.slice(-15)];
     const pats = await this.ctx.storage.get(ids.map(patKey));
     for (const p of pats.values()) if (p?.true_diagnosis) used.push(p.true_diagnosis);
 
     const p = P.patientPrompt({
-      spec, profession: prof0.profession, complexity: G.levelMeta(prof0.level).complexity, usedDiagnoses: used, isAlien,
+      spec, profession: prof0.profession, complexity: G.levelMeta(prof0.level).complexity, usedDiagnoses: used,
     });
     const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: 0.95 });
     validatePatient(data);
@@ -290,7 +289,7 @@ export class UserDO extends DurableObject {
     const pat = {
       id,
       doctor_uid: prof0.uid,
-      is_alien: isAlien,
+      is_alien: false,
       specialization: spec,
       name: clampStr(data.name, 60),
       age: data.age,
@@ -769,6 +768,26 @@ export class UserDO extends DurableObject {
     const until = planKey === "forever" || prof.sub_until === -1 ? "навсегда" : new Date(prof.sub_until).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
     await tg(this.env).send(prof.uid, `✅ <b>Подписка активирована!</b>\n\nТариф: ${plan.label}\nДоступ: ${until}\n\nТеперь можно принимать сколько угодно пациентов.`);
     return publicProfile(prof);
+  }
+
+  /** Бесплатная подписка от админа: дни добавляются к текущей подписке */
+  async grantSubscription(days) {
+    days = Math.round(Number(days));
+    if (!(days >= 1 && days <= 3650)) throw new UserError("Срок — от 1 до 3650 дней");
+    const prof = await this.profile();
+    if (prof.sub_until !== -1) {
+      const from = prof.sub_until && prof.sub_until > Date.now() ? prof.sub_until : Date.now();
+      prof.sub_until = from + days * 86400000;
+    }
+    prof.payments = [...(prof.payments || []), { op: `gift_${Date.now()}`, plan: "gift", days, ts: Date.now() }].slice(-20);
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile", { paid: "gift" });
+    await this.report("gift", prof);
+    const until = prof.sub_until === -1 ? "навсегда" : new Date(prof.sub_until).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+    await tg(this.env).send(prof.uid,
+      `🎁 <b>Вам подарок — безлимитный доступ на ${days} ${declDays(days)}!</b>\n\nПринимайте сколько угодно пациентов — в боте и в приложении.\nДоступ до: ${until}`,
+      [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
+    return { uid: prof.uid, name: prof.name, until };
   }
 
   // ---------------------------------------------------

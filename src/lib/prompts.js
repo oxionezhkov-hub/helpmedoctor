@@ -22,15 +22,7 @@ const COMPLEXITY = {
   hard: "редкая патология, противоречивые данные",
 };
 
-export function patientPrompt({ spec, profession, complexity, usedDiagnoses, isAlien }) {
-  if (isAlien) {
-    return {
-      maxTokens: 700,
-      prompt: `Создай пациента-ИНОПЛАНЕТЯНИНА для медицинского симулятора: абсурдно, но внутренне логично, с юмором.
-JSON:
-{"name":"труднопроизносимое имя","age":"возраст по-инопланетному, строкой","sex":"неизвестен","chief_complaint":"жалоба на орган, которого у людей нет","true_diagnosis":"выдуманная болезнь с псевдолатинским названием","full_history":"история болезни, 3-5 предложений","personality":"манера речи","condition_trajectory":"stable","opening_phrase":"странная дружелюбная первая фраза","findings":{"exam":"абсурдный признак при осмотре","lab":"абсурдный анализ","imaging":"абсурдная визуализация","ecg":"абсурдная ЭКГ","pathology":""}}`,
-    };
-  }
+export function patientPrompt({ spec, profession, complexity, usedDiagnoses }) {
   const pediatric = PEDIATRIC_SPECS.includes(spec) || /педиатр|неонат|детск|новорожд|подрост/i.test(`${profession} ${spec}`);
   const ages = pickAgeRange(pediatric);
   const sex = pick(["male", "female"]);

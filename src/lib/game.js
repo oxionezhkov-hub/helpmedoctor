@@ -102,7 +102,8 @@ export function canAcceptPatient(prof, now = Date.now()) {
 // ---------- Задание дня ----------
 export function ensureDailyTask(prof, now = Date.now()) {
   const today = mskDate(now);
-  if (prof.daily_task?.date === today) return false;
+  // Задание сегодняшнего дня оставляем, если такой тип заданий ещё существует
+  if (prof.daily_task?.date === today && DAILY_TASKS.some((t) => t.id === prof.daily_task.id)) return false;
   prof.daily_task = { date: today, ...pick(DAILY_TASKS), progress: 0, done: false };
   return true;
 }
@@ -132,7 +133,6 @@ export function applyDailyTask(prof, c, rating) {
     test_cardio: tests.includes("ЭКГ") && tests.includes("Эхо-КГ") ? 1 : 0,
     blood_test: tests.includes("Анализ крови") ? 1 : 0,
     correct_streak: prof.stats.correct_diagnoses_streak,
-    alien: c.isAlien ? 1 : 0,
     physical_diagnosis: c.physicals.length && c.diagnosis && rating >= 4 ? 1 : 0,
     specific_physical: c.physicals.some((p) => /аускульт|пальп/i.test(p)) ? 1 : 0,
   };
@@ -208,7 +208,6 @@ export function consultationFacts(pat) {
     treatment: cur.treatment || treatmentFromDialog || null,
     referrals: cur.referrals || [],
     discharged: !!cur.discharged,
-    isAlien: !!pat.is_alien,
   };
 }
 

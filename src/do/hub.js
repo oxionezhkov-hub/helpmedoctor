@@ -5,7 +5,7 @@
 // Всё строго консистентно — в отличие от KV, где запись видна не сразу.
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
-import { ADMIN_ID } from "../config.js";
+import { adminIds } from "../config.js";
 import { mskDate } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 
@@ -39,6 +39,13 @@ export class HubDO extends DurableObject {
       this.bump("new_users");
       await this.notifyAdmin(`🆕 ${name} ${username ? "@" + username : "-"} ${uid}`);
     }
+  }
+
+  /** uid по @username (без учёта регистра) */
+  async findByUsername(username) {
+    const u = String(username || "").trim().replace(/^@/, "").toLowerCase();
+    if (!u) return null;
+    return this.sql.exec("SELECT uid, name, username FROM users WHERE lower(username) = ?", u).toArray()[0] || null;
   }
 
   async listUsers() {
@@ -216,7 +223,7 @@ export class HubDO extends DurableObject {
 
   async notifyAdmin(text) {
     try {
-      await tg(this.env).send(this.env.ADMIN_ID || ADMIN_ID, text);
+      await Promise.all(adminIds(this.env).map((id) => tg(this.env).send(id, text)));
     } catch (e) {
       console.error("notifyAdmin", e);
     }

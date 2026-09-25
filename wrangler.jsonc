@@ -39,7 +39,7 @@
   "vars": {
     "PUBLIC_URL": "https://helpmedoctor.oxion-ezhkov.workers.dev",
     "BOT_USERNAME": "helpmedoctor_aibot",
-    "ADMIN_ID": "1326867567",
+    "ADMIN_ID": "1326867567,1062804986",
     "TOCHKA_MERCHANT": "200000000029805",
     "TOCHKA_CUSTOMER": "305372573"
   }

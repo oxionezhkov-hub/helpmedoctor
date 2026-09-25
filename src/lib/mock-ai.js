@@ -11,9 +11,6 @@ export const mockAi = {
     // Реалистичные задержки: генерация пациента заметно дольше остального
     await new Promise((r) => setTimeout(r, /Создай (уникального|пациента)/.test(prompt) ? 3000 : 400));
     if (model.includes("whisper")) return { text: "Где именно болит и как давно?" };
-    if (prompt.includes("Создай пациента-ИНОПЛАНЕТЯНИНА")) {
-      return { response: { name: "Зорг Кварк", age: "340 земных лет", sex: "неизвестен", chief_complaint: "Мерцает третий гребень", true_diagnosis: "Гребневая мерцалгия", full_history: "Гребень мерцает неделю.", personality: "вежливый", condition_trajectory: "stable", opening_phrase: "Приветствую, земной лекарь!", key_findings: "Гребень светится" } };
-    }
     if (prompt.includes("Создай уникального реалистичного пациента")) {
       // Как настоящая модель: иногда текст вокруг JSON
       return { response: 'Вот пациент:\n```json\n{"name":"Мирон Лесков","age":47,"sex":"male","chief_complaint":"Жжёт под ложечкой после еды","true_diagnosis":"Язвенная болезнь 12-перстной кишки, обострение","full_history":"Боли натощак 3 недели, курит, НПВС от спины.","personality":"ворчливый, но честный","condition_trajectory":"stable","opening_phrase":"Доктор, у меня опять живот крутит, сил нет.","findings":{"exam":"Болезненность в эпигастрии при пальпации","lab":"Hb 118 г/л","imaging":"ФГДС: язва 8 мм луковицы ДПК","ecg":"норма","pathology":"H. pylori +"}}\n```' };
