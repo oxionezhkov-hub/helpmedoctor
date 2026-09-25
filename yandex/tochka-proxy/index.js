@@ -9,7 +9,8 @@ const tls = require("tls");
 const crypto = require("crypto");
 
 const HOST = "enter.tochka.com";
-const ALLOWED_PATH = /^\/uapi\/acquiring\/v1\.0\/payments(\/[A-Za-z0-9_.-]+)?$/;
+// Разрешены только методы эквайринга: разовые платежи и подписки (создание, статус, списание, отмена)
+const ALLOWED_PATH = /^\/uapi\/acquiring\/v1\.0\/(payments(\/[A-Za-z0-9_.-]+)?|subscriptions(\/[A-Za-z0-9_.-]+\/(charge|status))?)$/;
 
 const RUSSIAN_TRUSTED_ROOT_CA = `-----BEGIN CERTIFICATE-----
 MIIFwjCCA6qgAwIBAgICEAAwDQYJKoZIhvcNAQELBQAwcDELMAkGA1UEBhMCUlUx
