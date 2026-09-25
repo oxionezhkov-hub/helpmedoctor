@@ -2,10 +2,10 @@
 // Cloudflare Worker — Help me, Doctor 👩‍⚕️
 // Telegram-бот + веб-приложение (/app) на общих данных (Durable Objects)
 // =====================================================
-import { PLANS } from "./config.js";
+import { PACKS, PLANS, TRIAL, productLabel } from "./config.js";
 import { bearer, createSession, loginLinks, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
 import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
-import { createPayment, fetchPayment, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
+import { createPayment, createSubscription, fetchPayment, isPaidStatus, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 import { adminApi } from "./admin-api.js";
 import { faceSvg } from "./lib/face.js";
@@ -63,6 +63,8 @@ export default {
     if (event.cron === "0 18 * * *") return ctx.waitUntil(hubStub(env).dailySummary());
     const kind = event.cron === "0 17 * * *" ? "evening" : "morning";
     ctx.waitUntil(hubStub(env).startCron(kind));
+    // Автопродления: 10:00 и 20:00 МСК (неудачное списание повторится на следующий день)
+    ctx.waitUntil(hubStub(env).chargeDueSubs().catch((e) => console.error("chargeDueSubs", e)));
   },
 };
 
@@ -99,17 +101,23 @@ async function paymentCallback(request, env) {
     return null;
   });
   if (!pay) return new Response("retry", { status: 503 });
-  if (pay.status !== "APPROVED") return new Response("OK");
+  if (!isPaidStatus(pay.status)) return new Response("OK");
   const uid = known?.uid || pay.consumerId || (/uid(\d+)/.exec(pay.purpose) || [])[1];
   const plan = known?.plan || planFromPurpose(pay.purpose);
-  if (!uid || !PLANS[plan]) {
+  if (!uid || !(PLANS[plan] || PACKS[plan] || plan === TRIAL.key)) {
     console.error("payment without uid/plan", op, pay);
     return new Response("OK");
   }
-  if (!known) await hub.savePayment(op, uid, plan);
-  if (await hub.markPaymentDone(op, pay.amount || PLANS[plan].price)) {
-    await userStub(env, uid, "system").activateSubscription(plan, op);
-    await hub.notifyAdmin(`💰 Новая оплата\nuid: ${uid}\nТариф: ${PLANS[plan].label}\nСумма: ${pay.amount || PLANS[plan].price} ₽`, "payment");
+  if (!known) {
+    // Уведомление о нашем же автосписании (charge) — продление уже учтено в HubDO.chargeDueSubs
+    const ap = await hub.autopayGet(uid);
+    if (ap?.last_charge_at && Date.now() - ap.last_charge_at < 2 * 86400000 && ap.plan === plan) return new Response("OK");
+    await hub.savePayment(op, uid, plan);
+  }
+  const amount = pay.amount || known?.amount;
+  if (await hub.markPaymentDone(op, amount)) {
+    await userStub(env, uid, "system").activateSubscription(plan, op, amount);
+    await hub.notifyAdmin(`💰 Новая оплата\nuid: ${uid}\nТариф: ${productLabel(plan)}\nСумма: ${amount} ₽`, "payment");
   }
   return new Response("OK");
 }
@@ -199,6 +207,7 @@ async function api(request, env, url) {
     }
     if (path === "/avatar/telegram" && method === "POST") return json(await user.avatarFromTelegram());
     if (path === "/avatar" && method === "DELETE") return json(await user.removeAvatar());
+    if (path === "/autopay/cancel" && method === "POST") return json({ profile: await user.cancelAutopay() });
     if (path === "/feedback" && method === "POST") {
       return json(await user.saveFeedback(await readJson(request), "web"));
     }
@@ -216,19 +225,23 @@ async function api(request, env, url) {
     }
     if (path === "/pay" && method === "POST") {
       const { plan } = await readJson(request);
-      if (!PLANS[plan]) return json({ error: "Неизвестный тариф" }, 400);
+      if (!(plan === TRIAL.key || PACKS[plan] || (PLANS[plan] && !PLANS[plan].hidden))) return json({ error: "Неизвестный тариф" }, 400);
+      // Пробный период — один раз; вторую подписку с автопродлением не оформляем. Цена — на момент покупки.
+      const { price } = await user.checkPurchase(plan);
       await user.trackEvent("pay_click", { plan });
       let payment;
       try {
-        payment = await createPayment(env, uid, plan);
+        payment = plan === TRIAL.key || PLANS[plan]?.recurring
+          ? await createSubscription(env, uid, plan, price)
+          : await createPayment(env, uid, plan, price);
       } catch (e) {
         console.error("tochka create", e);
         await hubStub(env).paymentError(uid, plan, e.message);
         await user.trackEvent("pay_error", { plan, error: String(e.message).slice(0, 300) });
-        await hubStub(env).notifyAdmin(`⚠️ Оплата не создана (uid ${uid}, тариф ${PLANS[plan].label})\n${esc(e.message).slice(0, 700)}`, "payment_error");
+        await hubStub(env).notifyAdmin(`⚠️ Оплата не создана (uid ${uid}, тариф ${productLabel(plan)})\n${esc(e.message).slice(0, 700)}`, "payment_error");
         return json({ error: "Платёжная система сейчас не отвечает. Мы уже разбираемся — попробуйте чуть позже.", code: "payment" }, 502);
       }
-      if (payment.operationId) await hubStub(env).savePayment(payment.operationId, uid, plan);
+      if (payment.operationId) await hubStub(env).savePayment(payment.operationId, uid, plan, price);
       await user.trackEvent("pay_link", { plan, op: payment.operationId });
       return json({ link: payment.link });
     }

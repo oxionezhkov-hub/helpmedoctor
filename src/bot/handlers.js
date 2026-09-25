@@ -58,7 +58,7 @@ export async function handleUpdate(env, update) {
   } catch (e) {
     const ue = userError(e);
     if (ue) {
-      await bot.send(uid, `⚠️ ${esc(ue.message)}`, ue.code === "limit" ? [[appBtn("💎 Тарифы", R.appUrl(env, "/plans"))]] : undefined);
+      await bot.send(uid, `⚠️ ${esc(ue.message)}`, ["limit", "premium"].includes(ue.code) ? [[appBtn("💎 Тарифы", R.appUrl(env, "/plans"))]] : undefined);
     } else {
       console.error("bot update error", e);
       await bot.send(uid, "😔 Что-то пошло не так. Попробуйте ещё раз.");

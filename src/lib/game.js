@@ -81,8 +81,13 @@ export function normalizeProfile(p) {
 }
 
 /** Сложность пациентов: выбранная пользователем или по его роли */
-export function complexityFor(prof) {
-  return DIFFICULTIES.some((d) => d.key === prof.difficulty) ? prof.difficulty : levelMeta(prof.level).complexity;
+/** Ключ сложности, доступный только в премиуме */
+export const PREMIUM_DIFFICULTY = "hard";
+
+export function complexityFor(prof, now = Date.now()) {
+  const key = DIFFICULTIES.some((d) => d.key === prof.difficulty) ? prof.difficulty : levelMeta(prof.level).complexity;
+  // «Очень сложные» случаи — в премиуме; без него — на ступень проще
+  return key === PREMIUM_DIFFICULTY && !hasActiveSub(prof, now) ? "medium_hard" : key;
 }
 
 export function difficultyMeta(key) {
@@ -105,10 +110,25 @@ export function todayPatientsCount(prof, now = Date.now()) {
   return (prof.daily_patients || []).filter((ts) => ts >= midnight).length;
 }
 
-export function canAcceptPatient(prof, now = Date.now()) {
-  // Админ может выдать дополнительных бесплатных пациентов на сегодня
+/** Премиум: полный разбор, тесты по ошибкам, «Очень сложные» случаи, статистика слабых мест */
+export function isPremium(prof, now = Date.now()) {
+  return hasActiveSub(prof, now);
+}
+
+/** Бесплатный лимит на сегодня (с учётом пациентов, которых админ добавил на сегодня) */
+export function freeLeftToday(prof, now = Date.now()) {
   const extra = prof.extra_patients?.date === mskDate(now) ? prof.extra_patients.n || 0 : 0;
-  return hasActiveSub(prof, now) || todayPatientsCount(prof, now) < FREE_DAILY_LIMIT + extra;
+  return FREE_DAILY_LIMIT + extra - todayPatientsCount(prof, now);
+}
+
+export function canAcceptPatient(prof, now = Date.now()) {
+  // Сверх бесплатного лимита — купленные пациенты (patient_credits), они не сгорают
+  return hasActiveSub(prof, now) || freeLeftToday(prof, now) > 0 || (prof.patient_credits || 0) > 0;
+}
+
+/** Нужно ли списать купленного пациента за нового (лимит исчерпан, подписки нет) */
+export function needsPatientCredit(prof, now = Date.now()) {
+  return !hasActiveSub(prof, now) && freeLeftToday(prof, now) <= 0 && (prof.patient_credits || 0) > 0;
 }
 
 // ---------- Задание дня ----------
@@ -200,7 +220,13 @@ export function applyStreak(prof, now = Date.now()) {
   const today = mskDate(now);
   const gap = daysBetween(prof.last_consult_date, today);
   if (gap === 0) return;
-  if (gap === 1) {
+  // Пропущенные дни закрываются заморозками стрика (покупаются разово)
+  const missed = gap - 1;
+  if (gap > 1 && missed <= (prof.streak_freezes || 0) && prof.streak) {
+    prof.streak_freezes -= missed;
+    prof.streak_freezes_used = (prof.streak_freezes_used || 0) + missed;
+    prof.streak = (prof.streak || 0) + 1;
+  } else if (gap === 1) {
     prof.streak = (prof.streak || 0) + 1;
   } else {
     if (prof.last_consult_date) prof.streak_before_break = prof.streak || 0;

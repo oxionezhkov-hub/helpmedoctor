@@ -738,7 +738,7 @@ function viewHome(fresh) {
     ${pendingQuiz ? html`<div class="section-title">Тест</div><a class="card tap row" href="#/quiz/${pendingQuiz.pat_id}" style="text-decoration:none;color:inherit">
       <div class="tile warn">${ic("quiz")}</div>
       <div class="grow"><b>Работа над ошибками</b><div class="small muted ellipsis">${pendingQuiz.pat_name} · ${pendingQuiz.pat_diagnosis}</div></div>
-      <span class="badge warn">${pendingQuiz.answered}/${pendingQuiz.total}</span>
+      ${pendingQuiz.locked ? html`<span class="badge accent">${ic("gem")}</span>` : html`<span class="badge warn">${pendingQuiz.answered}/${pendingQuiz.total}</span>`}
     </a>` : ""}
 
     ${p.onboarding_done && !active.length && !patients.length ? html`<div class="card stack center">
@@ -789,7 +789,7 @@ function onboardingCard() {
     const cur = o.difficulty || rec;
     body = html`<h3>Какая сложность пациентов?</h3>
       <div class="stack-sm">${cfg.difficulties.map((d) => html`<button class="onb-opt ${cur === d.key ? "on" : ""}" data-onb-diff="${d.key}">
-        <b>${d.emoji} ${d.label}${d.key === rec ? html` <span class="badge accent">рекомендуем</span>` : ""}</b><span class="small muted">${d.hint}</span></button>`)}</div>
+        <b>${d.emoji} ${d.label}${d.key === rec ? html` <span class="badge accent">рекомендуем</span>` : ""}${d.key === "hard" && !S.me.profile.premium ? html` <span class="badge">${ic("gem")} премиум</span>` : ""}</b><span class="small muted">${d.hint}</span></button>`)}</div>
       <div class="field"><label>Пара слов о себе <span class="muted">— необязательно</span></label>
         <textarea id="onb-about" maxlength="600" placeholder="Где учитесь или работаете, что хотите прокачать">${o.about}</textarea></div>`;
     next = html`<button class="btn" id="onb-finish">${ic("steth")}<span>Получить первого пациента</span></button>`;
@@ -906,10 +906,12 @@ function newPatientBlock() {
     return html`<div class="card small muted center">В очереди ${max} пациентов — это максимум. Завершите один из приёмов, чтобы принять нового.</div>`;
   }
   if (!p.can_accept) {
+    const pack = S.me.offer?.packs?.patients3;
     return html`<div class="card stack center">
       <b>Бесплатный пациент на сегодня принят</b>
-      <p class="small muted">Новый — завтра после полуночи (МСК). Или безлимит с подпиской.</p>
-      <a class="btn block" href="#/plans">${ic("gem")}<span>Безлимитный доступ</span></a>
+      <p class="small muted">Новый — завтра после полуночи (МСК).${p.trial_available ? " Или 7 дней безлимита за 1 ₽." : ""}</p>
+      <a class="btn block" href="#/plans">${ic("gem")}<span>${p.trial_available ? "Премиум 7 дней за 1 ₽" : "Безлимитный доступ"}</span></a>
+      ${pack ? html`<a class="btn block ghost" href="#/plans">${ic("plus")}<span>${pack.label} — ${rub(pack.price)} ₽</span></a>` : ""}
     </div>`;
   }
   return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>`;
@@ -1007,8 +1009,8 @@ function viewPatient() {
 
     ${quiz ? html`<a class="card tap row" href="#/quiz/${p.id}" style="text-decoration:none;color:inherit">
       <div class="tile warn">${ic("quiz")}</div>
-      <div class="grow"><b>Работа над ошибками</b><div class="small muted">${quiz.status === "done" ? `Пройден: ${quiz.score} из ${quiz.total}` : `${quiz.answered} из ${quiz.total} вопросов`}</div></div>
-      ${ic("chevron", "c-muted")}</a>` : ""}
+      <div class="grow"><b>Работа над ошибками</b><div class="small muted">${quiz.locked ? `${quiz.total} вопросов по вашим ошибкам · в премиуме` : quiz.status === "done" ? `Пройден: ${quiz.score} из ${quiz.total}` : `${quiz.answered} из ${quiz.total} вопросов`}</div></div>
+      ${quiz.locked ? html`<span class="badge accent">${ic("gem")} премиум</span>` : ic("chevron", "c-muted")}</a>` : ""}
 
     ${consults.length ? html`<div class="section-title">Приёмы</div>
       ${consults.map((c, i) => html`<div class="card stack">
@@ -1048,6 +1050,8 @@ function evaluationBlock(c) {
       ${[["Диагностика", axes.diagnosis], ["Общение", axes.communication], ["Лечение", axes.treatment]].map(([k, v]) => html`<div class="axis"><span>${k}</span><span class="bar"><i style="width:${(v / 5) * 100}%"></i></span><b>${v}</b></div>`)}
     </div>` : ""}
     ${f.expert_text ? html`<p>${f.expert_text}</p>` : (f.good || []).map((g) => html`<p>${g}</p>`)}
+    ${c.locked ? html`<div class="locked-teaser" aria-hidden="true"><div class="quote small">«Где именно болит и когда началось?»</div><div class="small">Хороший открытый вопрос, но не уточнили…</div><div class="small">Что было дальше: через три недели…</div></div>
+      ${premiumCta("Полный разбор: цитаты из диалога, совет эксперта и «что было дальше»")}` : ""}
     ${(f.dialog_moments || []).map((m) => html`<div class="stack-sm">${m.quote ? html`<div class="quote small">«${m.quote}»</div>` : ""}<div class="small">${m.comment}</div></div>`)}
     ${f.recommendation ? html`<div class="small fact">${ic("bulb", "c-warn")}<div><b>Совет:</b> ${f.recommendation}</div></div>` : ""}
     ${c.post_story ? html`<div class="card flat" style="background:var(--surface-2)"><div class="tiny muted row-c">${ic("book")} ЧТО БЫЛО ДАЛЬШЕ</div><div class="small">${c.post_story}</div></div>` : ""}
@@ -1586,14 +1590,14 @@ function onEvaluation(r) {
   haptic("success");
   const slot = $("#eval-slot");
   if (!slot) return;
-  const c = { rating: r.rating, xp: r.xp, post_story: r.post_story, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments } };
+  const c = { rating: r.rating, xp: r.xp, post_story: r.post_story, locked: r.locked, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments } };
   slot.outerHTML = html`<div class="stack" style="margin-top:16px">
     <h3 class="row-c">${ic("card", "c-accent")}Разбор эксперта</h3>
     ${evaluationBlock(c)}
     ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b></div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
-    <p class="tiny muted center">Тест «работа над ошибками» появится во вкладке «Тесты» через минуту.</p>
+    <p class="tiny muted center">${r.locked ? "Тест по вашим ошибкам уже готовится — он откроется в премиуме." : "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту."}</p>
   </div>`[RAW];
   const nb = $("#eval-new");
   if (nb) nb.onclick = () => { closeSheet(); go("/"); };
@@ -1609,11 +1613,12 @@ function viewQuizzes() {
   const item = (q) => html`<a class="card tap row" href="#/quiz/${q.pat_id}" style="text-decoration:none;color:inherit">
     <div class="tile ${q.status === "done" ? (q.score >= q.total - 1 ? "ok" : "") : "warn"}">${ic(q.status === "done" ? (q.score >= q.total - 1 ? "trophy" : "book") : "quiz")}</div>
     <div class="grow"><b class="ellipsis" style="display:block">${q.pat_diagnosis || q.pat_name}</b><div class="small muted ellipsis">${q.pat_name}</div></div>
-    ${q.status === "done" ? html`<span class="badge ${q.score >= q.total - 1 ? "ok" : "warn"}">${q.score}/${q.total}</span>` : html`<span class="badge accent">${q.answered}/${q.total}</span>`}
+    ${q.locked && q.status !== "done" ? html`<span class="badge accent">${ic("gem")}</span>` : q.status === "done" ? html`<span class="badge ${q.score >= q.total - 1 ? "ok" : "warn"}">${q.score}/${q.total}</span>` : html`<span class="badge accent">${q.answered}/${q.total}</span>`}
   </a>`;
   renderShell(html`<div class="page">
     <h1>Работа над ошибками</h1>
     <p class="muted small">После каждого приёма эксперт составляет тест по вашим пробелам. +5 XP за каждый верный ответ.</p>
+    ${list.some((q) => q.locked && q.status !== "done") ? premiumCta("Тесты по вашим ошибкам — в премиуме") : ""}
     ${pending.length ? html`<div class="section-title">Ждут прохождения</div>${limited("quizzes-pending", pending, item)}` : ""}
     ${done.length ? html`<div class="section-title">Пройдены</div>${limited("quizzes-done", done, item)}` : ""}
     ${!list.length ? html`<div class="empty"><div class="tile lg">${ic("quiz")}</div>Тесты появятся после первого приёма</div>` : ""}
@@ -1630,7 +1635,8 @@ async function viewQuiz(fresh) {
       quizState = { id, quiz, index: Math.min(quiz.answered, quiz.total - 1), answer: null };
     } catch (e) {
       renderShell(html`<div class="page"><div class="page-head"><button class="back" data-go="/quizzes" aria-label="Назад">${ic("back")}</button><h2>Тест</h2></div>
-        <div class="empty"><div class="tile lg">${ic("clock")}</div>${e.message}</div></div>`);
+        ${e.code === "premium" ? html`<div class="empty"><div class="tile lg accent">${ic("quiz")}</div>Тест по вашим ошибкам готов</div>${premiumCta("Откройте тест и полный разбор приёма")}`
+          : html`<div class="empty"><div class="tile lg">${ic("clock")}</div>${e.message}</div>`}</div>`);
       return;
     }
   }
@@ -1799,7 +1805,7 @@ function viewSettings(fresh) {
       <div class="field"><label>Кто вы</label>
         <div class="row wrap" style="gap:6px">${cfg.levels.map((l) => html`<button class="chip ${pf.level === l.key ? "on" : ""}" data-level="${l.key}">${l.label}</button>`)}</div></div>
       <div class="field"><label>Сложность пациентов</label>
-        <div class="row wrap" style="gap:6px"><button class="chip ${!pf.difficulty ? "on" : ""}" data-diff="">По уровню</button>${cfg.difficulties.map((d) => html`<button class="chip ${pf.difficulty === d.key ? "on" : ""}" data-diff="${d.key}">${d.emoji} ${d.label}</button>`)}</div>
+        <div class="row wrap" style="gap:6px"><button class="chip ${!pf.difficulty ? "on" : ""}" data-diff="">По уровню</button>${cfg.difficulties.map((d) => html`<button class="chip ${pf.difficulty === d.key ? "on" : ""}" data-diff="${d.key}">${d.emoji} ${d.label}${d.key === "hard" && !p.premium ? html` ${ic("gem")}` : ""}</button>`)}</div>
         <span class="tiny muted">${(cfg.difficulties.find((d) => d.key === (pf.difficulty || cfg.levels.find((l) => l.key === pf.level)?.complexity)) || {}).hint || ""}</span></div>
       <div class="field"><label>Специальность</label>
         <div class="row wrap" style="gap:6px">${professions.map((x) => html`<button class="chip ${pf.profession === x ? "on" : ""}" data-prof="${x}">${x}</button>`)}<button class="chip ${custom ? "on" : ""}" data-prof="__custom">Другая…</button></div>
@@ -1818,7 +1824,11 @@ function viewSettings(fresh) {
 
   $("#pf-name").oninput = (e) => { pf.name = e.target.value; };
   root.querySelectorAll("[data-level]").forEach((b) => (b.onclick = () => { pf.level = b.dataset.level; viewSettings(); }));
-  root.querySelectorAll("[data-diff]").forEach((b) => (b.onclick = () => { pf.difficulty = b.dataset.diff; viewSettings(); }));
+  root.querySelectorAll("[data-diff]").forEach((b) => (b.onclick = () => {
+    if (b.dataset.diff === "hard" && !p.premium) { toast("«Очень сложные» случаи — в премиуме"); return go("/plans"); }
+    pf.difficulty = b.dataset.diff;
+    viewSettings();
+  }));
   root.querySelectorAll("[data-prof]").forEach((b) => (b.onclick = () => {
     if (b.dataset.prof !== "__custom") return pickProfession(b.dataset.prof);
     if (custom) return;
@@ -1962,7 +1972,7 @@ function viewProfile() {
     <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : "Telegram ID " + p.uid}</div>
       <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
-      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Безлимитный доступ", sub ? `Активна ${sub}` : "1 пациент в день · безлимит от 30 ₽")}
+      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разборы, тесты" : "Безлимит, полный разбор, тесты по ошибкам")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
       ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что нравится, что мешает, чего не хватает")}
@@ -1995,6 +2005,7 @@ function viewStats() {
     ${p.strengths?.length ? html`<div class="card stack-sm"><div class="tiny muted">СИЛЬНЫЕ СТОРОНЫ</div><div class="row wrap" style="gap:6px">${p.strengths.slice(0, 8).map((s) => html`<span class="badge ok">${s}</span>`)}</div></div>` : ""}
     ${p.weaknesses?.length ? html`<div class="card stack-sm"><div class="tiny muted">ЧТО ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px">${p.weaknesses.slice(0, 8).map((s) => html`<span class="badge warn">${s}</span>`)}</div></div>` : ""}
     ${p.recommendations?.length ? html`<div class="card stack-sm"><div class="tiny muted">СОВЕТЫ ЭКСПЕРТА</div>${p.recommendations.slice(0, 3).map((r) => html`<div class="small fact">${ic("bulb", "c-warn")}<span>${r}</span></div>`)}</div>` : ""}
+    ${p.locked_insights ? premiumCta(`Слабые места и советы эксперта: ${p.locked_insights}`) : ""}
     ${!p.stats.ratings_count ? html`<div class="empty"><div class="tile lg">${ic("chart")}</div>Статистика появится после первого разобранного приёма</div>` : ""}
   </div>`);
 }
@@ -2067,21 +2078,62 @@ function mountFeedbackPrompt() {
 // ---------------------------------------------------
 // Тарифы
 // ---------------------------------------------------
+const rub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
+const PREMIUM_PERKS = [
+  ["users", "Безлимит пациентов"],
+  ["card", "Полный разбор: цитаты из диалога и «что было дальше»"],
+  ["quiz", "Тест по вашим ошибкам после каждого приёма"],
+  ["flame", "«Очень сложные» случаи"],
+  ["chart", "Слабые места и советы эксперта"],
+];
+
 function viewPlans(fresh) {
   const p = S.me.profile;
-  const plans = S.me.plans;
-  const order = ["day", "week", "month", "forever"];
-  if (fresh && S.route.q.paid) toast("Спасибо! Подписка активируется в течение минуты.");
+  const o = S.me.offer || { plans: S.me.plans, packs: {}, trial: null };
+  const order = ["month", "quarter", "year", "week"].filter((k) => o.plans[k]);
+  const earlyDate = o.early_until ? new Date(o.early_until - 1).toLocaleDateString("ru", { day: "numeric", month: "long" }) : "";
+  const ap = p.autopay;
+  if (fresh && S.route.q.paid) toast("Спасибо! Доступ включится в течение минуты.");
   if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
+  const planCard = (k) => {
+    const x = o.plans[k];
+    const monthly = x.days >= 60 ? Math.round(Number(x.price) / (x.days / 30)) : null;
+    const disabled = x.recurring && ap?.status === "active";
+    return html`<div class="plan ${x.best ? "best" : ""}">
+      <div class="small muted">${x.label}${x.recurring ? " · автопродление" : ""}</div>
+      <div class="price">${rub(x.price)} ₽${o.early && x.regular !== x.price ? html` <s>${rub(x.regular)}</s>` : ""}</div>
+      <div class="tiny muted plan-sub">${monthly ? `≈ ${monthly} ₽ в месяц` : x.recurring ? "каждые 30 дней" : "одним платежом"}</div>
+      <button class="btn block sm" data-plan="${k}" ${disabled ? "disabled" : ""}>${disabled ? "Оформлено" : "Оплатить"}</button></div>`;
+  };
   renderShell(html`<div class="page">
-    <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2>Безлимитный доступ</h2></div>
-    ${p.has_sub ? html`<div class="card center"><b class="row-c" style="justify-content:center">${ic("gem", "c-accent")}Подписка активна ${p.sub_until === -1 ? "навсегда" : `до ${dateText(p.sub_until)}`}</b><p class="small muted">Можно продлить — дни суммируются.</p></div>` : html`<div class="card stack-sm">
-      <b>Бесплатно — 1 пациент в день.</b><span class="small muted">С подпиской — сколько угодно пациентов, все функции те же. Оплата картой или через СБП.</span></div>`}
-    <div class="plans">${order.map((k) => html`<div class="plan ${k === "month" ? "best" : ""}">
-      <div class="small muted">${plans[k].label}</div>
-      <div class="price">${Number(plans[k].price).toLocaleString("ru")} ₽</div>
-      <button class="btn block sm" data-plan="${k}">Оплатить</button></div>`)}</div>
-    <p class="tiny muted center">После оплаты доступ включится автоматически — и в боте, и на сайте.</p>
+    <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2>Премиум</h2></div>
+
+    ${p.has_sub ? html`<div class="card stack-sm">
+      <b class="row-c">${ic("gem", "c-accent")}Премиум активен ${p.sub_until === -1 ? "навсегда" : `до ${dateText(p.sub_until)}`}</b>
+      ${ap?.status === "active" ? html`<span class="small muted">Автопродление: ${rub(ap.price)} ₽ ${dateText(ap.next_at)}${ap.trial ? " — после пробного периода" : ""}.</span>
+        <button class="btn sm ghost" id="autopay-off">Отключить автопродление</button>` : ""}
+      ${ap && ap.status !== "active" ? html`<span class="small muted">Автопродление отключено — после окончания срока останется бесплатный тариф.</span>` : ""}
+    </div>` : ""}
+
+    ${p.trial_available && o.trial ? html`<div class="card trial-card stack">
+      <div class="row-c"><span class="badge accent">${ic("zap")} Попробуйте</span></div>
+      <h2>Премиум 7 дней за ${rub(o.trial.price)} ₽</h2>
+      <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div>
+      <button class="btn lg block" data-plan="trial">Попробовать за ${rub(o.trial.price)} ₽</button>
+      <p class="tiny muted">Карта привязывается для продления. Через 7 дней — ${rub(o.trial.then_price)} ₽ в месяц автоматически${o.early ? " (цена ранних пользователей сохранится, пока подписка активна)" : ""}. Отключить можно в любой момент здесь же, до конца пробного периода — бесплатно.</p>
+    </div>` : !p.has_sub ? html`<div class="card stack-sm">
+      <b>Бесплатно — 1 пациент в день</b><span class="small muted">с оценкой и выводом эксперта. В премиуме:</span>
+      <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div></div>` : ""}
+
+    ${o.early ? html`<div class="early-note">${ic("zap")}<span>Цены для ранних пользователей — до ${earlyDate}</span></div>` : ""}
+    <div class="plans">${order.map(planCard)}</div>
+    <p class="tiny muted center">Месячный тариф продлевается автоматически, остальные — разовый платёж. Карта или СБП. Доступ включается сразу — и в боте, и на сайте.</p>
+
+    ${Object.keys(o.packs || {}).length ? html`<div class="section-title">Разовые покупки</div>
+      <div class="grid-2">${Object.entries(o.packs).map(([k, x]) => html`<button class="card tap pack" data-plan="${k}">
+        <div class="tile ${k === "freeze" ? "accent" : "warn"}">${ic(k === "freeze" ? "flame" : "users")}</div>
+        <b>${x.label}</b><span class="small muted">${k === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · есть: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · есть: ${p.patient_credits}` : ""}`}</span>
+        <span class="price-sm">${rub(x.price)} ₽</span></button>`)}</div>` : ""}
   </div>`);
   root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = async () => {
     btnBusy(b);
@@ -2094,6 +2146,30 @@ function viewPlans(fresh) {
     }
     btnBusy(b, false);
   }));
+  const off = $("#autopay-off");
+  if (off) off.onclick = async () => {
+    const ok = await confirmDialog("Отключить автопродление?", `Премиум останется до ${dateText(p.sub_until)}, дальше — бесплатный тариф.`, "Отключить");
+    if (!ok) return;
+    btnBusy(off);
+    try {
+      const { profile } = await api("POST", "/autopay/cancel");
+      S.me.profile = profile;
+      toast("Автопродление отключено");
+      viewPlans();
+    } catch (e) {
+      toast(e.message, "error");
+      btnBusy(off, false);
+    }
+  };
+}
+
+/** Карточка «откройте в премиуме» — после разбора, в тесте, при лимите */
+function premiumCta(text, compact = false) {
+  const p = S.me.profile;
+  const label = p.trial_available ? `Премиум 7 дней за ${rub(S.me.offer?.trial?.price || 1)} ₽` : "Открыть премиум";
+  return html`<a class="card premium-cta ${compact ? "compact" : ""}" href="#/plans">
+    <div class="tile accent">${ic("gem")}</div>
+    <div class="grow"><b>${text}</b><div class="small">${label}</div></div>${ic("chevron")}</a>`;
 }
 
 // ---------------------------------------------------

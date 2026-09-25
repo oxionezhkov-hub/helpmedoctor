@@ -111,8 +111,8 @@ export function onboardingInterests(profession, options, sel) {
 export function onboardingDifficulty(recommended) {
   return {
     text: "<b>4/4. Какая сложность пациентов?</b>\n\n" +
-      DIFFICULTIES.map((d) => `${d.emoji} <b>${d.label}</b> — ${d.hint}${d.key === recommended ? " ⭐" : ""}`).join("\n") +
-      "\n\n⭐ — рекомендуем для вашего уровня. Поменять можно в любой момент в профиле.",
+      DIFFICULTIES.map((d) => `${d.emoji} <b>${d.label}</b> — ${d.hint}${d.key === recommended ? " ⭐" : ""}${d.key === "hard" ? " 💎" : ""}`).join("\n") +
+      "\n\n⭐ — рекомендуем для вашего уровня. 💎 — в премиуме. Поменять можно в любой момент в профиле.",
     kb: [0, 2].map((i) => DIFFICULTIES.slice(i, i + 2).map((d) => btn(`${d.emoji} ${d.label}${d.key === recommended ? " ⭐" : ""}`, `ob_df_${d.key}`))),
   };
 }
@@ -208,6 +208,7 @@ export function evaluation(env, r) {
     t += `\n💬 <i>«${esc(m.quote)}»</i>\n→ ${esc(m.comment)}\n`;
   }
   if (r.post_story) t += `\n📖 <b>Что было дальше</b>\n${esc(r.post_story)}\n`;
+  if (r.locked) t += `\n🔒 <i>В премиуме — полный разбор: цитаты из вашего диалога с комментариями эксперта, «что было дальше» с пациентом и тест по ошибкам.</i>\n`;
   t += `\n⚡ <b>+${r.xp} XP</b>${r.streak_bonus > 0 ? ` (стрик ×${(1 + r.streak_bonus).toFixed(1)})` : ""}`;
   if (r.level_up) t += `\n🎉 <b>Новый уровень: ${r.level_up.from} → ${r.level_up.to}</b>`;
   t += `\n📊 Уровень ${r.level} · 🔥 ${r.streak} ${declDays(r.streak)} подряд`;
@@ -215,7 +216,9 @@ export function evaluation(env, r) {
   return {
     text: t,
     kb: [
-      [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)],
+      r.locked
+        ? [appBtn(r.trial_available ? "💎 Премиум 7 дней за 1 ₽" : "💎 Открыть полный разбор", appUrl(env, "/plans"))]
+        : [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)],
       [btn("➕ Новый пациент", "new"), appBtn("📋 Карточка", appUrl(env, `/patient/${r.patient_id}`))],
     ],
   };
@@ -254,9 +257,10 @@ export function streakLost(env, lost) {
   };
 }
 
-export function streakWarning(env, streak) {
+export function streakWarning(env, streak, { freezes = 0 } = {}) {
   return {
-    text: `⚠️ <b>Осталось 4 часа!</b>\n\n🔥 Стрик ${streak} ${declDays(streak)} сгорит в полночь. Один короткий приём — и серия сохранена.`,
-    kb: [[btn("➕ Принять пациента", "new")]],
+    text: `⚠️ <b>Осталось 4 часа!</b>\n\n🔥 Стрик ${streak} ${declDays(streak)} сгорит в полночь. Один короткий приём — и серия сохранена.` +
+      (freezes ? `\n❄️ У вас есть заморозка — если не успеете, серия не сгорит.` : ""),
+    kb: [[btn("➕ Принять пациента", "new")], ...(freezes ? [] : [[appBtn("❄️ Заморозка стрика", appUrl(env, "/plans"))]])],
   };
 }

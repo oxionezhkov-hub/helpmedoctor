@@ -3,7 +3,7 @@
 // Цены, специальности и лимиты берутся из src/config.js — на сайте всегда актуальные цифры.
 import fs from "node:fs";
 import path from "node:path";
-import { FREE_DAILY_LIMIT, PLANS, SPECIALIZATIONS } from "../src/config.js";
+import { EARLY_UNTIL, FREE_DAILY_LIMIT, PACKS, PLANS, SPECIALIZATIONS, TRIAL } from "../src/config.js";
 import { ARTICLES } from "./site/articles.mjs";
 import { withFigures } from "./site/figures.mjs";
 
@@ -104,11 +104,14 @@ const footer = () => `<footer><div class="wrap">
 const postCard = (a) => `<a class="post-card" href="/blog/${a.slug}/">${a.cover ? `<img class="post-cover" src="/blog/${a.slug}/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async">` : ""}<div class="post-body"><h3>${esc(a.h1)}</h3><p>${esc(a.description)}</p><span class="meta">${a.minutes} мин чтения →</span></div></a>`;
 
 // ---------------------------------------------------------------- главная
+// Дата окончания ранних цен (для текста на сайте; после неё сайт нужно пересобрать)
+const EARLY_DATE = new Date(EARLY_UNTIL - 1).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+
 const FAQ = [
   ["Это медицинская консультация?", "Нет. «Help me, Doctor» — учебный тренажёр: все пациенты вымышлены и созданы искусственным интеллектом. Сервис не ставит диагнозы реальным людям и не заменяет обращение к врачу."],
   ["Кому подходит тренажёр?", "Студентам медицинских вузов, ординаторам и практикующим врачам. При первом входе вы выбираете роль, специальность, интересующие разделы и сложность — пациенты подбираются под вас."],
   ["Нужно ли что-то устанавливать?", "Нет. Тренажёр работает в Telegram-боте и в браузере на телефоне или компьютере. Прогресс общий: начали приём в боте — продолжайте на сайте."],
-  ["Сколько это стоит?", `${FREE_DAILY_LIMIT === 1 ? "Один пациент" : `${FREE_DAILY_LIMIT} пациента`} в день — бесплатно. Безлимитный доступ — от ${rub(PLANS.day.price)} ₽ за день, ${rub(PLANS.month.price)} ₽ за месяц или ${rub(PLANS.forever.price)} ₽ навсегда. Оплата картой или через СБП.`],
+  ["Сколько это стоит?", `${FREE_DAILY_LIMIT === 1 ? "Один пациент" : `${FREE_DAILY_LIMIT} пациента`} в день — бесплатно, с оценкой и выводом эксперта. Премиум — безлимит пациентов, полный разбор, тесты по ошибкам и «Очень сложные» случаи: 7 дней за ${rub(TRIAL.price)} ₽, дальше ${rub(PLANS.month.early)} ₽ в месяц для ранних пользователей (до ${EARLY_DATE}, потом ${rub(PLANS.month.price)} ₽). Отключить автопродление можно в любой момент. Есть тарифы на неделю, 3 месяца и год. Оплата картой или через СБП.`],
   ["Можно ли общаться с пациентом голосом?", "Да. В Telegram и в веб-версии можно отправлять голосовые сообщения — они распознаются и превращаются в вопрос пациенту."],
   ["Можно ли доверять ответам ИИ?", "Случаи и разборы генерирует искусственный интеллект, он может ошибаться. Используйте тренажёр для отработки клинического мышления и коммуникации, а медицинские факты сверяйте с клиническими рекомендациями и учебниками."],
 ];
@@ -117,10 +120,12 @@ function landing() {
   const title = "Тренажёр врача с ИИ-пациентами — Help me, Doctor";
   const description = "Тренируйте клиническое мышление на виртуальных пациентах: расспрос текстом и голосом, осмотр, анализы, диагноз и разбор от эксперта. Для студентов-медиков, ординаторов и врачей. Бесплатно в Telegram и браузере.";
   const plans = [
-    `<div class="plan"><span class="name">Бесплатно</span><div class="price">0 ₽</div><p>${FREE_DAILY_LIMIT} ${FREE_DAILY_LIMIT === 1 ? "пациент" : "пациента"} в день, все функции тренажёра</p></div>`,
-    ...Object.entries(PLANS).map(([k, p]) => `<div class="plan${k === "month" ? " best" : ""}"><span class="name">${esc(p.label)}</span><div class="price">${rub(p.price)} <small>₽</small></div><p>${k === "forever" ? "Безлимит без срока, одним платежом" : "Безлимитные пациенты"}</p></div>`),
-  ].join("");
-  const offers = Object.entries(PLANS).map(([, p]) => ({ "@type": "Offer", name: `Безлимит — ${p.label}`, price: Number(p.price).toFixed(2), priceCurrency: "RUB" }));
+    `<div class="plan"><span class="name">Бесплатно</span><div class="price">0 ₽</div><p>${FREE_DAILY_LIMIT} ${FREE_DAILY_LIMIT === 1 ? "пациент" : "пациента"} в день, оценка и вывод эксперта</p></div>`,
+    ...Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([k, p]) => `<div class="plan${p.best ? " best" : ""}"><span class="name">${esc(p.label)}</span>
+      <div class="price">${rub(p.early || p.price)} <small>₽</small>${p.early ? ` <s>${rub(p.price)} ₽</s>` : ""}</div>
+      <p>${k === "month" ? `Премиум с автопродлением. Первые 7 дней — ${rub(TRIAL.price)} ₽` : "Премиум одним платежом"}</p></div>`),
+  ].join("") + `<p class="plans-note">Цены для ранних пользователей — до ${EARLY_DATE}. Премиум: безлимит пациентов, полный разбор эксперта, тесты по ошибкам, «Очень сложные» случаи. Разово: ${esc(PACKS.patients3.label)} — ${rub(PACKS.patients3.price)} ₽, ${esc(PACKS.freeze.label.toLowerCase())} — ${rub(PACKS.freeze.price)} ₽.</p>`;
+  const offers = Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([, p]) => ({ "@type": "Offer", name: `Премиум — ${p.label}`, price: Number(p.early || p.price).toFixed(2), priceCurrency: "RUB" }));
   const schema = [
     { "@context": "https://schema.org", "@type": "Organization", name: NAME, url: SITE, logo: `${SITE}/apple-touch-icon.png`, sameAs: [BOT] },
     { "@context": "https://schema.org", "@type": "WebSite", name: NAME, url: SITE, inLanguage: "ru" },

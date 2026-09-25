@@ -135,7 +135,8 @@ test("обследование: эндоскопия отдельно от КТ/
 
 test("сложность пациентов: выбранная или по роли", () => {
   assert.equal(G.complexityFor({ level: "студент", difficulty: "" }), "easy");
-  assert.equal(G.complexityFor({ level: "студент", difficulty: "hard" }), "hard");
+  assert.equal(G.complexityFor({ level: "студент", difficulty: "hard" }), "medium_hard", "«Очень сложная» — только в премиуме");
+  assert.equal(G.complexityFor({ level: "студент", difficulty: "hard", sub_until: Date.now() + 86400000 }), "hard");
   assert.equal(G.complexityFor({ level: "врач", difficulty: "нет такой" }), "medium_hard");
 });
 
@@ -221,4 +222,33 @@ test("лица пациентов: детерминированы, учитыв�
   assert.ok(faceOptions({ g: "m", a: 75 }).headVariant.every((h) => /gray|noHair/.test(h)), "пожилые — седые или лысые");
   assert.equal(faceOptions({ g: "m", a: 8 }).maskProbability, 0);
   assert.ok(faceOptions({ m: "good" }).expressionVariant.smile > 0);
+});
+
+test("тарифы: ранние цены до 31 октября, потом обычные", async () => {
+  const { planPrice, EARLY_UNTIL, TRIAL } = await import("../src/config.js");
+  assert.equal(planPrice("month", EARLY_UNTIL - 1), "249.00");
+  assert.equal(planPrice("month", EARLY_UNTIL), "390.00");
+  assert.equal(planPrice(TRIAL.key), "1.00");
+  assert.equal(planPrice("patients3"), "39.00");
+  assert.equal(planPrice("нет такого"), null);
+});
+
+test("стрик: заморозка закрывает пропущенный день", () => {
+  const day = 86400000, t0 = Date.parse("2026-10-01T12:00:00+03:00");
+  const p = { streak: 5, last_consult_date: mskDate(t0), streak_freezes: 1 };
+  G.applyStreak(p, t0 + 2 * day);
+  assert.equal(p.streak, 6, "один пропущенный день закрыт заморозкой");
+  assert.equal(p.streak_freezes, 0);
+  G.applyStreak(p, t0 + 5 * day);
+  assert.equal(p.streak, 1, "без заморозок стрик сгорает");
+});
+
+test("лимит: купленные пациенты сверх бесплатного", () => {
+  const now = Date.now();
+  const p = { daily_patients: [now - 1000], patient_credits: 0 };
+  assert.equal(G.canAcceptPatient(p, now), false);
+  p.patient_credits = 2;
+  assert.equal(G.canAcceptPatient(p, now), true);
+  assert.equal(G.needsPatientCredit(p, now), true);
+  assert.equal(G.needsPatientCredit({ ...p, sub_until: now + 1000 }, now), false, "с подпиской кредиты не тратятся");
 });

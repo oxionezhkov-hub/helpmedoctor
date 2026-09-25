@@ -123,7 +123,7 @@ export function avatar(name, uid, size = "") {
 
 export const LEVELS = { "студент": "Студент", "ординатор": "Ординатор", "врач": "Врач", "специалист": "Опытный специалист" };
 export const SOURCES = { bot: "Бот", miniapp: "Мини-приложение", web: "Сайт", system: "Система", admin: "Админ" };
-export const PLAN_LABELS = { day: "1 день", week: "1 неделя", month: "1 месяц", forever: "Навсегда", gift: "Подарок" };
+export const PLAN_LABELS = { day: "1 день", week: "1 неделя", month: "1 месяц", quarter: "3 месяца", year: "1 год", forever: "Навсегда", trial: "Пробный 7 дней", patients3: "+3 пациента", freeze: "Заморозка стрика", gift: "Подарок" };
 
 export function subBadge(u) {
   if (u.sub_until === -1 || u.sub_until > Date.now()) {
