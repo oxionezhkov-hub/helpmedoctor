@@ -96,7 +96,9 @@ export function todayPatientsCount(prof, now = Date.now()) {
 }
 
 export function canAcceptPatient(prof, now = Date.now()) {
-  return hasActiveSub(prof, now) || todayPatientsCount(prof, now) < FREE_DAILY_LIMIT;
+  // Админ может выдать дополнительных бесплатных пациентов на сегодня
+  const extra = prof.extra_patients?.date === mskDate(now) ? prof.extra_patients.n || 0 : 0;
+  return hasActiveSub(prof, now) || todayPatientsCount(prof, now) < FREE_DAILY_LIMIT + extra;
 }
 
 // ---------- Задание дня ----------

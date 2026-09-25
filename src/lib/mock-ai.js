@@ -7,6 +7,16 @@ function lastUser(messages) {
 
 export const mockAi = {
   async run(model, input) {
+    const res = await mockRun(model, input);
+    if (model.includes("whisper")) return { ...res, transcription_info: { duration: 3.2 } };
+    const prompt = (input?.messages || []).map((m) => m.content).join(" ");
+    const out = typeof res.response === "string" ? res.response : JSON.stringify(res.response);
+    return { ...res, usage: { prompt_tokens: Math.ceil(prompt.length / 2.5), completion_tokens: Math.ceil(out.length / 2.5) } };
+  },
+};
+
+const mockImpl = {
+  async run(model, input) {
     const prompt = lastUser(input?.messages);
     // Реалистичные задержки: генерация пациента заметно дольше остального
     await new Promise((r) => setTimeout(r, /Создай (уникального|пациента)/.test(prompt) ? 3000 : 400));
@@ -31,3 +41,7 @@ export const mockAi = {
     return { response: "Пациент: Болит под ложечкой, особенно ночью." };
   },
 };
+
+function mockRun(model, input) {
+  return mockImpl.run(model, input);
+}

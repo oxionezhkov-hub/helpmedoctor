@@ -258,6 +258,123 @@ assert.equal(r.data.code, "payment");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("Оплата не создана")), "admin payment error");
 step("оплата: ошибка банка — понятный ответ пользователю, подробности админу");
 
+
+// ---------------------------------------------------------------- веб-админка /admin
+async function adm(token, method, path, body) {
+  const r = await fetch(`${BASE}/api/admin${path}`, { method, headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  return { status: r.status, data: await r.json() };
+}
+assert.equal((await adm(null, "POST", "/auth/telegram", { initData: initData(U) })).status, 403, "не-админ не входит в админку");
+assert.equal((await adm(webToken, "GET", "/me")).status, 401, "токен пользователя не подходит для админки");
+const admTok = (await adm(null, "POST", "/auth/telegram", { initData: initData("1326867567") })).data.token;
+const admTok2 = (await adm(null, "POST", "/auth/telegram", { initData: initData("1062804986") })).data.token;
+assert.ok(admTok && admTok2);
+const aq = async (op, args = {}, tok = admTok) => {
+  const r = await adm(tok, "POST", "/q", { op, args });
+  assert.equal(r.status, 200, `${op}: ${JSON.stringify(r.data)}`);
+  return r.data;
+};
+assert.equal((await adm(admTok, "POST", "/q", { op: "set_setting", args: { k: "x", v: 1 } })).status, 400, "внутренние операции закрыты");
+const meAdm = (await adm(admTok, "GET", "/me")).data;
+assert.equal(meAdm.me.name, "Олег");
+assert.equal(meAdm.admins.length, 2);
+step("админка: вход только для Олега и Саши, внутренние операции закрыты");
+
+const nowTs = Date.now(), per = { from: nowTs - 30 * 86400000, to: nowTs + 60000 };
+const dash = await aq("dashboard", per);
+assert.ok(dash.tiles && dash.funnel?.steps?.length >= 3, JSON.stringify(dash).slice(0, 300));
+for (const name of ["retention", "consultations", "quality", "procedures", "specialties", "quizzes", "gamification", "money", "ai", "channels", "heatmap", "errors"]) {
+  await aq("report", { name, ...per });
+}
+const aiRep = await aq("report", { name: "ai", ...per });
+assert.ok(JSON.stringify(aiRep).includes("neurons"), "расход ИИ в нейронах");
+const list = await aq("users", { filter: { q: "777" }, sort: "last_active", limit: 10 });
+assert.ok(list.rows.some((u) => String(u.uid) === U));
+assert.ok((await aq("users", { filter: { q: "анна" } })).rows.some((u) => String(u.uid) === "555"), "поиск по кириллице без учёта регистра");
+step("админка: дашборд, 12 отчётов (включая расход ИИ), поиск пользователей");
+
+const card = await adm(admTok, "GET", `/user/${U}`);
+assert.equal(card.status, 200);
+let chat = (await aq("chat", { uid: U, limit: 2000 })).rows;
+assert.ok(chat.some((c) => c.dir === "in" && c.kind === "command" && c.text === "/start"), "входящая команда в переписке");
+assert.ok(chat.some((c) => c.dir === "in" && c.kind === "button"), "нажатия кнопок в переписке");
+assert.ok(chat.some((c) => c.dir === "out" && c.text.includes("Добро пожаловать")), "ответы бота в переписке");
+const pidAdm = card.data.view.patients[0].id;
+const patAdm = await adm(admTok, "GET", `/user/${U}/patient/${pidAdm}`);
+assert.equal(patAdm.status, 200);
+assert.ok(patAdm.data.patient.true_diagnosis, "админ видит скрытый диагноз");
+step("админка: карточка пользователя, полная переписка с ботом, полный приём пациента");
+
+let act = await adm(admTok, "POST", `/user/${U}/action`, { action: "cancel" });
+assert.equal(act.status, 200, JSON.stringify(act.data));
+assert.equal((await api(webToken, "GET", "/me")).data.profile.has_sub, false);
+act = await adm(admTok, "POST", `/user/${U}/action`, { action: "grant", days: 30, reason: "тест", text: "Держите **месяц**" });
+assert.equal(act.status, 200, JSON.stringify(act.data));
+await waitFor(() => sent(U).some((m) => m.text.includes("<b>месяц</b>")), "grant text");
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("выдал(а) подписку")), "other admin notified");
+me = (await api(webToken, "GET", "/me")).data;
+assert.ok(me.profile.has_sub && me.profile.sub_until > Date.now() + 29 * 86400000);
+act = await adm(admTok, "POST", `/user/${U}/action`, { action: "extra", n: 2 });
+assert.equal(act.status, 200, JSON.stringify(act.data));
+act = await adm(admTok, "POST", `/user/${U}/action`, { action: "block" });
+assert.equal(act.status, 200);
+assert.equal((await api(webToken, "POST", "/patients/request")).status >= 400, true, "заблокированный не берёт пациентов");
+act = await adm(admTok, "POST", `/user/${U}/action`, { action: "unblock" });
+assert.equal(act.status, 200);
+step("админка: подписка кнопкой (выдать/отменить), доп. пациенты, блокировка");
+
+const msgR = await adm(admTok, "POST", `/user/${U}/message`, { text: "Привет от **команды**", buttons: [{ type: "url", text: "Сайт", url: "https://example.com" }] });
+assert.equal(msgR.status, 200, JSON.stringify(msgR.data));
+assert.equal(msgR.data.ok, true);
+await waitFor(() => sent(U).some((m) => m.text.includes("Привет от <b>команды</b>")), "admin message");
+chat = (await aq("chat", { uid: U, limit: 2000 })).rows;
+const outAdm = chat.find((c) => c.kind === "admin" && c.text.includes("Привет от"));
+assert.ok(outAdm && outAdm.admin === "1326867567", "сообщение админа в переписке с автором");
+await tgUpdate(U, { message: { message_id: updateId, from: from(U), chat: { id: Number(U), type: "private" }, date: 1, text: "Спасибо, всё супер", reply_to_message: { message_id: outAdm.tg_mid } } });
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Ответ пользователя") && m.text.includes("всё супер")), "reply routed");
+await waitFor(() => sent(U).some((m) => m.text.includes("Передали команде")), "reply ack");
+chat = (await aq("chat", { uid: U, limit: 2000 })).rows;
+assert.ok(chat.some((c) => c.dir === "in" && c.kind === "reply" && c.text.includes("всё супер")));
+const inbox = await aq("inbox");
+assert.ok(inbox.rows.some((r) => String(r.uid) === U));
+step("админка: сообщение от имени бота, ответ пользователя уходит админам, а не пациенту");
+
+const segCount = await aq("segment_count", { filter: { uids: [U] } });
+assert.equal(segCount.count, 1);
+const bc = await aq("broadcast_create", { title: "Тест", text: "Новый **кейс** для {имя}", filter: { uids: [U] }, buttons: [{ type: "new", text: "Взять пациента" }] });
+const bcDone = await waitFor(async () => { const b = await aq("broadcast", { id: bc.id }); return b?.status === "done" && b; }, "broadcast done", 20000);
+assert.equal(bcDone.stats.sent, 1, JSON.stringify(bcDone.stats));
+const bcMsg = await waitFor(() => sent(U).find((m) => m.text.includes("Новый <b>кейс</b>")), "broadcast delivered");
+assert.ok(!bcMsg.text.includes("{имя}"), "подстановка имени");
+await press(U, `bc:${bc.id}:new`);
+await waitFor(async () => (await aq("broadcast", { id: bc.id })).stats?.clicked === 1, "broadcast click");
+step("админка: рассылка по сегменту, подстановки, клики по кнопке считаются");
+
+const t = await aq("task_create", { title: "Проверить отчёты", assignee: "1062804986", priority: "high" });
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Проверить отчёты")), "task assignee notified");
+await aq("task_update", { id: t.id, patch: { status: "doing" } }, admTok2);
+const tfull = await aq("task_comment", { id: t.id, text: "Взял" }, admTok2);
+assert.equal(tfull.status, "doing");
+assert.equal(tfull.comments_list.length, 1);
+assert.ok(tfull.history.length >= 1);
+await text("1062804986", "/idea Добавить тёмную тему в тест");
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("записана в бэклог")), "idea");
+const tasksAll = await aq("tasks", {});
+assert.ok(tasksAll.rows.some((x) => x.title.includes("тёмную тему") && x.status === "idea"));
+await aq("task_delete", { id: t.id });
+step("админка: задачи — создание, назначение с уведомлением, комментарии, история, /idea из бота");
+
+const np = await aq("notify_save", { prefs: { new_user: false } }, admTok2);
+assert.equal(np.prefs.new_user, false);
+const before2 = sent("1062804986").length;
+await text("888", "/start");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("888")), "new user to oleg", 20000);
+await sleep(500);
+assert.ok(!sent("1062804986").slice(before2).some((m) => m.text.includes("888") && m.text.includes("Новый")), "Саша отключил уведомления о новых");
+const audit = await aq("audit_log");
+for (const a of ["grant", "cancel", "extra", "block", "message"]) assert.ok(audit.rows.some((r) => r.action === a), `audit ${a}`);
+step("админка: личные настройки уведомлений, журнал действий админов");
+
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");

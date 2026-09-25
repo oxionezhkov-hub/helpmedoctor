@@ -1,6 +1,6 @@
 // Workers AI: текст, JSON и распознавание речи.
 // Все вызовы идут через binding env.AI — без внешних ключей.
-import { AI_MODEL, WHISPER_MODEL } from "../config.js";
+import { AI_MODEL, AI_NEURONS, WHISPER_MODEL } from "../config.js";
 import { mockAi } from "./mock-ai.js";
 
 const JSON_SYSTEM = "Отвечай ТОЛЬКО валидным JSON без markdown, без ``` и без пояснений. Все тексты внутри JSON — на русском языке.";
@@ -10,11 +10,11 @@ const JSON_SYSTEM = "Отвечай ТОЛЬКО валидным JSON без ma
  * @param {object} env
  * @param {{system?: string, prompt: string, maxTokens?: number, temperature?: number}} opts
  */
-export async function aiText(env, { system, prompt, maxTokens = 300, temperature = 0.8 }) {
+export async function aiText(env, { system, prompt, maxTokens = 300, temperature = 0.8, kind = "other", uid = "" }) {
   const messages = [];
   if (system) messages.push({ role: "system", content: system });
   messages.push({ role: "user", content: prompt });
-  const text = responseToText(await runWithRetry(env, { messages, max_tokens: maxTokens, temperature }));
+  const text = responseToText(await runWithRetry(env, { messages, max_tokens: maxTokens, temperature }, { kind, uid }));
   if (!text) throw new Error("Workers AI: пустой ответ");
   return stripQuotes(cleanText(text));
 }
@@ -22,14 +22,14 @@ export async function aiText(env, { system, prompt, maxTokens = 300, temperature
 /**
  * JSON-ответ модели: парсит, а при битом JSON делает одну повторную попытку.
  */
-export async function aiJson(env, { system, prompt, maxTokens = 800, temperature = 0.7 }) {
+export async function aiJson(env, { system, prompt, maxTokens = 800, temperature = 0.7, kind = "other", uid = "" }) {
   const messages = [
     { role: "system", content: system ? `${system}\n\n${JSON_SYSTEM}` : JSON_SYSTEM },
     { role: "user", content: prompt },
   ];
   let lastErr;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const result = await runWithRetry(env, { messages, max_tokens: maxTokens, temperature: attempt ? 0.3 : temperature });
+    const result = await runWithRetry(env, { messages, max_tokens: maxTokens, temperature: attempt ? 0.3 : temperature }, { kind, uid });
     // Workers AI сам парсит JSON-ответ в объект — тогда он уже готов
     if (result?.response && typeof result.response === "object") return cleanDeep(result.response);
     try {
@@ -43,9 +43,43 @@ export async function aiJson(env, { system, prompt, maxTokens = 800, temperature
 }
 
 /** Распознавание речи (Whisper). base64Audio — строка base64. */
-export async function transcribe(env, base64Audio) {
-  const result = await ai(env).run(WHISPER_MODEL, { audio: base64Audio, language: "ru", task: "transcribe" });
+export async function transcribe(env, base64Audio, { uid = "" } = {}) {
+  const t0 = Date.now();
+  let result;
+  try {
+    result = await ai(env).run(WHISPER_MODEL, { audio: base64Audio, language: "ru", task: "transcribe" });
+  } catch (e) {
+    await logUsage(env, { uid, kind: "voice", model: WHISPER_MODEL, ms: Date.now() - t0, ok: 0, err: e.message });
+    throw e;
+  }
+  // Длительность из ответа Whisper; если её нет — оценка по размеру (Opus ≈ 4 КБ/с)
+  let sec = Number(result?.transcription_info?.duration);
+  const estimated = !(sec > 0);
+  if (estimated) sec = Math.max(1, Math.round((base64Audio.length * 0.75) / 4000));
+  await logUsage(env, { uid, kind: "voice", model: WHISPER_MODEL, audio_sec: sec, ms: Date.now() - t0, ok: 1, estimated: estimated ? 1 : 0 });
   return String(result?.text ?? "").trim();
+}
+
+/** Нейроны за запрос по тарифу модели (цены Cloudflare в нейронах) */
+export function neuronsFor(model, { tin = 0, tout = 0, audio_sec = 0 } = {}) {
+  const r = AI_NEURONS[model];
+  if (!r) return 0;
+  return (tin * (r.in || 0)) / 1e6 + (tout * (r.out || 0)) / 1e6 + (audio_sec / 60) * (r.audio_min || 0);
+}
+
+/** Запись расхода ИИ в HubDO: по ней админка считает нейроны, скорость и ошибки */
+async function logUsage(env, row) {
+  if (!env.HUB) return;
+  try {
+    await env.HUB.get(env.HUB.idFromName("hub")).logAi({ ...row, neurons: neuronsFor(row.model, row) });
+  } catch (e) {
+    console.error("logAi", e);
+  }
+}
+
+function estimateTokens(text) {
+  // Кириллица в токенизаторе Llama — примерно 2,5 символа на токен
+  return Math.ceil(String(text || "").length / 2.5);
 }
 
 /** Binding Workers AI; в локальных тестах (AI_MOCK=1) — заглушка */
@@ -55,13 +89,25 @@ function ai(env) {
   throw new Error("Workers AI binding не настроен");
 }
 
-async function runWithRetry(env, input, attempts = 3) {
+async function runWithRetry(env, input, meta = {}, attempts = 3) {
   let lastErr;
+  const promptText = (input.messages || []).map((m) => m.content).join("\n");
   for (let i = 0; i < attempts; i++) {
+    const t0 = Date.now();
     try {
-      return await ai(env).run(AI_MODEL, input);
+      const res = await ai(env).run(AI_MODEL, input);
+      const u = res?.usage || {};
+      const exact = Number(u.prompt_tokens) > 0;
+      await logUsage(env, {
+        uid: meta.uid || "", kind: meta.kind || "other", model: AI_MODEL, ms: Date.now() - t0, ok: 1,
+        tin: exact ? Number(u.prompt_tokens) : estimateTokens(promptText),
+        tout: exact ? Number(u.completion_tokens || 0) : estimateTokens(responseToText(res)),
+        estimated: exact ? 0 : 1,
+      });
+      return res;
     } catch (e) {
       lastErr = e;
+      await logUsage(env, { uid: meta.uid || "", kind: meta.kind || "other", model: AI_MODEL, ms: Date.now() - t0, ok: 0, err: String(e.message || e).slice(0, 300) });
       console.warn(`Workers AI attempt ${i + 1} failed: ${e.message}`);
       if (i < attempts - 1) await new Promise((r) => setTimeout(r, 800 * (i + 1)));
     }

@@ -3,11 +3,12 @@
   "name": "helpmedoctor-test",
   "main": "src/index.js",
   "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_als"],
   "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "single-page-application" },
   "kv_namespaces": [{ "binding": "HELPMEDOCTOR", "id": "test-kv" }],
   "durable_objects": { "bindings": [{ "name": "USER", "class_name": "UserDO" }, { "name": "HUB", "class_name": "HubDO" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["UserDO", "HubDO"] }],
-  "triggers": { "crons": ["0 7 * * *", "0 17 * * *"] },
+  "triggers": { "crons": ["0 7 * * *", "0 17 * * *", "0 18 * * *"] },
   "vars": {
     "PUBLIC_URL": "http://localhost:8787", "BOT_USERNAME": "helpmedoctor_aibot", "ADMIN_ID": "1326867567,1062804986",
     "TOCHKA_MERCHANT": "0", "TOCHKA_CUSTOMER": "0",
