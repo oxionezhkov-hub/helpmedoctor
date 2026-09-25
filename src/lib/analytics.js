@@ -666,7 +666,7 @@ function taskOut(t) {
 const SEED_TASKS = [
   { title: "Проверить оплату после исправления", descr: "Попробовать оплатить любой тариф. Если банк откажет — админам придёт текст ошибки Точки.", type: "bug", status: "backlog", priority: "high" },
   { title: "Проверить качество ответов ИИ на новых промптах", descr: "Пройти 2–3 приёма: обследования и осмотры должны показывать только данные своего метода.", type: "feature", status: "backlog", priority: "medium" },
-  { title: "Выпустить токен Cloudflare для точного расхода ИИ", descr: "Cloudflare → My Profile → API Tokens → право Account Analytics: Read. Добавить в секреты GitHub как CF_ANALYTICS_TOKEN и перезапустить деплой.", type: "feature", status: "backlog", priority: "medium" },
+  { title: "Выпустить токен Cloudflare для точного расхода ИИ", descr: "Деплойному токену CLOUDFLARE_API_TOKEN выдать право Account Analytics: Read и перезапустить деплой.", type: "feature", status: "backlog", priority: "medium" },
   { title: "Обновить меню команд бота", descr: "Запустить node scripts/set-webhook.mjs — появятся /feedback и /idea.", type: "feature", status: "backlog", priority: "low" },
 ];
 
