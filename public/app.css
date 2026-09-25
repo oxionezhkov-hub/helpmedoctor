@@ -352,6 +352,13 @@ html:has(.consult) { scrollbar-gutter: auto; overflow: hidden; }
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
 .login .card { max-width: 420px; width: 100%; text-align: center; padding: 28px 20px; }
 .login .logo { font-size: 64px; }
+.login .or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; margin: 4px 0; }
+.login .or::before, .login .or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.oauth-btn { background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--border); }
+.oauth-btn:hover { box-shadow: inset 0 0 0 1.5px var(--muted); }
+.i.brand { stroke: none; width: 22px; height: 22px; flex: none; }
+.tile.plain { background: var(--surface-2); }
+.acc-row { cursor: default; }
 
 /* ---------- Тосты ---------- */
 #toast-root { position: fixed; left: 0; right: 0; top: calc(12px + var(--safe-top)); z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; padding: 0 16px; }

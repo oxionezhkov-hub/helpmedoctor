@@ -1,0 +1,40 @@
+/* Фирменный стиль PDF-материалов Help me, Doctor: A4, бумага, шрифт с засечками в заголовках, моно для пометок.
+   Используется всеми файлами в content/telegram-channel/pdf/*.html — сборка: node scripts/build-pdf.mjs */
+@font-face { font-family: "Literata"; font-weight: 500 800; src: url(../../../public/fonts/literata-cyrillic.woff2) format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Literata"; font-weight: 500 800; src: url(../../../public/fonts/literata-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2116, U+2122, U+2212; }
+@font-face { font-family: "Literata"; font-style: italic; font-weight: 500 700; src: url(../../../public/fonts/literata-italic-cyrillic.woff2) format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Literata"; font-style: italic; font-weight: 500 700; src: url(../../../public/fonts/literata-italic-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2116, U+2122, U+2212; }
+@page { size: A4; margin: 0; }
+:root {
+  --paper: #f6f4ee; --paper-2: #eeebe2; --card: #fffdf8; --ink: #191c1b; --ink-2: #353a38; --muted: #5f6662;
+  --rule: #dcd7ca; --rule-2: #c7c0ae; --green: #0d5c55; --green-soft: #dceae5; --red: #b3391f; --mark: #f4e4a1;
+  --serif: "Literata", Georgia, serif; --sans: "DejaVu Sans", "Segoe UI", Roboto, Arial, sans-serif; --mono: "DejaVu Sans Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font: 9pt/1.4 var(--sans); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { width: 210mm; height: 297mm; padding: 11mm 13mm 9mm; background: var(--paper); position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; }
+.page:last-child { page-break-after: auto; }
+.top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1.4pt solid var(--ink); padding-bottom: 3mm; margin-bottom: 4mm; font: 7.2pt var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.brand { display: flex; align-items: center; gap: 2.2mm; font: 700 11pt var(--serif); letter-spacing: 0; text-transform: none; color: var(--ink); }
+.brand svg { width: 6mm; height: 6mm; }
+h1 { font: 700 23pt/1.08 var(--serif); letter-spacing: -.01em; margin: 0 0 2.5mm; }
+h2 { font: 700 13.5pt/1.2 var(--serif); margin: 0 0 2.5mm; }
+h3 { font: 700 10.5pt/1.25 var(--serif); margin: 0 0 1.2mm; }
+p { margin: 0 0 2mm; }
+.lead { font-size: 9.8pt; color: var(--ink-2); max-width: 150mm; }
+.kicker { font: 7.5pt var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--red); margin-bottom: 2mm; }
+.mono { font-family: var(--mono); font-size: 7.5pt; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+ul { margin: 0; padding-left: 4.2mm; }
+li { margin-bottom: .6mm; }
+.box { background: var(--card); border: .8pt solid var(--rule-2); border-radius: 2mm; padding: 4mm; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3.5mm; }
+.check li { list-style: none; position: relative; padding-left: 5.5mm; margin-left: -4.2mm; }
+.check li::before { content: ""; position: absolute; left: 0; top: .6mm; width: 3mm; height: 3mm; border: .9pt solid var(--ink-2); border-radius: .6mm; background: var(--card); }
+.say { font-family: var(--sans); font-style: italic; color: #1e3a8a; }
+.flag { color: var(--red); font-weight: 700; }
+.foot { margin-top: auto; padding-top: 3mm; border-top: .8pt solid var(--rule-2); display: flex; justify-content: space-between; align-items: flex-end; gap: 6mm; font-size: 7.6pt; color: var(--muted); }
+.foot .cta { display: flex; gap: 3mm; align-items: center; color: var(--ink); }
+.foot .cta svg { width: 16mm; height: 16mm; background: var(--card); padding: 1.2mm; border: .8pt solid var(--rule-2); border-radius: 1.5mm; }
+.foot b { font: 700 9.5pt var(--serif); display: block; color: var(--ink); }

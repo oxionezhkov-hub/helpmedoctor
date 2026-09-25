@@ -28,8 +28,9 @@ export function enabledProviders(env) {
   return Object.keys(PROVIDERS).filter((k) => testMode(env) || (env[PROVIDERS[k].idVar] && env[PROVIDERS[k].secretVar]));
 }
 
-export function redirectUri(env, provider, origin) {
-  return `${(env.PUBLIC_URL || origin).replace(/\/$/, "")}/api/auth/oauth/${provider}/callback`;
+/** origin — адрес сайта, с которого пришёл пользователь: cookie с nonce живёт на нём же */
+export function redirectUri(provider, origin) {
+  return `${origin.replace(/\/$/, "")}/api/auth/oauth/${provider}/callback`;
 }
 
 export function authorizeUrl(env, provider, state, redirect) {

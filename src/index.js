@@ -196,8 +196,8 @@ async function api(request, env, url) {
     }
     const nonce = randomToken(16);
     const state = await signData(env, { p: provider, m: mode === "link" ? "link" : "login", u: owner, n: nonce, r: String(from).replace(/[^\w-]/g, "").slice(0, 40), exp: Date.now() + 10 * 60000 });
-    const secure = env.PUBLIC_URL?.startsWith("https:") ? "; Secure" : "";
-    return json({ url: authorizeUrl(env, provider, state, redirectUri(env, provider, url.origin)) }, 200, {
+    const secure = siteOrigin(request, env).startsWith("https:") ? "; Secure" : "";
+    return json({ url: authorizeUrl(env, provider, state, redirectUri(provider, siteOrigin(request, env))) }, 200, {
       "Set-Cookie": `${OAUTH_COOKIE}=${nonce}; Path=/api/auth/oauth/; Max-Age=600; HttpOnly; SameSite=Lax${secure}`,
     });
   }
@@ -382,6 +382,11 @@ async function mergeAccounts(env, from, to) {
   await src.wipe();
 }
 
+/** Адрес сайта для пользователя: helpmedoctor.ru приходит через прокси, у воркера в этом случае другой хост */
+function siteOrigin(request, env) {
+  return isCanonicalHost(request) && env.PUBLIC_URL ? env.PUBLIC_URL.replace(/\/$/, "") : new URL(request.url).origin;
+}
+
 function readCookie(request, name) {
   const m = (request.headers.get("Cookie") || "").match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return m ? m[1] : null;
@@ -401,7 +406,7 @@ async function oauthCallback(request, env, url, provider) {
   if (!code) return back("auth_error=cancel");
   let id;
   try {
-    id = await fetchIdentity(env, provider, code, redirectUri(env, provider, url.origin));
+    id = await fetchIdentity(env, provider, code, redirectUri(provider, siteOrigin(request, env)));
   } catch (e) {
     console.error("oauth", provider, e.message);
     return back("auth_error=provider");

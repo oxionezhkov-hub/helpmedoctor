@@ -4,3 +4,4 @@ node_modules/
 .env
 *.log
 .DS_Store
+content/telegram-channel/pdf/.*.html

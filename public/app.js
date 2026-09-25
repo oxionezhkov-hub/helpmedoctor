@@ -103,6 +103,7 @@ const ICONS = {
   alert: '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>',
   alien: '<path d="M12 3C7.6 3 4 6.2 4 10.3 4 15.3 9 21 12 21s8-5.7 8-10.7C20 6.2 16.4 3 12 3Z"/><path d="M7.5 11c1.8 0 3 .9 3.5 2.3-1.8.3-3.5-.6-3.5-2.3ZM16.5 11c-1.8 0-3 .9-3.5 2.3 1.8.3 3.5-.6 3.5-2.3Z"/>',
   logout: '<path d="M9 21H5V3h4M16 17l5-5-5-5M21 12H9"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.7-8.7M17 6l2.5 2.5M14.5 8.5 17 11"/>',
   back: '<path d="m15 18-6-6 6-6"/>',
   chevron: '<path d="m9 18 6-6-6-6"/>',
   heart: '<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M3.5 12h4l2-3 3 6 2-3h6" class="pulse"/>',
@@ -115,6 +116,14 @@ const ICONS = {
   chart: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
 };
+// Логотипы способов входа — в фирменных цветах
+const BRAND = {
+  google: '<svg class="i brand" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
+  yandex: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#FC3F1D"/><text x="12" y="17" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="14" fill="#fff">Я</text></svg>',
+  telegram: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#2AABEE"/><path fill="#fff" d="M17.6 7.2 15.7 16.6c-.1.6-.5.8-1 .5l-2.9-2.1-1.4 1.3c-.2.2-.3.3-.6.3l.2-2.9 5.3-4.8c.2-.2 0-.3-.4-.1l-6.5 4.1-2.8-.9c-.6-.2-.6-.6.1-.9l11-4.2c.5-.2 1 .1.9.9Z"/></svg>',
+};
+const PROVIDER_LABEL = { google: "Google", yandex: "Яндекс ID", telegram: "Telegram" };
+const brand = (name) => raw(BRAND[name] || "");
 const ic = (name, cls = "") => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ""}</svg>`);
 
 function hashHue(s) {
@@ -404,10 +413,16 @@ async function boot() {
       return renderFatal("Не удалось войти через Telegram. Закройте и откройте приложение ещё раз.");
     }
   } else {
-    // Пришли из мини-приложения по кнопке «Открыть на сайте»: одноразовый код входа
-    const handoff = new URLSearchParams(location.search).get("login");
+    // Одноразовый код входа: из мини-приложения («Открыть на сайте») или после Google / Яндекса.
+    // Остальные параметры — итог привязки способа входа и метка, откуда пришёл посетитель (для аналитики)
+    const qs = new URLSearchParams(location.search);
+    const handoff = qs.get("login");
+    if (qs.get("from")) sessionStore("hmd_from", qs.get("from").slice(0, 40));
+    S.authNotice = AUTH_NOTICES[qs.get("auth_error")] || (qs.get("linked") ? `${PROVIDER_LABEL[qs.get("linked")] || "Аккаунт"} привязан — теперь можно входить и так` : null)
+      || (qs.get("link_error") ? LINK_ERRORS[qs.get("link_error")] || "Не удалось привязать аккаунт" : null);
+    S.authNoticeKind = qs.get("linked") ? "ok" : "error";
+    if ([...qs.keys()].length) history.replaceState(null, "", `${location.pathname}${location.hash}`);
     if (handoff) {
-      history.replaceState(null, "", `${location.pathname}${location.hash}`);
       try {
         const r = await api("GET", `/auth/poll?code=${encodeURIComponent(handoff)}`);
         if (r.status === "ok") store(TOKEN_KEY, r.token);
@@ -426,7 +441,31 @@ async function boot() {
   connectWs();
   window.addEventListener("hashchange", route);
   route();
+  if (S.authNotice) toast(S.authNotice, S.authNoticeKind), (S.authNotice = null);
   api("POST", "/event", { type: "app_open" }).catch(() => {});
+}
+
+const AUTH_NOTICES = {
+  cancel: "Вход отменён",
+  state: "Ссылка входа устарела — попробуйте ещё раз",
+  provider: "Сервис входа не ответил — попробуйте ещё раз или войдите через Telegram",
+};
+const LINK_ERRORS = {
+  taken: "Этот аккаунт уже привязан к другому профилю. Войдите через него и отвяжите его там",
+  has_other: "К профилю уже привязан другой аккаунт этого сервиса — сначала отвяжите его",
+};
+
+/** Google / Яндекс: сервер ставит cookie с nonce и отдаёт адрес страницы входа провайдера */
+async function oauthStart(provider, mode = "login", btn = null) {
+  if (btn) btnBusy(btn);
+  try {
+    const { url } = await api("POST", "/auth/oauth/start", { provider, mode, from: sessionStore("hmd_from") || "" });
+    try { window.ym?.(113057442, "reachGoal", `auth_${provider}`); } catch {}
+    location.href = url;
+  } catch (e) {
+    toast(e.message, "error");
+    if (btn) btnBusy(btn, false);
+  }
 }
 
 function applyTgViewport() {
@@ -456,11 +495,23 @@ async function renderLogin() {
   root.innerHTML = html`<div class="login"><div class="card stack">
     <div class="logo">${ic("heart")}</div>
     <h1>Help me, Doctor</h1>
-    <p class="muted">Тренажёр врача: ИИ-пациенты, обследования, диагноз и разбор от эксперта. Прогресс общий с Telegram-ботом.</p>
+    <p class="muted">Тренажёр врача: ИИ-пациенты, обследования, диагноз и разбор от эксперта. Первый пациент каждый день — бесплатно.</p>
     <a class="btn lg block busy" id="login-btn" aria-disabled="true"><span>Войти через Telegram</span></a>
     <p class="tiny muted" id="login-hint">Откроется бот — нажмите в нём «Запустить», и сайт войдёт сам.</p>
+    <div id="oauth-box" class="stack-sm"></div>
     <p class="tiny muted">Входя, вы соглашаетесь с ${docLink("privacy", "политикой обработки персональных данных")}.</p>
   </div></div>`[RAW];
+  if (S.authNotice) toast(S.authNotice, S.authNoticeKind), (S.authNotice = null);
+  // Google и Яндекс — если ключи настроены на сервере
+  api("GET", "/config").then(({ providers = [] }) => {
+    const box = $("#oauth-box");
+    if (!box || !providers.length) return;
+    const order = ["yandex", "google"].filter((p) => providers.includes(p));
+    box.innerHTML = html`<div class="or"><span>или</span></div>
+      ${order.map((p) => html`<button class="btn block oauth-btn" data-oauth="${p}" type="button">${brand(p)}<span>Войти через ${PROVIDER_LABEL[p]}</span></button>`)}
+      <p class="tiny muted">Без Telegram тоже можно: прогресс сохранится, а Telegram привяжете потом в профиле.</p>`[RAW];
+    box.querySelectorAll("[data-oauth]").forEach((b) => (b.onclick = () => oauthStart(b.dataset.oauth, "login", b)));
+  }).catch(() => {});
   let code;
   try {
     const r = await api("POST", "/auth/login");
@@ -469,7 +520,7 @@ async function renderLogin() {
     // tg:// открывает приложение Telegram сразу, без новой вкладки; эта страница остаётся и ждёт подтверждения
     btn.href = r.tg || r.url;
     btn.classList.remove("busy");
-    btn.innerHTML = html`${ic("telegram")}<span>Войти через Telegram</span>`[RAW];
+    btn.innerHTML = html`${brand("telegram")}<span>Войти через Telegram</span>`[RAW];
     btn.removeAttribute("aria-disabled");
     btn.onclick = () => {
       btn.innerHTML = html`${ic("clock")}<span>Ждём подтверждения…</span>`[RAW];
@@ -560,6 +611,13 @@ function connectWs() {
 }
 
 function onSync(msg) {
+  // Этот веб-аккаунт объединён с Telegram: тот же токен теперь ведёт в общий профиль
+  if (msg.scope === "merged") {
+    try { S.ws?.close(); } catch {}
+    S.patients.clear();
+    loadMe().then(() => rerender(true)).catch(() => {});
+    return;
+  }
   if (msg.scope === "consultation" && msg.patient_id) {
     if (msg.typing) S.typing.add(msg.patient_id);
     else S.typing.delete(msg.patient_id);
@@ -617,6 +675,7 @@ function parseRoute() {
   if (parts[0] === "quiz" && parts[1]) return { name: "quiz", params: { id: parts[1] }, q };
   if (parts[0] === "profile" && parts[1] === "stats") return { name: "stats", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "settings") return { name: "settings", params: {}, q };
+  if (parts[0] === "profile" && parts[1] === "accounts") return { name: "accounts", params: {}, q };
   if (parts[0] === "profile") return { name: "profile", params: {}, q };
   if (parts[0] === "plans") return { name: "plans", params: {}, q };
   return { name: "home", params: {}, q };
@@ -665,7 +724,7 @@ async function route() {
 function rerender(fresh = false) {
   const r = S.route;
   if (!S.me) return;
-  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans };
+  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts };
   (views[r.name] || viewHome)(fresh);
 }
 
@@ -673,7 +732,7 @@ function renderShell(content, withNav = true) {
   const r = S.route.name;
   const pendingQuizzes = (S.me?.quizzes || []).filter((q) => q.status !== "done").length;
   const queue = (S.me?.patients || []).filter((p) => p.status !== "closed").length;
-  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings"].includes(r)) ? "active" : ""}">
+  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts"].includes(r)) ? "active" : ""}">
     ${ic(ico, "nav-i")}<span>${label}</span>${badge ? html`<span class="dot">${badge}</span>` : ""}</a>`;
   const scrollY = window.scrollY;
   patchRoot(html`${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
@@ -1988,12 +2047,13 @@ function viewProfile() {
   const item = (attrs, tile, icon, title, sub2, extra = "") => html`<${attrs.tag || "a"} class="menu-item${attrs.cls ? " " + attrs.cls : ""}" ${raw(attrs.a || "")}>
     <div class="tile ${tile}">${ic(icon)}</div><div class="grow"><b>${title}</b>${sub2 ? html`<div class="small muted ellipsis">${sub2}</div>` : ""}</div>${extra || ic("chevron", "c-muted")}</${attrs.tag || "a"}>`;
   renderShell(html`<div class="page">
-    <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : "Telegram ID " + p.uid}</div>
+    <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
       <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
       ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разборы, тесты" : "Безлимит, полный разбор, тесты по ошибкам")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
+      ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привяжите Telegram — приёмы в чате и напоминания")}
       ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что нравится, что мешает, чего не хватает")}
       ${item({ a: `href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener"` }, "accent", "telegram", "Бот в Telegram", "Приёмы в чате и напоминания", ic("external", "c-muted"))}
       ${item({ a: `href="${DOCS.offer}" target="_blank" rel="noopener"` }, "", "book", "Документы", "Оферта и политика конфиденциальности", ic("external", "c-muted"))}
@@ -2002,7 +2062,102 @@ function viewProfile() {
   </div>`);
   $("#feedback-open").onclick = () => sheetFeedback();
   const lo = $("#logout");
-  if (lo) lo.onclick = async () => { if (await confirmDialog("Выйти?", "На этом устройстве нужно будет снова войти через Telegram.", "Выйти")) logout(); };
+  if (lo) lo.onclick = async () => { if (await confirmDialog("Выйти?", "На этом устройстве нужно будет войти снова.", "Выйти")) logout(); };
+}
+
+// ---------- Способы входа ----------
+let accountsData = null;
+let linkPoll = null;
+async function viewAccounts(fresh) {
+  const head = html`<div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Способы входа</h2></div>`;
+  if (fresh || !accountsData) {
+    renderShell(html`<div class="page">${head}<div class="skeleton" style="height:180px"></div></div>`);
+    try {
+      accountsData = await api("GET", "/accounts");
+    } catch (e) {
+      toast(e.message, "error");
+      return go("/profile", true);
+    }
+    if (S.route.name !== "accounts") return;
+  }
+  const a = accountsData;
+  const p = S.me.profile;
+  const ids = Object.fromEntries(a.identities.map((i) => [i.provider, i]));
+  const total = (a.telegram ? 1 : 0) + a.identities.length;
+  const row = (key, linked, sub, action) => html`<div class="menu-item acc-row"><div class="tile plain">${brand(key)}</div>
+    <div class="grow"><b>${PROVIDER_LABEL[key]}</b><div class="small muted ellipsis">${sub}</div></div>${action}</div>`;
+  const tgRow = row("telegram", a.telegram, a.telegram ? (p.username ? "@" + p.username : "Привязан") : "Приёмы в чате с ботом, напоминания и стрики",
+    a.telegram ? html`<span class="badge ok">привязан</span>` : html`<button class="btn sm" id="link-tg" type="button">Привязать</button>`);
+  const provRows = a.providers.map((key) => {
+    const i = ids[key];
+    if (i) return row(key, true, i.email || i.name || "Привязан", total > 1 ? html`<button class="btn sm ghost" data-unlink="${key}" type="button">Отвязать</button>` : html`<span class="badge ok">привязан</span>`);
+    if (IN_TG) return row(key, false, "Привязывается в веб-версии", "");
+    return row(key, false, "Входить без Telegram", html`<button class="btn sm outline" data-link="${key}" type="button">Привязать</button>`);
+  });
+  renderShell(html`<div class="page">${head}
+    <div class="menu card">${tgRow}${provRows}</div>
+    <p class="small muted">Все способы ведут в один профиль: пациенты, опыт и подписка общие.${!a.telegram ? " При привязке Telegram прогресс сайта объединится с прогрессом бота — ничего не потеряется." : ""}</p>
+    ${IN_TG && a.providers.some((k) => !ids[k]) ? html`<button class="btn ghost block" id="acc-site" type="button">${ic("external")}Открыть веб-версию</button>` : ""}
+    <div id="link-tg-hint"></div>
+  </div>`);
+  root.querySelectorAll("[data-link]").forEach((b) => (b.onclick = () => oauthStart(b.dataset.link, "link", b)));
+  root.querySelectorAll("[data-unlink]").forEach((b) => (b.onclick = async () => {
+    const key = b.dataset.unlink;
+    if (!(await confirmDialog(`Отвязать ${PROVIDER_LABEL[key]}?`, "Входить через этот аккаунт больше не получится. Прогресс останется в профиле.", "Отвязать"))) return;
+    btnBusy(b);
+    try {
+      accountsData = await api("DELETE", `/accounts/${key}`);
+      toast(`${PROVIDER_LABEL[key]} отвязан`);
+      viewAccounts();
+    } catch (e) {
+      toast(e.message, "error");
+      btnBusy(b, false);
+    }
+  }));
+  const site = $("#acc-site");
+  if (site) site.onclick = () => openOnSite(site);
+  const lt = $("#link-tg");
+  if (lt) lt.onclick = () => linkTelegram(lt);
+}
+
+/** Привязка Telegram к аккаунту сайта: бот спросит подтверждение, сайт дождётся и объединит прогресс */
+async function linkTelegram(btn) {
+  btnBusy(btn);
+  let r;
+  try {
+    r = await api("POST", "/auth/link-telegram");
+  } catch (e) {
+    toast(e.message, "error");
+    return btnBusy(btn, false);
+  }
+  btnBusy(btn, false);
+  btn.outerHTML = html`<a class="btn sm" href="${r.tg || r.url}" id="link-tg-open">${ic("clock")}Ждём…</a>`[RAW];
+  const hint = $("#link-tg-hint");
+  if (hint) hint.innerHTML = html`<div class="card small">В Telegram нажмите «Запустить», затем «✅ Привязать» — эта страница обновится сама.<br>Telegram не открылся? <a href="${r.url}" target="_blank" rel="noopener">Открыть бота в браузере</a></div>`[RAW];
+  location.href = r.tg || r.url;
+  clearInterval(linkPoll);
+  const started = Date.now();
+  linkPoll = setInterval(async () => {
+    if (Date.now() - started > 9 * 60 * 1000 || S.route.name !== "accounts") return clearInterval(linkPoll);
+    try {
+      const x = await api("GET", `/auth/link-telegram/poll?code=${encodeURIComponent(r.code)}`);
+      if (x.status === "expired") {
+        clearInterval(linkPoll);
+        toast("Ссылка устарела — нажмите «Привязать» ещё раз", "error");
+        return viewAccounts(true);
+      }
+      if (x.status !== "ok") return;
+      clearInterval(linkPoll);
+      S.token = x.token;
+      store(TOKEN_KEY, x.token);
+      try { S.ws?.close(); } catch {}
+      S.patients.clear();
+      await loadMe();
+      haptic("success");
+      toast("Telegram привязан, прогресс объединён", "ok");
+      viewAccounts(true);
+    } catch {}
+  }, 2000);
 }
 
 function viewStats() {

@@ -7,7 +7,8 @@
 <meta name="description" content="Как готовиться к первичной аккредитации специалистов: тестирование, оценка практических навыков на станциях, ситуационные задачи. План подготовки и частые ошибки.">
 <link rel="canonical" href="https://helpmedoctor.ru/blog/podgotovka-k-akkreditacii/">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#f6f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121514" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -21,7 +22,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="/fonts/literata-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
+<script src="/site.js" defer></script>
 <meta property="article:published_time" content="2026-09-25">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Подготовка к первичной аккредитации: тесты, станции и клинические кейсы","description":"Как готовиться к первичной аккредитации специалистов: тестирование, оценка практических навыков на станциях, ситуационные задачи. План подготовки и частые ошибки.","url":"https://helpmedoctor.ru/blog/podgotovka-k-akkreditacii/","mainEntityOfPage":"https://helpmedoctor.ru/blog/podgotovka-k-akkreditacii/","datePublished":"2026-09-25","dateModified":"2026-09-25","inLanguage":"ru","keywords":"аккредитация, экзамены, ОСКЭ","image":"https://helpmedoctor.ru/blog/podgotovka-k-akkreditacii/og.jpg","author":{"@type":"Organization","name":"Help me, Doctor","url":"https://helpmedoctor.ru"},"publisher":{"@type":"Organization","name":"Help me, Doctor","logo":{"@type":"ImageObject","url":"https://helpmedoctor.ru/apple-touch-icon.png"}}}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://helpmedoctor.ru/"},{"@type":"ListItem","position":2,"name":"Блог","item":"https://helpmedoctor.ru/blog/"},{"@type":"ListItem","position":3,"name":"Подготовка к первичной аккредитации: тесты, станции и клинические кейсы","item":"https://helpmedoctor.ru/blog/podgotovka-k-akkreditacii/"}]}</script>
@@ -38,27 +41,42 @@
 </script>
 <!-- /Yandex.Metrika counter -->
 </head>
-<body>
+<body data-page="blog_podgotovka-k-akkreditacii" data-early-until="1793480400000">
 <noscript><div><img src="https://mc.yandex.ru/watch/113057442" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<div class="progress" aria-hidden="true"></div>
 <a class="skip" href="#main">Перейти к содержанию</a>
+<div class="promo" data-early hidden><div class="wrap"><span class="long">Ранние цены до 31 октября: премиум — <b>249 ₽</b> в месяц вместо 390 ₽, первые 7 дней — 1 ₽.</span><span class="short">Премиум <b>7 дней за 1 ₽</b>, потом 249 ₽/мес</span> <a href="/app?from=promo">Попробовать</a><button class="promo-x" type="button" aria-label="Скрыть">×</button></div></div>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/"><span class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M2.5 12h5l2-3.5 3 7 2-3.5h7"/></svg></span>Help me, Doctor</a>
+  <a class="brand" href="/" aria-label="Help me, Doctor — на главную"><svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8"/></svg>Help me, Doctor</a>
   <nav class="nav" aria-label="Основное меню">
-    <a href="/#how">Как это работает</a><a href="/#features">Возможности</a><a href="/#pricing">Тарифы</a><a href="/blog/">Блог</a>
+    <a href="/#how">Как это работает</a>
+    <a href="/demo/">Демо</a>
+    <details><summary>Для кого</summary><div class="menu">
+      <a href="/dlya-studentov/">Студентам-медикам<small>3–6 курс, практика и экзамены</small></a><a href="/dlya-ordinatorov/">Ординаторам<small>Кейсы по своей специальности</small></a><a href="/dlya-vrachej/">Практикующим врачам<small>Сложные случаи и смежные области</small></a>
+      <a href="/akkreditaciya/">Подготовка к аккредитации<small>Кейсы и навыки для ОСКЭ</small></a><a href="/klinicheskie-zadachi/">Клинические задачи онлайн<small>Интерактивно, с разбором</small></a><a href="/virtualnyj-pacient/">Виртуальный пациент<small>Что это и как работает</small></a>
+    </div></details>
+    <details><summary>Специальности</summary><div class="menu">
+      <a href="/specialnosti/terapiya/">Терапия</a><a href="/specialnosti/kardiologiya/">Кардиология</a><a href="/specialnosti/hirurgiya/">Хирургия</a><a href="/specialnosti/pediatriya/">Педиатрия</a><a href="/specialnosti/nevrologiya/">Неврология</a><a href="/specialnosti/onkologiya/">Онкология</a><a href="/specialnosti/psihiatriya/">Психиатрия</a><a href="/specialnosti/dermatologiya/">Дерматология</a><a href="/specialnosti/anesteziologiya-reanimatologiya/">Анестезиология и реаниматология</a><a href="/specialnosti/skoraya-pomoshch/">Скорая и неотложная помощь</a>
+      <a href="/specialnosti/"><b>Все специальности</b></a>
+    </div></details>
+    <a href="/#pricing">Тарифы</a>
+    <a href="/blog/">Блог</a>
   </nav>
-  <a class="btn btn-primary" href="https://t.me/helpmedoctor_aibot" rel="noopener">Начать</a>
+  <button class="burger" type="button" aria-label="Меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <a class="btn btn-primary" href="/app?from=header">Открыть тренажёр</a>
 </div></header>
 <main id="main">
+
 <article class="article">
-  <nav class="crumbs page-head" style="padding-bottom:0" aria-label="Навигация"><a href="/">Главная</a> / <a href="/blog/">Блог</a></nav>
+  <div class="page-head" style="padding-bottom:0"><nav class="crumbs" aria-label="Навигация"><ol><li><a href="/">Главная</a></li><li><a href="/blog/">Блог</a></li><li>Подготовка к первичной аккредитации: тесты, станции и клинические кейсы</li></ol></nav></div>
   <h1>Подготовка к первичной аккредитации: тесты, станции и клинические кейсы</h1>
   <div class="meta"><time datetime="2026-09-25">25 сентября 2026 г.</time><span>7 мин чтения</span></div>
   <img class="article-cover" src="/blog/podgotovka-k-akkreditacii/cover.jpg" alt="Станция: сбор анамнеза — Представляюсь, обрабатываю руки…" width="1200" height="630" fetchpriority="high">
   
-  <p class="lead">Аккредитация — обязательная процедура допуска к работе врачом. Выпускники проходят первичную аккредитацию, выпускники ординатуры — первичную специализированную. Разберём, из чего она состоит и как построить подготовку так, чтобы уверенно пройти все этапы.</p>
+  <p class="lead">Аккредитация — обязательная процедура допуска к работе врачом. Выпускники проходят первичную аккредитацию, выпускники ординатуры — первичную специализированную. Разберём, из чего она состоит и как построить подготовку так, чтобы уверенно пройти все этапы.</p><nav class="toc" aria-label="Содержание"><b>Содержание</b><ol><li><a href="#из-чего-состоит-аккредитация">Из чего состоит аккредитация</a></li><li><a href="#тестирование-как-готовиться">Тестирование: как готовиться</a></li><li><a href="#станции-оскэ-чек-лист-решает">Станции ОСКЭ: чек-лист решает</a></li><li><a href="#ситуационные-задачи-и-клинические-кейсы">Ситуационные задачи и клинические кейсы</a></li><li><a href="#план-подготовки-на-8-недель">План подготовки на 8 недель</a></li><li><a href="#частые-ошибки">Частые ошибки</a></li><li><a href="#где-тренировать-клинические-случаи">Где тренировать клинические случаи</a></li></ol></nav>
 <p class="note">Порядок, перечни станций и банки тестовых заданий утверждаются Минздравом и Методическим центром аккредитации специалистов и могут обновляться. Актуальные материалы для вашей специальности смотрите на официальном сайте fmza.ru.</p>
 
-<h2>Из чего состоит аккредитация</h2>
+<h2 id="из-чего-состоит-аккредитация">Из чего состоит аккредитация</h2>
 <ul>
   <li><strong>Тестирование</strong> — ответы на задания из открытого банка вопросов по специальности.</li>
   <li><strong>Оценка практических навыков (умений) в симулированных условиях</strong> — формат ОСКЭ: вы проходите станции с манекенами и стандартизированными пациентами, действия оценивают по чек-листу.</li>
@@ -66,10 +84,11 @@
 </ul>
 <figure class="fig"><ol class="fig-steps flow three"><li><span class="n">1</span><b>Тестирование</b><span>открытый банк заданий</span></li><li><span class="n">2</span><b>Практические навыки</b><span>станции ОСКЭ по чек-листу</span></li><li><span class="n">3</span><b>Ситуационные задачи</b><span>для специализированной аккредитации</span></li></ol><figcaption>Этапы аккредитации специалистов</figcaption></figure>
 
-<h2>Тестирование: как готовиться</h2>
+<h2 id="тестирование-как-готовиться">Тестирование: как готовиться</h2>
 <p>Банк заданий открыт, поэтому ключ к успеху — регулярная работа с ним, а не заучивание ответов накануне. Делите вопросы на блоки, решайте ежедневно и отдельно разбирайте ошибки: возвращайтесь к теме в учебнике или клинических рекомендациях, а не только запоминайте правильную букву.</p>
 
-<h2>Станции ОСКЭ: чек-лист решает</h2>
+<aside class="inline-cta"><div><b>Потренируйте станцию анамнеза без стандартизированного пациента</b><p>Полный приём за 10 минут и разбор: какие обязательные вопросы вы пропустили.</p></div><a class="btn btn-primary" href="/app?from=blog_podgotovka-k-akkreditacii_mid">Попробовать бесплатно <span class="arr" aria-hidden="true">→</span></a></aside>
+<h2 id="станции-оскэ-чек-лист-решает">Станции ОСКЭ: чек-лист решает</h2>
 <p>Среди станций обычно есть базовая сердечно-лёгочная реанимация, экстренная медицинская помощь, физикальное обследование и станции, связанные с общением с пациентом — сбором жалоб и анамнеза, консультированием. Главное правило: эксперт оценивает не результат «в целом», а выполнение каждого пункта чек-листа.</p>
 <ul>
   <li>Изучите паспорта станций и чек-листы — они публикуются заранее.</li>
@@ -78,10 +97,10 @@
   <li>Тренируйтесь на время — на станции оно ограничено.</li>
 </ul>
 
-<h2>Ситуационные задачи и клинические кейсы</h2>
+<h2 id="ситуационные-задачи-и-клинические-кейсы">Ситуационные задачи и клинические кейсы</h2>
 <p>Здесь проверяется клиническое мышление: из жалоб, анамнеза и результатов обследований нужно прийти к диагнозу и тактике. Лучшая подготовка — разбирать как можно больше разных случаев и каждый раз проговаривать: какой ведущий синдром, какие диагнозы нужно исключить, какое обследование следующее и почему.</p>
 
-<h2>План подготовки на 8 недель</h2>
+<h2 id="план-подготовки-на-8-недель">План подготовки на 8 недель</h2>
 <figure class="fig"><div class="fig-timeline"><div class="tl"><b>Недели 1–2</b><span>Структура, паспорта станций, 50–100 тестов в день</span></div><div class="tl"><b>Недели 3–5</b><span>Навыки по чек-листам + клинические кейсы</span></div><div class="tl"><b>Недели 6–7</b><span>Пробные экзамены на время, разбор ошибок</span></div><div class="tl"><b>Неделя 8</b><span>Повторение, сон и режим</span></div></div><figcaption>План подготовки на 8 недель</figcaption></figure>
 <ol>
   <li><strong>Недели 1–2:</strong> изучите структуру аккредитации, паспорта станций; начните ежедневные тесты по 50–100 вопросов.</li>
@@ -90,7 +109,7 @@
   <li><strong>Неделя 8:</strong> повторение, сон и режим — усталость стоит баллов на станциях.</li>
 </ol>
 
-<h2>Частые ошибки</h2>
+<h2 id="частые-ошибки">Частые ошибки</h2>
 <ul>
   <li>готовиться только к тестам и откладывать практические навыки;</li>
   <li>выполнять действия молча — эксперт может не засчитать то, что не озвучено;</li>
@@ -98,36 +117,59 @@
   <li>игнорировать коммуникацию: представление, согласие, понятные объяснения пациенту.</li>
 </ul>
 
-<h2>Где тренировать клинические случаи</h2>
+<h2 id="где-тренировать-клинические-случаи">Где тренировать клинические случаи</h2>
 <p>Клиническое мышление и расспрос удобно тренировать в «Help me, Doctor»: каждый пациент — уникальный случай по выбранной специальности и сложности, а после приёма вы получаете разбор эксперта и тест по своим ошибкам. Это не заменяет симуляционный центр для манипуляций, но отлично дополняет подготовку к кейсам и станциям с общением.</p>
   
   
   <ul class="tags" aria-label="Темы"><li>аккредитация</li><li>экзамены</li><li>ОСКЭ</li></ul>
   <aside class="cta-box">
     <h2>Потренируйтесь на виртуальном пациенте</h2>
-    <p>Расспрос, осмотр, анализы и диагноз — а затем разбор эксперта с оценкой и тестом по вашим ошибкам. Первый пациент каждый день бесплатно.</p>
-    <div class="cta" style="margin:0"><a class="btn btn-primary" href="https://t.me/helpmedoctor_aibot" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.6 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2 1.8 11.7c-1-.3-1-1 .2-1.5L20.5 3.1c.9-.3 1.6.2 1.4 1.5Z"/></svg>Начать в Telegram</a><a class="btn btn-ghost" href="/app">В браузере</a></div>
+    <ul><li>расспрос текстом или голосом — пациент отвечает только на заданное</li><li>анализы, УЗИ, ЭКГ, эндоскопия — результаты под скрытый диагноз</li><li>разбор эксперта и тест по вашим ошибкам</li></ul>
+    <p>Первый пациент каждый день — бесплатно. Вход через Яндекс, Google или Telegram.</p>
+    <div class="cta" style="margin:0"><a class="btn btn-primary btn-lg" href="/app?from=blog_podgotovka-k-akkreditacii_end">Принять пациента <span class="arr" aria-hidden="true">→</span></a><a class="btn btn-ghost btn-lg" href="/files/chek-list-sbor-anamneza.pdf" download>Чек-лист анамнеза (PDF)</a></div>
   </aside>
 </article>
-<div class="related"><h2 style="font-size:24px">Читайте также</h2><div class="posts"><a class="post-card" href="/blog/sbor-anamneza/"><img class="post-cover" src="/blog/sbor-anamneza/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async"><div class="post-body"><h3>Как собрать анамнез: пошаговая схема для студента</h3><p>Схема сбора анамнеза для студентов: жалобы, история болезни, история жизни, опрос по системам. Какие вопросы задавать и как не упустить важное.</p><span class="meta">7 мин чтения →</span></div></a><a class="post-card" href="/blog/differencialnyj-diagnoz/"><img class="post-cover" src="/blog/differencialnyj-diagnoz/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async"><div class="post-body"><h3>Дифференциальный диагноз: как развивать клиническое мышление</h3><p>Как ставить дифференциальный диагноз: ведущий синдром, список причин, опасные состояния, проверка гипотез. Разбор на примере боли в груди и типичные когнитивные ошибки.</p><span class="meta">8 мин чтения →</span></div></a><a class="post-card" href="/blog/obshchij-analiz-krovi/"><img class="post-cover" src="/blog/obshchij-analiz-krovi/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async"><div class="post-body"><h3>Общий анализ крови: как читать бланк</h3><p>Показатели общего анализа крови с ориентировочными нормами для взрослых: гемоглобин, эритроциты, MCV, лейкоциты и формула, тромбоциты, СОЭ. Что означают отклонения.</p><span class="meta">8 мин чтения →</span></div></a></div></div>
+<div class="related"><h2 style="font-size:26px">Читайте также</h2><div class="posts"><a class="post-card" href="/blog/sbor-anamneza/"><img class="post-cover" src="/blog/sbor-anamneza/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async"><div class="post-body"><h3>Как собрать анамнез: пошаговая схема для студента</h3><p>Схема сбора анамнеза для студентов: жалобы, история болезни, история жизни, опрос по системам. Какие вопросы задавать и как не упустить важное.</p><span class="meta">7 мин чтения</span></div></a><a class="post-card" href="/blog/differencialnyj-diagnoz/"><img class="post-cover" src="/blog/differencialnyj-diagnoz/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async"><div class="post-body"><h3>Дифференциальный диагноз: как развивать клиническое мышление</h3><p>Как ставить дифференциальный диагноз: ведущий синдром, список причин, опасные состояния, проверка гипотез. Разбор на примере боли в груди и типичные когнитивные ошибки.</p><span class="meta">8 мин чтения</span></div></a><a class="post-card" href="/blog/obshchij-analiz-krovi/"><img class="post-cover" src="/blog/obshchij-analiz-krovi/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async"><div class="post-body"><h3>Общий анализ крови: как читать бланк</h3><p>Показатели общего анализа крови с ориентировочными нормами для взрослых: гемоглобин, эритроциты, MCV, лейкоциты и формула, тромбоциты, СОЭ. Что означают отклонения.</p><span class="meta">8 мин чтения</span></div></a></div></div>
 </main>
 <footer><div class="wrap">
-  <div>
-    <a class="brand" href="/"><span class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M2.5 12h5l2-3.5 3 7 2-3.5h7"/></svg></span>Help me, Doctor</a>
-    <p style="margin-top:12px">Учебный тренажёр для студентов-медиков, ординаторов и врачей. Пациенты вымышлены, сервис не оказывает медицинских услуг и не заменяет консультацию врача.</p>
-    <p>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</p>
-    <p><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></p>
+  <div class="cols">
+    <div>
+      <a class="brand" href="/"><svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8"/></svg>Help me, Doctor</a>
+      <p style="margin-top:14px">Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей. Пациенты вымышлены; сервис не оказывает медицинских услуг и не заменяет консультацию врача.</p>
+    </div>
+    <div><b>Тренажёр</b><ul>
+      <li><a href="/app?from=footer">Веб-версия</a></li>
+      <li><a href="/demo/">Демо-приём</a></li>
+      <li><a href="/#pricing">Тарифы</a></li>
+      <li><a href="/materialy/">Материалы</a></li>
+      <li><a href="/#faq">Вопросы и ответы</a></li>
+      <li><a href="https://t.me/helpmedoctor_aibot" rel="noopener">Бот в Telegram</a></li>
+    </ul></div>
+    <div><b>Для кого</b><ul>
+      <li><a href="/dlya-studentov/">Студентам-медикам</a></li><li><a href="/dlya-ordinatorov/">Ординаторам</a></li><li><a href="/dlya-vrachej/">Практикующим врачам</a></li><li><a href="/akkreditaciya/">Подготовка к аккредитации</a></li><li><a href="/klinicheskie-zadachi/">Клинические задачи онлайн</a></li><li><a href="/virtualnyj-pacient/">Виртуальный пациент</a></li>
+    </ul></div>
+    <div><b>Специальности</b><ul>
+      <li><a href="/specialnosti/terapiya/">Терапия</a></li><li><a href="/specialnosti/kardiologiya/">Кардиология</a></li><li><a href="/specialnosti/hirurgiya/">Хирургия</a></li><li><a href="/specialnosti/pediatriya/">Педиатрия</a></li><li><a href="/specialnosti/nevrologiya/">Неврология</a></li><li><a href="/specialnosti/onkologiya/">Онкология</a></li><li><a href="/specialnosti/psihiatriya/">Психиатрия</a></li><li><a href="/specialnosti/dermatologiya/">Дерматология</a></li><li><a href="/specialnosti/anesteziologiya-reanimatologiya/">Анестезиология и реаниматология</a></li><li><a href="/specialnosti/skoraya-pomoshch/">Скорая и неотложная помощь</a></li>
+    </ul></div>
+    <div><b>Блог</b><ul>
+      <li><a href="/blog/sbor-anamneza/">Как собрать анамнез</a></li><li><a href="/blog/differencialnyj-diagnoz/">Дифференциальный диагноз</a></li><li><a href="/blog/obshchij-analiz-krovi/">Общий анализ крови</a></li><li><a href="/blog/podgotovka-k-akkreditacii/">Подготовка к первичной аккредитации</a></li><li><a href="/blog/kommunikaciya-s-pacientom/">Общение с пациентом</a></li>
+      <li><a href="/blog/">Все статьи</a></li>
+    </ul></div>
   </div>
-  <div><b>Тренажёр</b><ul>
-    <li><a href="https://t.me/helpmedoctor_aibot" rel="noopener">Telegram-бот</a></li>
-    <li><a href="/app">Веб-версия</a></li>
-    <li><a href="/#pricing">Тарифы</a></li>
-    <li><a href="/#faq">Вопросы и ответы</a></li>
-  </ul></div>
-  <div><b>Блог</b><ul>
-    <li><a href="/blog/sbor-anamneza/">Как собрать анамнез</a></li><li><a href="/blog/differencialnyj-diagnoz/">Дифференциальный диагноз</a></li><li><a href="/blog/obshchij-analiz-krovi/">Общий анализ крови</a></li><li><a href="/blog/podgotovka-k-akkreditacii/">Подготовка к первичной аккредитации</a></li>
-    <li><a href="/blog/">Все статьи</a></li>
-  </ul></div>
+  <div class="legal-line">
+    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</span>
+    <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></span>
+  </div>
 </div></footer>
+<div class="sticky-cta" role="complementary" aria-label="Быстрый старт"><p>Первый пациент каждый день — бесплатно</p><a class="btn btn-primary" href="/app?from=blog_podgotovka-k-akkreditacii">Принять пациента <span class="arr" aria-hidden="true">→</span></a></div>
+<dialog class="pop" aria-labelledby="pop-t"><div class="pop-in">
+  <button class="pop-x" type="button" data-close aria-label="Закрыть">×</button>
+  <p class="mono">Подарок перед уходом</p>
+  <h2 id="pop-t">Чек-лист сбора анамнеза — в PDF</h2>
+  <p>Две страницы, которые удобно держать в телефоне на практике и перед аккредитацией:</p>
+  <ul><li>порядок расспроса по разделам</li><li>OPQRST для боли и «красные флаги»</li><li>фразы для начала и резюме приёма</li></ul>
+  <a class="btn btn-primary" href="/files/chek-list-sbor-anamneza.pdf" download data-close autofocus>Скачать чек-лист (PDF)</a>
+  <a class="btn btn-ghost" href="/app?from=popup_blog_podgotovka-k-akkreditacii">Или сразу потренироваться на пациенте <span class="arr" aria-hidden="true">→</span></a>
+</div></dialog>
 </body>
 </html>

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Чек-лист: сбор анамнеза за 10 минут — Help me, Doctor</title>
+<meta name="author" content="Help me, Doctor — helpmedoctor.ru">
+<meta name="description" content="Порядок расспроса, OPQRST, красные флаги и готовые фразы для студентов-медиков">
+<link rel="stylesheet" href="_brand.css">
+<style>
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6mm; }
+  .step { background: var(--card); border: .8pt solid var(--rule-2); border-radius: 2mm; padding: 2.6mm 3.2mm; position: relative; }
+  .step .n { position: absolute; right: 3mm; top: 2mm; font: 700 17pt/1 var(--serif); color: var(--green); opacity: .9; }
+  .step h3 { padding-right: 9mm; }
+  .step ul { font-size: 8.4pt; }
+  .step .say { font-size: 8.4pt; line-height: 1.35; display: block; margin-top: .8mm; }
+  .opq { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2mm; margin-top: 2mm; }
+  .opq div { background: var(--green-soft); border-radius: 1.6mm; padding: 2mm 2.2mm; font-size: 7.6pt; line-height: 1.28; }
+  .opq b { display: block; font: 700 13pt/1 var(--serif); color: var(--green); margin-bottom: .8mm; }
+  .opq i { font-style: normal; font-family: var(--mono); font-size: 6.6pt; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); display: block; margin-bottom: .6mm; }
+  .flags { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6mm; }
+  .flags .box { padding: 2.6mm 3.2mm; }
+  .flags ul { font-size: 8.3pt; }
+  .flags h3::before { content: "▲ "; color: var(--red); font-size: 8pt; vertical-align: 1pt; }
+  .phr { display: grid; grid-template-columns: 22mm 1fr; gap: 1.2mm 3mm; font-size: 8.4pt; line-height: 1.3; }
+  .phr dt { font: 7.2pt var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding-top: .6mm; }
+  .phr dd { margin: 0; }
+  .note { background: color-mix(in srgb, var(--mark) 55%, var(--card)); border-left: 2pt solid #a16207; padding: 2.4mm 3.2mm; font-size: 8.6pt; border-radius: 0 1.6mm 1.6mm 0; }
+  .time { display: grid; grid-template-columns: 1fr 3fr 2fr 2fr 1fr 1fr; margin-top: 2mm; border-radius: 1.6mm; overflow: hidden; border: .8pt solid var(--rule-2); }
+  .time div { padding: 2mm 2.2mm; font-size: 7.6pt; line-height: 1.25; background: var(--card); border-left: .8pt solid var(--rule-2); }
+  .time div:first-child { border-left: 0; }
+  .time b { display: block; font: 700 11pt/1 var(--serif); color: var(--green); margin-bottom: .8mm; }
+  .pk { font-family: var(--mono); font-size: 8pt; background: var(--paper-2); padding: .3mm 1.2mm; border-radius: .8mm; }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Чек-лист · клинические навыки · 1/2</span></div>
+  <p class="kicker">Для студентов-медиков, ординаторов и станции ОСКЭ</p>
+  <h1>Сбор анамнеза за&nbsp;10&nbsp;минут</h1>
+  <p class="lead">Шесть шагов по порядку. Отмечайте пункты, пока не станет автоматизмом: чаще всего теряют не сложное, а очевидное — аллергию, лекарства и резюме.</p>
+
+  <div class="steps" style="margin-top:3mm">
+    <div class="step"><span class="n">1</span><h3>Контакт и паспортная часть</h3>
+      <ul class="check"><li>поздоровался, назвал имя и роль</li><li>объяснил цель и время, получил согласие</li><li>уточнил, как обращаться к пациенту</li><li>возраст, профессия, место работы</li></ul>
+      <span class="say">«Здравствуйте, я Анна, студентка 5 курса. Мне нужно расспросить вас о самочувствии — это около 10 минут. Как к вам обращаться?»</span></div>
+
+    <div class="step"><span class="n">2</span><h3>Жалобы</h3>
+      <ul class="check"><li>открытый вопрос — и дал договорить</li><li>выделил главную жалобу и дополнительные</li><li>детализировал главную (для боли — OPQRST ниже)</li><li>спросил о сопутствующих: лихорадка, слабость, вес, стул, мочеиспускание</li></ul>
+      <span class="say">«Что вас беспокоит? Расскажите подробнее…»</span></div>
+
+    <div class="step"><span class="n">3</span><h3>История заболевания <span class="mono" style="text-transform:none">anamnesis morbi</span></h3>
+      <ul class="check"><li>когда и как началось, что было первым</li><li>как менялось: лучше, хуже, волнообразно</li><li>куда обращался, какие обследования уже есть</li><li>чем лечился и помогло ли</li><li>почему пришёл именно сегодня</li></ul></div>
+
+    <div class="step"><span class="n">4</span><h3>История жизни <span class="mono" style="text-transform:none">anamnesis vitae</span></h3>
+      <ul class="check"><li>болезни, операции, травмы, гемотрансфузии</li><li><b>аллергия</b> — на что и какая была реакция</li><li><b>все лекарства</b>, включая безрецептурные, контрацептивы, БАДы</li><li>курение (индекс пачко-лет), алкоголь, вещества</li><li>наследственность, работа и быт, эпиданамнез, у женщин — гинекологический</li></ul></div>
+
+    <div class="step"><span class="n">5</span><h3>Опрос по системам</h3>
+      <ul class="check"><li>дыхательная и сердечно-сосудистая</li><li>пищеварительная и мочевыделительная</li><li>нервная, эндокринная, опорно-двигательная, кожа</li></ul>
+      <span class="say">«Я задам несколько коротких вопросов по остальным органам — так мы ничего не упустим».</span></div>
+
+    <div class="step"><span class="n">6</span><h3>Резюме и ожидания (ICE)</h3>
+      <ul class="check"><li><b>I</b>deas — что сам думает о причине</li><li><b>C</b>oncerns — чего опасается</li><li><b>E</b>xpectations — чего ждёт от визита</li><li>пересказал услышанное и спросил, что упустил</li></ul>
+      <span class="say">«Правильно ли я понял…? Есть ли что-то ещё, о чём я не спросил?»</span></div>
+  </div>
+
+  <h2 style="margin-top:3.5mm">OPQRST — детализация боли</h2>
+  <div class="opq">
+    <div><b>O</b><i>Onset</i>начало: внезапно или постепенно, при каких обстоятельствах</div>
+    <div><b>P</b><i>Provocation</i>что усиливает и что облегчает: еда, нагрузка, поза, лекарства</div>
+    <div><b>Q</b><i>Quality</i>характер: давит, жжёт, колет, режет, схватки</div>
+    <div><b>R</b><i>Region</i>где болит и куда отдаёт (попросите показать)</div>
+    <div><b>S</b><i>Severity</i>сила от 0 до 10, мешает ли спать и работать</div>
+    <div><b>T</b><i>Time</i>длительность, частота, динамика, время суток</div>
+  </div>
+
+  <h2 style="margin-top:4mm">Хронометраж: как уложиться в 10 минут</h2>
+  <div class="time">
+    <div><b>1′</b>контакт</div>
+    <div><b>3′</b>жалобы и детализация главной</div>
+    <div><b>2′</b>история заболевания</div>
+    <div><b>2′</b>история жизни</div>
+    <div><b>1′</b>системы</div>
+    <div><b>1′</b>резюме</div>
+  </div>
+  <p style="margin-top:2mm;font-size:8.4pt;color:var(--muted)">Больше всего времени — на жалобы: именно там прячется диагноз. Опрос по системам — коротко, закрытыми вопросами.</p>
+
+  <div class="foot">
+    <span>Учебный материал. Не заменяет клинические рекомендации и паспорта станций МЦА.<br>Основан на статье helpmedoctor.ru/blog/sbor-anamneza</span>
+    <span class="cta">{{QR}}<span><b>Отработайте на пациенте</b>ИИ-пациент отвечает только<br>на заданный вопрос · helpmedoctor.ru</span></span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Чек-лист · клинические навыки · 2/2</span></div>
+  <h2 style="font-size:16pt">«Красные флаги»: когда расспрос прерывают ради срочных действий</h2>
+  <p class="lead" style="margin-bottom:3mm">Если ответ на вопрос из этого списка — «да», сначала оцените состояние и угрозу жизни, детали анамнеза соберёте потом.</p>
+  <div class="flags">
+    <div class="box"><h3>Боль в груди</h3><ul><li>давящая, при нагрузке или дольше 20 минут в покое</li><li>отдаёт в руку, шею, челюсть; холодный пот, одышка</li><li>«разрывающая» боль с отдачей в спину, разница АД на руках</li><li>обморок, внезапная одышка, отёк одной ноги</li></ul></div>
+    <div class="box"><h3>Головная боль</h3><ul><li>внезапная, «самая сильная в жизни»</li><li>с лихорадкой и ригидностью затылочных мышц</li><li>со слабостью в конечностях, нарушением речи или зрения</li><li>впервые после 50 лет, после травмы, при онкологии или иммуносупрессии</li></ul></div>
+    <div class="box"><h3>Боль в животе</h3><ul><li>внезапная, очень сильная, «доскообразный» живот</li><li>рвота кровью или «кофейной гущей», чёрный стул</li><li>нет стула и газов, многократная рвота</li><li>обморок; у женщин — задержка менструации</li></ul></div>
+    <div class="box"><h3>Диспепсия, изжога</h3><ul><li>затруднение или боль при глотании</li><li>похудение без причины, анемия</li><li>упорная рвота, признаки кровотечения</li><li>впервые возникшие симптомы в старшем возрасте</li></ul></div>
+    <div class="box"><h3>Боль в спине</h3><ul><li>онкология в анамнезе, похудение, лихорадка</li><li>боль в покое и ночью, впервые после 50 лет</li><li>онемение в промежности, задержка мочи</li><li>нарастающая слабость в ногах, травма</li></ul></div>
+    <div class="box"><h3>Кашель и одышка</h3><ul><li>кровохарканье, особенно у курильщика</li><li>похудение, ночные поты, кашель дольше 3 недель</li><li>одышка в покое, не может договорить фразу</li><li>боль в груди при вдохе, отёк одной ноги</li></ul></div>
+  </div>
+
+  <div class="grid2" style="margin-top:3mm">
+    <div class="box">
+      <h2>Что забывают чаще всего</h2>
+      <ul class="check">
+        <li>реакцию при аллергии — «сыпь» и «отёк гортани» ведут к разным решениям</li>
+        <li>безрецептурные обезболивающие (НПВП), контрацептивы, БАДы</li>
+        <li>курение в цифрах: пачко-лет = сигарет в день ÷ 20 × годы курения</li>
+        <li>эпиданамнез: поездки, контакты, животные</li>
+        <li>вопрос «чего вы опасаетесь?»</li>
+        <li>резюме в конце приёма</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h2>Фразы, которые помогают</h2>
+      <dl class="phr">
+        <dt>Открыть</dt><dd class="say">«Расскажите, что вас привело сегодня?»</dd>
+        <dt>Не перебить</dt><dd class="say">«Так… продолжайте».</dd>
+        <dt>Переход</dt><dd class="say">«Теперь несколько вопросов о вашем здоровье в целом».</dd>
+        <dt>Деликатное</dt><dd class="say">«Эти вопросы я задаю всем пациентам…»</dd>
+        <dt>Резюме</dt><dd class="say">«Давайте я перескажу, а вы поправите меня».</dd>
+        <dt>Закрыть</dt><dd class="say">«Что ещё мне важно знать?»</dd>
+      </dl>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:3mm">Проверка себя: после расспроса вы должны уметь одной фразой назвать ведущий синдром и 3–5 причин, которые его объясняют, — начиная с опасных.</p>
+
+  <div class="foot">
+    <span>© Help me, Doctor, helpmedoctor.ru · Распространяйте свободно со ссылкой на источник.<br>Сверяйте тактику с действующими клиническими рекомендациями Минздрава РФ.</span>
+    <span class="cta">{{QR}}<span><b>Первый пациент — бесплатно</b>Расспрос, обследования, диагноз<br>и разбор эксперта · helpmedoctor.ru</span></span>
+  </div>
+</section>
+
+</body>
+</html>
