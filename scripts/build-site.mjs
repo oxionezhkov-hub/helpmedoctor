@@ -266,7 +266,9 @@ ${footer()}
 
 function articlePage(a) {
   const url = `${SITE}/blog/${a.slug}/`;
-  const others = ARTICLES.filter((x) => x.slug !== a.slug).slice(0, 2);
+  // «Читайте также»: сначала статьи с общими темами, затем свежие
+  const shared = (x) => x.tags.filter((t) => a.tags.includes(t)).length;
+  const others = ARTICLES.filter((x) => x.slug !== a.slug).map((x, i) => ({ x, k: shared(x) * 100 - i })).sort((p, q) => q.k - p.k).slice(0, 3).map((o) => o.x);
   const schema = [
     { "@context": "https://schema.org", "@type": "BlogPosting", headline: a.h1, description: a.description, url, mainEntityOfPage: url,
       datePublished: a.date, dateModified: a.updated || a.date, inLanguage: "ru", keywords: a.tags.join(", "), image: a.cover ? `${SITE}/blog/${a.slug}/og.jpg` : `${SITE}/og.png`,
@@ -275,6 +277,7 @@ function articlePage(a) {
       { "@type": "ListItem", position: 1, name: "Главная", item: `${SITE}/` },
       { "@type": "ListItem", position: 2, name: "Блог", item: `${SITE}/blog/` },
       { "@type": "ListItem", position: 3, name: a.h1, item: url }] },
+    ...(a.faq?.length ? [{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: a.faq.map(([q, ans]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: ans } })) }] : []),
   ];
   return `${head({ title: `${a.title} — ${NAME}`, description: a.description, canonical: url, type: "article", image: a.cover ? `${SITE}/blog/${a.slug}/og.jpg` : undefined,
     extra: `<meta property="article:published_time" content="${a.date}">\n${schema.map(ldjson).join("\n")}` })}
@@ -285,9 +288,12 @@ ${header()}
 <article class="article">
   <nav class="crumbs page-head" style="padding-bottom:0" aria-label="Навигация"><a href="/">Главная</a> / <a href="/blog/">Блог</a></nav>
   <h1>${esc(a.h1)}</h1>
-  <div class="meta"><time datetime="${a.date}">${fmtDate(a.date)}</time><span>${a.minutes} мин чтения</span></div>
+  <div class="meta"><time datetime="${a.date}">${fmtDate(a.date)}</time>${a.updated && a.updated !== a.date ? `<span>обновлено ${fmtDate(a.updated)}</span>` : ""}<span>${a.minutes} мин чтения</span></div>
   ${a.cover ? `<img class="article-cover" src="/blog/${a.slug}/cover.jpg" alt="${esc(`${a.cover.says[0]} — ${a.cover.says[1]}`)}" width="1200" height="630" fetchpriority="high">` : ""}
+  ${a.summary?.length ? `<aside class="tldr" aria-label="Коротко"><b>Коротко</b><ul>${a.summary.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></aside>` : ""}
   ${withFigures(a.body.trim())}
+  ${a.faq?.length ? `<h2>Частые вопросы</h2><div class="faq article-faq">${a.faq.map(([q, ans]) => `<details><summary>${esc(q)}</summary><p>${esc(ans)}</p></details>`).join("")}</div>` : ""}
+  ${a.sources?.length ? `<h2>Источники</h2><ol class="sources">${a.sources.map(([t, u]) => `<li>${u ? `<a href="${esc(u)}" rel="noopener nofollow" target="_blank">${esc(t)}</a>` : esc(t)}</li>`).join("")}</ol>` : ""}
   <ul class="tags" aria-label="Темы">${a.tags.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
   <aside class="cta-box">
     <h2>Потренируйтесь на виртуальном пациенте</h2>
@@ -351,6 +357,23 @@ ${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod><pri
 `;
 }
 
+/** llms.txt — краткая карта сайта для ИИ-поисковиков и ассистентов (GEO) */
+function llmsTxt() {
+  return `# ${NAME}
+
+> Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей: ИИ-пациенты с жалобами и характером, расспрос, осмотр, анализы, диагноз и лечение, затем разбор приёма экспертом с оценкой и тестом по ошибкам. Работает в Telegram и в браузере, первый пациент каждый день бесплатно.
+
+## Продукт
+- [Главная](${SITE}/): как работает тренажёр, цены, вопросы и ответы
+- [Веб-приложение](${SITE}/app): тренажёр в браузере
+- [Публичная оферта](${SITE}/oferta/)
+- [Политика обработки данных](${SITE}/privacy/)
+
+## Блог
+${ARTICLES.map((a) => `- [${a.h1}](${SITE}/blog/${a.slug}/): ${a.description}`).join("\n")}
+`;
+}
+
 // ---------------------------------------------------------------- запись
 const write = (rel, content) => {
   const f = path.join(OUT, rel);
@@ -364,3 +387,4 @@ for (const a of ARTICLES) write(`blog/${a.slug}/index.html`, articlePage(a));
 for (const d of [OFFER, PRIVACY]) write(`${d.slug}/index.html`, legalPage(d));
 write("404.html", notFound());
 write("sitemap.xml", sitemap());
+write("llms.txt", llmsTxt());

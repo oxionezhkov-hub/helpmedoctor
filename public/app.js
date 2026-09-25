@@ -913,8 +913,8 @@ function newPatientBlock() {
     return html`<div class="card stack center">
       <b>Бесплатный пациент на сегодня принят</b>
       <p class="small muted">Новый — завтра после полуночи (МСК).${p.trial_available ? " Или 7 дней безлимита за 1 ₽." : ""}</p>
-      <a class="btn block" href="#/plans">${ic("gem")}<span>${p.trial_available ? "Премиум 7 дней за 1 ₽" : "Безлимитный доступ"}</span></a>
-      ${pack ? html`<a class="btn block ghost" href="#/plans">${ic("plus")}<span>${pack.label.replace(/^\+/, "")} — ${rub(pack.price)} ₽</span></a>` : ""}
+      <a class="btn block" href="#/plans" ${p.trial_available ? html`data-checkout="trial"` : ""}>${ic("gem")}<span>${p.trial_available ? "Премиум 7 дней за 1 ₽" : "Безлимитный доступ"}</span></a>
+      ${pack ? html`<a class="btn block ghost" href="#/plans" data-checkout="patients3">${ic("plus")}<span>${pack.label.replace(/^\+/, "")} — ${rub(pack.price)} ₽</span></a>` : ""}
     </div>`;
   }
   return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>`;
@@ -934,7 +934,7 @@ function bindNewPatient() {
       S.expectNewPatient = 0;
       btnBusy(btn, false);
       toast(e.message, "error");
-      if (e.code === "limit") go("/plans");
+      if (e.code === "limit") checkout(S.me.offer?.packs?.patients3 && !S.me.profile.trial_available ? "patients3" : "trial");
       await loadMe().catch(() => {});
     }
     rerender();
@@ -1070,6 +1070,8 @@ document.addEventListener("click", async (e) => {
   }
   const site = e.target.closest("[data-open-site]");
   if (site) return openOnSite(site);
+  const buy = e.target.closest("[data-checkout]");
+  if (buy) { e.preventDefault(); return checkout(buy.dataset.checkout); }
   const t = e.target.closest("[data-start],[data-reopen],[data-reject],[data-delete-patient],[data-delete-quiz],[data-go]");
   if (!t) return;
   if (t.dataset.go) return go(t.dataset.go);
@@ -2150,8 +2152,7 @@ function viewPlans(fresh) {
     ${o.early ? html`<div class="early-note">${ic("zap")}<span>Цены для ранних пользователей — до ${earlyDate}</span></div>` : ""}
     <div class="plans">${order.map(planCard)}</div>
 
-    <label class="consent"><input type="checkbox" id="consent" ${store("hmd_consent") === "1" ? "checked" : ""}>
-      <span>Принимаю ${docLink("offer", "условия оферты")} и ${docLink("privacy", "политику обработки данных")}, согласен на автоматические списания по подписке — их можно отключить в любой момент.</span></label>
+    ${consentBox()}
 
     ${Object.keys(o.packs || {}).length ? html`<div class="section-title">Разовые покупки</div>
       <div class="card packs">${Object.entries(o.packs).map(([k, x]) => html`<div class="pack-row">
@@ -2161,26 +2162,10 @@ function viewPlans(fresh) {
 
     <p class="tiny muted center">Карта или СБП. Доступ включается сразу — и в боте, и на сайте.<br>${docLink("offer", "Оферта")} · ${docLink("privacy", "Политика конфиденциальности")}</p>
   </div>`);
-  const consent = $("#consent");
-  consent.onchange = () => { store("hmd_consent", consent.checked ? "1" : null); consent.closest(".consent").classList.remove("need"); };
-  root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = async () => {
-    // Согласие с офертой и на автосписания — обязательно перед оплатой
-    if (!consent.checked) {
-      const box = consent.closest(".consent");
-      box.classList.add("need");
-      box.scrollIntoView({ block: "center", behavior: "smooth" });
-      return toast("Отметьте согласие с условиями оплаты", "error");
-    }
-    btnBusy(b);
-    try {
-      const { link } = await api("POST", "/pay", { plan: b.dataset.plan, consent: true });
-      if (IN_TG && tg.openLink) tg.openLink(link);
-      else location.href = link;
-    } catch (e) {
-      toast(e.message, "error");
-    }
-    btnBusy(b, false);
-  }));
+  bindConsent(root);
+  root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = () => payFor(b.dataset.plan, b, root)));
+  // Переход из другого раздела с конкретной покупкой (?buy=freeze) — сразу открываем её, а не всю страницу тарифов
+  if (fresh && S.route.q.buy) checkout(S.route.q.buy);
   const off = $("#autopay-off");
   if (off) off.onclick = async () => {
     const ok = await confirmDialog("Отключить автопродление?", `Премиум останется до ${dateText(p.sub_until)}, дальше — бесплатный тариф.`, "Отключить");
@@ -2198,11 +2183,69 @@ function viewPlans(fresh) {
   };
 }
 
+// Согласие с офертой и на автосписания: отмечено по умолчанию, снять галочку можно
+const consentOn = () => store("hmd_consent") !== "0";
+function consentBox() {
+  return html`<label class="consent"><input type="checkbox" data-consent ${consentOn() ? "checked" : ""}>
+      <span>Принимаю ${docLink("offer", "условия оферты")} и ${docLink("privacy", "политику обработки данных")}, согласен на автоматические списания по подписке — их можно отключить в любой момент.</span></label>`;
+}
+function bindConsent(scope) {
+  scope.querySelectorAll("[data-consent]").forEach((c) => (c.onchange = () => {
+    store("hmd_consent", c.checked ? null : "0");
+    c.closest(".consent").classList.remove("need");
+  }));
+}
+
+/** Создаёт платёж и открывает страницу банка */
+async function payFor(key, b, scope) {
+  const consent = scope.querySelector("[data-consent]");
+  if (consent && !consent.checked) {
+    const box = consent.closest(".consent");
+    box.classList.add("need");
+    box.scrollIntoView({ block: "center", behavior: "smooth" });
+    return toast("Отметьте согласие с условиями оплаты", "error");
+  }
+  btnBusy(b);
+  try {
+    const { link } = await api("POST", "/pay", { plan: key, consent: true });
+    if (IN_TG && tg.openLink) tg.openLink(link);
+    else location.href = link;
+  } catch (e) {
+    toast(e.message, "error");
+  }
+  btnBusy(b, false);
+}
+
+/** Покупка на месте: лист с одним товаром (пробный период или разовая покупка) без перехода к тарифам */
+function checkout(key) {
+  const p = S.me.profile;
+  const o = S.me.offer || {};
+  const pack = o.packs?.[key];
+  const trial = key === "trial" && p.trial_available ? o.trial : null;
+  if (!pack && !trial) return key === "trial" || key === "premium" ? go("/plans") : null;
+  haptic();
+  const body = trial
+    ? html`<h2>Премиум 7 дней за ${rub(trial.price)} ₽</h2>
+      <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div>
+      <p class="tiny muted">Через 7 дней — ${rub(trial.then_price)} ₽ в месяц автоматически. Отключить можно в любой момент в профиле, до конца пробного периода — бесплатно.</p>`
+    : html`<div class="row-c"><div class="tile ${key === "freeze" ? "accent" : "warn"}">${ic(key === "freeze" ? "flame" : "users")}</div>
+        <div class="grow"><h2>${pack.label}</h2><div class="small muted">${key === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}`}</div></div></div>`;
+  const price = trial ? trial.price : pack.price;
+  openSheet(html`<div class="stack checkout">${body}
+    <button class="btn lg block" data-buy="${key}">Оплатить ${rub(price)} ₽</button>
+    ${consentBox()}
+    <a class="small center" href="#/plans" data-close>Все тарифы</a></div>`, (sheet) => {
+    bindConsent(sheet);
+    sheet.querySelector("[data-buy]").onclick = (e) => payFor(key, e.currentTarget, sheet);
+    sheet.querySelector("[data-close]").onclick = () => closeSheet(true);
+  });
+}
+
 /** Карточка «откройте в премиуме» — после разбора, в тесте, при лимите */
 function premiumCta(text, compact = false) {
   const p = S.me.profile;
   const label = p.trial_available ? `Премиум 7 дней за ${rub(S.me.offer?.trial?.price || 1)} ₽` : "Открыть премиум";
-  return html`<a class="card premium-cta ${compact ? "compact" : ""}" href="#/plans">
+  return html`<a class="card premium-cta ${compact ? "compact" : ""}" href="#/plans" ${p.trial_available ? html`data-checkout="trial"` : ""}>
     <div class="tile accent">${ic("gem")}</div>
     <div class="grow"><b>${text}</b><div class="small">${label}</div></div>${ic("chevron")}</a>`;
 }

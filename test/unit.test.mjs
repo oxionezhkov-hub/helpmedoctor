@@ -252,3 +252,60 @@ test("лимит: купленные пациенты сверх бесплат�
   assert.equal(G.needsPatientCredit(p, now), true);
   assert.equal(G.needsPatientCredit({ ...p, sub_until: now + 1000 }, now), false, "с подпиской кредиты не тратятся");
 });
+
+test("оценка приёма считается формулой и не спорит с верностью диагноза", () => {
+  const facts = (n, o = {}) => ({ doctorMessages: Array(n).fill("вопрос"), tests: ["КТ"], physicals: ["осмотр"], diagnosis: "д", treatment: "л", referrals: [], ...o });
+  const ev = (dx, d, c, t, extra = {}) => ({ axes: { diagnosis: d, communication: c, treatment: t }, diagnosis_correct: dx, ...extra });
+  assert.equal(G.scoreConsultation(ev("yes", 5, 4, 4), facts(5)).rating, 4.5);
+  assert.equal(G.scoreConsultation(ev("yes", 5, 5, 5), facts(5)).rating, 5);
+  // Неверный диагноз — не выше 2.5, даже если модель завысила оси; ось «диагностика» ≤ 2
+  const wrong = G.scoreConsultation(ev("no", 5, 5, 5), facts(6));
+  assert.equal(wrong.rating, 2.5);
+  assert.equal(wrong.axes.diagnosis, 2);
+  // Верный диагноз — не ниже 3.5
+  assert.equal(G.scoreConsultation(ev("yes", 3, 1, 0), facts(1, { physicals: [], tests: [] })).rating, 3.5);
+  assert.ok(G.scoreConsultation(ev("partial", 3, 4, 3), facts(6)).rating <= 4);
+  assert.equal(G.scoreConsultation(ev("yes", 5, 5, 1, { critical_error: "вредное назначение" }), facts(6)).rating, 2);
+  assert.equal(G.scoreConsultation(ev("none", 0, 3, 0), facts(4, { diagnosis: "" })).rating <= 2, true);
+  // Мало вопросов — минус полбалла
+  assert.equal(G.scoreConsultation(ev("yes", 5, 4, 4), facts(2)).rating, 4);
+});
+
+test("статьи блога из scripts/site/posts отвечают редакционным требованиям", async () => {
+  const fsm = await import("node:fs");
+  const { ARTICLES } = await import("../scripts/site/articles.mjs");
+  const slugs = ARTICLES.map((a) => a.slug);
+  assert.equal(new Set(slugs).size, slugs.length, "slug статей уникальны");
+  assert.equal(new Set(ARTICLES.map((a) => a.title)).size, ARTICLES.length, "заголовки статей уникальны");
+  for (const a of ARTICLES.filter((x) => x.file)) {
+    const at = `статья ${a.file}`;
+    assert.equal(a.file, `${a.slug}.mjs`, `${at}: имя файла = slug`);
+    assert.match(a.slug, /^[a-z0-9]+(-[a-z0-9]+)*$/, `${at}: slug латиницей через дефис`);
+    assert.match(a.date, /^\d{4}-\d{2}-\d{2}$/, `${at}: дата`);
+    assert.ok(a.title.length <= 70, `${at}: title до 70 символов (сейчас ${a.title.length})`);
+    assert.ok(a.h1 && a.h1.length <= 90, `${at}: h1`);
+    assert.ok(a.description.length >= 120 && a.description.length <= 170, `${at}: description 120–170 символов (сейчас ${a.description.length})`);
+    assert.ok(a.tags.length >= 2 && a.tags.length <= 5, `${at}: 2–5 тегов`);
+    assert.ok(a.summary?.length >= 3 && a.summary.length <= 5, `${at}: «Коротко» — 3–5 пунктов`);
+    assert.ok(a.faq?.length >= 3 && a.faq.length <= 6 && a.faq.every(([q, ans]) => q.endsWith("?") && ans.length >= 60), `${at}: 3–6 вопросов FAQ с развёрнутыми ответами`);
+    assert.ok(a.sources?.length >= 2 && a.sources.every(([t, u]) => t && (!u || u.startsWith("https://"))), `${at}: минимум 2 источника`);
+    assert.ok(a.cover?.says?.length === 2 && a.cover.patient && a.cover.doctor, `${at}: обложка`);
+    assert.ok(fsm.existsSync(`public/blog/${a.slug}/cover.jpg`) && fsm.existsSync(`public/blog/${a.slug}/og.jpg`), `${at}: картинки обложки — node scripts/build-images.mjs ${a.slug}`);
+    const body = a.body;
+    assert.ok(!/<h1|<script|<style|style="/i.test(body), `${at}: без h1, скриптов и инлайн-стилей`);
+    assert.ok(/^\s*<p class="lead">/.test(body), `${at}: начинается с лида <p class="lead">`);
+    assert.ok((body.match(/<h2>/g) || []).length >= 4, `${at}: минимум 4 раздела <h2>`);
+    const text = body.replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ");
+    const words = text.toLowerCase().match(/[а-яёa-z0-9-]+/g) || [];
+    assert.ok(words.length >= 1200, `${at}: минимум 1200 слов (сейчас ${words.length})`);
+    assert.ok(Math.abs(a.minutes - Math.round(words.length / 180)) <= 2, `${at}: minutes ≈ слов/180 (${Math.round(words.length / 180)})`);
+    // Без переспама: ни одно значимое слово не занимает больше 2,5% текста
+    const freq = {};
+    for (const w of words) if (w.length >= 6) freq[w] = (freq[w] || 0) + 1;
+    const [top, n] = Object.entries(freq).sort((x, y) => y[1] - x[1])[0] || ["", 0];
+    assert.ok(n / words.length <= 0.025, `${at}: переспам слова «${top}» — ${(100 * n / words.length).toFixed(1)}%`);
+    for (const [, href] of body.matchAll(/href="(\/blog\/[^"#]+)"/g)) {
+      assert.ok(slugs.some((s) => href === `/blog/${s}/`), `${at}: внутренняя ссылка ${href} ведёт на существующую статью`);
+    }
+  }
+});

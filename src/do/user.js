@@ -772,6 +772,7 @@ export class UserDO extends DurableObject {
       const p = P.evaluationPrompt(pat, { ...facts, profession: (await this.profile()).profession });
       try {
         ev = normalizeEvaluation(await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "evaluation", uid: pat.doctor_uid }));
+        Object.assign(ev, G.scoreConsultation(ev, facts));
       } catch (e) {
         console.error("evaluate", e);
         if ((job.attempt || 0) < 2) throw e; // alarm повторит
@@ -1536,7 +1537,8 @@ function normalizeEvaluation(e) {
   return {
     rating: Math.round(num(e.rating, 2.5) * 10) / 10,
     axes: { diagnosis: Math.round(num(axes.diagnosis)), communication: Math.round(num(axes.communication)), treatment: Math.round(num(axes.treatment)) },
-    diagnosis_correct: ["yes", "partial", "no"].includes(e.diagnosis_correct) ? e.diagnosis_correct : null,
+    diagnosis_correct: ["yes", "partial", "no", "none"].includes(e.diagnosis_correct) ? e.diagnosis_correct : null,
+    critical_error: clampStr(e.critical_error, 300),
     expert_text: clampStr(e.expert_text, 1500),
     dialog_moments: (Array.isArray(e.dialog_moments) ? e.dialog_moments : [])
       .filter((m) => m && m.comment).slice(0, 2).map((m) => ({ quote: clampStr(m.quote, 300), comment: clampStr(m.comment, 400) })),

@@ -141,14 +141,14 @@ await waitFor(() => sent(U).some((m) => m.text.includes("Назначьте ле
 await text(U, "Омепразол 20 мг 2 раза, амоксициллин, кларитромицин 14 дней");
 await waitFor(() => sent(U).some((m) => m.text.includes("ПРИЁМ ЗАВЕРШЁН")), "finish");
 const evalMsg = await waitFor(() => sent(U).find((m) => m.text.includes("Разбор приёма")), "evaluation");
-assert.ok(evalMsg.text.includes("4.2"));
+assert.ok(evalMsg.text.includes("4.0") || /\b4\b/.test(evalMsg.text), evalMsg.text.slice(0, 200));
 await waitFor(() => sent(U).find((m) => m.text.includes("первый разобранный приём") && JSON.stringify(m.reply_markup || {}).includes("rv_")), "review after first patient");
 step("бот: диагноз + лечение → завершение → разбор эксперта → сразу просьба оценить тренажёр");
 
 me = (await api(webToken, "GET", "/me")).data;
 const closed = me.patients.find((p) => p.id === patId);
 assert.equal(closed.status, "closed");
-assert.equal(closed.last_rating, 4.2);
+assert.equal(closed.last_rating, 4, "мало вопросов — минус полбалла к верному диагнозу");
 assert.ok(me.profile.xp > 0);
 assert.equal(me.profile.stats.consultations_total, 1);
 assert.equal(me.profile.streak, 1);

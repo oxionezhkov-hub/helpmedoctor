@@ -29,11 +29,15 @@ jobs:
           [ -z "$TOCHKA_PROXY_SECRET" ] && missing="$missing TOCHKA_PROXY_SECRET"
           if [ -n "$missing" ]; then echo "::error::Нет секретов:$missing"; exit 1; fi
           node --check yandex/tochka-proxy/index.js
+          # ID каталога без пробелов и переводов строк; похоже ли на ID (20 символов, латиница и цифры) — подсказка, само значение не печатаем
+          folder=$(printf %s "$YC_FOLDER_ID" | tr -d '[:space:]')
+          echo "YC_FOLDER=$folder" >> "$GITHUB_ENV"
+          echo "$folder" | grep -Eq '^[a-z0-9]{20}$' || echo "::warning::YC_FOLDER_ID не похож на ID каталога (ожидается 20 символов вида b1g…). Нужен ID каталога, а не облака и не имя."
       - name: Выкладка tochka-proxy
         uses: yc-actions/yc-sls-function@v5
         with:
           yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-          folder-id: ${{ secrets.YC_FOLDER_ID }}
+          folder-id: ${{ env.YC_FOLDER }}
           function-name: tochka-proxy
           runtime: nodejs22
           entrypoint: index.handler

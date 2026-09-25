@@ -261,3 +261,29 @@ export function consultationXp(prof, facts, rating) {
   const base = active ? Math.round((100 + rating * 20) * mult) : Math.round(10 * mult);
   return Math.round(base * (1 + streakBonus(prof.streak || 0)));
 }
+
+/**
+ * Итоговая оценка приёма считается здесь, а не моделью: ИИ оценивает оси по якорям и верность диагноза,
+ * формула сводит их в балл 0-5 с «потолками» за неверный диагноз и опасную ошибку. Так одинаковые приёмы
+ * получают одинаковые оценки, а балл не расходится с осями и разбором.
+ */
+export function scoreConsultation(ev, facts) {
+  const ax = ev.axes || {};
+  const dx = ev.diagnosis_correct || (facts.diagnosis || facts.referrals?.length ? "partial" : "none");
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  // Ось «диагностика» не может спорить с верностью диагноза
+  const diagnosis = clamp(ax.diagnosis ?? 0, dx === "yes" ? 3 : dx === "partial" ? 2 : 0, dx === "yes" ? 5 : dx === "partial" ? 4 : dx === "no" ? 2 : 1);
+  const treatment = clamp(ax.treatment ?? 0, 0, 5);
+  const communication = clamp(ax.communication ?? 0, 0, 5);
+  let r = diagnosis * 0.5 + treatment * 0.3 + communication * 0.2;
+  // Мало расспроса и никакого объективного обследования — приём неполный
+  const asked = facts.doctorMessages?.length || 0;
+  if (asked < 3) r -= 0.5;
+  if (!facts.physicals?.length && !facts.tests?.length) r -= 0.3;
+  const cap = { yes: 5, partial: 4, no: 2.5, none: 2 }[dx];
+  const floor = dx === "yes" ? 3.5 : dx === "partial" ? 2.5 : 0;
+  r = clamp(r, floor, cap);
+  if (ev.critical_error) r = Math.min(r, 2);
+  if (facts.discharged) r = Math.min(r, 1.5);
+  return { rating: Math.round(clamp(r, 0, 5) * 10) / 10, axes: { diagnosis, communication, treatment }, diagnosis_correct: dx };
+}

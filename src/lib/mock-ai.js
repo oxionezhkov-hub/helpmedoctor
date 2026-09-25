@@ -29,7 +29,7 @@ const mockImpl = {
       return { response: { sensation: "Болезненность в эпигастрии при пальпации, живот мягкий.", reaction: "Ай, вот тут больно!" } };
     }
     if (prompt.includes("Разбери приём")) {
-      return { response: JSON.stringify({ rating: 4.2, axes: { diagnosis: 4, communication: 5, treatment: 3 }, diagnosis_correct: "partial", expert_text: "Хороший сбор анамнеза, диагноз близок.", dialog_moments: [{ quote: "Где болит?", comment: "Хороший открытый вопрос" }], strengths: ["Сбор анамнеза"], weaknesses: ["Эрадикация H. pylori"], recommendation: "Назначайте ФГДС раньше.", outcome_update: "improving", post_story: "Через 3 недели боли ушли." }) };
+      return { response: JSON.stringify({ axes: { diagnosis: 5, communication: 4, treatment: 4 }, diagnosis_correct: "yes", critical_error: "", expert_text: "Хороший сбор анамнеза, диагноз близок.", dialog_moments: [{ quote: "Где болит?", comment: "Хороший открытый вопрос" }], strengths: ["Сбор анамнеза"], weaknesses: ["Эрадикация H. pylori"], recommendation: "Назначайте ФГДС раньше.", outcome_update: "improving", post_story: "Через 3 недели боли ушли." }) };
     }
     if (prompt.includes("работа над ошибками")) {
       return { response: { questions: Array.from({ length: 5 }, (_, i) => ({ text: `Вопрос ${i + 1}: что первым при подозрении на язву?`, options: ["ФГДС", "КТ", "МРТ", "ЭКГ"], correct: 0, explanation: "ФГДС — золотой стандарт." })) } };
