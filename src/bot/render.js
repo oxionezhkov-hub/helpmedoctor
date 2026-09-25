@@ -70,7 +70,8 @@ export function onboardingStart(name) {
   return {
     text: `👩‍⚕️ <b>Добро пожаловать в «Help me, Doctor», ${esc(name)}!</b>\n\n` +
       `Это тренажёр врача: ИИ-пациенты с настоящими жалобами, обследования, осмотр, диагноз — и разбор от эксперта.\n\n` +
-      `Настроим тренажёр под вас — 4 коротких вопроса, и я сразу подберу первого пациента.\n\n<b>1/4. Кто вы?</b>`,
+      `Настроим тренажёр под вас — 4 коротких вопроса, и я сразу подберу первого пациента.\n\n<b>1/4. Кто вы?</b>\n\n` +
+      `<i>Продолжая, вы принимаете <a href="https://helpmedoctor.ru/oferta/">оферту</a> и <a href="https://helpmedoctor.ru/privacy/">политику обработки данных</a>.</i>`,
     kb: [
       ONBOARDING_ROLES.slice(0, 2).map(([k, l]) => btn(l, `ob_lvl_${k}`)),
       ONBOARDING_ROLES.slice(2).map(([k, l]) => btn(l, `ob_lvl_${k}`)),

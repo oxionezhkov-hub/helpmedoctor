@@ -277,3 +277,5 @@ footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
 .fig-timeline .tl b { color: var(--accent); margin-bottom: 4px; }
 .plan .price s { font-size: 16px; font-weight: 600; color: var(--muted); margin-left: 4px; }
 .plans-note { grid-column: 1 / -1; margin: 4px 0 0; font-size: 14px; color: var(--muted); text-align: center; }
+.legal h2 { font-size: 21px; }
+.legal p, .legal li { font-size: 16px; }
