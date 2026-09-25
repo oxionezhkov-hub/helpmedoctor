@@ -5,7 +5,7 @@
 Работает в двух местах **на одних данных**:
 
 - Telegram-бот [@helpmedoctor_aibot](https://t.me/helpmedoctor_aibot);
-- веб-приложение `https://helpmedoctor.oxion-ezhkov.workers.dev/app` — открывается и внутри Telegram (кнопка «Приложение»), и в обычном браузере на телефоне или компьютере.
+- веб-приложение `https://helpmedoctor.ru/app` (запасной адрес — `https://helpmedoctor.oxion-ezhkov.workers.dev/app`) — открывается и внутри Telegram (кнопка «Приложение»), и в обычном браузере на телефоне или компьютере.
 
 Начали приём в боте — продолжайте на сайте, и наоборот. Открытые вкладки обновляются сами (WebSocket).
 

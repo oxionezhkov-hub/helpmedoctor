@@ -3,7 +3,7 @@
 //   TELEGRAM_TOKEN=... WEBHOOK_SECRET=... node scripts/set-webhook.mjs
 const token = process.env.TELEGRAM_TOKEN;
 const secret = process.env.WEBHOOK_SECRET;
-const base = (process.env.PUBLIC_URL || "https://helpmedoctor.oxion-ezhkov.workers.dev").replace(/\/$/, "");
+const base = (process.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "");
 if (!token) {
   console.error("Укажите TELEGRAM_TOKEN");
   process.exit(1);
