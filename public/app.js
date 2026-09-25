@@ -43,6 +43,9 @@ const S = {
   inflight: new Set(), // пациенты с запросом в процессе (с этой вкладки)
   expectNewPatient: 0, // когда нажали «Новый пациент» на этой вкладке
   evalWaiting: null,   // id пациента, чей разбор ждём в открытом листе
+  more: new Set(),     // раскрытые длинные списки
+  reveal: null,        // реплика пациента, которая сейчас «печатается» по словам
+  revealTs: 0,         // результат обследования/осмотра, который появляется с анимацией
 };
 
 // ---------------------------------------------------
@@ -106,6 +109,11 @@ const ICONS = {
   telegram: '<path d="M21 4 3 11l6 2 2 6 3-4 5 4Z"/><path d="m9 13 12-9"/>',
   party: '<path d="M4 20 9 7l8 8Z"/><path d="M14 4v2M19 9h2M17 3l-1 2M20 6l-2 1"/>',
   sad: '<circle cx="12" cy="12" r="9"/><path d="M8 16a5 5 0 0 1 8 0M9 9.5h.01M15 9.5h.01"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+  external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4Z"/><circle cx="12" cy="13" r="3.5"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
 };
 const ic = (name, cls = "") => raw(`<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ""}</svg>`);
 
@@ -120,6 +128,19 @@ function patAvatar(p, size = "") {
   const letters = String(p.name || "?").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
   return html`<div class="pav ${size}" style="--h:${hashHue(p.name)}">${letters}</div>`;
 }
+/** Аватар врача: фото (из Telegram или своё) или первая буква имени */
+function userAvatar(p, cls = "") {
+  if (p.avatar?.id) return html`<img class="avatar ${cls}" src="/api/avatar/${p.avatar.id}" alt="">`;
+  return html`<div class="avatar ${cls}">${initials(p.name)}</div>`;
+}
+
+/** Длинные списки: первые 5, остальное — по кнопке */
+const LIST_LIMIT = 5;
+function limited(key, items, render) {
+  if (items.length <= LIST_LIMIT || S.more.has(key)) return items.map(render);
+  return html`${items.slice(0, LIST_LIMIT).map(render)}<button class="btn ghost block more-btn" data-more="${key}">Показать все · ${items.length}</button>`;
+}
+
 function starsRow(n) {
   const r = Math.round(n);
   return html`<span class="stars">${[0, 1, 2, 3, 4].map((i) => ic("star", i < r ? "on" : ""))}</span>`;
@@ -259,6 +280,12 @@ function patchRoot(markup) {
   root.dataset.view = key;
   if (!same) {
     root.innerHTML = markup;
+    // Небольшая анимация входа на новый экран
+    root.classList.remove("enter");
+    void root.offsetWidth;
+    root.classList.add("enter");
+    clearTimeout(patchRoot.t);
+    patchRoot.t = setTimeout(() => root.classList.remove("enter"), 400);
   } else {
     const tpl = document.createElement("div");
     tpl.innerHTML = markup;
@@ -373,6 +400,15 @@ async function boot() {
       return renderFatal("Не удалось войти через Telegram. Закройте и откройте приложение ещё раз.");
     }
   } else {
+    // Пришли из мини-приложения по кнопке «Открыть на сайте»: одноразовый код входа
+    const handoff = new URLSearchParams(location.search).get("login");
+    if (handoff) {
+      history.replaceState(null, "", `${location.pathname}${location.hash}`);
+      try {
+        const r = await api("GET", `/auth/poll?code=${encodeURIComponent(handoff)}`);
+        if (r.status === "ok") store(TOKEN_KEY, r.token);
+      } catch {}
+    }
     S.token = store(TOKEN_KEY);
     if (!S.token) return renderLogin();
   }
@@ -574,6 +610,8 @@ function parseRoute() {
   if (parts[0] === "consult" && parts[1]) return { name: "consult", params: { id: parts[1] }, q };
   if (parts[0] === "quizzes") return { name: "quizzes", params: {}, q };
   if (parts[0] === "quiz" && parts[1]) return { name: "quiz", params: { id: parts[1] }, q };
+  if (parts[0] === "profile" && parts[1] === "stats") return { name: "stats", params: {}, q };
+  if (parts[0] === "profile" && parts[1] === "settings") return { name: "settings", params: {}, q };
   if (parts[0] === "profile") return { name: "profile", params: {}, q };
   if (parts[0] === "plans") return { name: "plans", params: {}, q };
   return { name: "home", params: {}, q };
@@ -588,10 +626,11 @@ function go(path, replace = false) {
 
 function goBack() {
   const r = S.route;
+  if (sheetRoot.innerHTML) return closeSheet(); // сначала закрываем открытый лист
   if (r.name === "consult") return go(`/patient/${r.params.id}`);
-  if (r.name === "patient") return go("/patients");
+  if (r.name === "patient") return go(r.q.from === "consult" ? `/consult/${r.params.id}` : "/patients");
   if (r.name === "quiz") return go("/quizzes");
-  if (r.name === "plans") return go("/profile");
+  if (["plans", "stats", "settings"].includes(r.name)) return go("/profile");
   go("/");
 }
 
@@ -621,7 +660,7 @@ async function route() {
 function rerender(fresh = false) {
   const r = S.route;
   if (!S.me) return;
-  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, plans: viewPlans };
+  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans };
   (views[r.name] || viewHome)(fresh);
 }
 
@@ -629,10 +668,11 @@ function renderShell(content, withNav = true) {
   const r = S.route.name;
   const pendingQuizzes = (S.me?.quizzes || []).filter((q) => q.status !== "done").length;
   const queue = (S.me?.patients || []).filter((p) => p.status !== "closed").length;
-  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && r === "plans") ? "active" : ""}">
+  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings"].includes(r)) ? "active" : ""}">
     ${ic(ico, "nav-i")}<span>${label}</span>${badge ? html`<span class="dot">${badge}</span>` : ""}</a>`;
   const scrollY = window.scrollY;
-  patchRoot(html`${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
+  const siteBar = IN_TG && ROOT_TABS.includes(r) ? html`<div class="site-bar"><button class="site-btn" data-open-site>${ic("external")}<span>Открыть на сайте</span></button></div>` : "";
+  patchRoot(html`${siteBar}${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
     ${tab("home", "/", "home", "Главная")}
     ${tab("patients", "/patients", "users", "Пациенты", queue)}
     ${tab("quizzes", "/quizzes", "quiz", "Тесты", pendingQuizzes)}
@@ -656,7 +696,7 @@ function viewHome(fresh) {
 
   const y = renderShell(html`<div class="page">
     <div class="hello">
-      <div class="avatar">${initials(p.name)}</div>
+      <a href="#/profile" class="avatar-link" aria-label="Профиль">${userAvatar(p)}</a>
       <div class="grow">
         <h1 class="ellipsis">Доктор ${p.name}</h1>
         <div class="muted small">${!p.onboarding_done ? "Настройка профиля" : html`${p.level_label} · ${p.profession}`}${p.has_sub ? html` · <span class="badge accent">${ic("gem")} Безлимит</span>` : ""}</div>
@@ -687,11 +727,13 @@ function viewHome(fresh) {
     ${p.onboarding_done ? newPatientBlock() : ""}
 
     ${inConsult.length ? html`<div class="section-title">Идёт приём</div>
-      ${inConsult.map((x) => patientCard(x, `/consult/${x.id}`, "Продолжить приём"))}` : ""}
+      ${patientCard(inConsult[0], `/consult/${inConsult[0].id}`, "Продолжить приём")}` : ""}
 
-    ${waiting.length ? html`<div class="section-title">Ждут приёма</div>${waiting.map((x) => patientCard(x))}` : ""}
+    ${waiting.length ? html`<div class="section-title">Ждёт приёма</div>${patientCard(waiting[0])}` : ""}
 
-    ${pendingQuiz ? html`<a class="card tap row" href="#/quiz/${pendingQuiz.pat_id}" style="text-decoration:none;color:inherit">
+    ${active.length > (inConsult.length ? 1 : 0) + (waiting.length ? 1 : 0) ? html`<a class="more-link" href="#/patients">Все пациенты в очереди · ${active.length}${ic("chevron")}</a>` : ""}
+
+    ${pendingQuiz ? html`<div class="section-title">Тест</div><a class="card tap row" href="#/quiz/${pendingQuiz.pat_id}" style="text-decoration:none;color:inherit">
       <div class="tile warn">${ic("quiz")}</div>
       <div class="grow"><b>Работа над ошибками</b><div class="small muted ellipsis">${pendingQuiz.pat_name} · ${pendingQuiz.pat_diagnosis}</div></div>
       <span class="badge warn">${pendingQuiz.answered}/${pendingQuiz.total}</span>
@@ -923,7 +965,7 @@ function viewPatients() {
       <button data-tab="archive" class="${patientsTab === "archive" ? "on" : ""}">Архив · ${archive.length}</button>
     </div>
     ${patientsTab === "queue" ? newPatientBlock() : ""}
-    ${items.length ? items.map((x) => patientCard(x)) : html`<div class="empty"><div class="tile lg">${ic(patientsTab === "queue" ? "inbox" : "archive")}</div>${patientsTab === "queue" ? "Очередь пуста" : "Здесь появятся пациенты после приёма"}</div>`}
+    ${items.length ? limited(`patients-${patientsTab}`, items, (x) => patientCard(x)) : html`<div class="empty"><div class="tile lg">${ic(patientsTab === "queue" ? "inbox" : "archive")}</div>${patientsTab === "queue" ? "Очередь пуста" : "Здесь появятся пациенты после приёма"}</div>`}
   </div>`);
   root.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => { patientsTab = b.dataset.tab; viewPatients(); }));
   bindNewPatient();
@@ -942,7 +984,7 @@ function viewPatient() {
   const never = !(p.consultations || []).length && !p.current;
 
   const y = renderShell(html`<div class="page">
-    <div class="page-head"><button class="back" data-go="/patients" aria-label="Назад">${ic("back")}</button><h2 class="grow ellipsis">Карточка пациента</h2></div>
+    <div class="page-head"><button class="back" data-go="${S.route.q.from === "consult" ? `/consult/${p.id}` : "/patients"}" aria-label="Назад">${ic("back")}</button><h2 class="grow ellipsis">Карточка пациента</h2></div>
     <div class="card stack">
       <div class="patient">
         ${patAvatar(p, "lg")}
@@ -975,6 +1017,8 @@ function viewPatient() {
 
     ${p.test_results?.length ? html`<div class="section-title">Результаты обследований</div>
       ${[...p.test_results].reverse().map((t) => html`<details class="card"><summary><b class="row-c">${ic("flask", "c-accent")}${t.test}</b> <span class="tiny muted">· ${dateText(t.ordered_at)}</span></summary><div class="pre small" style="margin-top:10px;font-family:ui-monospace,Menlo,monospace">${t.result}</div></details>`)}` : ""}
+
+    ${!never && !consults.some((c) => c.evaluating) ? html`<button class="btn block ghost c-danger" data-delete-patient="${p.id}">${ic("trash")}<span>Удалить пациента</span></button>` : ""}
   </div>`, true);
   window.scrollTo(0, y);
 }
@@ -1010,7 +1054,14 @@ function evaluationBlock(c) {
 
 // Кнопки на карточке пациента и в чате
 document.addEventListener("click", async (e) => {
-  const t = e.target.closest("[data-start],[data-reopen],[data-reject],[data-go]");
+  const more = e.target.closest("[data-more]");
+  if (more) {
+    S.more.add(more.dataset.more);
+    return rerender();
+  }
+  const site = e.target.closest("[data-open-site]");
+  if (site) return openOnSite(site);
+  const t = e.target.closest("[data-start],[data-reopen],[data-reject],[data-delete-patient],[data-delete-quiz],[data-go]");
   if (!t) return;
   if (t.dataset.go) return go(t.dataset.go);
   e.preventDefault();
@@ -1024,6 +1075,26 @@ document.addEventListener("click", async (e) => {
     if (t.dataset.reopen) {
       await api("POST", `/patients/${t.dataset.reopen}/reopen`);
       await startConsult(t.dataset.reopen);
+      return;
+    }
+    if (t.dataset.deletePatient) {
+      const ok = await confirmDialog("Удалить пациента?", "Пациент, его приёмы и тест будут удалены насовсем. Опыт и статистика сохранятся.", "Удалить");
+      if (!ok) return;
+      await api("DELETE", `/patients/${t.dataset.deletePatient}`);
+      S.patients.delete(t.dataset.deletePatient);
+      await loadMe();
+      toast("Пациент удалён");
+      go("/patients");
+      return;
+    }
+    if (t.dataset.deleteQuiz) {
+      const ok = await confirmDialog("Удалить тест?", "Тест «работа над ошибками» по этому пациенту будет удалён. Полученный опыт сохранится.", "Удалить");
+      if (!ok) return;
+      await api("DELETE", `/quiz/${t.dataset.deleteQuiz}`);
+      quizState = null;
+      await loadMe();
+      toast("Тест удалён");
+      go("/quizzes");
       return;
     }
     if (t.dataset.reject) {
@@ -1041,6 +1112,19 @@ document.addEventListener("click", async (e) => {
     if (document.body.contains(t)) btnBusy(t, false);
   }
 });
+
+/** Мини-приложение → сайт в браузере, сразу с входом (одноразовый код) */
+async function openOnSite(btn) {
+  btnBusy(btn);
+  try {
+    const { url } = await api("POST", "/auth/handoff");
+    if (tg?.openLink) tg.openLink(url);
+    else window.open(url, "_blank", "noopener");
+  } catch (e) {
+    toast(e.message, "error");
+  }
+  btnBusy(btn, false);
+}
 
 async function startConsult(id) {
   haptic();
@@ -1093,7 +1177,7 @@ function viewConsult(fresh) {
         <div class="title ellipsis">${p.name}</div>
         <div class="tiny muted ellipsis">${open ? `Приём №${(p.consultations || []).length + 1} · ${ageText(p)}` : "Приём завершён"}</div>
       </div>
-      <a class="icon-btn" href="#/patient/${p.id}" aria-label="Карточка">${ic("card")}</a>
+      <button class="icon-btn" id="summary-open" aria-label="Сводка пациента">${ic("card")}</button>
     </div>
     <div class="messages" id="messages">${timeline(p)}${pendingBlock(p)}</div>
     ${open && IN_TG ? html`<div class="composer"><div class="card flat tg-note">
@@ -1113,6 +1197,7 @@ function viewConsult(fresh) {
       </div>` : ""}
     ${!open ? html`<div class="composer"><a class="btn block" href="#/patient/${p.id}">К карточке пациента</a></div>` : ""}
   </div>`, false);
+  $("#summary-open").onclick = () => sheetSummary(p);
   const toChat = $("#to-chat");
   if (toChat) toChat.onclick = async () => {
     btnBusy(toChat);
@@ -1151,6 +1236,7 @@ function pendingBlock(p) {
 
 /** Запуск операции в приёме с замером длительности (для оценки времени в следующий раз) */
 async function consultOp(id, kind, label, fn) {
+  const since = Date.now() - 1000;
   S.op = { id, kind, label, start: Date.now() };
   S.inflight.add(id);
   viewConsult();
@@ -1166,7 +1252,13 @@ async function consultOp(id, kind, label, fn) {
     S.op = null;
     S.inflight.delete(id);
     S.typing.delete(id);
-    try { await loadPatient(id); } catch {}
+    try {
+      const { patient } = await loadPatient(id);
+      if (kind === "reply" || kind === "voice") startReveal(patient, since);
+      if (kind === "test") S.revealTs = patient.test_results?.at(-1)?.ordered_at || 0;
+      if (kind === "exam") S.revealTs = patient.exam_results?.at(-1)?.ts || 0;
+      if (S.revealTs) setTimeout(() => { S.revealTs = 0; }, 6000);
+    } catch {}
     if (S.route.name === "consult" && S.route.params.id === id) viewConsult();
     scrollChatDown();
   }
@@ -1191,18 +1283,69 @@ function timeline(p) {
     const sep = day !== lastDay ? html`<div class="divider">${day}</div>` : "";
     lastDay = day;
     if (it.kind === "patient" || it.kind === "doctor") {
-      return html`${sep}<div class="msg from-${it.kind}${it.pending ? " pending" : ""}">${it.m.voice ? ic("mic", "c-soft") : ""}${it.m.text}<div class="meta">${it.pending ? "отправка…" : timeText(it.ts)}</div></div>`;
+      const rv = it.kind === "patient" && S.reveal?.ts === it.ts ? S.reveal : null;
+      const text = rv ? rv.parts.slice(0, rv.n).join("") : it.m.text;
+      return html`${sep}<div class="msg from-${it.kind}${it.pending ? " pending" : ""}${rv ? " revealing" : ""}" data-ts="${it.ts}">${it.m.voice ? ic("mic", "c-soft") : ""}<span class="txt">${text}</span><div class="meta">${it.pending ? "отправка…" : timeText(it.ts)}</div></div>`;
     }
+    const fresh = S.revealTs && it.ts === S.revealTs ? " reveal" : "";
     if (it.kind === "test") {
-      return html`${sep}<div class="event test"><div class="event-title">${ic("flask", "c-accent")}${it.t.test}</div><div class="event-body">${it.t.result}</div></div>`;
+      return html`${sep}<div class="event test${fresh}"><div class="event-title">${ic("flask", "c-accent")}${it.t.test}</div><div class="event-body">${revealLines(it.t.result, fresh)}</div></div>`;
     }
     if (it.kind === "exam") {
-      return html`${sep}<div class="event"><div class="event-title">${ic("steth", "c-accent")}Осмотр: ${it.x.action}</div><div class="event-body">${it.x.sensation}</div>${it.x.reaction ? html`<div class="event-body" style="margin-top:8px"><b>Пациент:</b> ${it.x.reaction}</div>` : ""}</div>`;
+      return html`${sep}<div class="event${fresh}"><div class="event-title">${ic("steth", "c-accent")}Осмотр: ${it.x.action}</div><div class="event-body">${revealLines(it.x.sensation, fresh)}</div>${it.x.reaction ? html`<div class="event-body line" style="margin-top:8px;--i:${String(it.x.sensation || "").split("\n").length}"><b>Пациент:</b> ${it.x.reaction}</div>` : ""}</div>`;
     }
     if (it.kind === "end") {
       return html`${sep}<div class="divider">${ic("flag")} Приём №${it.n} завершён${it.c.rating != null ? ` · ${Number(it.c.rating).toFixed(1)} из 5` : ""}</div>`;
     }
     return "";
+  });
+}
+
+/** Строки результата по одной (у свежего результата — с задержкой, см. .event.reveal .line) */
+function revealLines(text, fresh) {
+  if (!fresh) return text;
+  return String(text || "").split("\n").map((line, i) => html`<span class="line" style="--i:${i}">${line || " "}</span>`);
+}
+
+// ---------- Реплика пациента «печатается» по словам ----------
+// ИИ отвечает быстро и целиком — показываем постепенно, как в живом разговоре
+const REVEAL_MS = 55;
+function startReveal(p, since) {
+  const m = [...(p.conversation_history || [])].reverse().find((x) => x.role === "patient" && x.ts >= since);
+  if (!m || !m.text) return;
+  const parts = m.text.split(/(\s+)/).filter(Boolean);
+  if (parts.length < 3) return;
+  S.reveal = { ts: m.ts, parts, n: 0 };
+  clearInterval(S.revealTimer);
+  S.revealTimer = setInterval(() => {
+    const r = S.reveal;
+    if (!r) return clearInterval(S.revealTimer);
+    r.n = Math.min(r.parts.length, r.n + 2); // слово + пробел
+    const el = document.querySelector(`.msg[data-ts="${r.ts}"] .txt`);
+    if (el) el.textContent = r.parts.slice(0, r.n).join("");
+    const box = $("#messages");
+    if (box && box.scrollHeight - box.scrollTop - box.clientHeight < 160) box.scrollTop = box.scrollHeight;
+    if (r.n >= r.parts.length) {
+      clearInterval(S.revealTimer);
+      S.reveal = null;
+      document.querySelector(`.msg[data-ts="${r.ts}"]`)?.classList.remove("revealing");
+    }
+  }, REVEAL_MS);
+}
+
+/** Сводка пациента поверх диалога: закрыли — остались в чате */
+function sheetSummary(p) {
+  const tests = [...(p.test_results || [])].reverse();
+  const exams = [...(p.exam_results || [])].reverse();
+  openSheet(html`<div class="patient" style="margin-bottom:12px">${patAvatar(p, "lg")}<div class="grow"><h2 style="margin:0">${p.name}</h2>
+      <div class="small muted">${ageText(p)}${p.is_alien ? " · инопланетянин" : p.sex === "female" ? " · женщина" : p.sex === "male" ? " · мужчина" : ""} · ${p.specialization}</div></div></div>
+    ${p.chief_complaint ? html`<div class="quote" style="margin-bottom:12px">${p.chief_complaint}</div>` : ""}
+    ${p.current ? html`<div style="margin-bottom:12px">${actionsSummary({ tests: p.current.tests, physicals: p.current.physicals })}</div>` : ""}
+    ${tests.length ? html`<div class="section-title" style="margin:6px 0 8px">Обследования</div>${tests.map((t) => html`<details class="card flat sum-item"><summary><b>${t.test}</b></summary><div class="pre small mono">${t.result}</div></details>`)}` : ""}
+    ${exams.length ? html`<div class="section-title" style="margin:10px 0 8px">Осмотр</div>${exams.map((x) => html`<details class="card flat sum-item"><summary><b>${x.action}</b></summary><div class="pre small">${x.sensation}</div></details>`)}` : ""}
+    ${!tests.length && !exams.length ? html`<p class="small muted">Обследований и осмотров пока не было.</p>` : ""}
+    <div class="grid-2" style="margin-top:14px"><button class="btn ghost" data-close-sheet>${ic("chat")}<span>К диалогу</span></button><a class="btn" href="#/patient/${p.id}?from=consult">Карточка</a></div>`, (el) => {
+    el.querySelector("[data-close-sheet]").onclick = () => closeSheet();
   });
 }
 
@@ -1388,9 +1531,11 @@ async function finishConsult(p, body) {
     haptic("success");
     S.evalWaiting = p.id;
     openSheet(html`<h2 class="row-c">${ic("checkCircle", "c-ok")}Приём завершён</h2>
-      <div class="msg from-patient" style="max-width:100%;margin-bottom:12px">${res.farewell}</div>
+      <div class="msg from-patient" style="max-width:100%;margin-bottom:12px"><span class="txt" id="farewell-txt"></span></div>
       <div class="card flat" style="background:var(--surface-2)"><div class="tiny muted">ИСТИННЫЙ ДИАГНОЗ</div><b>${res.true_diagnosis}</b></div>
-      <div id="eval-slot" style="margin-top:16px">${etaBox("evaluation", S.evalStart)}</div>`, null, () => { S.evalWaiting = null; });
+      <div id="eval-slot" style="margin-top:16px">${etaBox("evaluation", S.evalStart)}</div>
+      ${wantsFeedbackPrompt() ? html`<div class="card flat fb-prompt" id="fb-prompt"></div>` : ""}`, () => mountFeedbackPrompt(), () => { S.evalWaiting = null; });
+    typeWords($("#farewell-txt"), res.farewell || "");
     await Promise.all([loadPatient(p.id), loadMe()]);
     if (S.route.name === "consult") viewConsult();
     pollEvaluation(p.id);
@@ -1398,6 +1543,19 @@ async function finishConsult(p, body) {
     toast(e.message, "error");
     btnBusy(btn, false);
   }
+}
+
+/** Текст по словам в отдельном элементе (прощание пациента) */
+function typeWords(el, text) {
+  if (!el) return;
+  const parts = String(text).split(/(\s+)/).filter(Boolean);
+  let n = 0;
+  const t = setInterval(() => {
+    n = Math.min(parts.length, n + 2);
+    if (!document.body.contains(el)) return clearInterval(t);
+    el.textContent = parts.slice(0, n).join("");
+    if (n >= parts.length) clearInterval(t);
+  }, REVEAL_MS);
 }
 
 // Если WebSocket не донёс разбор — проверяем сами
@@ -1454,8 +1612,8 @@ function viewQuizzes() {
   renderShell(html`<div class="page">
     <h1>Работа над ошибками</h1>
     <p class="muted small">После каждого приёма эксперт составляет тест по вашим пробелам. +5 XP за каждый верный ответ.</p>
-    ${pending.length ? html`<div class="section-title">Ждут прохождения</div>${pending.map(item)}` : ""}
-    ${done.length ? html`<div class="section-title">Пройдены</div>${done.map(item)}` : ""}
+    ${pending.length ? html`<div class="section-title">Ждут прохождения</div>${limited("quizzes-pending", pending, item)}` : ""}
+    ${done.length ? html`<div class="section-title">Пройдены</div>${limited("quizzes-done", done, item)}` : ""}
     ${!list.length ? html`<div class="empty"><div class="tile lg">${ic("quiz")}</div>Тесты появятся после первого приёма</div>` : ""}
   </div>`);
 }
@@ -1481,7 +1639,8 @@ async function viewQuiz(fresh) {
   const ans = quizState.answer;
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/quizzes" aria-label="Назад">${ic("back")}</button>
-      <div class="grow"><div class="tiny muted">РАБОТА НАД ОШИБКАМИ</div><b class="ellipsis" style="display:block">${quiz.pat_diagnosis}</b></div></div>
+      <div class="grow"><div class="tiny muted">РАБОТА НАД ОШИБКАМИ</div><b class="ellipsis" style="display:block">${quiz.pat_diagnosis}</b></div>
+      <button class="icon-btn" data-delete-quiz="${id}" aria-label="Удалить тест">${ic("trash")}</button></div>
     <div class="steps">${quiz.questions.map((qq, k) => html`<i class="${qq.chosen != null ? (qq.chosen === qq.correct ? "ok" : "bad") : k === i ? "cur" : ""}"></i>`)}</div>
     <div class="card stack">
       <div class="tiny muted">Вопрос ${i + 1} из ${quiz.total}</div>
@@ -1553,6 +1712,7 @@ function renderQuizResult() {
       <div class="small muted fact">${ic("bulb")}<span>${q.explanation || ""}</span></div>
     </div>`)}
     <a class="btn block" href="#/">На главную</a>
+    <button class="btn block ghost c-danger" data-delete-quiz="${quizState.id}">${ic("trash")}<span>Удалить тест</span></button>
   </div>`);
 }
 
@@ -1580,7 +1740,7 @@ async function suggestSections(profession) {
   const known = Object.keys(S.me.config.specializations).find((k) => k.toLowerCase() === profession.toLowerCase());
   if (known) return pickProfession(known);
   pf.suggesting = true;
-  viewProfile();
+  viewSettings();
   try {
     const { sections } = await api("POST", "/sections/suggest", { profession });
     if (!pf || pf.custom !== profession) return; // пока ждали, специальность поменяли
@@ -1593,7 +1753,7 @@ async function suggestSections(profession) {
     toast(e.message, "error");
   } finally {
     if (pf) pf.suggesting = false;
-    if (S.route.name === "profile") viewProfile();
+    if (S.route.name === "settings") viewSettings();
   }
 }
 
@@ -1604,39 +1764,35 @@ function pickProfession(name) {
   pf.options = [...cfg.specializations[name]];
   pf.specs = new Set(pf.options);
   pf.suggesting = false;
-  viewProfile();
+  viewSettings();
 }
 
-function viewProfile(fresh) {
+function viewSettings(fresh) {
   const p = S.me.profile;
   const cfg = S.me.config;
   if (fresh || !pf) pf = profileDraft(p, cfg);
   const professions = Object.keys(cfg.specializations);
   const custom = pf.profession === "__custom";
-  const sub = p.has_sub ? (p.sub_until === -1 ? "навсегда" : `до ${dateText(p.sub_until)}`) : null;
 
   renderShell(html`<div class="page">
-    <div class="hello"><div class="avatar">${initials(p.name)}</div><div class="grow"><h1 class="ellipsis">${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : "Telegram ID " + p.uid}</div></div></div>
-
-    <a class="card tap row" href="#/plans" style="text-decoration:none;color:inherit">
-      <div class="tile accent">${ic("gem")}</div>
-      <div class="grow"><b>${sub ? "Безлимитный доступ" : "Бесплатный тариф"}</b><div class="small muted">${sub ? `Активен ${sub}` : "1 пациент в день · безлимит от 30 ₽"}</div></div>${ic("chevron", "c-muted")}
-    </a>
+    <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Настройки</h2></div>
 
     <div class="card stack">
-      <h3>Статистика</h3>
-      <div class="stats">
-        <div class="stat"><b>${p.stats.patients_total || 0}</b><span>${plural(p.stats.patients_total || 0, "пациент", "пациента", "пациентов")}</span></div>
-        <div class="stat"><b>${p.stats.quizzes_done || 0}</b><span>${plural(p.stats.quizzes_done || 0, "тест", "теста", "тестов")}</span></div>
-        <div class="stat"><b>${p.stats.correct_diagnoses_streak || 0}</b><span>верных подряд</span></div>
+      <h3>Фото профиля</h3>
+      <div class="row">
+        ${userAvatar(p, "xl")}
+        <div class="stack-sm grow">
+          <label class="btn sm ghost file-btn">${ic("camera")}<span>Загрузить фото</span><input type="file" accept="image/*" id="av-file" hidden></label>
+          <div class="row" style="gap:6px">
+            <button class="btn sm ghost grow" id="av-tg">${ic("telegram")}<span>Из Telegram</span></button>
+            ${p.avatar ? html`<button class="btn sm ghost" id="av-del" aria-label="Убрать фото">${ic("trash")}</button>` : ""}
+          </div>
+        </div>
       </div>
-      ${p.strengths?.length ? html`<div><div class="tiny muted">СИЛЬНЫЕ СТОРОНЫ</div><div class="row wrap" style="gap:6px;margin-top:6px">${p.strengths.slice(0, 6).map((s) => html`<span class="badge ok">${s}</span>`)}</div></div>` : ""}
-      ${p.weaknesses?.length ? html`<div><div class="tiny muted">ЧТО ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px;margin-top:6px">${p.weaknesses.slice(0, 6).map((s) => html`<span class="badge warn">${s}</span>`)}</div></div>` : ""}
-      ${p.recommendations?.length ? html`<div class="small fact">${ic("bulb", "c-warn")}<span>${p.recommendations[0]}</span></div>` : ""}
     </div>
 
     <div class="card stack" id="profile-form">
-      <h3>Настройки</h3>
+      <h3>Профиль врача</h3>
       <div class="field"><label>Имя</label><input class="input" id="pf-name" value="${pf.name}" maxlength="40"></div>
       <div class="field"><label>Кто вы</label>
         <div class="row wrap" style="gap:6px">${cfg.levels.map((l) => html`<button class="chip ${pf.level === l.key ? "on" : ""}" data-level="${l.key}">${l.label}</button>`)}</div></div>
@@ -1656,27 +1812,18 @@ function viewProfile(fresh) {
       <button class="btn block" id="pf-save">Сохранить</button>
     </div>
 
-    <button class="card tap row" id="feedback-open" style="width:100%;text-align:left;font:inherit;color:inherit">
-      <div class="tile warn">${ic("star")}</div>
-      <div class="grow"><b>Оставить отзыв</b><div class="small muted">Что нравится, что мешает, чего не хватает</div></div>${ic("chevron", "c-muted")}
-    </button>
-
-    <div class="card stack-sm small">
-      <a href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener" class="row-c">${ic("telegram")}Открыть бота в Telegram</a>
-      ${!IN_TG ? html`<a href="#" id="logout" class="row-c" style="color:var(--danger)">${ic("logout")}Выйти</a>` : ""}
-    </div>
   </div>`);
 
   $("#pf-name").oninput = (e) => { pf.name = e.target.value; };
-  root.querySelectorAll("[data-level]").forEach((b) => (b.onclick = () => { pf.level = b.dataset.level; viewProfile(); }));
-  root.querySelectorAll("[data-diff]").forEach((b) => (b.onclick = () => { pf.difficulty = b.dataset.diff; viewProfile(); }));
+  root.querySelectorAll("[data-level]").forEach((b) => (b.onclick = () => { pf.level = b.dataset.level; viewSettings(); }));
+  root.querySelectorAll("[data-diff]").forEach((b) => (b.onclick = () => { pf.difficulty = b.dataset.diff; viewSettings(); }));
   root.querySelectorAll("[data-prof]").forEach((b) => (b.onclick = () => {
     if (b.dataset.prof !== "__custom") return pickProfession(b.dataset.prof);
     if (custom) return;
     pf.profession = "__custom";
     pf.options = [];
     pf.specs = new Set();
-    viewProfile();
+    viewSettings();
     const inp = $("#pf-prof-custom");
     inp.focus();
     if (pf.custom) suggestSections(pf.custom);
@@ -1696,7 +1843,7 @@ function viewProfile(fresh) {
   root.querySelectorAll("[data-spec]").forEach((b) => (b.onclick = () => {
     const s = b.dataset.spec;
     if (pf.specs.has(s)) pf.specs.delete(s); else pf.specs.add(s);
-    viewProfile();
+    viewSettings();
   }));
   const addSpec = (v, input) => {
     v = pf.options.find((o) => o.toLowerCase() === v.toLowerCase()) || v;
@@ -1705,7 +1852,7 @@ function viewProfile(fresh) {
     if (!pf.options.includes(v)) pf.options = [...pf.options, v];
     pf.specs.add(v);
     if (input) input.value = "";
-    viewProfile();
+    viewSettings();
   };
   bindInlineForm("pf-spec-add", addSpec);
   $("#pf-save").onclick = async () => {
@@ -1729,45 +1876,190 @@ function viewProfile(fresh) {
       pf = null;
       haptic("success");
       toast("Сохранено", "ok");
-      viewProfile(true);
+      viewSettings(true);
     } catch (e) {
       toast(e.message, "error");
       btnBusy(btn, false);
     }
   };
+  bindAvatar();
+}
+
+/** Фото профиля: своё (сжимаем в браузере до 320 px), из Telegram или без фото */
+function bindAvatar() {
+  const file = $("#av-file");
+  if (file) file.onchange = async () => {
+    const f = file.files?.[0];
+    file.value = "";
+    if (!f) return;
+    const label = file.closest("label");
+    btnBusy(label);
+    try {
+      const blob = await squareImage(f, 320);
+      const r = await fetch("/api/avatar", { method: "POST", headers: { Authorization: `Bearer ${S.token}`, "Content-Type": blob.type, "X-Client": IN_TG ? "miniapp" : "web" }, body: blob });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || "Не удалось загрузить фото");
+      S.me.profile = data.profile;
+      haptic("success");
+      toast("Фото обновлено", "ok");
+      viewSettings();
+    } catch (e) {
+      toast(e.message, "error");
+      btnBusy(label, false);
+    }
+  };
+  const fromTg = $("#av-tg");
+  if (fromTg) fromTg.onclick = async () => {
+    btnBusy(fromTg);
+    try {
+      const { profile } = await api("POST", "/avatar/telegram");
+      S.me.profile = profile;
+      toast("Фото из Telegram", "ok");
+      viewSettings();
+    } catch (e) {
+      toast(e.message, "error");
+      btnBusy(fromTg, false);
+    }
+  };
+  const del = $("#av-del");
+  if (del) del.onclick = async () => {
+    btnBusy(del);
+    try {
+      const { profile } = await api("DELETE", "/avatar");
+      S.me.profile = profile;
+      viewSettings();
+    } catch (e) {
+      toast(e.message, "error");
+      btnBusy(del, false);
+    }
+  };
+}
+
+/** Квадратная обрезка по центру и JPEG — аватар весит 20–40 КБ */
+async function squareImage(file, size) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("Не удалось открыть картинку")); i.src = url; });
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    c.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
+    return await new Promise((res) => c.toBlob(res, "image/jpeg", 0.86));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+// ---------- Профиль: меню ----------
+function viewProfile() {
+  const p = S.me.profile;
+  const sub = p.has_sub ? (p.sub_until === -1 ? "навсегда" : `до ${dateText(p.sub_until)}`) : null;
+  const item = (attrs, tile, icon, title, sub2, extra = "") => html`<${attrs.tag || "a"} class="menu-item${attrs.cls ? " " + attrs.cls : ""}" ${raw(attrs.a || "")}>
+    <div class="tile ${tile}">${ic(icon)}</div><div class="grow"><b>${title}</b>${sub2 ? html`<div class="small muted ellipsis">${sub2}</div>` : ""}</div>${extra || ic("chevron", "c-muted")}</${attrs.tag || "a"}>`;
+  renderShell(html`<div class="page">
+    <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : "Telegram ID " + p.uid}</div>
+      <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
+    <div class="menu card">
+      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Безлимитный доступ", sub ? `Активна ${sub}` : "1 пациент в день · безлимит от 30 ₽")}
+      ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
+      ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
+      ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что нравится, что мешает, чего не хватает")}
+      ${item({ a: `href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener"` }, "accent", "telegram", "Бот в Telegram", "Приёмы в чате и напоминания", ic("external", "c-muted"))}
+      ${!IN_TG ? item({ tag: "button", a: 'id="logout" type="button"', cls: "danger" }, "", "logout", "Выйти", "") : ""}
+    </div>
+  </div>`);
   $("#feedback-open").onclick = () => sheetFeedback();
   const lo = $("#logout");
-  if (lo) lo.onclick = (e) => { e.preventDefault(); logout(); };
+  if (lo) lo.onclick = async () => { if (await confirmDialog("Выйти?", "На этом устройстве нужно будет снова войти через Telegram.", "Выйти")) logout(); };
+}
+
+function viewStats() {
+  const p = S.me.profile;
+  const lvl = p.level_info;
+  renderShell(html`<div class="page">
+    <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Статистика</h2></div>
+    <div class="card stack">
+      <div class="row between"><b>Уровень ${lvl.level}</b><span class="small muted">${p.xp || 0}${lvl.to ? ` / ${lvl.to}` : ""} XP</span></div>
+      <div class="xp-bar"><i style="width:${Math.round((lvl.progress || 0) * 100)}%"></i></div>
+      <div class="stats">
+        <div class="stat"><b>${p.stats.consultations_total || 0}</b><span>${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")}</span></div>
+        <div class="stat"><b>${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}</b><span>средняя оценка</span></div>
+        <div class="stat"><b class="row-c">${ic("flame", "c-flame")}${p.streak || 0}</b><span>${plural(p.streak || 0, "день", "дня", "дней")} подряд</span></div>
+        <div class="stat"><b>${p.stats.patients_total || 0}</b><span>${plural(p.stats.patients_total || 0, "пациент", "пациента", "пациентов")}</span></div>
+        <div class="stat"><b>${p.stats.quizzes_done || 0}</b><span>${plural(p.stats.quizzes_done || 0, "тест", "теста", "тестов")}</span></div>
+        <div class="stat"><b>${p.stats.correct_diagnoses_streak || 0}</b><span>верных подряд</span></div>
+      </div>
+    </div>
+    ${p.strengths?.length ? html`<div class="card stack-sm"><div class="tiny muted">СИЛЬНЫЕ СТОРОНЫ</div><div class="row wrap" style="gap:6px">${p.strengths.slice(0, 8).map((s) => html`<span class="badge ok">${s}</span>`)}</div></div>` : ""}
+    ${p.weaknesses?.length ? html`<div class="card stack-sm"><div class="tiny muted">ЧТО ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px">${p.weaknesses.slice(0, 8).map((s) => html`<span class="badge warn">${s}</span>`)}</div></div>` : ""}
+    ${p.recommendations?.length ? html`<div class="card stack-sm"><div class="tiny muted">СОВЕТЫ ЭКСПЕРТА</div>${p.recommendations.slice(0, 3).map((r) => html`<div class="small fact">${ic("bulb", "c-warn")}<span>${r}</span></div>`)}</div>` : ""}
+    ${!p.stats.ratings_count ? html`<div class="empty"><div class="tile lg">${ic("chart")}</div>Статистика появится после первого разобранного приёма</div>` : ""}
+  </div>`);
 }
 
 // ---------- Отзыв ----------
-function sheetFeedback() {
+/** Форма отзыва: звёзды + текст. Рисуется в любом контейнере (лист или окно в листе завершения приёма). */
+function feedbackForm(box, { title, hint, onDone, onSkip }) {
   let rating = 0;
-  const draw = (el) => {
-    const text = el.querySelector("#fb-text")?.value || "";
-    el.innerHTML = html`<div class="grip"></div><h2 class="row-c">${ic("star", "c-warn")}Отзыв о тренажёре</h2>
-      <p class="small muted" style="margin-bottom:12px">Оцените и напишите пару слов — мы читаем каждый отзыв.</p>
+  const draw = () => {
+    const text = box.querySelector("#fb-text")?.value || "";
+    box.innerHTML = html`${title}
+      <p class="small muted" style="margin-bottom:12px">${hint}</p>
       <div class="rate-row">${[1, 2, 3, 4, 5].map((n) => html`<button class="rate ${n <= rating ? "on" : ""}" data-rate="${n}" aria-label="${n} из 5">${ic("star", n <= rating ? "on" : "")}</button>`)}</div>
       <div class="field" style="margin-top:14px"><textarea id="fb-text" placeholder="Что понравилось, что мешает, чего не хватает?" maxlength="1500"></textarea></div>
-      <button class="btn lg block" id="fb-send" style="margin-top:14px">Отправить</button>`[RAW];
-    el.querySelector("#fb-text").value = text;
-    el.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => { rating = Number(b.dataset.rate); haptic(); draw(el); }));
-    el.querySelector("#fb-send").onclick = async (e) => {
-      const body = { rating, text: el.querySelector("#fb-text").value.trim() };
+      <div class="${onSkip ? "grid-2" : ""}" style="margin-top:14px">${onSkip ? html`<button class="btn ghost" id="fb-skip">Не сейчас</button>` : ""}<button class="btn ${onSkip ? "" : "lg block"}" id="fb-send">Отправить</button></div>`[RAW];
+    box.querySelector("#fb-text").value = text;
+    box.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => { rating = Number(b.dataset.rate); haptic(); draw(); }));
+    const skip = box.querySelector("#fb-skip");
+    if (skip) skip.onclick = onSkip;
+    box.querySelector("#fb-send").onclick = async (e) => {
+      const body = { rating, text: box.querySelector("#fb-text").value.trim() };
       if (!body.rating && !body.text) return toast("Поставьте оценку или напишите пару слов", "error");
       btnBusy(e.currentTarget);
       try {
         await api("POST", "/feedback", body);
-        closeSheet();
+        S.me.profile.feedback = [...(S.me.profile.feedback || []), { ts: Date.now(), rating: body.rating }];
         haptic("success");
         toast("Спасибо за отзыв!", "ok");
+        onDone();
       } catch (err) {
         toast(err.message, "error");
-        btnBusy(el.querySelector("#fb-send"), false);
+        btnBusy(box.querySelector("#fb-send"), false);
       }
     };
   };
-  openSheet("", draw);
+  draw();
+}
+
+function sheetFeedback() {
+  openSheet("", (el) => {
+    const box = document.createElement("div");
+    el.appendChild(box);
+    feedbackForm(box, {
+      title: html`<h2 class="row-c">${ic("star", "c-warn")}Отзыв о тренажёре</h2>`,
+      hint: "Оцените и напишите пару слов — мы читаем каждый отзыв.",
+      onDone: () => closeSheet(),
+    });
+  });
+}
+
+// Пока эксперт пишет разбор — просим отзыв у тех, кто его ещё не оставлял. «Не сейчас» — спросим через 3 приёма.
+const FB_SNOOZE_KEY = "hmd_fb_snooze";
+function wantsFeedbackPrompt() {
+  if ((S.me?.profile?.feedback || []).length) return false;
+  const left = Number(store(FB_SNOOZE_KEY) || 0);
+  if (left > 0) { store(FB_SNOOZE_KEY, String(left - 1)); return false; }
+  return true;
+}
+function mountFeedbackPrompt() {
+  const box = $("#fb-prompt");
+  if (!box) return;
+  feedbackForm(box, {
+    title: html`<b class="row-c">${ic("star", "c-warn")}Пока эксперт пишет разбор — как вам тренажёр?</b>`,
+    hint: "Оценка и пара слов очень помогут сделать его лучше.",
+    onDone: () => { box.innerHTML = html`<div class="small row-c" style="color:var(--ok)">${ic("checkCircle")}Спасибо за отзыв!</div>`[RAW]; },
+    onSkip: () => { store(FB_SNOOZE_KEY, "3"); box.remove(); },
+  });
 }
 
 // ---------------------------------------------------

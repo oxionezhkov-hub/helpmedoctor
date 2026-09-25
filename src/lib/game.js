@@ -185,9 +185,14 @@ const REVIEW_ACTIVE_WITHIN_MS = 14 * 86400000;
 
 /** Через 2+ дня после регистрации — один раз, и только тем, кто недавно заходил */
 export function shouldAskReview(prof, now = Date.now()) {
-  if (prof.review_asked || (prof.feedback || []).length) return false;
+  if (prof.review_asked || prof.review_first_asked || (prof.feedback || []).length) return false;
   if (!prof.registered_at || now - prof.registered_at < REVIEW_AFTER_MS) return false;
   return now - (prof.last_active || 0) < REVIEW_ACTIVE_WITHIN_MS;
+}
+
+/** Сразу после первого разобранного приёма — один раз, если отзыва ещё нет */
+export function shouldAskReviewAfterFirst(prof) {
+  return !prof.review_first_asked && !(prof.feedback || []).length && (prof.stats?.ratings_count || 0) >= 1;
 }
 
 // ---------- Стрик ----------

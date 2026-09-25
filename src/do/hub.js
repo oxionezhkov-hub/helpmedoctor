@@ -443,6 +443,11 @@ export class HubDO extends DurableObject {
     }
   }
 
+  /** Тексты системных сообщений, изменённые в админке */
+  systemTexts() {
+    return this.getSetting("texts", {}) || {};
+  }
+
   aiUsedToday() {
     return this.one("SELECT COALESCE(SUM(neurons), 0) AS n FROM ai_usage WHERE day_utc = ?", utcDate()).n;
   }
