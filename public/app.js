@@ -417,7 +417,7 @@ async function renderLogin() {
     <div class="logo">${ic("heart")}</div>
     <h1>Help me, Doctor</h1>
     <p class="muted">Тренажёр врача: ИИ-пациенты, обследования, диагноз и разбор от эксперта. Прогресс общий с Telegram-ботом.</p>
-    <a class="btn lg block busy" id="login-btn" target="_blank" rel="noopener" aria-disabled="true"><span>Войти через Telegram</span></a>
+    <a class="btn lg block busy" id="login-btn" aria-disabled="true"><span>Войти через Telegram</span></a>
     <p class="tiny muted" id="login-hint">Откроется бот — нажмите в нём «Запустить», и сайт войдёт сам.</p>
   </div></div>`[RAW];
   let code;
@@ -425,13 +425,14 @@ async function renderLogin() {
     const r = await api("POST", "/auth/login");
     code = r.code;
     const btn = $("#login-btn");
-    btn.href = r.url;
+    // tg:// открывает приложение Telegram сразу, без новой вкладки; эта страница остаётся и ждёт подтверждения
+    btn.href = r.tg || r.url;
     btn.classList.remove("busy");
     btn.innerHTML = html`${ic("telegram")}<span>Войти через Telegram</span>`[RAW];
     btn.removeAttribute("aria-disabled");
     btn.onclick = () => {
       btn.innerHTML = html`${ic("clock")}<span>Ждём подтверждения…</span>`[RAW];
-      $("#login-hint").innerHTML = html`Бот не открылся? <a href="${r.url}" target="_blank" rel="noopener">Нажмите сюда</a>. После «Запустить» вернитесь на эту вкладку.`[RAW];
+      $("#login-hint").innerHTML = html`Нажмите в боте «Запустить» и вернитесь сюда — сайт войдёт сам.<br>Telegram не открылся? <a href="${r.url}" target="_blank" rel="noopener">Открыть бота в браузере</a>`[RAW];
     };
   } catch (e) {
     $("#login-hint").textContent = e.message;

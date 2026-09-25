@@ -84,14 +84,19 @@ async function renderLogin(err = "") {
     <h1>Админка Help me, Doctor</h1>
     <p class="muted">Доступ только для администраторов. Вход через Telegram.</p>
     ${err ? html`<div class="callout warn">${err}</div>` : ""}
-    <a class="btn" id="login-btn" target="_blank" rel="noopener">${ic("telegram")}<span>Войти через Telegram</span></a>
+    <a class="btn" id="login-btn">${ic("telegram")}<span>Войти через Telegram</span></a>
     <p class="tiny muted" id="login-hint">Откроется бот — нажмите «Запустить», и админка откроется сама.</p>
   </div></div>`);
   let code;
   try {
     const r = await api("POST", "/auth/login");
     code = r.code;
-    $("#login-btn").href = r.url;
+    // tg:// открывает приложение Telegram сразу, без новой вкладки
+    const b = $("#login-btn");
+    b.href = r.tg || r.url;
+    b.onclick = () => {
+      $("#login-hint").innerHTML = str(html`Нажмите в боте «Запустить» и вернитесь сюда — админка откроется сама.<br>Telegram не открылся? <a href="${r.url}" target="_blank" rel="noopener">Открыть бота в браузере</a>`);
+    };
   } catch (e) {
     $("#login-hint").textContent = e.message;
     return;

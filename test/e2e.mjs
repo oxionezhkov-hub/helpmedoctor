@@ -222,6 +222,7 @@ step("отказ от пациента: пациент исчезает из о�
 r = await api(null, "POST", "/auth/login");
 const code = r.data.code;
 assert.ok(r.data.url.includes(`start=login_${code}`));
+assert.equal(r.data.tg, `tg://resolve?domain=helpmedoctor_aibot&start=login_${code}`, "ссылка сразу в приложение Telegram");
 assert.equal((await api(null, "GET", `/auth/poll?code=${code}`)).data.status, "pending");
 await text(U, `/start login_${code}`);
 await waitFor(() => sent(U).some((m) => m.text.includes("Вход подтверждён")), "login confirm");
@@ -278,6 +279,17 @@ assert.equal((await adm(admTok, "POST", "/q", { op: "set_setting", args: { k: "x
 const meAdm = (await adm(admTok, "GET", "/me")).data;
 assert.equal(meAdm.me.name, "Олег");
 assert.equal(meAdm.admins.length, 2);
+const al = await adm(null, "POST", "/auth/login");
+assert.ok(al.data.code.startsWith("adm-") && al.data.tg.startsWith("tg://resolve?domain="));
+await text(U, `/start login_${al.data.code}`);
+await waitFor(() => sent(U).filter((m) => m.text.includes("Вход подтверждён")).length >= 2, "admin login confirm by non-admin");
+assert.equal((await adm(null, "GET", `/auth/poll?code=${al.data.code}`)).status, 403, "не-админ не входит в админку через бота");
+const al2 = await adm(null, "POST", "/auth/login");
+await text("1062804986", `/start login_${al2.data.code}`);
+await waitFor(() => sent("1062804986").some((m) => m.text.includes("Вход подтверждён")), "admin login confirm");
+const ap = await adm(null, "GET", `/auth/poll?code=${al2.data.code}`);
+assert.equal(ap.data.status, "ok");
+assert.equal((await adm(ap.data.token, "GET", "/me")).data.me.name, "Саша");
 step("админка: вход только для Олега и Саши, внутренние операции закрыты");
 
 const nowTs = Date.now(), per = { from: nowTs - 30 * 86400000, to: nowTs + 60000 };

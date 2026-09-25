@@ -3,7 +3,7 @@
 // Доступ — только Telegram ID из ADMIN_ID. Сессия 12 часов, проверяется на каждом запросе.
 // =====================================================
 import { adminIds, AI_FREE_NEURONS_PER_DAY, PLANS } from "./config.js";
-import { ADMIN_SESSION_TTL_MS, bearer, createSession, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
+import { ADMIN_SESSION_TTL_MS, bearer, createSession, loginLinks, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
 import { aiText } from "./lib/ai.js";
 import { declDays, esc, json, toTelegramHtml, userError } from "./lib/util.js";
 import { fetchPayment } from "./lib/tochka.js";
@@ -36,9 +36,10 @@ export async function adminApi(request, env, url, ctx) {
     return json({ token: await createSession(env, u.id, { scope: "admin", ttl: ADMIN_SESSION_TTL_MS }), me: adminMe(env, u.id) });
   }
   if (path === "/auth/login" && method === "POST") {
-    const code = newLoginCode();
+    // Префикс «adm-» (в обычных кодах дефиса нет): бот поймёт, что после входа вести в админку
+    const code = `adm-${newLoginCode()}`;
     await hub.createLogin(code);
-    return json({ code, url: `https://t.me/${env.BOT_USERNAME}?start=login_${code}` });
+    return json({ code, ...loginLinks(env, code) });
   }
   if (path === "/auth/poll" && method === "GET") {
     const res = await hub.pollLogin(url.searchParams.get("code") || "");

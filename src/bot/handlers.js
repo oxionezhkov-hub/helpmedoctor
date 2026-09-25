@@ -4,7 +4,7 @@
 // =====================================================
 import { adminIds, PHYSICAL_EXAMPLES, TEST_TYPES } from "../config.js";
 import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
-import { appBtn, btn, tg } from "../lib/telegram.js";
+import { appBtn, btn, tg, urlBtn } from "../lib/telegram.js";
 import * as R from "./render.js";
 
 /**
@@ -186,10 +186,14 @@ async function onVoice(ctx, msg) {
 async function onStart(ctx, payload) {
   const { user, bot, uid, env, from } = ctx;
   if (payload.startsWith("login_")) {
-    const ok = await hubStub(env).confirmLogin(payload.slice(6), uid);
+    const code = payload.slice(6);
+    const ok = await hubStub(env).confirmLogin(code, uid);
+    const site = `${(env.PUBLIC_URL || "").replace(/\/$/, "")}${code.startsWith("adm-") ? "/admin" : "/app"}`;
     return bot.send(uid, ok
-      ? "✅ <b>Вход подтверждён.</b>\n\nВернитесь в браузер — сайт откроется сам через пару секунд."
-      : "⏰ Ссылка для входа устарела. Обновите страницу сайта и нажмите «Войти через Telegram» ещё раз.");
+      ? "✅ <b>Вход подтверждён.</b>\n\nВернитесь в браузер — сайт уже открыт и войдёт сам через пару секунд. Кнопка ниже откроет его, если вкладка потерялась."
+      : "⏰ Ссылка для входа устарела. Обновите страницу сайта и нажмите «Войти через Telegram» ещё раз.",
+    // Telegram принимает в кнопке только полноценный адрес сайта
+    ok && /^https?:\/\/[^/]+\.[^/]+/.test(site) ? [[urlBtn("↩️ Вернуться на сайт", site)]] : undefined);
   }
   await user.touch({ username: from.username });
   const { profile, waiting } = await user.waitingSummary();
