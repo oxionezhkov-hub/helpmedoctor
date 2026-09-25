@@ -12,7 +12,7 @@
   "vars": {
     "PUBLIC_URL": "http://localhost:8787", "BOT_USERNAME": "helpmedoctor_aibot", "ADMIN_ID": "1326867567,1062804986",
     "TOCHKA_MERCHANT": "0", "TOCHKA_CUSTOMER": "0",
-    "AI_MOCK": "1", "TG_API_BASE": "http://127.0.0.1:8790",
+    "AI_MOCK": "1", "OAUTH_TEST_MODE": "1", "TG_API_BASE": "http://127.0.0.1:8790",
     "TELEGRAM_TOKEN": "123:TEST", "SESSION_SECRET": "test-secret", "TOCHKA_TOKEN": "x",
     "TOCHKA_PROXY_URL": "http://127.0.0.1:8790/tochka", "TOCHKA_PROXY_SECRET": "s"
   }

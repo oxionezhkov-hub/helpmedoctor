@@ -534,6 +534,99 @@ assert.equal((await api(oldToken, "DELETE", `/patients/${patId}`)).status, 409, 
 step("удаление: тест и пациент удаляются, опыт остаётся, чужое не удалить");
 
 
+// ---------------------------------------------------------------- Google / Яндекс и привязка Telegram
+async function oauth(provider, { mode = "login", token = null, code = null, cookie: withCookie = true } = {}) {
+  const r = await fetch(`${BASE}/api/auth/oauth/start`, {
+    method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ provider, mode, from: "e2e" }),
+  });
+  assert.equal(r.status, 200, await r.clone().text());
+  const cookie = (r.headers.get("set-cookie") || "").split(";")[0];
+  assert.match(cookie, /^hmd_oa=/);
+  const u = new URL((await r.json()).url);
+  if (code) u.searchParams.set("code", code);
+  const cb = await fetch(`${BASE}${u.pathname}${u.search}`, { headers: withCookie ? { Cookie: cookie } : {}, redirect: "manual" });
+  assert.equal(cb.status, 302);
+  return new URL(cb.headers.get("location"), BASE);
+}
+async function oauthLogin(provider, code) {
+  const loc = await oauth(provider, { code });
+  const lc = loc.searchParams.get("login");
+  assert.ok(lc, loc.toString());
+  const p = (await api(null, "GET", `/auth/poll?code=${lc}`)).data;
+  assert.equal(p.status, "ok");
+  return p.token;
+}
+
+assert.deepEqual((await api(null, "GET", "/config")).data.providers, ["google", "yandex"]);
+assert.equal((await oauth("google", { cookie: false })).searchParams.get("auth_error"), "state", "без cookie — отказ (CSRF)");
+const g1 = await oauthLogin("google", "test:g-anna:anna@example.com:Анна");
+let gme = (await api(g1, "GET", "/me")).data;
+assert.match(gme.profile.uid, /^w\d{12}$/);
+assert.equal(gme.profile.name, "Анна");
+const W1 = gme.profile.uid;
+assert.equal((await api(await oauthLogin("google", "test:g-anna:anna@example.com:Анна"), "GET", "/me")).data.profile.uid, W1, "повторный вход — тот же аккаунт");
+let acc = (await api(g1, "GET", "/accounts")).data;
+assert.equal(acc.telegram, false);
+assert.deepEqual(acc.identities.map((i) => [i.provider, i.email]), [["google", "anna@example.com"]]);
+assert.equal((await api(g1, "DELETE", "/accounts/google")).status, 409, "единственный способ входа не отвязать");
+assert.equal((await oauth("yandex", { mode: "link", token: g1, code: "test:y-anna:anna@yandex.ru:Анна" })).searchParams.get("linked"), "yandex");
+acc = (await api(g1, "GET", "/accounts")).data;
+assert.deepEqual(acc.identities.map((i) => i.provider).sort(), ["google", "yandex"]);
+const g2 = await oauthLogin("google", "test:g-boris:boris@example.com:Борис");
+const W2 = (await api(g2, "GET", "/me")).data.profile.uid;
+assert.notEqual(W2, W1);
+assert.equal((await oauth("google", { mode: "link", token: g1, code: "test:g-boris:boris@example.com:Борис" })).searchParams.get("link_error"), "taken", "чужой Google не привязать");
+step("вход через Google и Яндекс: новый веб-аккаунт, повторный вход, привязка второго способа, защита от CSRF и чужих аккаунтов");
+
+// Веб-аккаунт с прогрессом привязывает новый Telegram — всё переезжает
+await api(g1, "PATCH", "/profile", { level: "student", profession: "Терапевт", specializations: ["гастроэнтерология"], onboarding_done: true });
+await api(g1, "POST", "/patients/new");
+await waitFor(async () => (await api(g1, "GET", "/me")).data.patients.length === 1, "web patient");
+const webPat = (await api(g1, "GET", "/me")).data.patients[0].id;
+assert.ok(!sent(W1).length, "аккаунту без Telegram бот не пишет");
+r = await api(g1, "POST", "/auth/link-telegram");
+const linkCode = r.data.code;
+assert.ok(r.data.url.includes(`start=link_${linkCode}`));
+assert.equal((await api(g2, "GET", `/auth/link-telegram/poll?code=${linkCode}`)).data.status, "expired", "чужой код привязки не забрать");
+assert.equal((await api(null, "GET", `/auth/poll?code=${linkCode}`)).data.status, "expired", "код привязки не годится для входа");
+const TG1 = "4401";
+await text(TG1, `/start link_${linkCode}`);
+const ask = await waitFor(() => sent(TG1).find((m) => m.text.includes("Привязать этот Telegram")), "link ask");
+assert.ok(ask.text.includes("anna@example.com"), "бот показывает, к какому аккаунту привязка");
+assert.equal((await api(g1, "GET", `/auth/link-telegram/poll?code=${linkCode}`)).data.status, "pending", "без подтверждения в боте — ждём");
+await press(TG1, `lk_${linkCode}`);
+await waitFor(() => sent(TG1).some((m) => m.text.includes("Telegram привязан")), "link confirmed");
+r = (await api(g1, "GET", `/auth/link-telegram/poll?code=${linkCode}`)).data;
+assert.equal(r.status, "ok");
+gme = (await api(r.token, "GET", "/me")).data;
+assert.equal(gme.profile.uid, TG1);
+assert.equal(gme.profile.name, "Анна", "профиль сайта заменил пустой профиль бота");
+assert.ok(gme.patients.some((x) => x.id === webPat), "пациент переехал");
+assert.equal((await api(g1, "GET", "/me")).data.profile.uid, TG1, "старая сессия ведёт в объединённый аккаунт");
+assert.equal((await api(await oauthLogin("yandex", "test:y-anna:anna@yandex.ru:Анна"), "GET", "/me")).data.profile.uid, TG1, "вход через Яндекс — в объединённый аккаунт");
+acc = (await api(r.token, "GET", "/accounts")).data;
+assert.equal(acc.telegram, true);
+assert.equal(acc.identities.length, 2);
+assert.equal((await api(r.token, "POST", "/auth/link-telegram")).status, 409);
+assert.equal((await api(r.token, "DELETE", "/accounts/google")).status, 200, "с Telegram можно отвязать Google");
+step("привязка Telegram: подтверждение в боте, перенос пациентов, старые сессии и Яндекс ведут в объединённый аккаунт");
+
+// Веб-аккаунт привязывает Telegram, где уже есть прогресс — прогресс складывается
+const before777 = (await api(webToken, "GET", "/me")).data;
+await api(g2, "PATCH", "/profile", { onboarding_done: true });
+r = await api(g2, "POST", "/auth/link-telegram");
+await text(U, `/start link_${r.data.code}`);
+await waitFor(() => sent(U).some((m) => m.text.includes("boris@example.com")), "link ask 777");
+await press(U, `lk_${r.data.code}`);
+await waitFor(async () => (await api(g2, "GET", `/auth/link-telegram/poll?code=${r.data.code}`)).data.status === "ok", "merge 777");
+const after777 = (await api(webToken, "GET", "/me")).data;
+assert.equal(after777.profile.name, before777.profile.name, "имя Telegram-профиля осталось");
+assert.equal(after777.profile.stats.consultations_total, before777.profile.stats.consultations_total);
+assert.equal(after777.patients.length, before777.patients.length);
+assert.equal((await api(g2, "GET", "/me")).data.profile.uid, U);
+step("привязка к Telegram с прогрессом: данные складываются, ничего не теряется");
+
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");

@@ -10,6 +10,12 @@ export function tg(env, { log = true, kind = "bot", admin = null, ref = null } =
   let last = { ok: true, code: 0, description: "" };
 
   async function call(method, body) {
+    // Аккаунт без Telegram (вход через Google/Яндекс): uid вида w123… — писать некуда
+    const chat = body?.chat_id ?? body?.user_id;
+    if (chat !== undefined && !/^-?\d+$/.test(String(chat))) {
+      last = { ok: false, code: 0, description: "no telegram" };
+      return undefined;
+    }
     let d;
     try {
       const r = await fetch(`${base}/${method}`, {
@@ -27,7 +33,7 @@ export function tg(env, { log = true, kind = "bot", admin = null, ref = null } =
   }
 
   async function record(chatId, text, extra = {}) {
-    if (!log || !env.HUB) return;
+    if (!log || !env.HUB || !/^-?\d+$/.test(String(chatId))) return;
     try {
       await env.HUB.get(env.HUB.idFromName("hub")).logChat({
         uid: String(chatId), dir: "out", kind, text: String(text || "").slice(0, 4000), admin, ref,
@@ -55,6 +61,7 @@ export function tg(env, { log = true, kind = "bot", admin = null, ref = null } =
     async sendPhoto(chatId, blob, caption, keyboard) {
       caption = caption ? stripForeignScripts(caption) : caption;
       const fd = new FormData();
+      if (!/^-?\d+$/.test(String(chatId))) return 0;
       fd.append("chat_id", String(chatId));
       fd.append("photo", blob, "image.jpg");
       if (caption) {
