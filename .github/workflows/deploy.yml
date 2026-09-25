@@ -45,3 +45,14 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TOCHKA_TOKEN: ${{ secrets.TOCHKA_TOKEN }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      # Точный расход Workers AI в админке: токен Cloudflare с правом Account Analytics: Read.
+      # Загружается, только если секрет CF_ANALYTICS_TOKEN добавлен в репозиторий.
+      - name: Доступ к аналитике Cloudflare для админки
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ANALYTICS_TOKEN: ${{ secrets.CF_ANALYTICS_TOKEN }}
+        run: |
+          if [ -z "$CF_ANALYTICS_TOKEN" ]; then echo "CF_ANALYTICS_TOKEN не задан — пропускаю"; exit 0; fi
+          printf '%s' "$CF_ANALYTICS_TOKEN" | npx wrangler secret put CF_ANALYTICS_TOKEN
+          printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | npx wrangler secret put CF_ACCOUNT_ID

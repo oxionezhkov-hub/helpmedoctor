@@ -99,3 +99,12 @@ export const MAX_LEVEL = 200;
 // Модели Workers AI. Одна большая модель для всего — предсказуемый русский язык.
 export const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 export const WHISPER_MODEL = "@cf/openai/whisper-large-v3-turbo";
+
+// Цена моделей в нейронах (developers.cloudflare.com/workers-ai/platform/pricing):
+// in/out — за 1 млн токенов, audio_min — за минуту аудио. 10 000 нейронов в сутки (UTC) бесплатно, дальше $0.011 за 1000.
+export const AI_NEURONS = {
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { in: 26668, out: 204805 },
+  "@cf/openai/whisper-large-v3-turbo": { audio_min: 46.63 },
+};
+export const AI_FREE_NEURONS_PER_DAY = 10000;
+export const AI_USD_PER_1000_NEURONS = 0.011;

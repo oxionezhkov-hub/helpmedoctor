@@ -11,14 +11,14 @@ import * as R from "./render.js";
  * Клиент UserDO: user.method(...args) → rpc. Пользовательские ошибки
  * пересоздаются здесь как UserError, чтобы их обрабатывал вызывающий код.
  */
-export function userStub(env, uid) {
+export function userStub(env, uid, source = "system") {
   const stub = env.USER.get(env.USER.idFromName(String(uid)));
   return new Proxy({}, {
     get(_, method) {
       if (method === "fetch") return (req) => stub.fetch(req);
       if (typeof method !== "string" || method === "then") return undefined;
       return async (...args) => {
-        const res = await stub.rpc(method, args);
+        const res = await stub.rpc(method, args, source);
         if (res.userError) throw new UserError(res.userError.message, res.userError.code);
         return res.ok;
       };
@@ -40,14 +40,18 @@ export async function handleUpdate(env, update) {
   if (chat && chat.type !== "private") return;
 
   const uid = String(from.id);
-  const user = userStub(env, uid);
+  const user = userStub(env, uid, "bot");
   const bot = tg(env);
   const ctx = { env, uid, user, bot, from };
 
   try {
     if (await user.seenUpdate(update.update_id)) return;
-    const { isNew } = await user.init(uid, { first_name: from.first_name, username: from.username });
+    // Метка источника из ссылки t.me/<бот>?start=<метка> (кроме входа на сайт)
+    const payload = /^\/start\s+(\S+)/.exec(msg?.text || "")?.[1] || "";
+    const ref = payload && !payload.startsWith("login_") ? payload.slice(0, 64) : "";
+    const { isNew } = await user.init(uid, { first_name: from.first_name, username: from.username, ref });
     ctx.isNew = isNew;
+    ctx.adminReply = await logIncoming(ctx, msg, cb);
     if (cb) await onCallback(ctx, cb);
     else if (msg) await onMessage(ctx, msg);
   } catch (e) {
@@ -65,9 +69,47 @@ export async function handleUpdate(env, update) {
 // ---------------------------------------------------
 // Сообщения
 // ---------------------------------------------------
+/**
+ * Каждое входящее сообщение и нажатие кнопки — в переписку пользователя (админка видит всё).
+ * Возвращает true, если это ответ на сообщение админа/рассылки (его не отдаём пациенту).
+ */
+// Подпись кнопки, если Telegram не прислал разметку сообщения
+function cbLabel(data) {
+  if (/^bc:\d+:new$/.test(data)) return "Взять пациента (из рассылки)";
+  if (data.startsWith("bc:")) return "Кнопка рассылки";
+  return data;
+}
+
+async function logIncoming(ctx, msg, cb) {
+  const hub = hubStub(ctx.env);
+  try {
+    if (cb) {
+      const label = (cb.message?.reply_markup?.inline_keyboard || []).flat().find((b) => b.callback_data === cb.data)?.text;
+      await hub.logChat({ uid: ctx.uid, dir: "in", kind: "button", text: label ? `[${label}]` : `[${cbLabel(cb.data)}]`, ref: cb.data });
+      return false;
+    }
+    if (!msg) return false;
+    const replyTo = msg.reply_to_message?.message_id;
+    const adminMsg = replyTo && !(msg.text || "").startsWith("/") ? await hub.findAdminMessage(ctx.uid, replyTo) : null;
+    const text = msg.text || msg.caption || (msg.voice ? `🎙 Голосовое, ${msg.voice.duration || "?"} сек` : msg.audio ? "🎵 Аудио" : msg.photo ? "🖼 Фото" : msg.document ? `📎 ${msg.document.file_name || "Файл"}` : msg.sticker ? `${msg.sticker.emoji || ""} Стикер` : "Сообщение");
+    const kind = adminMsg ? "reply" : (msg.text || "").startsWith("/") ? "command" : msg.voice ? "voice" : "text";
+    await hub.logChat({ uid: ctx.uid, dir: "in", kind, text, tg_mid: msg.message_id, ref: adminMsg ? String(adminMsg.id) : null });
+    return !!adminMsg;
+  } catch (e) {
+    console.error("logIncoming", e);
+    return false;
+  }
+}
+
 async function onMessage(ctx, msg) {
   const { user, bot, uid, env } = ctx;
   const text = (msg.text || "").trim();
+
+  // Ответ на сообщение от команды — передаём админам, пациенту не отправляем
+  if (ctx.adminReply) {
+    await hubStub(env).userReplied(uid, text || msg.caption || "(не текст)");
+    return bot.send(uid, "🙏 Спасибо! Передали команде — ответим здесь.");
+  }
 
   if (msg.voice || msg.audio) return onVoice(ctx, msg);
 
@@ -88,6 +130,7 @@ async function onMessage(ctx, msg) {
     const isAdmin = adminIds(env).includes(uid);
     if (command === "/admin" && isAdmin) return admin(ctx);
     if (command === "/grant" && isAdmin) return grant(ctx, text);
+    if (command === "/idea" && isAdmin) return idea(ctx, text);
     return help(ctx);
   }
   if (!text) return;
@@ -198,7 +241,7 @@ async function startPatient(ctx, patId) {
 
 /** Приём, начатый из мини-приложения в Telegram, продолжается в чате с ботом */
 export async function startInBot(env, uid, patId) {
-  const user = userStub(env, uid);
+  const user = userStub(env, uid, "miniapp");
   const start = await user.startConsultation(patId);
   await sendConsultationStart({ user, bot: tg(env), uid }, start);
   return start;
@@ -292,6 +335,13 @@ async function onCallback(ctx, cb) {
   await bot.answerCb(cb.id);
 
   if (data === "new") return newPatient(ctx);
+  // Кнопка из рассылки: считаем клик и выполняем действие
+  if (data.startsWith("bc:")) {
+    const [, bid, action] = data.split(":");
+    await hubStub(env).bcClick(Number(bid), uid);
+    if (action === "new") return newPatient(ctx);
+    return;
+  }
   if (data === "list") return listPatients(ctx);
   if (data.startsWith("sp_")) {
     await bot.editKeyboard(uid, mid, []);
@@ -349,6 +399,7 @@ async function onCallback(ctx, cb) {
   if (data === "act_end") return bot.editKeyboard(uid, mid, R.kbEnd());
   if (data === "act_pause") {
     await bot.editKeyboard(uid, mid, []);
+    await user.trackEvent("pause", { patient: patId });
     return bot.send(uid, `⏸ Приём с ${esc(firstName(active.name))} на паузе. Вернуться можно в любой момент — в боте или в приложении.`, [[btn("👥 Мои пациенты", "list"), btn("➕ Новый пациент", "new")]]);
   }
   if (data.startsWith("t_")) {
@@ -452,6 +503,14 @@ async function quizAnswer(ctx, data, mid) {
 // Админка
 // ---------------------------------------------------
 /** /grant @username 7 — бесплатная подписка на N дней (по умолчанию 7) с уведомлением пользователю */
+async function idea(ctx, text) {
+  const { bot, uid, env } = ctx;
+  const title = text.replace(/^\/idea(@\S+)?\s*/i, "").trim();
+  if (!title) return bot.send(uid, "Формат: <code>/idea текст идеи</code> — попадёт в бэклог админки.");
+  const t = await hubStub(env).admin("task_create", { title: title.slice(0, 300), type: "idea", status: "idea", descr: title.length > 300 ? title : "" }, uid);
+  await bot.send(uid, `💡 Идея №${t.id} записана в бэклог.`, [[{ text: "Открыть в админке", url: `${(env.PUBLIC_URL || "").replace(/\/$/, "")}/admin#/tasks/${t.id}` }]]);
+}
+
 async function grant(ctx, text) {
   const { bot, uid, env } = ctx;
   const [, who = "", daysRaw = "7"] = text.split(/\s+/);
@@ -461,7 +520,12 @@ async function grant(ctx, text) {
   if (/^\d+$/.test(who)) target = { uid: who, name: "", username: "" };
   else target = await hubStub(env).findByUsername(who);
   if (!target) return bot.send(uid, `Пользователь ${esc(who)} не найден. Он должен хотя бы раз запустить бота — или укажите его Telegram ID.`);
-  const res = await userStub(env, target.uid).grantSubscription(days);
+  const hub = hubStub(env);
+  const texts = (await hub.admin("get_setting", { k: "texts" })) || {};
+  const res = await userStub(env, target.uid, "admin").grantSubscription(days, { admin: uid, texts, reason: "команда /grant" });
+  await hub.admin("record_gift", { uid: res.uid, days, reason: "команда /grant" }, uid);
+  await hub.admin("audit", { action: "grant", target: res.uid, details: { days, via: "bot" } }, uid);
+  await hub.notifyAdmin(`🎁 ${esc(ctx.from.first_name || uid)} выдал(а) подписку: ${esc(res.name || "")} (${res.uid}) — ${days} ${declDays(days)}`, "grant", { except: uid });
   await bot.send(uid, `✅ Подписка выдана: ${esc(res.name || target.name || "")} ${target.username ? "@" + esc(target.username) : ""} (${res.uid})\n${days} ${declDays(days)}, доступ до: ${esc(res.until)}\nПользователь получил уведомление.`);
 }
 async function admin(ctx) {
@@ -477,5 +541,7 @@ async function admin(ctx) {
     `💰 Оплат: ${s.payments_total} · выручка ${s.revenue_total} ₽\nПлатёжных ссылок: ${s.payment_links}\n\n` +
     `⭐ Отзывов: ${s.feedback?.n || 0}${s.feedback?.avg ? ` · средняя ${s.feedback.avg}` : ""}\n\n` +
     `🏆 <b>Топ-5</b>\n${(s.top || []).map((u, i) => `${i + 1}. ${esc(u.name || "—")}${u.username ? " @" + esc(u.username) : ""} — ${u.cons} приёмов`).join("\n") || "—"}\n\n` +
-    `🔽 <b>Воронка</b> (данные по ${f.known || 0} активным после обновления)\n≥1 пациента: ${f.p1 || 0} (${pct(f.p1)}%)\n≥3 пациентов: ${f.p3 || 0} (${pct(f.p3)}%)\nС подпиской: ${f.paid || 0} (${pct(f.paid)}%)`);
+    `🔽 <b>Воронка</b> (данные по ${f.known || 0} активным после обновления)\n≥1 пациента: ${f.p1 || 0} (${pct(f.p1)}%)\n≥3 пациентов: ${f.p3 || 0} (${pct(f.p3)}%)\nС подпиской: ${f.paid || 0} (${pct(f.paid)}%)\n\n` +
+    `Подробная аналитика, пользователи, рассылки и задачи — в админке.`,
+    [[appBtn("🛠 Открыть админку", `${(env.PUBLIC_URL || "").replace(/\/$/, "")}/admin`)]]);
 }

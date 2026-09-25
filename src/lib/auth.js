@@ -38,13 +38,14 @@ function safeEqual(a, b) {
 }
 
 // ---------- Сессии ----------
-export async function createSession(env, uid) {
-  const payload = b64url(enc.encode(JSON.stringify({ uid: String(uid), exp: Date.now() + SESSION_TTL_MS })));
+export async function createSession(env, uid, { scope = "user", ttl = SESSION_TTL_MS } = {}) {
+  const payload = b64url(enc.encode(JSON.stringify({ uid: String(uid), exp: Date.now() + ttl, ...(scope !== "user" ? { scope } : {}) })));
   const sig = b64url(await hmac(env.SESSION_SECRET, payload));
   return `${payload}.${sig}`;
 }
 
-export async function verifySession(env, token) {
+/** uid из токена; scope — "user" (сайт) или "admin" (админка). Токены разных scope не взаимозаменяемы. */
+export async function verifySession(env, token, scope = "user") {
   if (!token || typeof token !== "string") return null;
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return null;
@@ -53,6 +54,7 @@ export async function verifySession(env, token) {
   try {
     const data = JSON.parse(b64urlDecode(payload));
     if (!data.uid || data.exp < Date.now()) return null;
+    if ((data.scope || "user") !== scope) return null;
     return data.uid;
   } catch {
     return null;
@@ -97,3 +99,5 @@ export function bearer(request) {
   const h = request.headers.get("Authorization") || "";
   return h.startsWith("Bearer ") ? h.slice(7) : null;
 }
+
+export const ADMIN_SESSION_TTL_MS = 12 * 3600 * 1000;

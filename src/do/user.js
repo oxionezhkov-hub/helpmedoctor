@@ -5,14 +5,16 @@
 // Тяжёлые ИИ-задачи (новый пациент, разбор приёма) выполняются в alarm() — там лимит 15 минут.
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
+import { AsyncLocalStorage } from "node:async_hooks";
 import {
   DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
   MAX_ACTIVE_PATIENTS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES,
 } from "../config.js";
+import { SYSTEM_TEXTS } from "../lib/analytics.js";
 import { aiJson, aiText, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
 import * as G from "../lib/game.js";
-import { clampStr, daysBetween, declDays, mskDate, pick, UserError, userError } from "../lib/util.js";
+import { clampStr, daysBetween, declDays, esc, mskDate, pick, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import * as R from "../bot/render.js";
 
@@ -21,6 +23,11 @@ const STATE = "state";
 const JOBS = "jobs";
 const patKey = (id) => `pat:${id}`;
 const quizKey = (patId) => `quiz:${patId}`;
+
+// Откуда пришло действие: bot | miniapp | web | system — задаётся в rpc()
+const als = new AsyncLocalStorage();
+// Что нельзя делать заблокированному админом пользователю
+const BLOCKED_METHODS = new Set(["requestNewPatient", "startConsultation", "doctorMessage", "voiceMessage", "orderTest", "physicalExam", "finishConsultation", "answerQuiz", "reopenPatient"]);
 
 export class UserDO extends DurableObject {
   constructor(ctx, env) {
@@ -32,12 +39,16 @@ export class UserDO extends DurableObject {
    * Единая точка RPC: ожидаемые ошибки (лимит, «пациент не найден»…) возвращаем как данные,
    * чтобы они не попадали в логи Cloudflare как Uncaught Error.
    */
-  async rpc(method, args = []) {
+  async rpc(method, args = [], source = "system") {
     if (method.startsWith("_") || typeof this[method] !== "function" || ["rpc", "fetch", "alarm", "constructor"].includes(method)) {
       throw new Error(`unknown method ${method}`);
     }
     try {
-      return { ok: await this[method](...args) };
+      if (BLOCKED_METHODS.has(method)) {
+        const prof = await this.ctx.storage.get(PROFILE);
+        if (prof?.blocked) throw new UserError("Доступ к тренажёру ограничен. Если это ошибка — напишите в поддержку.", "blocked");
+      }
+      return { ok: await als.run({ source }, () => this[method](...args)) };
     } catch (e) {
       const ue = userError(e);
       if (ue) return { userError: ue };
@@ -59,9 +70,11 @@ export class UserDO extends DurableObject {
         prof = G.newProfile(uid, { name: meta.first_name, username: meta.username });
         isNew = true;
       }
+      if (isNew && meta.ref) prof.ref = clampStr(meta.ref, 64);
       G.ensureDailyTask(prof);
       await this.ctx.storage.put(PROFILE, prof);
-      await this.hub().registerUser(prof.uid, { name: prof.name, username: prof.username, isNew });
+      await this.hub().registerUser(prof.uid, { name: prof.name, username: prof.username, isNew, ref: prof.ref || "" });
+      if (isNew) await this.track("signup", { ref: prof.ref || null });
     } else {
       let changed = G.ensureDailyTask(prof);
       if (meta.username && meta.username !== prof.username) {
@@ -190,11 +203,15 @@ export class UserDO extends DurableObject {
     if (finishedOnboarding) prof.onboarding_done = true;
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile");
+    const fields = Object.keys(patch).filter((k) => k !== "onboarding_done");
+    if (finishedOnboarding) await this.track("onboarding", { answered: !!(prof.about || prof.expectations), level: prof.level });
+    else if (fields.length) await this.track("profile_update", { fields, profession: prof.profession, notifications: prof.notifications !== false });
     if (finishedOnboarding && (prof.about || prof.expectations)) {
       await this.hub().notifyAdmin(
         `📝 Анкета: ${prof.name}${prof.username ? " @" + prof.username : ""} (${prof.uid})\n` +
         `Кто: ${G.levelMeta(prof.level).label}${prof.about ? ` — ${prof.about}` : ""}\n` +
         `Ожидания: ${prof.expectations || "—"}`,
+        "onboarding",
       );
     }
     return publicProfile(prof);
@@ -212,7 +229,7 @@ export class UserDO extends DurableObject {
     const p = P.sectionsPrompt(profession);
     let data;
     try {
-      data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature });
+      data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "sections", uid: (await this.profile()).uid });
     } catch (e) {
       console.error("sections", e);
       throw new UserError("Не удалось подобрать разделы — добавьте их вручную", "ai_error");
@@ -244,6 +261,7 @@ export class UserDO extends DurableObject {
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile");
     await this.hub().saveFeedback(prof.uid, { name: prof.name, username: prof.username, rating: entry.rating, text: entry.text, source, ts: entry.ts });
+    await this.track("feedback", { rating: entry.rating, has_text: !!entry.text }, { val: entry.rating });
     return { ok: true };
   }
 
@@ -260,11 +278,13 @@ export class UserDO extends DurableObject {
       throw new UserError(`У вас уже ${MAX_ACTIVE_PATIENTS} активных пациентов. Завершите один из приёмов, чтобы принять нового.`, "max_active");
     }
     if (!G.canAcceptPatient(prof)) {
+      await this.track("limit_hit");
       throw new UserError("Бесплатный лимит на сегодня исчерпан. Лимит сбрасывается в полночь по Москве — или оформите подписку.", "limit");
     }
     prof.generating_patient = Date.now();
     await this.ctx.storage.put(PROFILE, prof);
-    await this.enqueue({ type: "new_patient", origin, botMsgId });
+    await this.enqueue({ type: "new_patient", origin, botMsgId, source: this.source(), requested_at: Date.now() });
+    await this.track("patient_request");
     this.broadcast("profile");
     return { queued: true };
   }
@@ -281,7 +301,7 @@ export class UserDO extends DurableObject {
     const p = P.patientPrompt({
       spec, profession: prof0.profession, complexity: G.levelMeta(prof0.level).complexity, usedDiagnoses: used,
     });
-    const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: 0.95 });
+    const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: 0.95, kind: "patient", uid: prof0.uid });
     validatePatient(data);
 
     const now = Date.now();
@@ -329,9 +349,9 @@ export class UserDO extends DurableObject {
       const m = R.newPatientReady(this.env, pat);
       await bot.send(prof.uid, m.text, m.kb);
     }
-    await this.report("patient", prof);
+    await this.track("patient_ready", { spec, diagnosis: pat.true_diagnosis, name: pat.name }, { dur: job.requested_at ? Date.now() - job.requested_at : null, source: job.source });
     if (prof.stats.patients_total === 1) {
-      await this.hub().notifyAdmin(`🩺 Первый пациент\nВрач: ${prof.name} ${prof.username ? "@" + prof.username : ""}\nuid: ${prof.uid}`);
+      await this.hub().notifyAdmin(`🩺 Первый пациент\nВрач: ${esc(prof.name)} ${prof.username ? "@" + esc(prof.username) : ""}\nuid: ${prof.uid}`, "first_patient");
     }
   }
 
@@ -346,6 +366,7 @@ export class UserDO extends DurableObject {
       await bot.send(prof.uid, "😔 Не получилось подготовить пациента. Попробуйте ещё раз.", R.kbNewPatient());
     }
     console.error("new_patient failed", err);
+    await this.track("patient_failed", { error: String(err?.message || err).slice(0, 300) }, { source: job.source });
   }
 
   async rejectPatient(patId) {
@@ -356,6 +377,7 @@ export class UserDO extends DurableObject {
     prof.active_patient_ids = prof.active_patient_ids.filter((id) => id !== patId);
     await this.ctx.storage.put(PROFILE, prof);
     await this.ctx.storage.delete(patKey(patId));
+    await this.track("patient_reject", { name: pat.name, diagnosis: pat.true_diagnosis, complaint: pat.chief_complaint, spec: pat.specialization });
     const st = await this.state();
     if (st.active_patient_id === patId) await this.ctx.storage.put(STATE, { ...st, active_patient_id: null, bot: null });
     this.broadcast("patients");
@@ -376,6 +398,7 @@ export class UserDO extends DurableObject {
     prof.active_patient_ids = [patId, ...prof.active_patient_ids];
     await this.ctx.storage.put({ [patKey(patId)]: pat, [PROFILE]: prof });
     this.broadcast("patients");
+    await this.track("patient_reopen", { name: pat.name });
     return { ok: true };
   }
 
@@ -401,6 +424,7 @@ export class UserDO extends DurableObject {
     }
     await this.ctx.storage.put({ [patKey(patId)]: pat, [STATE]: { ...st, active_patient_id: patId, bot: null } });
     this.broadcast("consultation", { patient_id: patId });
+    await this.track("consult_start", { patient: patId, name: pat.name, new: isNewConsultation, n: (pat.consultations || []).length + 1 });
     const lastPatientMsg = [...pat.conversation_history].reverse().find((m) => m.role === "patient");
     return {
       patient: publicPatient(pat),
@@ -429,15 +453,19 @@ export class UserDO extends DurableObject {
       await this.ctx.storage.put(patKey(patId), pat);
       this.broadcast("consultation", { patient_id: patId, typing: true });
 
+      await this.track("message", { patient: patId, voice, len: text.length });
       const p = P.patientReplyPrompt(pat, text);
       let reply;
+      const t0 = Date.now();
       try {
-        reply = await aiText(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens });
+        reply = await aiText(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, kind: "reply", uid: pat.doctor_uid });
       } catch (e) {
         console.error("patient reply", e);
         this.broadcast("consultation", { patient_id: patId });
+        await this.track("ai_error", { what: "reply", error: String(e.message || e).slice(0, 300) });
         throw new UserError("Пациент задумался… Попробуйте задать вопрос ещё раз.", "ai_error");
       }
+      await this.track("reply", { patient: patId }, { dur: Date.now() - t0 });
       const fresh = await this.patient(patId);
       fresh.conversation_history.push({ role: "patient", text: reply, ts: Date.now() });
       await this.ctx.storage.put(patKey(patId), fresh);
@@ -450,9 +478,10 @@ export class UserDO extends DurableObject {
   async voiceMessage(patId, base64Audio) {
     let text;
     try {
-      text = await transcribe(this.env, base64Audio);
+      text = await transcribe(this.env, base64Audio, { uid: (await this.profile()).uid });
     } catch (e) {
       console.error("transcribe", e);
+      await this.track("stt_error", { error: String(e.message || e).slice(0, 300) });
       throw new UserError("Не удалось распознать голосовое. Попробуйте ещё раз или напишите текстом.", "stt_error");
     }
     if (!text) throw new UserError("В записи не слышно речи. Попробуйте ещё раз.", "stt_empty");
@@ -467,15 +496,20 @@ export class UserDO extends DurableObject {
       const pat = await this.openPatient(patId);
       // Повторный заказ того же обследования в этом приёме — отдаём готовый результат без ИИ
       const existing = pat.test_results.find((t) => t.test.toLowerCase() === testName.toLowerCase() && t.ordered_at >= pat.current.started_at);
-      if (existing) return { test: existing.test, result: existing.result, cached: true };
+      if (existing) {
+        await this.track("test", { name: existing.test, cached: true, custom: !TEST_TYPES.includes(existing.test), patient: patId });
+        return { test: existing.test, result: existing.result, cached: true };
+      }
       this.broadcast("consultation", { patient_id: patId, typing: true });
       const p = P.testResultPrompt(pat, testName);
       let result;
+      const t0 = Date.now();
       try {
-        result = await aiText(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature });
+        result = await aiText(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "test", uid: pat.doctor_uid });
       } catch (e) {
         console.error("test result", e);
         this.broadcast("consultation", { patient_id: patId });
+        await this.track("ai_error", { what: "test", name: testName, error: String(e.message || e).slice(0, 300) });
         throw new UserError(`Результат «${testName}» временно недоступен. Попробуйте ещё раз.`, "ai_error");
       }
       const fresh = await this.patient(patId);
@@ -483,6 +517,7 @@ export class UserDO extends DurableObject {
       fresh.test_results.push({ test: testName, result, ordered_at: Date.now() });
       await this.ctx.storage.put(patKey(patId), fresh);
       this.broadcast("consultation", { patient_id: patId });
+      await this.track("test", { name: testName, custom: !TEST_TYPES.includes(testName), patient: patId }, { dur: Date.now() - t0 });
       return { test: testName, result };
     });
   }
@@ -495,11 +530,13 @@ export class UserDO extends DurableObject {
       this.broadcast("consultation", { patient_id: patId, typing: true });
       const p = P.physicalExamPrompt(pat, action);
       let res;
+      const t0 = Date.now();
       try {
-        res = await aiJson(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature });
+        res = await aiJson(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "exam", uid: pat.doctor_uid });
       } catch (e) {
         console.error("physical", e);
         this.broadcast("consultation", { patient_id: patId });
+        await this.track("ai_error", { what: "exam", name: action, error: String(e.message || e).slice(0, 300) });
         throw new UserError("Результат осмотра временно недоступен. Попробуйте ещё раз.", "ai_error");
       }
       const exam = {
@@ -513,6 +550,7 @@ export class UserDO extends DurableObject {
       fresh.exam_results.push(exam);
       await this.ctx.storage.put(patKey(patId), fresh);
       this.broadcast("consultation", { patient_id: patId });
+      await this.track("exam", { name: action, custom: !PHYSICAL_EXAMPLES.includes(action), patient: patId }, { dur: Date.now() - t0 });
       return exam;
     });
   }
@@ -542,7 +580,7 @@ export class UserDO extends DurableObject {
       let farewell;
       try {
         const p = P.farewellPrompt(pat, actionsList(pat.current));
-        farewell = await aiText(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens });
+        farewell = await aiText(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, kind: "farewell", uid: pat.doctor_uid });
       } catch {
         farewell = "Спасибо, доктор. До свидания.";
       }
@@ -584,8 +622,13 @@ export class UserDO extends DurableObject {
         [PROFILE]: prof,
         [STATE]: st.active_patient_id === patId ? { ...st, active_patient_id: null, bot: null } : st,
       });
-      await this.enqueue({ type: "evaluate", patId, origin });
+      await this.enqueue({ type: "evaluate", patId, origin, source: this.source() });
       this.broadcast("patients", { patient_id: patId });
+      await this.track("finish", {
+        patient: patId, name: fresh.name, type, diagnosis: facts.diagnosis, referral: type === "referral" ? value : null, treatment: !!facts.treatment,
+        tests: facts.tests.length, exams: facts.physicals.length, msgs: facts.doctorMessages.length,
+        minutes: Math.round((Date.now() - (record.started_at || Date.now())) / 60000),
+      });
       return { farewell, true_diagnosis: fresh.true_diagnosis, consultation_number: fresh.consultations.length, patient_name: fresh.name };
     });
   }
@@ -608,7 +651,7 @@ export class UserDO extends DurableObject {
     } else {
       const p = P.evaluationPrompt(pat, { ...facts, profession: (await this.profile()).profession });
       try {
-        ev = normalizeEvaluation(await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature }));
+        ev = normalizeEvaluation(await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "evaluation", uid: pat.doctor_uid }));
       } catch (e) {
         console.error("evaluate", e);
         if ((job.attempt || 0) < 2) throw e; // alarm повторит
@@ -619,6 +662,7 @@ export class UserDO extends DurableObject {
     // Профиль: стрик, XP, задания — всё синхронно после ИИ
     const prof = await this.profile();
     const prevXp = prof.xp || 0;
+    const prevStreak = prof.streak || 0;
     G.applyStreak(prof);
     const correct = ev.diagnosis_correct === "yes" || (ev.diagnosis_correct !== "no" && ev.rating >= 4 && facts.diagnosis);
     prof.stats.correct_diagnoses_streak = correct ? (prof.stats.correct_diagnoses_streak || 0) + 1 : 0;
@@ -638,6 +682,7 @@ export class UserDO extends DurableObject {
     rec.feedback = {
       axes: ev.axes, expert_text: ev.expert_text, dialog_moments: ev.dialog_moments,
       diagnosis_correct: ev.diagnosis_correct, recommendation: ev.recommendation,
+      strengths: ev.strengths, weaknesses: ev.weaknesses,
     };
     rec.post_story = ev.post_story;
     rec.xp = earned;
@@ -657,7 +702,14 @@ export class UserDO extends DurableObject {
       task_done: taskDone ? prof.daily_task : null, consultation_number: fresh.consultations.length,
     };
     this.broadcast("evaluation", result);
-    await this.report("consultation", prof);
+    const evSource = { source: job.source || (job.origin === "bot" ? "bot" : "web") };
+    await this.track("evaluation", {
+      patient: job.patId, spec: fresh.specialization, rating: ev.rating, axes: ev.axes, correct: ev.diagnosis_correct, xp: earned,
+      tests: facts.tests, exams: facts.physicals, weaknesses: ev.weaknesses, level: prof.level,
+    }, { val: ev.rating, ...evSource });
+    if (lvlAfter > lvlBefore) await this.track("level_up", { from: lvlBefore, to: lvlAfter }, evSource);
+    if (taskDone) await this.track("task_done", { id: prof.daily_task.id, desc: prof.daily_task.desc, xp: prof.daily_task.xp }, evSource);
+    if (prof.streak !== prevStreak) await this.track(prof.streak > prevStreak ? "streak_up" : "streak_reset", { streak: prof.streak, before: prevStreak }, evSource);
 
     if (job.origin === "bot") {
       const m = R.evaluation(this.env, result);
@@ -680,7 +732,7 @@ export class UserDO extends DurableObject {
     ].filter(Boolean).slice(0, 5);
     if (!topics.length) topics.push(`Диагностика и лечение: ${pat.true_diagnosis}`);
     const p = P.quizPrompt(pat, topics);
-    const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature });
+    const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "quiz", uid: pat.doctor_uid });
     const questions = (data.questions || []).map(normalizeQuestion).filter(Boolean).slice(0, 5);
     if (questions.length < 3) throw new Error("quiz: мало валидных вопросов");
     const quiz = {
@@ -691,6 +743,7 @@ export class UserDO extends DurableObject {
     prof.test_ids = [pat.id, ...prof.test_ids.filter((id) => id !== pat.id)];
     await this.ctx.storage.put({ [quizKey(pat.id)]: quiz, [PROFILE]: prof });
     this.broadcast("quizzes", { patient_id: pat.id });
+    await this.track("quiz_ready", { patient: pat.id, diagnosis: pat.true_diagnosis });
   }
 
   // ---------------------------------------------------
@@ -700,6 +753,7 @@ export class UserDO extends DurableObject {
   async quiz(patId) {
     const q = await this.ctx.storage.get(quizKey(patId));
     if (!q) throw new UserError("Тест ещё готовится — загляните через минуту", "quiz_pending");
+    if (q.status !== "done") await this.track("quiz_open", { patient: patId, answered: q.answers.length });
     return publicQuiz(q);
   }
 
@@ -735,8 +789,10 @@ export class UserDO extends DurableObject {
     }
     entries[quizKey(patId)] = q;
     await this.ctx.storage.put(entries);
-    if (done) await this.report("quiz", entries[PROFILE]);
     this.broadcast("quizzes", { patient_id: patId });
+    await this.track("quiz_answer", { patient: patId, i: index, correct: isCorrect, q: clampStr(question.text, 200) });
+    if (done) await this.track("quiz_done", { patient: patId, score: q.score, total: q.questions.length }, { val: q.score });
+    if (taskDone) await this.track("task_done", { id: entries[PROFILE].daily_task.id, desc: entries[PROFILE].daily_task.desc, xp: entries[PROFILE].daily_task.xp });
     return {
       is_correct: isCorrect, correct: question.correct, explanation: question.explanation,
       done, score: q.score, xp: q.xp || 0, task_done: taskDone, quiz: publicQuiz(q),
@@ -764,30 +820,180 @@ export class UserDO extends DurableObject {
     prof.payments = prof.payments.slice(-20);
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile", { paid: planKey });
-    await this.report("payment", prof);
+    await this.track("paid", { plan: planKey, op: operationId }, { val: Number(plan.price) });
     const until = planKey === "forever" || prof.sub_until === -1 ? "навсегда" : new Date(prof.sub_until).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
     await tg(this.env).send(prof.uid, `✅ <b>Подписка активирована!</b>\n\nТариф: ${plan.label}\nДоступ: ${until}\n\nТеперь можно принимать сколько угодно пациентов.`);
     return publicProfile(prof);
   }
 
-  /** Бесплатная подписка от админа: дни добавляются к текущей подписке */
-  async grantSubscription(days) {
+  /**
+   * Бесплатная подписка от админа: дни добавляются к текущей подписке.
+   * @param {number} days
+   * @param {{reason?: string, notify?: boolean, text?: string, admin?: string, texts?: object}} opts
+   */
+  async grantSubscription(days, { reason = "", notify = true, text = "", admin = "", texts = {} } = {}) {
     days = Math.round(Number(days));
-    if (!(days >= 1 && days <= 3650)) throw new UserError("Срок — от 1 до 3650 дней");
+    if (!(days >= 1 && days <= 36500)) throw new UserError("Срок — от 1 дня");
     const prof = await this.profile();
-    if (prof.sub_until !== -1) {
+    const forever = days >= 36500;
+    if (forever) prof.sub_until = -1;
+    else if (prof.sub_until !== -1) {
       const from = prof.sub_until && prof.sub_until > Date.now() ? prof.sub_until : Date.now();
       prof.sub_until = from + days * 86400000;
     }
-    prof.payments = [...(prof.payments || []), { op: `gift_${Date.now()}`, plan: "gift", days, ts: Date.now() }].slice(-20);
+    // Платный тариф не перетираем: подарок продлевает его
+    const hadPaid = G.hasActiveSub(prof) && prof.sub_plan && prof.sub_plan !== "gift" && prof.sub_activated_at;
+    if (!hadPaid) prof.sub_plan = "gift";
+    prof.payments = [...(prof.payments || []), { op: `gift_${Date.now()}`, plan: "gift", days, ts: Date.now(), reason, admin }].slice(-20);
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile", { paid: "gift" });
-    await this.report("gift", prof);
+    await this.track("gift", { days, reason, admin }, { source: "admin" });
     const until = prof.sub_until === -1 ? "навсегда" : new Date(prof.sub_until).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
-    await tg(this.env).send(prof.uid,
-      `🎁 <b>Вам подарок — безлимитный доступ на ${days} ${declDays(days)}!</b>\n\nПринимайте сколько угодно пациентов — в боте и в приложении.\nДоступ до: ${until}`,
-      [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
+    const term = forever ? "навсегда" : `${days} ${declDays(days)}`;
+    if (notify) {
+      const body = text
+        ? text.replace(/\{срок\}/g, term).replace(/\{до\}/g, until).replace(/\{имя\}/g, esc(String(prof.name || "").split(" ")[0]))
+        : sysText(texts, "gift", { срок: term, до: until, имя: prof.name });
+      await tg(this.env, { kind: "admin", admin }).send(prof.uid, body, [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
+    }
     return { uid: prof.uid, name: prof.name, until };
+  }
+
+  /** Отмена подписки админом (сразу) */
+  async adminCancelSubscription({ admin = "", notify = false, text = "" } = {}) {
+    const prof = await this.profile();
+    prof.sub_until = Date.now() - 1;
+    prof.payments = [...(prof.payments || []), { op: `cancel_${Date.now()}`, plan: "cancel", ts: Date.now(), admin }].slice(-20);
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track("sub_cancel", { admin }, { source: "admin" });
+    if (notify && text) await tg(this.env, { kind: "admin", admin }).send(prof.uid, text);
+    return { ok: true };
+  }
+
+  /** Сократить подписку до даты (ts) */
+  async adminSetSubUntil(ts, { admin = "" } = {}) {
+    const prof = await this.profile();
+    prof.sub_until = Number(ts);
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track("sub_change", { admin, until: prof.sub_until }, { source: "admin" });
+    return { ok: true };
+  }
+
+  /** Дополнительные бесплатные пациенты на сегодня */
+  async adminExtraPatients(n, { admin = "", notify = true } = {}) {
+    n = Math.max(1, Math.min(50, Math.round(Number(n) || 1)));
+    const prof = await this.profile();
+    const today = mskDate();
+    const cur = prof.extra_patients?.date === today ? prof.extra_patients.n : 0;
+    prof.extra_patients = { date: today, n: cur + n };
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track("extra_patients", { n, admin }, { source: "admin" });
+    if (notify) {
+      await tg(this.env, { kind: "admin", admin }).send(prof.uid, `🎁 Сегодня вам доступно ещё <b>${n}</b> ${n === 1 ? "пациент" : n < 5 ? "пациента" : "пациентов"} бесплатно.`, [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
+    }
+    return { ok: true, extra: prof.extra_patients };
+  }
+
+  async adminSetBlocked(blocked, { admin = "" } = {}) {
+    const prof = await this.profile();
+    prof.blocked = !!blocked;
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.track(blocked ? "blocked" : "unblocked", { admin }, { source: "admin" });
+    return { ok: true };
+  }
+
+  async adminResetStreak({ admin = "" } = {}) {
+    const prof = await this.profile();
+    prof.streak = 0;
+    prof.last_consult_date = null;
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track("streak_reset", { admin, by_admin: true }, { source: "admin" });
+    return { ok: true };
+  }
+
+  /** Всё о пользователе для карточки админки: профиль, пациенты целиком, тесты */
+  async adminView() {
+    const prof = await this.ctx.storage.get(PROFILE);
+    if (!prof) return null;
+    const ids = [...new Set([...prof.active_patient_ids, ...prof.closed_patient_ids])];
+    const pats = ids.length ? await this.ctx.storage.get(ids.map(patKey)) : new Map();
+    const quizzes = prof.test_ids.length ? await this.ctx.storage.get(prof.test_ids.map(quizKey)) : new Map();
+    const st = await this.state();
+    return {
+      profile: { ...publicProfile(prof), payments: prof.payments || [], daily_patients: prof.daily_patients || [] },
+      state: { active_patient_id: st.active_patient_id, bot_pending: st.bot?.pending || null },
+      patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => ({
+        ...patientSummary(p), true_diagnosis: p.true_diagnosis,
+        consultations_list: (p.consultations || []).map((c) => ({ date: c.date, rating: c.rating, diagnosis: c.diagnosis, referrals: c.referrals, discharged: c.discharged, evaluating: c.evaluating })),
+        messages_count: (p.conversation_history || []).length,
+      })).sort((a, b) => (b.created_at || 0) - (a.created_at || 0)),
+      quizzes: prof.test_ids.map((id) => quizzes.get(quizKey(id))).filter(Boolean).map((q) => ({
+        ...quizSummary(q),
+        questions: q.questions.map((qq, i) => ({ text: qq.text, options: qq.options, correct: qq.correct, chosen: q.answers[i]?.chosen ?? null, explanation: qq.explanation })),
+        finished_at: q.finished_at,
+      })),
+    };
+  }
+
+  /** Пациент целиком: скрытые данные, весь диалог, обследования, осмотры, разборы */
+  async adminPatient(id) {
+    const pat = await this.ctx.storage.get(patKey(id));
+    if (!pat) return null;
+    const quiz = await this.ctx.storage.get(quizKey(id));
+    return { patient: pat, quiz: quiz || null };
+  }
+
+  /** Сводка для таблицы users в HubDO и события из прошлого (один раз при запуске админки) */
+  async adminBackfill(uid) {
+    let prof = await this.ctx.storage.get(PROFILE);
+    if (!prof && uid) {
+      prof = await this.migrateFromKv(uid);
+      if (prof) await this.ctx.storage.put(PROFILE, prof);
+    }
+    if (!prof) return null;
+    const events = [];
+    const add = (ts, type, meta = {}, extra = {}) => ts && events.push({ uid: prof.uid, ts, type, meta, ...extra });
+    add(prof.registered_at, "signup", {});
+    const ids = [...new Set([...prof.active_patient_ids, ...prof.closed_patient_ids])];
+    const pats = ids.length ? await this.ctx.storage.get(ids.map(patKey)) : new Map();
+    for (const p of pats.values()) {
+      if (!p) continue;
+      add(p.created_at, "patient_ready", { spec: p.specialization, diagnosis: p.true_diagnosis, name: p.name });
+      for (const m of p.conversation_history || []) if (m.role === "doctor") add(m.ts, "message", { patient: p.id, voice: !!m.voice, len: (m.text || "").length });
+      for (const t of p.test_results || []) add(t.ordered_at, "test", { name: t.test, custom: !TEST_TYPES.includes(t.test), patient: p.id });
+      for (const x of p.exam_results || []) add(x.ts, "exam", { name: x.action, custom: !PHYSICAL_EXAMPLES.includes(x.action), patient: p.id });
+      for (const c of p.consultations || []) {
+        const type = c.discharged ? "discharge" : (c.referrals || []).length ? "referral" : "diagnosis";
+        add(c.started_at, "consult_start", { patient: p.id, name: p.name });
+        add(c.date, "finish", { patient: p.id, name: p.name, type, diagnosis: c.diagnosis, treatment: !!c.treatment, tests: (c.tests || []).length, exams: (c.physicals || []).length, msgs: c.doctor_messages || 0, minutes: c.started_at ? Math.round((c.date - c.started_at) / 60000) : null });
+        if (c.rating != null) add(c.date + 1000, "evaluation", { patient: p.id, spec: p.specialization, rating: c.rating, axes: c.feedback?.axes, correct: c.feedback?.diagnosis_correct, xp: c.xp, tests: c.tests || [], exams: c.physicals || [] }, { val: c.rating });
+      }
+    }
+    const quizzes = prof.test_ids.length ? await this.ctx.storage.get(prof.test_ids.map(quizKey)) : new Map();
+    for (const q of quizzes.values()) {
+      if (!q) continue;
+      add(q.created_at, "quiz_ready", { patient: q.pat_id });
+      if (q.status === "done") add(q.finished_at, "quiz_done", { patient: q.pat_id, score: q.score, total: q.questions.length }, { val: q.score });
+    }
+    for (const f of prof.feedback || []) add(f.ts, "feedback", { rating: f.rating, has_text: !!f.text }, { val: f.rating });
+    const payments = [];
+    for (const pay of prof.payments || []) {
+      if (pay.plan === "gift") { add(pay.ts, "gift", { days: pay.days }); continue; }
+      if (!PLANS[pay.plan]) continue;
+      add(pay.ts, "paid", { plan: pay.plan, op: pay.op }, { val: Number(PLANS[pay.plan].price) });
+      if (pay.op) payments.push({ op: pay.op, plan: pay.plan, ts: pay.ts, amount: Number(PLANS[pay.plan].price), status: "paid" });
+    }
+    return { summary: this.summary(prof), events: events.filter((e) => e.ts > 0), payments };
+  }
+
+  /** Событие из бота/сайта/воркера (пауза, открыл тарифы, нажал «Оплатить»…) */
+  async trackEvent(type, meta = {}, opts = {}) {
+    await this.track(String(type).slice(0, 40), meta, opts);
+    return { ok: true };
   }
 
   // ---------------------------------------------------
@@ -830,58 +1036,99 @@ export class UserDO extends DurableObject {
   // Напоминания (cron)
   // ---------------------------------------------------
 
-  async cronTick(kind, uid) {
+  async cronTick(kind, uid, texts = {}) {
     let prof = await this.ctx.storage.get(PROFILE);
     if (!prof && uid) {
       // Старый пользователь, ещё не заходивший после переезда — переносим данные из KV
       prof = await this.migrateFromKv(uid);
       if (prof) await this.ctx.storage.put(PROFILE, prof);
     }
-    if (!prof || prof.notifications === false) return "skip";
+    if (!prof) return "skip";
+    // Подписка закончилась — отмечаем один раз
+    if (prof.sub_until > 0 && prof.sub_until < Date.now() && prof.sub_expired_logged !== prof.sub_until) {
+      prof.sub_expired_logged = prof.sub_until;
+      await this.ctx.storage.put(PROFILE, prof);
+      await this.track("sub_expired", { plan: prof.sub_plan || null }, { source: "system" });
+    }
+    if (prof.notifications === false || prof.blocked) return "skip";
     const today = mskDate();
     const gap = daysBetween(prof.last_consult_date, today);
     const streak = prof.streak || 0;
-    const bot = tg(this.env);
-    let sent = "none";
+    const bot = tg(this.env, { kind: "system" });
+    const vars = { стрик: streak, дней: declDays(streak), имя: prof.name };
+    const send = async (what, key, kb, v = vars) => {
+      await bot.send(prof.uid, sysText(texts, key, v), kb);
+      const delivered = bot.last.ok;
+      if (!delivered && bot.last.code === 403) {
+        prof.bot_blocked = true;
+        await this.ctx.storage.put(PROFILE, prof);
+        await this.track("bot_blocked", { error: bot.last.description }, { source: "system" });
+      } else if (delivered && prof.bot_blocked) {
+        prof.bot_blocked = false;
+        await this.ctx.storage.put(PROFILE, prof);
+      }
+      await this.track("reminder", { kind: what, delivered }, { source: "system" });
+      return what;
+    };
     if (kind === "morning") {
       if (G.ensureDailyTask(prof)) await this.ctx.storage.put(PROFILE, prof);
       if (G.shouldAskReview(prof)) {
         prof.review_asked = true;
         await this.ctx.storage.put(PROFILE, prof);
-        const m = R.reviewRequest(prof.name);
-        await bot.send(prof.uid, m.text, m.kb);
-        return "review";
+        return send("review", "review_request", R.kbRating());
       }
       if (gap === 0) return "active";
-      if (gap === 1 && streak >= 2) {
-        const m = R.streakReminder(this.env, streak);
-        await bot.send(prof.uid, m.text, m.kb);
-        sent = "reminder";
-      } else if (gap === 2 && !prof.streak_broken_notified && (prof.streak_before_break || streak) >= 2) {
+      if (gap === 1 && streak >= 2) return send("reminder", "streak_reminder", R.streakReminder(this.env, streak).kb);
+      if (gap === 2 && !prof.streak_broken_notified && (prof.streak_before_break || streak) >= 2) {
         prof.streak_broken_notified = true;
         await this.ctx.storage.put(PROFILE, prof);
-        const m = R.streakLost(this.env, prof.streak_before_break || streak);
-        await bot.send(prof.uid, m.text, m.kb);
-        sent = "lost";
+        const lost = prof.streak_before_break || streak;
+        return send("lost", "streak_lost", R.streakLost(this.env, lost).kb, { ...vars, стрик: lost, дней: declDays(lost) });
       }
     }
-    if (kind === "evening" && gap === 1 && streak >= 3) {
-      const m = R.streakWarning(this.env, streak);
-      await bot.send(prof.uid, m.text, m.kb);
-      sent = "warning";
-    }
-    return sent;
+    if (kind === "evening" && gap === 1 && streak >= 3) return send("warning", "streak_warning", R.streakWarning(this.env, streak).kb);
+    return "none";
   }
 
-  /** Отправляет в HubDO событие и свежую сводку профиля для админки */
-  async report(event, prof) {
+  /** Источник текущего действия (bot / miniapp / web / system / admin) */
+  source() {
+    return als.getStore()?.source || "system";
+  }
+
+  /** Сводка профиля для таблицы пользователей в HubDO */
+  summary(prof) {
+    const lvl = G.levelInfo(prof.xp || 0).level;
+    const today = mskDate();
+    return {
+      name: prof.name, username: prof.username, registered_at: prof.registered_at, last_active: prof.last_active,
+      level: prof.level, profession: prof.profession, specs: prof.specializations || [], xp: prof.xp || 0, lvl, streak: prof.streak || 0,
+      cons: prof.stats?.consultations_total || 0, patients: prof.stats?.patients_total || 0, quizzes: prof.stats?.quizzes_done || 0,
+      avg_rating: prof.stats?.avg_rating || 0, ratings_count: prof.stats?.ratings_count || 0, correct_streak: prof.stats?.correct_diagnoses_streak || 0,
+      sub_until: prof.sub_until || 0, sub_plan: prof.sub_plan || null, paid: G.hasActiveSub(prof) ? 1 : 0,
+      onboarding_done: prof.onboarding_done === false ? 0 : 1, about: prof.about || "", expectations: prof.expectations || "",
+      notifications: prof.notifications === false ? 0 : 1, feedback_count: (prof.feedback || []).length,
+      blocked: prof.blocked ? 1 : 0, bot_blocked: prof.bot_blocked ? 1 : 0, ref: prof.ref || null,
+      extra_today: prof.extra_patients?.date === today ? prof.extra_patients.n : 0,
+    };
+  }
+
+  /**
+   * Событие для аналитики админки + свежая сводка профиля.
+   * @param {string} type
+   * @param {object} meta
+   * @param {{dur?: number, val?: number, source?: string}} opts
+   */
+  async track(type, meta = {}, { dur = null, val = null, source = null } = {}) {
     try {
-      await this.hub().track(event, prof.uid, {
-        name: prof.name, username: prof.username, cons: prof.stats?.consultations_total || 0,
-        quizzes: prof.stats?.quizzes_done || 0, patients: prof.stats?.patients_total || 0, paid: !!prof.sub_until,
-      });
+      const prof = await this.ctx.storage.get(PROFILE);
+      if (!prof) return;
+      if (prof.last_active < Date.now() - 60000 && !["reminder", "bot_blocked", "sub_expired", "gift", "sub_cancel", "sub_change", "extra_patients", "blocked", "unblocked"].includes(type)) {
+        prof.last_active = Date.now();
+        await this.ctx.storage.put(PROFILE, prof);
+      }
+      await this.hub().logEvent({ uid: prof.uid, type, source: source || this.source(), meta, dur, val, summary: this.summary(prof) });
     } catch (e) {
-      console.error("hub report", e);
+      console.error("track", type, e);
     }
   }
 
@@ -1008,6 +1255,16 @@ export class UserDO extends DurableObject {
 // =====================================================
 // Нормализация и представления
 // =====================================================
+
+/** Текст системного сообщения бота: правка из админки или текст по умолчанию */
+function sysText(texts, key, vars = {}) {
+  let t = (texts && texts[key]) || SYSTEM_TEXTS[key]?.def || "";
+  for (const [k, v] of Object.entries(vars)) {
+    const val = k === "имя" ? String(v || "").split(" ")[0] || "доктор" : String(v ?? "");
+    t = t.split(`{${k}}`).join(esc(val));
+  }
+  return t;
+}
 
 function actionsList(cur) {
   const a = [];

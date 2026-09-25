@@ -7,6 +7,7 @@ import { bearer, createSession, newLoginCode, verifyInitData, verifySession } fr
 import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
 import { createPayment, fetchPayment, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
+import { adminApi } from "./admin-api.js";
 
 export { UserDO } from "./do/user.js";
 export { HubDO } from "./do/hub.js";
@@ -25,7 +26,12 @@ export default {
       if (request.method === "POST" && path === "/payment-callback") {
         return paymentCallback(request, env);
       }
+      if (path.startsWith("/api/admin/")) return adminApi(request, env, url, ctx);
       if (path.startsWith("/api/")) return api(request, env, url);
+      // Админка — отдельное одностраничное приложение в public/admin
+      if (path === "/admin" || path === "/admin/") {
+        return env.ASSETS.fetch(new Request(`${url.origin}/admin/`, request));
+      }
 
       // Старые ссылки мини-приложения ведут в новое
       if (path === "/" || path.startsWith("/mini-app")) {
@@ -39,7 +45,8 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    // 07:00 UTC = 10:00 МСК — утреннее напоминание; 17:00 UTC = 20:00 МСК — «стрик сгорит»
+    // 07:00 UTC = 10:00 МСК — утреннее напоминание; 17:00 UTC = 20:00 МСК — «стрик сгорит»; 18:00 UTC = 21:00 МСК — итоги дня админам
+    if (event.cron === "0 18 * * *") return ctx.waitUntil(hubStub(env).dailySummary());
     const kind = event.cron === "0 17 * * *" ? "evening" : "morning";
     ctx.waitUntil(hubStub(env).startCron(kind));
   },
@@ -87,8 +94,8 @@ async function paymentCallback(request, env) {
   }
   if (!known) await hub.savePayment(op, uid, plan);
   if (await hub.markPaymentDone(op, pay.amount || PLANS[plan].price)) {
-    await userStub(env, uid).activateSubscription(plan, op);
-    await hub.notifyAdmin(`💰 Новая оплата\nuid: ${uid}\nТариф: ${PLANS[plan].label}\nСумма: ${pay.amount || PLANS[plan].price} ₽`);
+    await userStub(env, uid, "system").activateSubscription(plan, op);
+    await hub.notifyAdmin(`💰 Новая оплата\nuid: ${uid}\nТариф: ${PLANS[plan].label}\nСумма: ${pay.amount || PLANS[plan].price} ₽`, "payment");
   }
   return new Response("OK");
 }
@@ -105,7 +112,7 @@ async function api(request, env, url) {
     const { initData } = await readJson(request);
     const tgUser = await verifyInitData(env, initData);
     if (!tgUser) return json({ error: "Не удалось проверить вход через Telegram" }, 401);
-    await userStub(env, tgUser.id).init(tgUser.id, tgUser);
+    await userStub(env, tgUser.id, "miniapp").init(tgUser.id, tgUser);
     return json({ token: await createSession(env, tgUser.id) });
   }
   if (path === "/auth/login" && method === "POST") {
@@ -133,7 +140,9 @@ async function api(request, env, url) {
 
   const uid = await verifySession(env, bearer(request));
   if (!uid) return json({ error: "Нужно войти", code: "auth" }, 401);
-  const user = userStub(env, uid);
+  // Мини-приложение в Telegram или сайт в браузере — для аналитики каналов
+  const source = request.headers.get("X-Client") === "miniapp" ? "miniapp" : "web";
+  const user = userStub(env, uid, source);
 
   try {
     if (path === "/me" && method === "GET") {
@@ -152,18 +161,28 @@ async function api(request, env, url) {
     if (path === "/patients/new" && method === "POST") {
       return json(await user.requestNewPatient("web"));
     }
+    if (path === "/event" && method === "POST") {
+      // Клиентские события: открыл приложение, открыл тарифы
+      const { type, meta } = await readJson(request);
+      if (!["app_open", "plans_open"].includes(type)) return json({ error: "Неизвестное событие" }, 400);
+      return json(await user.trackEvent(type, typeof meta === "object" && meta ? meta : {}));
+    }
     if (path === "/pay" && method === "POST") {
       const { plan } = await readJson(request);
       if (!PLANS[plan]) return json({ error: "Неизвестный тариф" }, 400);
+      await user.trackEvent("pay_click", { plan });
       let payment;
       try {
         payment = await createPayment(env, uid, plan);
       } catch (e) {
         console.error("tochka create", e);
-        await hubStub(env).notifyAdmin(`⚠️ Оплата не создана (uid ${uid}, тариф ${PLANS[plan].label})\n${esc(e.message).slice(0, 700)}`);
+        await hubStub(env).paymentError(uid, plan, e.message);
+        await user.trackEvent("pay_error", { plan, error: String(e.message).slice(0, 300) });
+        await hubStub(env).notifyAdmin(`⚠️ Оплата не создана (uid ${uid}, тариф ${PLANS[plan].label})\n${esc(e.message).slice(0, 700)}`, "payment_error");
         return json({ error: "Платёжная система сейчас не отвечает. Мы уже разбираемся — попробуйте чуть позже.", code: "payment" }, 502);
       }
       if (payment.operationId) await hubStub(env).savePayment(payment.operationId, uid, plan);
+      await user.trackEvent("pay_link", { plan, op: payment.operationId });
       return json({ link: payment.link });
     }
 

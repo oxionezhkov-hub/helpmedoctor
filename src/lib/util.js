@@ -86,3 +86,21 @@ export function arrayBufferToBase64(buf) {
   }
   return btoa(binary);
 }
+
+/** День (YYYY-MM-DD), час 0-23 и день недели 0=пн…6=вс по Москве */
+export function mskParts(ts = Date.now()) {
+  const d = new Date(ts + MSK_OFFSET_MS);
+  return { day: d.toISOString().slice(0, 10), hour: d.getUTCHours(), dow: (d.getUTCDay() + 6) % 7 };
+}
+
+export function utcDate(ts = Date.now()) {
+  return new Date(ts).toISOString().slice(0, 10);
+}
+
+/** Разметка из админки: **жирный**, _курсив_, [текст](ссылка) → HTML для Telegram (остальное экранируется) */
+export function toTelegramHtml(s) {
+  return esc(String(s || ""))
+    .replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[\s(«"])_([^_\n]+)_(?=[\s).,!?:;»"]|$)/gm, "$1<i>$2</i>")
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, (m, t, u) => `<a href="${u.replace(/"/g, "&quot;")}">${t}</a>`);
+}

@@ -22,12 +22,24 @@ await call("setWebhook", {
   ...(secret ? { secret_token: secret } : {}),
 });
 await call("setChatMenuButton", { menu_button: { type: "web_app", text: "Приложение", web_app: { url: `${base}/app` } } });
-await call("setMyCommands", {
-  commands: [
+const userCommands = [
     { command: "new", description: "Принять нового пациента" },
     { command: "patients", description: "Мои пациенты" },
     { command: "app", description: "Открыть приложение" },
     { command: "feedback", description: "Оставить отзыв" },
     { command: "help", description: "Как пользоваться" },
-  ],
-});
+];
+await call("setMyCommands", { commands: userCommands });
+// Админам — те же команды плюс админские (видны только им)
+const admins = (process.env.ADMIN_ID || "1326867567,1062804986").split(",").map((s) => s.trim()).filter(Boolean);
+for (const id of admins) {
+  await call("setMyCommands", {
+    scope: { type: "chat", chat_id: Number(id) },
+    commands: [
+      ...userCommands,
+      { command: "admin", description: "Админка и сводка" },
+      { command: "idea", description: "Записать идею в бэклог" },
+      { command: "grant", description: "Выдать подписку: /grant @user 7" },
+    ],
+  });
+}

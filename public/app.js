@@ -314,7 +314,7 @@ class ApiError extends Error {
 }
 
 async function api(method, path, body, opts = {}) {
-  const headers = {};
+  const headers = { "X-Client": IN_TG ? "miniapp" : "web" };
   if (S.token) headers.Authorization = `Bearer ${S.token}`;
   let payload;
   if (body instanceof Blob) payload = body;
@@ -386,6 +386,7 @@ async function boot() {
   connectWs();
   window.addEventListener("hashchange", route);
   route();
+  api("POST", "/event", { type: "app_open" }).catch(() => {});
 }
 
 function applyTgViewport() {
@@ -1674,6 +1675,7 @@ function viewPlans(fresh) {
   const plans = S.me.plans;
   const order = ["day", "week", "month", "forever"];
   if (fresh && S.route.q.paid) toast("Спасибо! Подписка активируется в течение минуты.");
+  if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2>Безлимитный доступ</h2></div>
     ${p.has_sub ? html`<div class="card center"><b class="row-c" style="justify-content:center">${ic("gem", "c-accent")}Подписка активна ${p.sub_until === -1 ? "навсегда" : `до ${dateText(p.sub_until)}`}</b><p class="small muted">Можно продлить — дни суммируются.</p></div>` : html`<div class="card stack-sm">

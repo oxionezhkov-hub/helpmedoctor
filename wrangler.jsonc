@@ -3,6 +3,7 @@
   "name": "helpmedoctor",
   "main": "src/index.js",
   "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_als"],
   "workers_dev": true,
   "observability": { "enabled": true },
 
@@ -33,7 +34,7 @@
   ],
 
   // 10:00 и 20:00 по Москве
-  "triggers": { "crons": ["0 7 * * *", "0 17 * * *"] },
+  "triggers": { "crons": ["0 7 * * *", "0 17 * * *", "0 18 * * *"] },
 
   // Не секретные настройки. Секреты — через `wrangler secret put` (см. README)
   "vars": {
