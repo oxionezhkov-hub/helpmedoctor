@@ -4,7 +4,7 @@
 // =====================================================
 import { PLANS } from "./config.js";
 import { bearer, createSession, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
-import { arrayBufferToBase64, json, userError } from "./lib/util.js";
+import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
 import { createPayment, fetchPayment, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 
@@ -155,9 +155,16 @@ async function api(request, env, url) {
     if (path === "/pay" && method === "POST") {
       const { plan } = await readJson(request);
       if (!PLANS[plan]) return json({ error: "Неизвестный тариф" }, 400);
-      const { link, operationId } = await createPayment(env, uid, plan);
-      if (operationId) await hubStub(env).savePayment(operationId, uid, plan);
-      return json({ link });
+      let payment;
+      try {
+        payment = await createPayment(env, uid, plan);
+      } catch (e) {
+        console.error("tochka create", e);
+        await hubStub(env).notifyAdmin(`⚠️ Оплата не создана (uid ${uid}, тариф ${PLANS[plan].label})\n${esc(e.message).slice(0, 700)}`);
+        return json({ error: "Платёжная система сейчас не отвечает. Мы уже разбираемся — попробуйте чуть позже.", code: "payment" }, 502);
+      }
+      if (payment.operationId) await hubStub(env).savePayment(payment.operationId, uid, plan);
+      return json({ link: payment.link });
     }
 
     let m = path.match(/^\/patients\/([\w-]+)(?:\/(\w+))?$/);

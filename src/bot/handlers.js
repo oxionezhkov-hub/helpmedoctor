@@ -3,7 +3,7 @@
 // Вся логика и данные — в UserDO (общие с сайтом), здесь только интерфейс.
 // =====================================================
 import { ADMIN_ID, PHYSICAL_EXAMPLES, TEST_TYPES } from "../config.js";
-import { arrayBufferToBase64, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
+import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
 import { appBtn, btn, tg } from "../lib/telegram.js";
 import * as R from "./render.js";
 
@@ -85,7 +85,9 @@ async function onMessage(ctx, msg) {
     }
     if (command === "/feedback") return askFeedback(ctx);
     if (command === "/help") return help(ctx);
-    if (command === "/admin" && uid === String(env.ADMIN_ID || ADMIN_ID)) return admin(ctx);
+    const isAdmin = uid === String(env.ADMIN_ID || ADMIN_ID);
+    if (command === "/admin" && isAdmin) return admin(ctx);
+    if (command === "/grant" && isAdmin) return grant(ctx, text);
     return help(ctx);
   }
   if (!text) return;
@@ -449,6 +451,19 @@ async function quizAnswer(ctx, data, mid) {
 // ---------------------------------------------------
 // Админка
 // ---------------------------------------------------
+/** /grant @username 7 — бесплатная подписка на N дней (по умолчанию 7) с уведомлением пользователю */
+async function grant(ctx, text) {
+  const { bot, uid, env } = ctx;
+  const [, who = "", daysRaw = "7"] = text.split(/\s+/);
+  const days = Number(daysRaw);
+  if (!who) return bot.send(uid, "Формат: <code>/grant @username 7</code> или <code>/grant 123456789 7</code>");
+  let target = null;
+  if (/^\d+$/.test(who)) target = { uid: who, name: "", username: "" };
+  else target = await hubStub(env).findByUsername(who);
+  if (!target) return bot.send(uid, `Пользователь ${esc(who)} не найден. Он должен хотя бы раз запустить бота — или укажите его Telegram ID.`);
+  const res = await userStub(env, target.uid).grantSubscription(days);
+  await bot.send(uid, `✅ Подписка выдана: ${esc(res.name || target.name || "")} ${target.username ? "@" + esc(target.username) : ""} (${res.uid})\n${days} ${declDays(days)}, доступ до: ${esc(res.until)}\nПользователь получил уведомление.`);
+}
 async function admin(ctx) {
   const { bot, uid, env } = ctx;
   const s = await hubStub(env).stats();

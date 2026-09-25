@@ -237,6 +237,26 @@ assert.equal((await api(null, "POST", "/auth/telegram", { initData: initData(U).
 assert.equal((await api(webToken, "GET", "/patients/pat_555_1")).status, 409, "чужой пациент недоступен");
 step("безопасность: без токена, с поддельным токеном и чужими данными — отказ");
 
+// ---------------------------------------------------------------- подарок подписки и ошибка оплаты
+await text("1326867567", "/grant @U777 7");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("Подписка выдана") && m.text.includes("777")), "grant admin");
+await waitFor(() => sent(U).some((m) => m.text.includes("Вам подарок") && m.text.includes("7 дней")), "grant user");
+me = (await api(webToken, "GET", "/me")).data;
+assert.equal(me.profile.has_sub, true);
+assert.ok(me.profile.sub_until > Date.now() + 6.9 * 86400000);
+await text("1326867567", "/grant @nobody_here 7");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("не найден")), "grant unknown");
+await text(U, "/grant @U777 30");
+await sleep(500);
+assert.ok(!sent(U).some((m) => m.text.includes("Подписка выдана")), "не-админ не может выдавать подписку");
+step("админ: /grant @username 7 — подписка выдана, пользователь уведомлён");
+
+r = await api(webToken, "POST", "/pay", { plan: "week" });
+assert.equal(r.status, 502);
+assert.equal(r.data.code, "payment");
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("Оплата не создана")), "admin payment error");
+step("оплата: ошибка банка — понятный ответ пользователю, подробности админу");
+
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");

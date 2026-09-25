@@ -41,6 +41,13 @@ export class HubDO extends DurableObject {
     }
   }
 
+  /** uid по @username (без учёта регистра) */
+  async findByUsername(username) {
+    const u = String(username || "").trim().replace(/^@/, "").toLowerCase();
+    if (!u) return null;
+    return this.sql.exec("SELECT uid, name, username FROM users WHERE lower(username) = ?", u).toArray()[0] || null;
+  }
+
   async listUsers() {
     await this.seedFromKv();
     return this.sql.exec("SELECT uid FROM users").toArray().map((r) => r.uid);

@@ -7,7 +7,6 @@ export const ADMIN_ID = "1326867567";
 export const BOT_USERNAME = "helpmedoctor_aibot";
 
 export const MAX_ACTIVE_PATIENTS = 6;
-export const ALIEN_PATIENT_EVERY = 7;
 export const FREE_DAILY_LIMIT = 1; // пациентов в день бесплатно
 
 // Сколько последних реплик отдаём ИИ целиком; всё что старше — сжимается в резюме
@@ -84,7 +83,6 @@ export const DAILY_TASKS = [
   { id: "dt_29", desc: "3 верных диагноза подряд",                      xp: 100, type: "correct_streak",     target: 3 },
   { id: "dt_30", desc: "Провести 4 консультации за день",               xp: 100, type: "consultations",      target: 4 },
   // Экспертные
-  { id: "dt_31", desc: "Принять пациента-инопланетянина",               xp: 120, type: "alien",              target: 1 },
   { id: "dt_32", desc: "Получить оценку 5.0",                           xp: 150, type: "rating",             target: 5.0 },
   { id: "dt_33", desc: "Пройти 3 теста на ошибки",                      xp: 120, type: "quiz",               target: 3 },
   { id: "dt_34", desc: "5 верных диагнозов подряд",                     xp: 150, type: "correct_streak",     target: 5 },
