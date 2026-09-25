@@ -23,15 +23,12 @@ const HEAD_OLD_FEMALE = ["grayBun", "grayMedium", "hijab"];
 const HEAD_OLD_MALE = ["grayShort", "grayMedium", "noHair1", "noHair2", "noHair3"];
 const HEAD_CHILD = ["bangs", "bangs2", "buns", "short1", "short2", "short3", "medium1", "mediumBangs", "twists", "afro"];
 
-// Пациенты чаще встревожены и устали; остальные выражения — изредка, для разнообразия
-const EXPRESSION = {
-  concerned: 6, concernedFear: 4, tired: 6, solemn: 4, serious: 4, calm: 4, blank: 3, fear: 2, eyesClosed: 2, hectic: 2,
-  explaining: 2, awe: 1, suspicious: 1, smile: 1, cute: 1, driven: 1, contempt: 1, cheeky: 1, smileTeethGap: 1,
-  angryWithFang: 0.5, rage: 0.5, veryAngry: 0.5, eatingHappy: 0.5,
-};
-const EXPRESSION_OLD = { ...EXPRESSION, old: 8 };
-const EXPRESSION_GOOD = { smile: 6, calm: 4, cute: 2, explaining: 1 };
-const EXPRESSION_BAD = { tired: 6, concernedFear: 4, fear: 3, eyesClosed: 3, concerned: 3, hectic: 2 };
+// Выражения подобраны вручную: спокойные, усталые, серьёзные. Открытый рот с зубами (concerned, fear, hectic),
+// гнев и «ест с аппетитом» на новом пациенте выглядят странно — их нет.
+const EXPRESSION = { tired: 5, solemn: 5, serious: 4, calm: 4, blank: 4, eyesClosed: 2, suspicious: 1, smile: 1 };
+const EXPRESSION_OLD = { ...EXPRESSION, old: 6 };
+const EXPRESSION_GOOD = { smile: 6, calm: 4, cute: 2 };
+const EXPRESSION_BAD = { tired: 5, solemn: 5, eyesClosed: 3, serious: 2 };
 
 /** Параметры лица по пациенту: s — seed, g — пол (m/f), a — возраст, m — состояние (good/bad); clean — без маски и тёмных очков (обложки) */
 export function faceOptions({ s = "", g = "", a = 0, m = "", clean = false } = {}) {
