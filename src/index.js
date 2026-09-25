@@ -140,6 +140,13 @@ async function api(request, env, url) {
     await userStub(env, res.uid).init(res.uid);
     return json({ status: "ok", token: await createSession(env, res.uid) });
   }
+  // Аватар по случайному id (без авторизации: <img> не умеет заголовки; id не угадать)
+  let am = path.match(/^\/avatar\/([a-f0-9]{32})$/);
+  if (am && method === "GET") {
+    const { value, metadata } = await env.HELPMEDOCTOR.getWithMetadata(`avatar:${am[1]}`, "arrayBuffer");
+    if (!value) return new Response("not found", { status: 404 });
+    return new Response(value, { headers: { "Content-Type": metadata?.type || "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" } });
+  }
   if (path === "/config" && method === "GET") {
     return json({ bot_username: env.BOT_USERNAME });
   }
@@ -165,6 +172,20 @@ async function api(request, env, url) {
     if (path === "/profile" && method === "PATCH") {
       return json({ profile: await user.updateProfile(await readJson(request)) });
     }
+    // Мини-приложение → сайт в браузере: одноразовый код входа, уже подтверждённый этим пользователем
+    if (path === "/auth/handoff" && method === "POST") {
+      const code = newLoginCode();
+      await hubStub(env).createLogin(code);
+      await hubStub(env).confirmLogin(code, uid);
+      const base = (env.PUBLIC_URL || new URL(request.url).origin).replace(/\/$/, "");
+      return json({ url: `${base}/app?login=${encodeURIComponent(code)}` });
+    }
+    if (path === "/avatar" && method === "POST") {
+      const buf = await request.arrayBuffer();
+      return json(await user.setAvatar(buf, (request.headers.get("Content-Type") || "").split(";")[0]));
+    }
+    if (path === "/avatar/telegram" && method === "POST") return json(await user.avatarFromTelegram());
+    if (path === "/avatar" && method === "DELETE") return json(await user.removeAvatar());
     if (path === "/feedback" && method === "POST") {
       return json(await user.saveFeedback(await readJson(request), "web"));
     }
@@ -203,6 +224,7 @@ async function api(request, env, url) {
     if (m) {
       const [, id, action] = m;
       if (!action && method === "GET") return json(await user.patientView(id));
+      if (!action && method === "DELETE") return json(await user.deletePatient(id));
       if (method !== "POST") return json({ error: "Метод не поддерживается" }, 405);
       if (action === "start") {
         // Из мини-приложения Telegram приём идёт в чате с ботом
@@ -227,6 +249,7 @@ async function api(request, env, url) {
     if (m) {
       const [, patId, action] = m;
       if (!action && method === "GET") return json({ quiz: await user.quiz(patId) });
+      if (!action && method === "DELETE") return json(await user.deleteQuiz(patId));
       if (action === "answer" && method === "POST") {
         const { index, chosen } = await readJson(request);
         return json(await user.answerQuiz(patId, Number(index), Number(chosen)));

@@ -617,6 +617,7 @@ export const SYSTEM_TEXTS = {
   streak_warning: { label: "Стрик сгорит сегодня (вечер, 20:00)", def: "⚠️ <b>Осталось 4 часа!</b>\n\n🔥 Стрик {стрик} {дней} сгорит в полночь. Один короткий приём — и серия сохранена." },
   streak_lost: { label: "Стрик сгорел", def: "😔 <b>Стрик сгорел</b>\n\nВы пропустили 2 дня и потеряли серию {стрик} {дней}.\nНачните новую сегодня — регулярная практика делает диагнозы точнее." },
   review_request: { label: "Просьба оценить (через 2 дня после старта)", def: "👋 {имя}, вы пользуетесь «Help me, Doctor» уже пару дней.\n\n<b>Как вам тренажёр?</b> Оцените от 1 до 5 — это займёт секунду и очень поможет сделать его лучше." },
+  review_first: { label: "Просьба оценить (после первого разбора в боте)", def: "🙏 {имя}, это был ваш первый разобранный приём.\n\n<b>Как вам тренажёр?</b> Оцените от 1 до 5 — это займёт секунду и очень поможет сделать его лучше." },
   gift: { label: "Подарок подписки", def: "🎁 <b>Вам подарок — безлимитный доступ на {срок}!</b>\n\nПринимайте сколько угодно пациентов — в боте и в приложении.\nДоступ до: {до}" },
 };
 
@@ -703,6 +704,47 @@ const TASK_IMPORTS = {
   ],
 };
 
+// Разовые смены статусов (по названию задачи): что уже сделано в коде
+const TASK_STATUS_UPDATES = {
+  done_2026_09_25: [
+    ["Проверить оплату после исправления", "Оплата работает через посредника в Yandex Cloud."],
+    ["Выпустить токен Cloudflare для точного расхода ИИ", "Деплойный токен читает аналитику — «Расход ИИ» → «Загрузить из Cloudflare»."],
+    ["Обновить меню команд бота", "Меню и кнопка приложения обновляются при каждом деплое."],
+    ["Купить домен и запустить SEO через статьи", "helpmedoctor.ru: главная, блог из 5 статей, sitemap, IndexNow, Яндекс Метрика."],
+    ["Предлагать оставить отзыв после первого завершённого пациента", "Бот просит оценку сразу после первого разбора; на сайте форма отзыва появляется, пока эксперт пишет разбор."],
+  ],
+};
+const UPDATE_0925 = "обновление 25.09";
+const DONE_0925 = [
+  { title: "Запасной ИИ и модели по шагам", descr: "Qwen3 по умолчанию, разбор эксперта — Llama 70B; при исчерпании лимита Cloudflare — Cerebras / Groq. Настройка в «Расход ИИ».", type: "feature" },
+  { title: "Мини-приложение: кнопка «Открыть на сайте»", descr: "Открывает сайт в браузере сразу с входом (одноразовый код).", type: "feature" },
+  { title: "Фото профиля из Telegram и своё", descr: "Фото подтягивается из Telegram, в «Настройках» можно загрузить своё или убрать.", type: "feature" },
+  { title: "Удаление пациентов и тестов", descr: "Кнопка в карточке пациента и в тесте; опыт и статистика сохраняются.", type: "feature" },
+  { title: "Новая главная и профиль", descr: "Главная: один пациент на приёме, один новый, один тест. Профиль — меню: подписка, статистика, настройки, отзыв, Telegram, выход. Списки — по 5 с кнопкой «Показать все».", type: "feature" },
+  { title: "Диалог: анимации и сводка пациента", descr: "Реплика пациента выводится по словам, результаты обследований — построчно; сводка открывается поверх чата; скруглённая шапка, без полосы прокрутки; плавные переходы между экранами.", type: "feature" },
+];
+
+function runTaskStatusUpdates(h) {
+  const now = Date.now();
+  for (const [key, list] of Object.entries(TASK_STATUS_UPDATES)) {
+    if (h.getMeta(`task_update:${key}`)) continue;
+    h.setMeta(`task_update:${key}`, now);
+    for (const [title, note] of list) {
+      for (const t of h.all("SELECT id, status FROM tasks WHERE title = ? AND status NOT IN ('done', 'rejected')", title)) {
+        h.sql.exec("UPDATE tasks SET status = 'done', updated_at = ? WHERE id = ?", now, t.id);
+        h.sql.exec("INSERT INTO task_history (task_id, ts, admin, field, old, new) VALUES (?, ?, 'system', 'status', ?, 'done')", t.id, now, t.status);
+        h.sql.exec("INSERT INTO task_comments (task_id, ts, admin, text) VALUES (?, ?, 'system', ?)", t.id, now, `✅ ${note}`);
+      }
+    }
+    if (key === "done_2026_09_25") {
+      DONE_0925.forEach((t, i) => h.sql.exec(
+        "INSERT INTO tasks (title, descr, type, status, priority, assignee, labels, links, checklist, created_by, created_at, updated_at, sort) VALUES (?, ?, ?, 'done', 'medium', ?, ?, '[]', '[]', 'system', ?, ?, ?)",
+        t.title, t.descr, t.type, OLEG, JSON.stringify([UPDATE_0925]), now, now, -2000 + i,
+      ));
+    }
+  }
+}
+
 function runTaskImports(h) {
   const now = Date.now();
   for (const [key, list] of Object.entries(TASK_IMPORTS)) {
@@ -713,6 +755,7 @@ function runTaskImports(h) {
       t.title, t.descr, t.type, t.status, t.priority, t.assignee || null, t.due || null, JSON.stringify([CALL_0924]), now, now, -1000 + i,
     ));
   }
+  runTaskStatusUpdates(h); // после импортов: обновляет и только что добавленные задачи
 }
 
 function tasks(h, { status = "", assignee = "", type = "", q = "" } = {}) {

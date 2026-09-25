@@ -160,6 +160,9 @@ export class UserDO extends DurableObject {
   /** Всё для главного экрана веб-версии */
   async snapshot() {
     const prof = await this.profile();
+    if (!prof.avatar && !prof.avatar_off && (!prof.avatar_checked || Date.now() - prof.avatar_checked > 7 * 86400000)) {
+      this.ctx.waitUntil(this.ensureTgAvatar().catch((e) => console.warn("avatar", e.message)));
+    }
     const st = await this.state();
     const ids = [...prof.active_patient_ids, ...prof.closed_patient_ids.slice(-60).reverse()];
     const pats = await this.ctx.storage.get(ids.map(patKey));
@@ -409,6 +412,105 @@ export class UserDO extends DurableObject {
     this.broadcast("patients");
     await this.track("patient_reopen", { name: pat.name });
     return { ok: true };
+  }
+
+  /** Удалить пациента насовсем (из очереди или архива) вместе с его тестом. Статистика и XP остаются. */
+  async deletePatient(patId) {
+    const prof = await this.profile();
+    const known = prof.active_patient_ids.includes(patId) || prof.closed_patient_ids.includes(patId);
+    if (!known) throw new UserError("Пациент не найден");
+    const pat = await this.patient(patId);
+    if (pat.consultations?.at(-1)?.evaluating) throw new UserError("Эксперт ещё разбирает приём — удалить можно после разбора", "busy");
+    prof.active_patient_ids = prof.active_patient_ids.filter((id) => id !== patId);
+    prof.closed_patient_ids = prof.closed_patient_ids.filter((id) => id !== patId);
+    prof.test_ids = prof.test_ids.filter((id) => id !== patId);
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.ctx.storage.delete([patKey(patId), quizKey(patId)]);
+    const st = await this.state();
+    if (st.active_patient_id === patId) await this.ctx.storage.put(STATE, { ...st, active_patient_id: null, bot: null });
+    await this.track("patient_delete", { name: pat.name, diagnosis: pat.true_diagnosis, status: pat.status, consultations: (pat.consultations || []).length });
+    this.broadcast("patients");
+    return { ok: true };
+  }
+
+  /** Удалить тест «работа над ошибками» */
+  async deleteQuiz(patId) {
+    const prof = await this.profile();
+    if (!prof.test_ids.includes(patId)) throw new UserError("Тест не найден");
+    prof.test_ids = prof.test_ids.filter((id) => id !== patId);
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.ctx.storage.delete(quizKey(patId));
+    await this.track("quiz_delete", { patient: patId });
+    this.broadcast("patients");
+    return { ok: true };
+  }
+
+  // ---------------------------------------------------
+  // Аватар: фото из Telegram или своё (хранится в KV, отдаётся по случайному id)
+  // ---------------------------------------------------
+
+  /** Один раз (и раз в неделю, если фото не было) подтягиваем фото профиля Telegram */
+  async ensureTgAvatar(force = false) {
+    const prof = await this.profile();
+    if (!force && (prof.avatar || prof.avatar_off)) return prof.avatar || null;
+    if (!force && prof.avatar_checked && Date.now() - prof.avatar_checked < 7 * 86400000) return null;
+    prof.avatar_checked = Date.now();
+    await this.ctx.storage.put(PROFILE, prof);
+    const bot = tg(this.env, { log: false });
+    const photos = await bot.call("getUserProfilePhotos", { user_id: Number(prof.uid), limit: 1 });
+    const sizes = photos?.photos?.[0];
+    if (!sizes?.length) return null;
+    // Самый маленький размер не меньше 160 px — чётко на ретине и лёгкий
+    const size = [...sizes].sort((a, b) => a.width - b.width).find((x) => x.width >= 160) || sizes.at(-1);
+    let buf;
+    try {
+      buf = await bot.downloadFile(size.file_id);
+    } catch (e) {
+      console.warn("avatar download", e.message);
+      return null;
+    }
+    return this.storeAvatar(buf, "image/jpeg", "tg");
+  }
+
+  async storeAvatar(buf, type, src) {
+    if (!this.env.HELPMEDOCTOR) throw new UserError("Хранилище недоступно");
+    const prof = await this.profile();
+    const id = crypto.randomUUID().replace(/-/g, "");
+    await this.env.HELPMEDOCTOR.put(`avatar:${id}`, buf, { metadata: { type, uid: prof.uid } });
+    const old = prof.avatar?.id;
+    prof.avatar = { id, src };
+    prof.avatar_off = false;
+    await this.ctx.storage.put(PROFILE, prof);
+    if (old) await this.env.HELPMEDOCTOR.delete(`avatar:${old}`).catch(() => {});
+    this.broadcast("profile");
+    return prof.avatar;
+  }
+
+  /** Своё фото из настроек (уже сжатое в браузере) */
+  async setAvatar(buf, type) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(type)) throw new UserError("Нужна картинка JPG, PNG или WebP");
+    if (!buf?.byteLength || buf.byteLength > 400 * 1024) throw new UserError("Файл слишком большой — до 400 КБ");
+    const avatar = await this.storeAvatar(buf, type, "custom");
+    await this.track("avatar", { src: "custom" });
+    return { profile: publicProfile(await this.profile()), avatar };
+  }
+
+  async avatarFromTelegram() {
+    const avatar = await this.ensureTgAvatar(true);
+    if (!avatar) throw new UserError("В Telegram нет фото профиля или оно скрыто настройками приватности");
+    await this.track("avatar", { src: "tg" });
+    return { profile: publicProfile(await this.profile()), avatar };
+  }
+
+  async removeAvatar() {
+    const prof = await this.profile();
+    const old = prof.avatar?.id;
+    prof.avatar = null;
+    prof.avatar_off = true;
+    await this.ctx.storage.put(PROFILE, prof);
+    if (old) await this.env.HELPMEDOCTOR?.delete(`avatar:${old}`).catch(() => {});
+    this.broadcast("profile");
+    return { profile: publicProfile(prof) };
   }
 
   // ---------------------------------------------------
@@ -723,6 +825,14 @@ export class UserDO extends DurableObject {
     if (job.origin === "bot") {
       const m = R.evaluation(this.env, result);
       await tg(this.env).send(prof.uid, m.text, m.kb);
+      // Первый разобранный приём и отзыва ещё нет — сразу просим оценить тренажёр (на сайте это окно в листе завершения)
+      if (G.shouldAskReviewAfterFirst(prof)) {
+        prof.review_first_asked = true;
+        await this.ctx.storage.put(PROFILE, prof);
+        const texts = await this.hub().systemTexts().catch(() => ({}));
+        await tg(this.env, { kind: "system" }).send(prof.uid, sysText(texts, "review_first", { имя: prof.name }), R.kbRating());
+        await this.track("review_ask", { when: "first_patient" }, evSource);
+      }
     }
 
     // Тест «работа над ошибками»

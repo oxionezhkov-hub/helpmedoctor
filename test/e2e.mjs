@@ -142,7 +142,8 @@ await text(U, "Омепразол 20 мг 2 раза, амоксициллин, 
 await waitFor(() => sent(U).some((m) => m.text.includes("ПРИЁМ ЗАВЕРШЁН")), "finish");
 const evalMsg = await waitFor(() => sent(U).find((m) => m.text.includes("Разбор приёма")), "evaluation");
 assert.ok(evalMsg.text.includes("4.2"));
-step("бот: диагноз + лечение → завершение → разбор эксперта");
+await waitFor(() => sent(U).find((m) => m.text.includes("первый разобранный приём") && JSON.stringify(m.reply_markup || {}).includes("rv_")), "review after first patient");
+step("бот: диагноз + лечение → завершение → разбор эксперта → сразу просьба оценить тренажёр");
 
 me = (await api(webToken, "GET", "/me")).data;
 const closed = me.patients.find((p) => p.id === patId);
@@ -393,7 +394,10 @@ assert.ok(imported.some((x) => x.assignee === "1062804986" && x.title.includes("
 assert.equal((await aq("tasks", {})).rows.filter((x) => x.labels.includes("созвон 24.09")).length, 19, "импорт не дублируется");
 assert.ok(tasksAll.rows.some((x) => x.title.includes("тёмную тему") && x.status === "idea"));
 await aq("task_delete", { id: t.id });
-step("админка: задачи — создание, назначение с уведомлением, комментарии, история, /idea из бота");
+const upd = tasksAll.rows.filter((x) => x.labels.includes("обновление 25.09"));
+assert.equal(upd.length, 6, "сделанное 25.09 добавлено в трекер");
+assert.equal(tasksAll.rows.find((x) => x.title.startsWith("Предлагать оставить отзыв")).status, "done", "выполненные задачи закрыты");
+step("админка: задачи — создание, назначение с уведомлением, комментарии, история, /idea из бота, закрытие сделанного");
 
 const np = await aq("notify_save", { prefs: { new_user: false } }, admTok2);
 assert.equal(np.prefs.new_user, false);
@@ -405,6 +409,49 @@ assert.ok(!sent("1062804986").slice(before2).some((m) => m.text.includes("888") 
 const audit = await aq("audit_log");
 for (const a of ["grant", "cancel", "extra", "block", "message"]) assert.ok(audit.rows.some((r) => r.action === a), `audit ${a}`);
 step("админка: личные настройки уведомлений, журнал действий админов");
+
+// ---------------------------------------------------------------- аватар, переход из мини-приложения, удаление
+const tgAv = await waitFor(async () => (await api(webToken, "GET", "/me")).data.profile.avatar, "avatar from telegram");
+assert.equal(tgAv.src, "tg");
+let av = await fetch(`${BASE}/api/avatar/${tgAv.id}`);
+assert.equal(av.status, 200);
+assert.ok((await av.arrayBuffer()).byteLength > 0);
+const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4, 0xff, 0xd9]);
+av = await fetch(`${BASE}/api/avatar`, { method: "POST", headers: { Authorization: `Bearer ${webToken}`, "Content-Type": "image/jpeg" }, body: jpeg });
+const avUp = await av.json();
+assert.equal(avUp.profile.avatar.src, "custom", JSON.stringify(avUp));
+assert.equal((await fetch(`${BASE}/api/avatar/${tgAv.id}`)).status, 404, "старое фото удалено");
+assert.equal((await fetch(`${BASE}/api/avatar`, { method: "POST", headers: { Authorization: `Bearer ${webToken}`, "Content-Type": "text/plain" }, body: "x" })).status, 409);
+r = await api(webToken, "DELETE", "/avatar");
+assert.equal(r.data.profile.avatar, null);
+assert.equal(r.data.profile.avatar_off, true);
+r = await api(webToken, "POST", "/avatar/telegram");
+assert.equal(r.data.profile.avatar.src, "tg");
+step("аватар: фото из Telegram, своё фото, удаление, снова из Telegram");
+
+r = await api(webToken, "POST", "/auth/handoff");
+const hoCode = new URL(r.data.url).searchParams.get("login");
+assert.ok(hoCode);
+const ho = (await api(null, "GET", `/auth/poll?code=${hoCode}`)).data;
+assert.equal(ho.status, "ok");
+assert.equal((await api(ho.token, "GET", "/me")).data.profile.uid, U, "вход на сайт тем же пользователем");
+assert.notEqual((await api(null, "GET", `/auth/poll?code=${hoCode}`)).data.status, "ok", "код одноразовый");
+step("мини-приложение → сайт: вход по одноразовому коду");
+
+r = await api(webToken, "DELETE", `/quiz/${patId}`);
+assert.equal(r.status, 200);
+me = (await api(webToken, "GET", "/me")).data;
+assert.ok(!me.quizzes.some((q) => q.pat_id === patId), "тест удалён");
+assert.equal((await api(webToken, "GET", `/quiz/${patId}`)).status, 409);
+const xpBefore = me.profile.xp;
+r = await api(webToken, "DELETE", `/patients/${patId}`);
+assert.equal(r.status, 200);
+me = (await api(webToken, "GET", "/me")).data;
+assert.ok(!me.patients.some((x) => x.id === patId), "пациент удалён");
+assert.equal(me.profile.xp, xpBefore, "опыт сохранён");
+assert.equal((await api(webToken, "DELETE", `/patients/${patId}`)).status, 409);
+assert.equal((await api(oldToken, "DELETE", `/patients/${patId}`)).status, 409, "чужого пациента не удалить");
+step("удаление: тест и пациент удаляются, опыт остаётся, чужое не удалить");
 
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");

@@ -22,6 +22,8 @@ http.createServer((req, res) => {
     let result = true;
     if (method === "sendMessage") result = { message_id: ++mid };
     if (method === "getFile") result = { file_path: "voice/file_1.oga" };
+    // Фото профиля есть только у пользователя 777
+    if (method === "getUserProfilePhotos") result = data.user_id === 777 ? { total_count: 1, photos: [[{ file_id: "ph_s", width: 160, height: 160 }, { file_id: "ph_b", width: 640, height: 640 }]] } : { total_count: 0, photos: [] };
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, result }));
   });
