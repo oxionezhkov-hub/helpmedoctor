@@ -3,7 +3,21 @@
 // статус платежа запросом к API Точки с нашим токеном.
 import { PLANS } from "../config.js";
 
-const API = "https://enter.tochka.com/uapi/acquiring/v1.0/payments";
+const API_HOST = "https://enter.tochka.com";
+const API_PATH = "/uapi/acquiring/v1.0/payments";
+
+/**
+ * Запрос к API Точки. Точка работает на сертификате НУЦ Минцифры, которому Cloudflare не доверяет (ошибка 526),
+ * поэтому, если задан TOCHKA_PROXY_URL, идём через посредника в Yandex Cloud (yandex/tochka-proxy):
+ * он проверяет TOCHKA_PROXY_SECRET и пересылает запрос в Точку.
+ */
+function tochkaFetch(env, path, { method = "GET", body } = {}) {
+  const proxy = String(env.TOCHKA_PROXY_URL || "").trim();
+  const headers = body ? { "Content-Type": "application/json" } : {};
+  if (!proxy) return fetch(`${API_HOST}${path}`, { method, body, headers: { ...headers, Authorization: auth(env) } });
+  const url = `${proxy}${proxy.includes("?") ? "&" : "?"}path=${encodeURIComponent(path)}`;
+  return fetch(url, { method, body, headers: { ...headers, "X-Tochka-Auth": auth(env), "X-Proxy-Secret": String(env.TOCHKA_PROXY_SECRET || "").trim() } });
+}
 
 /** Ошибка API Точки: статус и ответ банка (без токена) — для уведомления админу */
 export class TochkaError extends Error {
@@ -24,9 +38,8 @@ function auth(env) {
 export async function createPayment(env, uid, planKey) {
   const plan = PLANS[planKey];
   if (!plan) throw new Error("unknown plan");
-  const r = await fetch(API, {
+  const r = await tochkaFetch(env, API_PATH, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: auth(env) },
     body: JSON.stringify({
       Data: {
         customerCode: env.TOCHKA_CUSTOMER,
@@ -56,9 +69,7 @@ export async function createPayment(env, uid, planKey) {
 
 /** Актуальный статус платежа из API Точки */
 export async function fetchPayment(env, operationId) {
-  const r = await fetch(`${API}/${encodeURIComponent(operationId)}`, {
-    headers: { Authorization: auth(env) },
-  });
+  const r = await tochkaFetch(env, `${API_PATH}/${encodeURIComponent(operationId)}`);
   if (!r.ok) throw new Error(`Tochka status ${r.status}`);
   const d = await r.json();
   const op = Array.isArray(d.Data?.Operation) ? d.Data.Operation[0] : d.Data?.Operation || d.Data;

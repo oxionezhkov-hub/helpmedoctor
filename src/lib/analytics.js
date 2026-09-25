@@ -670,6 +670,48 @@ const SEED_TASKS = [
   { title: "Обновить меню команд бота", descr: "Запустить node scripts/set-webhook.mjs — появятся /feedback и /idea.", type: "feature", status: "backlog", priority: "low" },
 ];
 
+// Разовые импорты задач (например, итоги созвонов): каждый добавляется один раз, даже если трекер уже заполнен
+const OLEG = "1326867567", SASHA = "1062804986";
+const CALL_0924 = "созвон 24.09";
+const TASK_IMPORTS = {
+  call_2026_09_24: [
+    // Олег
+    { title: "Прислать Александру договор (ГПХ / самозанятость)", descr: "Как только Александр пришлёт паспортные данные, ИНН и реквизиты.", type: "org", status: "backlog", priority: "high", assignee: OLEG },
+    { title: "Иероглифы / китайские символы в ответах ИИ на русском", descr: "Сделано: ответы ИИ очищаются от символов CJK (обновление бота от 24.09).", type: "bug", status: "done", priority: "high", assignee: OLEG },
+    { title: "Продумать монетизацию и подписку", descr: "Решение со созвона: поверх бесплатного бота — платные «программы» по специализациям.", type: "idea", status: "backlog", priority: "high", assignee: OLEG },
+    { title: "Стартовый вопрос в боте: кто пользователь и какая специальность", descr: "Сделано: анкета при первом входе (студент / ординатор / врач, где учится или работает, ожидания) и выбор специальности с разделами в профиле.", type: "feature", status: "done", priority: "high", assignee: OLEG },
+    { title: "Уведомления Александру о новых пользователях и отзывах", descr: "Сделано: Саша в админах, получает все уведомления; включить или выключить отдельные виды можно в «Настройках».", type: "feature", status: "done", priority: "medium", assignee: OLEG },
+    { title: "Предлагать оставить отзыв после первого завершённого пациента", descr: "Сейчас бот просит оценку через 2 дня после старта и принимает /feedback. Нужно добавить просьбу сразу после первого разбора.", type: "feature", status: "backlog", priority: "medium", assignee: OLEG },
+    { title: "Дашборд с аналитикой и общий трекер задач", descr: "Сделано: админка /admin — дашборд, аналитика, пользователи и переписка, задачи.", type: "feature", status: "done", priority: "high", assignee: OLEG },
+    { title: "Три посадочные страницы: кардиология, терапия, неврология", descr: "Для SEO и таргетированной рекламы. Материалы собирает Александр.", type: "marketing", status: "backlog", priority: "medium", assignee: OLEG },
+    { title: "Купить домен и запустить SEO через статьи", descr: "Статьи и полезные материалы по специальностям.", type: "marketing", status: "backlog", priority: "medium", assignee: OLEG },
+    { title: "Разослать ~54 пользователям уведомление об обновлении сервиса", descr: "Админка → Сообщения → Новая рассылка. Сначала «Отправить себе».", type: "marketing", status: "backlog", priority: "high", assignee: OLEG },
+    { title: "Выдать неделю премиума одногруппнику Александра", descr: "После того как Александр пришлёт его Telegram: /grant @username 7 в боте или «Подписка» в карточке пользователя.", type: "org", status: "backlog", priority: "medium", assignee: OLEG },
+    { title: "Скинуть саммари встречи 24.09", descr: "", type: "org", status: "backlog", priority: "low", assignee: OLEG },
+    // Александр (Саша)
+    { title: "Прислать Telegram одногруппника, который тестировал бота", descr: "Ему выдадим неделю премиума.", type: "org", status: "backlog", priority: "medium", assignee: SASHA },
+    { title: "Прислать паспортные данные, ИНН и реквизиты для договора", descr: "Реквизиты: номер карты или телефон для Сбера.", type: "org", status: "backlog", priority: "high", assignee: SASHA },
+    { title: "Собрать материалы: кардиология, терапия, неврология", descr: "Примерно по 5 материалов на тему — для посадочных страниц и статей.", type: "content", status: "backlog", priority: "medium", assignee: SASHA },
+    { title: "Найти примеры платных Telegram-каналов с медицинским контентом", descr: "Посмотреть, как оформлены и как продают доступ.", type: "marketing", status: "backlog", priority: "medium", assignee: SASHA },
+    { title: "Проверить у знакомого гипотезу «стартового пациента» при первом входе", descr: "Результат написать на следующий день после созвона.", type: "idea", status: "backlog", priority: "medium", assignee: SASHA, due: "2026-09-25" },
+    { title: "Подготовить вопросы для нетворкинга на бизнес-фестивале 29.09", descr: "", type: "marketing", status: "backlog", priority: "medium", assignee: SASHA, due: "2026-09-28" },
+    // Решения
+    { title: "Договорённости созвона 24.09", descr: "• Прибыль делится 50/50 за вычетом расходов (например, на маркетинг).\n• Фокус пока на B2C, B2B — позже.\n• Название сервиса пока не меняем, ребрендинг возможен в будущем.\n• Поверх бесплатного бота делаем платные «программы» по специализациям.", type: "org", status: "done", priority: "low" },
+  ],
+};
+
+function runTaskImports(h) {
+  const now = Date.now();
+  for (const [key, list] of Object.entries(TASK_IMPORTS)) {
+    if (h.getMeta(`task_import:${key}`)) continue;
+    h.setMeta(`task_import:${key}`, now);
+    list.forEach((t, i) => h.sql.exec(
+      "INSERT INTO tasks (title, descr, type, status, priority, assignee, due, labels, links, checklist, created_by, created_at, updated_at, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '[]', '[]', 'system', ?, ?, ?)",
+      t.title, t.descr, t.type, t.status, t.priority, t.assignee || null, t.due || null, JSON.stringify([CALL_0924]), now, now, -1000 + i,
+    ));
+  }
+}
+
 function tasks(h, { status = "", assignee = "", type = "", q = "" } = {}) {
   if (!h.getMeta("tasks_seeded")) {
     h.setMeta("tasks_seeded", 1);
@@ -681,6 +723,7 @@ function tasks(h, { status = "", assignee = "", type = "", q = "" } = {}) {
       ));
     }
   }
+  runTaskImports(h);
   const w = ["1 = 1"];
   const a = [];
   if (status) { w.push("status = ?"); a.push(status); }

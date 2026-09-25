@@ -621,7 +621,7 @@ async function surveys(el, ctx, head) {
 // Задачи
 // =====================================================
 const STATUSES = [["idea", "Идея"], ["backlog", "Бэклог"], ["doing", "В работе"], ["review", "На проверке"], ["done", "Готово"], ["rejected", "Отклонено"]];
-const TYPES = [["idea", "Идея"], ["feature", "Фича"], ["bug", "Баг"], ["marketing", "Маркетинг"], ["content", "Контент"]];
+const TYPES = [["idea", "Идея"], ["feature", "Фича"], ["bug", "Баг"], ["marketing", "Маркетинг"], ["content", "Контент"], ["org", "Организационное"]];
 const PRIOS = [["urgent", "Срочно"], ["high", "Высокий"], ["medium", "Средний"], ["low", "Низкий"]];
 const TF = { view: "board", assignee: "", type: "", q: "" };
 const label = (list, k) => list.find(([v]) => v === k)?.[1] || k || "—";
