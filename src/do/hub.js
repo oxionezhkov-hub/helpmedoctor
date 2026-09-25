@@ -4,7 +4,7 @@
 // платежи, коды входа, задачи, рассылки и настройки админки. Хранилище — SQLite Durable Object.
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
-import { adminIds, AI_FREE_NEURONS_PER_DAY, PLANS } from "../config.js";
+import { adminIds, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, PLANS } from "../config.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
 import { tg, btn } from "../lib/telegram.js";
 import * as A from "../lib/analytics.js";
@@ -443,9 +443,50 @@ export class HubDO extends DurableObject {
     }
   }
 
+  aiUsedToday() {
+    return this.one("SELECT COALESCE(SUM(neurons), 0) AS n FROM ai_usage WHERE day_utc = ?", utcDate()).n;
+  }
+
+  aiCap() {
+    const v = Number(this.getSetting("ai_cap", AI_CAP_DEFAULT));
+    return Number.isFinite(v) && v >= 0 ? v : AI_CAP_DEFAULT;
+  }
+
+  /** Маршрутизация ИИ для воркера: модели по шагам и «на сегодня уходим с Cloudflare на запасных» */
+  aiRoute() {
+    const cap = this.aiCap();
+    const cf_blocked = this.getMeta("ai_cf_blocked") === utcDate() || (cap > 0 && this.aiUsedToday() >= cap);
+    return { routing: this.getSetting("ai_routing", {}) || {}, cf_blocked };
+  }
+
+  fallbackNames() {
+    return AI_FALLBACKS.filter((f) => this.env[f.secret]).map((f) => f.label);
+  }
+
+  /** Workers AI ответил «лимит исчерпан» — до конца суток UTC работаем через запасных */
+  async aiCfBlocked(err = "") {
+    const day = utcDate();
+    if (this.getMeta("ai_cf_blocked") === day) return;
+    this.setMeta("ai_cf_blocked", day);
+    await this.notifyFallback(`Cloudflare ответил: ${esc(err)}`);
+  }
+
+  async notifyFallback(reason) {
+    const day = utcDate();
+    if (this.getMeta("ai_fallback_alert") === day) return;
+    this.setMeta("ai_fallback_alert", day);
+    const names = this.fallbackNames();
+    await this.notifyAdmin(names.length
+      ? `🔁 <b>ИИ переключён на запасной</b>: ${esc(names.join(", "))} — до 03:00 МСК, когда обнулится лимит Cloudflare.\n${reason}`
+      : `🛑 <b>Бесплатные нейроны Cloudflare кончились</b>, а запасной ИИ не настроен (ключи CEREBRAS_API_KEY / GROQ_API_KEY).\n${reason}`, "ai_limit",
+    { kb: [[{ text: "Модели ИИ", url: this.adminUrl("/analytics?r=ai") }]] });
+  }
+
   async checkAiLimit() {
     const day = utcDate();
-    const used = this.one("SELECT COALESCE(SUM(neurons), 0) AS n FROM ai_usage WHERE day_utc = ?", day).n;
+    const used = this.aiUsedToday();
+    const cap = this.aiCap();
+    if (cap > 0 && used >= cap) await this.notifyFallback(`Израсходовано ${Math.round(used)} нейронов из порога ${cap}.`);
     if (used >= AI_FREE_NEURONS_PER_DAY * 0.8 && this.getMeta("ai_limit_alert") !== day) {
       this.setMeta("ai_limit_alert", day);
       await this.notifyAdmin(`📈 Расход ИИ сегодня: ${Math.round(used)} из ${AI_FREE_NEURONS_PER_DAY} бесплатных нейронов (${Math.round((used / AI_FREE_NEURONS_PER_DAY) * 100)}%). Сверх лимита — $0.011 за 1000 нейронов.`, "ai_limit");

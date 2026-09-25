@@ -1,6 +1,6 @@
 // Отчёты и операции админки поверх SQLite HubDO.
 // Все функции получают hub (с методами all/one/sql) — выполняются внутри HubDO.
-import { AI_FREE_NEURONS_PER_DAY, AI_USD_PER_1000_NEURONS, PLANS, SPECIALIZATIONS, DOCTOR_LEVELS } from "../config.js";
+import { AI_CAP_DEFAULT, AI_DEFAULT_MODEL, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AI_MODELS, AI_ROUTING_DEFAULT, AI_STEPS, AI_USD_PER_1000_NEURONS, PLANS, SPECIALIZATIONS, DOCTOR_LEVELS } from "../config.js";
 import { mskDate, toTelegramHtml, utcDate } from "./util.js";
 
 const DAY = 86400000;
@@ -420,10 +420,13 @@ const REPORTS = {
       WHERE a.ts >= ? AND a.ts < ? AND a.uid != '' GROUP BY a.uid ORDER BY neurons DESC LIMIT 15`, from, to).map((r) => ({ ...r, neurons: round(r.neurons, 1) }));
     const perDay = h.all("SELECT day_utc AS day, SUM(neurons) AS neurons, COUNT(*) AS requests FROM ai_usage WHERE ts >= ? AND ts < ? GROUP BY day_utc ORDER BY day_utc", from, to)
       .map((r) => ({ ...r, neurons: round(r.neurons, 0), over: round(Math.max(0, r.neurons - AI_FREE_NEURONS_PER_DAY), 0), usd: round(usd(r.neurons - AI_FREE_NEURONS_PER_DAY), 4) }));
+    const models = h.all(`SELECT model, COUNT(*) AS requests, SUM(ok = 0) AS errors, AVG(ms) AS ms, SUM(neurons) AS neurons FROM ai_usage
+      WHERE ts >= ? AND ts < ? AND model != '' GROUP BY model ORDER BY requests DESC`, from, to)
+      .map((r) => ({ ...r, ms: Math.round(r.ms || 0), neurons: round(r.neurons, 1), error_pct: r.requests ? round((r.errors / r.requests) * 100, 1) : 0 }));
     const totalN = kinds.reduce((a, k) => a + (k.neurons || 0), 0);
     const activeUsers = h.one("SELECT COUNT(DISTINCT uid) AS n FROM ai_usage WHERE ts >= ? AND ts < ? AND uid != ''", from, to).n;
     return {
-      kinds, users, per_day: perDay,
+      kinds, users, models, per_day: perDay, setup: aiModels(h),
       total_neurons: round(totalN, 0), total_requests: kinds.reduce((a, k) => a + k.requests, 0),
       usd_over_free: round(perDay.reduce((a, d) => a + (d.usd || 0), 0), 4),
       per_user: activeUsers ? round(totalN / activeUsers, 1) : null,
@@ -905,6 +908,15 @@ export const ADMIN_OPS = {
   record_gift: (h, a, admin) => { h.recordGift(a.uid, a.days, admin, a.reason); return { ok: true }; },
   cf_cache_set: (h, a) => { h.setSetting("cf_ai_cache", a.value); return { ok: true }; },
   cf_cache_get: (h) => h.getSetting("cf_ai_cache", null),
+  ai_models_get: (h) => aiModels(h),
+  ai_models_set: (h, a, admin) => {
+    const routing = {};
+    for (const [k, v] of Object.entries(a.routing || {})) if (AI_STEPS[k] && AI_MODELS[v]) routing[k] = v;
+    h.setSetting("ai_routing", routing);
+    if (a.cap != null) h.setSetting("ai_cap", Math.max(0, Math.round(Number(a.cap) || 0)));
+    h.audit(admin, "ai_models", "", { routing, cap: a.cap });
+    return aiModels(h);
+  },
   set_setting: (h, a) => { h.setSetting(a.k, a.v); return { ok: true }; },
   get_setting: (h, a) => h.getSetting(a.k, null),
   day_summary: (h, a) => daySummary(h, a.day || mskDate()),
@@ -914,6 +926,18 @@ export const ADMIN_OPS = {
     my_tasks: h.one("SELECT COUNT(*) AS n FROM tasks WHERE assignee = ? AND status NOT IN ('done', 'rejected')", admin).n,
   }),
 };
+
+/** Настройки моделей ИИ для админки */
+function aiModels(h) {
+  const saved = h.getSetting("ai_routing", {}) || {};
+  const routing = Object.fromEntries(Object.keys(AI_STEPS).map((k) => [k, [saved[k], AI_ROUTING_DEFAULT[k], AI_DEFAULT_MODEL].find((m) => m && AI_MODELS[m])]));
+  return {
+    steps: AI_STEPS, routing, defaults: Object.fromEntries(Object.keys(AI_STEPS).map((k) => [k, AI_ROUTING_DEFAULT[k] || AI_DEFAULT_MODEL])),
+    models: Object.fromEntries(Object.entries(AI_MODELS).map(([k, m]) => [k, { label: m.label, note: m.note }])),
+    cap: h.aiCap(), cap_default: AI_CAP_DEFAULT, used_today: round(h.aiUsedToday(), 0), cf_blocked: h.aiRoute().cf_blocked,
+    fallbacks: AI_FALLBACKS.map((f) => ({ label: f.label, secret: f.secret, configured: !!h.env[f.secret] })),
+  };
+}
 
 // Виды уведомлений админам (каждый админ включает/выключает у себя)
 export const NOTIFY_KINDS = {
@@ -927,7 +951,7 @@ export const NOTIFY_KINDS = {
   grant: "Подписка выдана другим админом",
   reply: "Ответ пользователя на наше сообщение",
   ai_errors: "Сбои ИИ (больше 5 за 10 минут)",
-  ai_limit: "Расход ИИ близок к бесплатному лимиту (80%)",
+  ai_limit: "Расход ИИ: 80% бесплатного лимита, переключение на запасной ИИ",
   task: "Задача назначена на меня / срок сегодня",
   daily: "Итоги дня в 21:00",
   other: "Прочее",

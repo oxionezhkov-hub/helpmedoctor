@@ -104,14 +104,37 @@ export const DAILY_TASKS = [
 
 export const MAX_LEVEL = 200;
 
-// Модели Workers AI. Одна большая модель для всего — предсказуемый русский язык.
-export const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+// Модели ИИ. Каждый шаг приёма (kind) идёт в свою модель — выбор в админке («Расход ИИ» → «Модели по шагам»).
+// По умолчанию всё на дешёвой Qwen3 (≈ в 6 раз меньше нейронов), разбор эксперта — на Llama 70B.
+export const AI_MODELS = {
+  qwen3: { id: "@cf/qwen/qwen3-30b-a3b-fp8", label: "Qwen3 30B", note: "быстрая и дешёвая, ≈ 200 нейронов на приём", noThink: true },
+  llama70: { id: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", label: "Llama 3.3 70B", note: "самая аккуратная, ≈ 1300 нейронов на приём" },
+};
+export const AI_DEFAULT_MODEL = "qwen3";
+export const AI_ROUTING_DEFAULT = { evaluation: "llama70" };
+// Шаги, для которых в админке есть переключатель (ключи совпадают с kind в ai_usage)
+export const AI_STEPS = {
+  patient: "Новый пациент", reply: "Ответ пациента", test: "Обследование", exam: "Осмотр", farewell: "Прощание",
+  evaluation: "Разбор эксперта", quiz: "Тест по ошибкам", summarize: "Сжатие диалога", sections: "Разделы специальности", admin_summary: "Сводка отзывов",
+};
+// Совместимость: модель по умолчанию для старых вызовов
+export const AI_MODEL = AI_MODELS.llama70.id;
 export const WHISPER_MODEL = "@cf/openai/whisper-large-v3-turbo";
+
+// Запасные провайдеры (OpenAI-совместимые, бесплатные тарифы). Включаются, когда бесплатные нейроны Cloudflare
+// на сегодня кончились (или Workers AI отказал). Ключи — секреты воркера CEREBRAS_API_KEY / GROQ_API_KEY.
+export const AI_FALLBACKS = [
+  { key: "cerebras", label: "Cerebras · GPT-OSS 120B", url: "https://api.cerebras.ai/v1/chat/completions", model: "gpt-oss-120b", secret: "CEREBRAS_API_KEY" },
+  { key: "groq", label: "Groq · GPT-OSS 120B", url: "https://api.groq.com/openai/v1/chat/completions", model: "openai/gpt-oss-120b", secret: "GROQ_API_KEY" },
+];
+// Порог нейронов за сутки (UTC), после которого уходим на запасных — чтобы не платить за перерасход. 0 — не переключаться.
+export const AI_CAP_DEFAULT = 9500;
 
 // Цена моделей в нейронах (developers.cloudflare.com/workers-ai/platform/pricing):
 // in/out — за 1 млн токенов, audio_min — за минуту аудио. 10 000 нейронов в сутки (UTC) бесплатно, дальше $0.011 за 1000.
 export const AI_NEURONS = {
   "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { in: 26668, out: 204805 },
+  "@cf/qwen/qwen3-30b-a3b-fp8": { in: 4625, out: 30475 },
   "@cf/openai/whisper-large-v3-turbo": { audio_min: 46.63 },
 };
 export const AI_FREE_NEURONS_PER_DAY = 10000;
