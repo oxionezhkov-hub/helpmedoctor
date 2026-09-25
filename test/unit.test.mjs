@@ -210,3 +210,15 @@ test("ИИ: без ключей запасного — ошибка Cloudflare �
   const env = { AI: { run: async () => { throw new Error("4006: daily free allocation"); } } };
   await assert.rejects(aiText(env, { prompt: "x", kind: "reply" }), /4006/);
 });
+
+test("лица пациентов: детерминированы, учитывают пол, возраст и самочувствие", async () => {
+  const { faceSvg, faceOptions } = await import("../src/lib/face.js");
+  const a = faceSvg({ s: "pat_1", g: "m", a: 47 });
+  assert.match(a, /^<svg/);
+  assert.equal(a, faceSvg({ s: "pat_1", g: "m", a: 47 }), "одинаковый пациент — одинаковое лицо");
+  assert.notEqual(a, faceSvg({ s: "pat_2", g: "m", a: 47 }));
+  assert.equal(faceOptions({ g: "f", a: 30 }).facialHairProbability, 0, "без бороды у женщин");
+  assert.ok(faceOptions({ g: "m", a: 75 }).headVariant.every((h) => /gray|noHair/.test(h)), "пожилые — седые или лысые");
+  assert.equal(faceOptions({ g: "m", a: 8 }).maskProbability, 0);
+  assert.ok(faceOptions({ m: "good" }).expressionVariant.smile > 0);
+});

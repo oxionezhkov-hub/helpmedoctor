@@ -122,11 +122,13 @@ function hashHue(s) {
   for (const ch of String(s)) h = (h * 31 + ch.codePointAt(0)) % 360;
   return h;
 }
-/** Аватар пациента: цветной кружок с инициалами (у инопланетянина — своя иконка) */
+/** Аватар пациента: рисованное лицо (Open Peeps) по полу, возрасту и самочувствию; у инопланетянина — своя иконка */
 function patAvatar(p, size = "") {
   if (p.is_alien) return html`<div class="pav alien ${size}">${ic("alien")}</div>`;
-  const letters = String(p.name || "?").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-  return html`<div class="pav ${size}" style="--h:${hashHue(p.name)}">${letters}</div>`;
+  const rating = p.last_rating ?? p.consultations?.at?.(-1)?.rating;
+  const mood = rating == null ? "" : rating >= 4 ? "good" : rating < 3 ? "bad" : "";
+  const q = new URLSearchParams({ s: p.id || p.name || "", g: p.sex === "female" ? "f" : "m", a: String(parseInt(p.age, 10) || 0), ...(mood ? { m: mood } : {}) });
+  return html`<div class="pav face ${size}" style="--h:${hashHue(p.name)}"><img src="/api/face?${q}" alt="" loading="lazy"></div>`;
 }
 /** Аватар врача: фото (из Telegram или своё) или первая буква имени */
 function userAvatar(p, cls = "") {
