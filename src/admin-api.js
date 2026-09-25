@@ -71,23 +71,23 @@ export async function adminApi(request, env, url, ctx) {
     if (path === "/backfill" && method === "POST") return json(await hub.startBackfill(true));
 
     // Карточка пользователя: сводка из HubDO + всё из его UserDO
-    let m = path.match(/^\/user\/(\d+)$/);
+    let m = path.match(/^\/user\/(w?\d+)$/);
     if (m && method === "GET") {
       const uid = m[1];
       const [h, view] = await Promise.all([hub.admin("user_hub", { uid }, admin), userStub(env, uid, "admin").adminView()]);
       if (!h && !view) return json({ error: "Пользователь не найден" }, 404);
       return json({ ...(h || {}), view });
     }
-    m = path.match(/^\/user\/(\d+)\/patient\/([\w-]+)$/);
+    m = path.match(/^\/user\/(w?\d+)\/patient\/([\w-]+)$/);
     if (m && method === "GET") {
       const res = await userStub(env, m[1], "admin").adminPatient(m[2]);
       if (!res) return json({ error: "Пациент не найден (возможно, врач от него отказался)" }, 404);
       return json(res);
     }
-    m = path.match(/^\/user\/(\d+)\/action$/);
+    m = path.match(/^\/user\/(w?\d+)\/action$/);
     if (m && method === "POST") return json(await userAction(env, hub, admin, m[1], await readJson(request)));
 
-    m = path.match(/^\/user\/(\d+)\/message$/);
+    m = path.match(/^\/user\/(w?\d+)\/message$/);
     if (m && method === "POST") return json(await sendMessage(env, hub, admin, m[1], request));
 
     // Массовые действия по выбранным пользователям

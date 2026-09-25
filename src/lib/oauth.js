@@ -22,7 +22,7 @@ export const PROVIDERS = {
 };
 
 /** Тестовый режим (только wrangler.test.jsonc): код вида "test:<sub>:<email>:<имя>" вместо похода к провайдеру */
-const testMode = (env) => env.OAUTH_TEST_MODE === "1";
+const testMode = (env) => env.OAUTH_TEST_MODE === "1" && !String(env.PUBLIC_URL || "").startsWith("https://"); // на боевом адресе не включается
 
 export function enabledProviders(env) {
   return Object.keys(PROVIDERS).filter((k) => testMode(env) || (env[PROVIDERS[k].idVar] && env[PROVIDERS[k].secretVar]));

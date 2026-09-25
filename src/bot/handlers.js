@@ -49,7 +49,9 @@ export async function handleUpdate(env, update) {
     if (await user.seenUpdate(update.update_id)) return;
     // Метка источника из ссылки t.me/<бот>?start=<метка> (кроме входа на сайт)
     const payload = /^\/start\s+(\S+)/.exec(msg?.text || "")?.[1] || "";
-    const ref = payload && !/^(login|link)_/.test(payload) ? payload.slice(0, 64) : "";
+    // Вход на сайт через бота: метка источника пришла с сайта вместе с кодом входа
+    let ref = payload && !/^(login|link)_/.test(payload) ? payload.slice(0, 64) : "";
+    if (payload.startsWith("login_")) ref = await hubStub(env).loginRef(payload.slice(6)).catch(() => "");
     const { isNew } = await user.init(uid, { first_name: from.first_name, username: from.username, ref });
     ctx.isNew = isNew;
     ctx.adminReply = await logIncoming(ctx, msg, cb);

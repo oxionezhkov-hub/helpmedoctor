@@ -535,10 +535,11 @@ step("удаление: тест и пациент удаляются, опыт 
 
 
 // ---------------------------------------------------------------- Google / Яндекс и привязка Telegram
+const CN = "e2ebrowsernonce";
 async function oauth(provider, { mode = "login", token = null, code = null, cookie: withCookie = true } = {}) {
   const r = await fetch(`${BASE}/api/auth/oauth/start`, {
     method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ provider, mode, from: "e2e" }),
+    body: JSON.stringify({ provider, mode, from: "e2e", cn: CN }),
   });
   assert.equal(r.status, 200, await r.clone().text());
   const cookie = (r.headers.get("set-cookie") || "").split(";")[0];
@@ -553,7 +554,10 @@ async function oauthLogin(provider, code) {
   const loc = await oauth(provider, { code });
   const lc = loc.searchParams.get("login");
   assert.ok(lc, loc.toString());
-  const p = (await api(null, "GET", `/auth/poll?code=${lc}`)).data;
+  // Код после Google/Яндекса привязан к браузеру: без его nonce (чужая ссылка ?login=) — не отдаётся
+  assert.equal((await api(null, "GET", `/auth/poll?code=${lc}`)).data.status, "expired");
+  assert.equal((await api(null, "GET", `/auth/poll?code=${lc}&cn=other`)).data.status, "expired");
+  const p = (await api(null, "GET", `/auth/poll?code=${lc}&cn=${CN}`)).data;
   assert.equal(p.status, "ok");
   return p.token;
 }
@@ -577,7 +581,11 @@ const g2 = await oauthLogin("google", "test:g-boris:boris@example.com:Борис
 const W2 = (await api(g2, "GET", "/me")).data.profile.uid;
 assert.notEqual(W2, W1);
 assert.equal((await oauth("google", { mode: "link", token: g1, code: "test:g-boris:boris@example.com:Борис" })).searchParams.get("link_error"), "taken", "чужой Google не привязать");
-step("вход через Google и Яндекс: новый веб-аккаунт, повторный вход, привязка второго способа, защита от CSRF и чужих аккаунтов");
+const g1b = await oauthLogin("google", "test:g-anna:anna@example.com:Анна");
+assert.equal((await api(g1b, "DELETE", "/accounts/yandex")).status, 200, "два способа — один можно отвязать");
+assert.equal((await api(g1b, "DELETE", "/accounts/google")).status, 409, "последний — нельзя");
+assert.equal((await oauth("yandex", { mode: "link", token: g1b, code: "test:y-anna:anna@yandex.ru:Анна" })).searchParams.get("linked"), "yandex");
+step("вход через Google и Яндекс: новый веб-аккаунт, повторный вход, привязка и отвязка, защита от CSRF, подмены ссылки входа и чужих аккаунтов");
 
 // Веб-аккаунт с прогрессом привязывает новый Telegram — всё переезжает
 await api(g1, "PATCH", "/profile", { level: "student", profession: "Терапевт", specializations: ["гастроэнтерология"], onboarding_done: true });
@@ -604,6 +612,7 @@ assert.equal(gme.profile.uid, TG1);
 assert.equal(gme.profile.name, "Анна", "профиль сайта заменил пустой профиль бота");
 assert.ok(gme.patients.some((x) => x.id === webPat), "пациент переехал");
 assert.equal((await api(g1, "GET", "/me")).data.profile.uid, TG1, "старая сессия ведёт в объединённый аккаунт");
+assert.equal((await api(r.token, "GET", `/auth/link-telegram/poll?code=${linkCode}`)).data.status, "expired", "код привязки удалён после склейки");
 assert.equal((await api(await oauthLogin("yandex", "test:y-anna:anna@yandex.ru:Анна"), "GET", "/me")).data.profile.uid, TG1, "вход через Яндекс — в объединённый аккаунт");
 acc = (await api(r.token, "GET", "/accounts")).data;
 assert.equal(acc.telegram, true);

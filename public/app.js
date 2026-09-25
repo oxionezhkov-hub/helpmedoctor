@@ -4,7 +4,7 @@
 // =====================================================
 
 // Скрипт Telegram грузим только когда нас открыли из Telegram — в браузере он не нужен
-const TG_LAUNCH = /tgWebApp/.test(location.hash + location.search) || sessionStore("hmd_tg") === "1";
+const TG_LAUNCH = /tgWebApp/.test(location.hash + (window.__hmdQs ?? location.search)) || sessionStore("hmd_tg") === "1";
 let tg = null;
 let IN_TG = false;
 
@@ -383,7 +383,7 @@ async function boot() {
   IN_TG = !!tg?.initData;
   if (IN_TG) sessionStore("hmd_tg", "1");
   // Ссылки из бота: /app?go=/patient/123 → #/patient/123
-  const goParam = new URLSearchParams(location.search).get("go");
+  const goParam = new URLSearchParams(window.__hmdQs ?? location.search).get("go");
   if (goParam && goParam.startsWith("/")) {
     history.replaceState(null, "", `${location.pathname}#${goParam}`);
   } else if (/tgWebApp/.test(location.hash)) {
@@ -415,18 +415,25 @@ async function boot() {
   } else {
     // Одноразовый код входа: из мини-приложения («Открыть на сайте») или после Google / Яндекса.
     // Остальные параметры — итог привязки способа входа и метка, откуда пришёл посетитель (для аналитики)
-    const qs = new URLSearchParams(location.search);
+    // app.html убирает параметры из адреса до загрузки Метрики (код входа не должен уходить в аналитику) и оставляет их в window.__hmdQs
+    const qs = new URLSearchParams(window.__hmdQs ?? location.search);
     const handoff = qs.get("login");
     if (qs.get("from")) sessionStore("hmd_from", qs.get("from").slice(0, 40));
     S.authNotice = AUTH_NOTICES[qs.get("auth_error")] || (qs.get("linked") ? `${PROVIDER_LABEL[qs.get("linked")] || "Аккаунт"} привязан — теперь можно входить и так` : null)
       || (qs.get("link_error") ? LINK_ERRORS[qs.get("link_error")] || "Не удалось привязать аккаунт" : null);
     S.authNoticeKind = qs.get("linked") ? "ok" : "error";
-    if ([...qs.keys()].length) history.replaceState(null, "", `${location.pathname}${location.hash}`);
+    if (location.search) history.replaceState(null, "", `${location.pathname}${location.hash}`);
     if (handoff) {
       try {
-        const r = await api("GET", `/auth/poll?code=${encodeURIComponent(handoff)}`);
-        if (r.status === "ok") store(TOKEN_KEY, r.token);
+        // cn — nonce этого браузера из oauthStart: код после Google/Яндекса без него не отдаётся
+        const cn = sessionStore("hmd_oauth_cn") || "";
+        const r = await api("GET", `/auth/poll?code=${encodeURIComponent(handoff)}${cn ? `&cn=${encodeURIComponent(cn)}` : ""}`);
+        if (r.status === "ok") {
+          store(TOKEN_KEY, r.token);
+          goal("login_ok", { via: cn ? "oauth" : "handoff" });
+        } else if (cn) S.authNotice = AUTH_NOTICES.state;
       } catch {}
+      sessionStore("hmd_oauth_cn", "");
     }
     S.token = store(TOKEN_KEY);
     if (!S.token) return renderLogin();
@@ -443,6 +450,20 @@ async function boot() {
   route();
   if (S.authNotice) toast(S.authNotice, S.authNoticeKind), (S.authNotice = null);
   api("POST", "/event", { type: "app_open" }).catch(() => {});
+  followIntent();
+}
+
+/** Цели Яндекс Метрики (счётчик сайта) */
+function goal(name, params) {
+  try { window.ym?.(113057442, "reachGoal", name, params); } catch {}
+}
+
+/** Пришли с сайта по кнопке тарифа (from=…_trial / _month …) — после входа сразу открываем тарифы */
+function followIntent() {
+  const from = sessionStore("hmd_from") || "";
+  if (!/_(trial|week|month|quarter|year)$/.test(from) || !S.me?.profile?.onboarding_done || IN_TG) return;
+  sessionStore("hmd_from", from.replace(/_(trial|week|month|quarter|year)$/, "_done"));
+  if (!location.hash || location.hash === "#/") go("/plans", true);
 }
 
 const AUTH_NOTICES = {
@@ -455,12 +476,15 @@ const LINK_ERRORS = {
   has_other: "К профилю уже привязан другой аккаунт этого сервиса — сначала отвяжите его",
 };
 
-/** Google / Яндекс: сервер ставит cookie с nonce и отдаёт адрес страницы входа провайдера */
+/** Google / Яндекс: сервер ставит cookie с nonce и отдаёт адрес страницы входа провайдера.
+ *  cn — ещё один nonce, в sessionStorage этой вкладки: без него код входа после возврата не отдаётся */
 async function oauthStart(provider, mode = "login", btn = null) {
   if (btn) btnBusy(btn);
   try {
-    const { url } = await api("POST", "/auth/oauth/start", { provider, mode, from: sessionStore("hmd_from") || "" });
-    try { window.ym?.(113057442, "reachGoal", `auth_${provider}`); } catch {}
+    const cn = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
+    sessionStore("hmd_oauth_cn", mode === "login" ? cn : "");
+    const { url } = await api("POST", "/auth/oauth/start", { provider, mode, cn, from: sessionStore("hmd_from") || "" });
+    goal(`auth_${provider}`, { mode });
     location.href = url;
   } catch (e) {
     toast(e.message, "error");
@@ -492,44 +516,43 @@ let loginPoll = null;
 async function renderLogin() {
   clearInterval(loginPoll);
   root.dataset.view = "";
+  goal("login_view");
+  // Способы входа и код для бота запрашиваем вместе — экран рисуется один раз, без прыжков
+  const [cfg, lr] = await Promise.all([
+    api("GET", "/config").catch(() => ({ providers: [] })),
+    api("POST", "/auth/login", { from: sessionStore("hmd_from") || "" }).catch((e) => ({ error: e.message })),
+  ]);
+  const providers = ["yandex", "google"].filter((p) => (cfg.providers || []).includes(p));
+  // На компьютере Telegram часто не установлен — первым предлагаем Яндекс ID; на телефоне — Telegram
+  const tgFirst = IS_TOUCH || !providers.length;
+  const tgBtn = html`<a class="btn lg block ${tgFirst ? "" : "oauth-btn"}" id="login-btn" href="${lr.tg || lr.url || "#"}">${brand("telegram")}<span>Войти через Telegram</span></a>`;
+  const oBtns = providers.map((p, i) => html`<button class="btn block ${!tgFirst && i === 0 ? "lg primary-oauth" : "oauth-btn"}" data-oauth="${p}" type="button">${brand(p)}<span>Войти через ${PROVIDER_LABEL[p]}</span></button>`);
   root.innerHTML = html`<div class="login"><div class="card stack">
     <div class="logo">${ic("heart")}</div>
     <h1>Help me, Doctor</h1>
-    <p class="muted">Тренажёр врача: ИИ-пациенты, обследования, диагноз и разбор от эксперта. Первый пациент каждый день — бесплатно.</p>
-    <a class="btn lg block busy" id="login-btn" aria-disabled="true"><span>Войти через Telegram</span></a>
-    <p class="tiny muted" id="login-hint">Откроется бот — нажмите в нём «Запустить», и сайт войдёт сам.</p>
-    <div id="oauth-box" class="stack-sm"></div>
+    <p class="muted">Войдите, чтобы принять первого пациента. Дальше — четыре вопроса о вас, около минуты.</p>
+    ${tgFirst ? tgBtn : oBtns[0] || ""}
+    <p class="tiny muted" id="login-hint">${tgFirst ? "Откроется бот — нажмите в нём «Запустить», и сайт войдёт сам." : "Без пароля: подтвердите вход в своём аккаунте Яндекса."}</p>
+    ${providers.length ? html`<div class="or"><span>или</span></div>` : ""}
+    <div class="stack-sm">${tgFirst ? oBtns : [...oBtns.slice(1), tgBtn]}</div>
+    <p class="tiny muted">Бесплатно, без карты. Прогресс общий на сайте и в Telegram — привязать способы входа можно в профиле.</p>
     <p class="tiny muted">Входя, вы соглашаетесь с ${docLink("privacy", "политикой обработки персональных данных")}.</p>
   </div></div>`[RAW];
   if (S.authNotice) toast(S.authNotice, S.authNoticeKind), (S.authNotice = null);
-  // Google и Яндекс — если ключи настроены на сервере
-  api("GET", "/config").then(({ providers = [] }) => {
-    const box = $("#oauth-box");
-    if (!box || !providers.length) return;
-    const order = ["yandex", "google"].filter((p) => providers.includes(p));
-    box.innerHTML = html`<div class="or"><span>или</span></div>
-      ${order.map((p) => html`<button class="btn block oauth-btn" data-oauth="${p}" type="button">${brand(p)}<span>Войти через ${PROVIDER_LABEL[p]}</span></button>`)}
-      <p class="tiny muted">Без Telegram тоже можно: прогресс сохранится, а Telegram привяжете потом в профиле.</p>`[RAW];
-    box.querySelectorAll("[data-oauth]").forEach((b) => (b.onclick = () => oauthStart(b.dataset.oauth, "login", b)));
-  }).catch(() => {});
-  let code;
-  try {
-    const r = await api("POST", "/auth/login");
-    code = r.code;
-    const btn = $("#login-btn");
-    // tg:// открывает приложение Telegram сразу, без новой вкладки; эта страница остаётся и ждёт подтверждения
-    btn.href = r.tg || r.url;
-    btn.classList.remove("busy");
-    btn.innerHTML = html`${brand("telegram")}<span>Войти через Telegram</span>`[RAW];
-    btn.removeAttribute("aria-disabled");
-    btn.onclick = () => {
-      btn.innerHTML = html`${ic("clock")}<span>Ждём подтверждения…</span>`[RAW];
-      $("#login-hint").innerHTML = html`Нажмите в боте «Запустить» и вернитесь сюда — сайт войдёт сам.<br>Telegram не открылся? <a href="${r.url}" target="_blank" rel="noopener">Открыть бота в браузере</a>`[RAW];
-    };
-  } catch (e) {
-    $("#login-hint").textContent = e.message;
+  root.querySelectorAll("[data-oauth]").forEach((b) => (b.onclick = () => oauthStart(b.dataset.oauth, "login", b)));
+  if (lr.error) {
+    $("#login-hint").textContent = lr.error;
     return;
   }
+  const code = lr.code;
+  const r = lr;
+  const btn = $("#login-btn");
+  // tg:// открывает приложение Telegram сразу, без новой вкладки; эта страница остаётся и ждёт подтверждения
+  btn.onclick = () => {
+    goal("auth_telegram");
+    btn.innerHTML = html`${ic("clock")}<span>Ждём подтверждения…</span>`[RAW];
+    $("#login-hint").innerHTML = html`Нажмите в боте «Запустить» и вернитесь сюда — сайт войдёт сам.<br>Telegram не открылся? <a href="${r.url}" target="_blank" rel="noopener">Открыть бота в браузере</a>`[RAW];
+  };
   // Опрашиваем сразу: пользователь может подтвердить вход с телефона
   const started = Date.now();
   loginPoll = setInterval(async () => {
@@ -540,11 +563,13 @@ async function renderLogin() {
         clearInterval(loginPoll);
         S.token = r.token;
         store(TOKEN_KEY, r.token);
+        goal("login_ok", { via: "telegram" });
         await loadMe();
         connectWs();
         window.addEventListener("hashchange", route);
         route();
         toast("Вы вошли");
+        followIntent();
       } else if (r.status === "expired") {
         renderLogin();
       }
@@ -767,6 +792,7 @@ function viewHome(fresh) {
       ${IN_TG ? html`<button class="icon-btn site-btn" data-open-site aria-label="Открыть на сайте" title="Открыть на сайте">${ic("external")}</button>` : ""}
     </div>
 
+    ${trialNotice(p)}
     ${p.onboarding_done ? html`<div class="card stack">
       <div class="row between"><b>Уровень ${lvl.level}</b><span class="small muted">${p.xp || 0}${lvl.to ? ` / ${lvl.to}` : ""} XP</span></div>
       <div class="xp-bar"><i style="width:${xpPct}%"></i></div>
@@ -825,6 +851,17 @@ function onbState() {
 function onbRecommended() {
   const lvl = S.me.config.levels.find((l) => l.key === onb.level);
   return lvl?.complexity || "medium";
+}
+
+/** За двое суток до конца пробного премиума — напоминание прямо в приложении (веб-аккаунтам бот не пишет) */
+function trialNotice(p) {
+  const a = p.autopay;
+  if (!a || a.status !== "active" || !a.trial || !a.next_at) return "";
+  const left = a.next_at - Date.now();
+  if (left <= 0 || left > 2 * 86400000) return "";
+  return html`<a class="card row notice" href="#/plans" style="text-decoration:none;color:inherit">
+    <div class="tile warn">${ic("clock")}</div>
+    <div class="grow"><b>Пробный премиум заканчивается ${dateText(a.next_at)}</b><div class="small muted">Дальше — ${a.price} ₽ в месяц автоматически. Отключить можно в «Подписке» в один клик.</div></div>${ic("chevron", "c-muted")}</a>`;
 }
 
 function onboardingCard() {
@@ -939,6 +976,7 @@ function bindOnboarding() {
       });
       S.me.profile = profile;
       onb = null;
+      goal("onboarding_done", { level: o.level });
       // Первый пациент — сразу, по только что выбранному профилю
       try {
         S.expectNewPatient = Date.now();
@@ -2068,6 +2106,7 @@ function viewProfile() {
 // ---------- Способы входа ----------
 let accountsData = null;
 let linkPoll = null;
+let linkBusyShown = false;
 async function viewAccounts(fresh) {
   const head = html`<div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Способы входа</h2></div>`;
   if (fresh || !accountsData) {
@@ -2148,6 +2187,7 @@ async function linkTelegram(btn) {
       }
       if (x.status !== "ok") return;
       clearInterval(linkPoll);
+      goal("link_telegram");
       S.token = x.token;
       store(TOKEN_KEY, x.token);
       try { S.ws?.close(); } catch {}
@@ -2156,7 +2196,11 @@ async function linkTelegram(btn) {
       haptic("success");
       toast("Telegram привязан, прогресс объединён", "ok");
       viewAccounts(true);
-    } catch {}
+    } catch (e) {
+      // busy — идёт генерация пациента или разбор: склейка повторится при следующем опросе
+      if (e.code === "busy" && !linkBusyShown) { linkBusyShown = true; toast(e.message); }
+      else if (e.code === "two_autopays") { clearInterval(linkPoll); toast(e.message, "error"); viewAccounts(true); }
+    }
   }, 2000);
 }
 
@@ -2363,6 +2407,7 @@ async function payFor(key, b, scope) {
   btnBusy(b);
   try {
     const { link } = await api("POST", "/pay", { plan: key, consent: true });
+    goal("pay_click", { plan: key });
     if (IN_TG && tg.openLink) tg.openLink(link);
     else location.href = link;
   } catch (e) {
