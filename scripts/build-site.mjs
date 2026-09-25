@@ -17,6 +17,21 @@ const rub = (p) => Number(p).toLocaleString("ru-RU", { maximumFractionDigits: 0 
 const ldjson = (obj) => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, "\\u003c")}</script>`;
 const fmtDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 
+// Яндекс Метрика (счётчик 113057442) — на всех страницах сайта и в приложении, но не в админке
+const METRIKA_HEAD = `<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=113057442', 'ym');
+
+    ym(113057442, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<!-- /Yandex.Metrika counter -->`;
+const METRIKA_NOSCRIPT = `<noscript><div><img src="https://mc.yandex.ru/watch/113057442" style="position:absolute; left:-9999px;" alt="" /></div></noscript>`;
+
 const HEART = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M2.5 12h5l2-3.5 3 7 2-3.5h7"/></svg>`;
 const TG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.6 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2 1.8 11.7c-1-.3-1-1 .2-1.5L20.5 3.1c.9-.3 1.6.2 1.4 1.5Z"/></svg>`;
 const ICONS = {
@@ -54,6 +69,7 @@ function head({ title, description, canonical, type = "website", extra = "" }) {
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/site.css">
 ${extra}
+${METRIKA_HEAD}
 </head>`;
 }
 
@@ -118,6 +134,7 @@ function landing() {
 
   return `${head({ title, description, canonical: `${SITE}/`, extra: schema.map(ldjson).join("\n") })}
 <body>
+${METRIKA_NOSCRIPT}
 ${header()}
 <main id="main">
 <section class="hero"><div class="wrap">
@@ -223,6 +240,7 @@ function blogIndex() {
   ];
   return `${head({ title, description, canonical: `${SITE}/blog/`, extra: schema.map(ldjson).join("\n") })}
 <body>
+${METRIKA_NOSCRIPT}
 ${header()}
 <main id="main">
 <div class="page-head"><div class="wrap">
@@ -253,6 +271,7 @@ function articlePage(a) {
   return `${head({ title: `${a.title} — ${NAME}`, description: a.description, canonical: url, type: "article",
     extra: `<meta property="article:published_time" content="${a.date}">\n${schema.map(ldjson).join("\n")}` })}
 <body>
+${METRIKA_NOSCRIPT}
 ${header()}
 <main id="main">
 <article class="article">
@@ -278,6 +297,7 @@ ${footer()}
 function notFound() {
   return `${head({ title: `Страница не найдена — ${NAME}`, description: "Такой страницы нет.", canonical: `${SITE}/` }).replace('content="index, follow, max-image-preview:large"', 'content="noindex"')}
 <body>
+${METRIKA_NOSCRIPT}
 ${header()}
 <main id="main" class="notfound"><h1>Страница не найдена</h1><p class="muted">Возможно, ссылка устарела. Начните с главной или загляните в блог.</p>
 <div class="cta" style="justify-content:center"><a class="btn btn-primary" href="/">На главную</a><a class="btn btn-ghost" href="/blog/">Блог</a></div></main>
