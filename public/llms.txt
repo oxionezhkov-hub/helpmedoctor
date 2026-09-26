@@ -8,6 +8,7 @@
 - [Веб-приложение](https://helpmedoctor.ru/app): тренажёр в браузере
 - [Материалы](https://helpmedoctor.ru/materialy/): бесплатный чек-лист сбора анамнеза (PDF) и первоисточники
 - [О проекте](https://helpmedoctor.ru/o-proekte/): как устроены ИИ-пациенты и ИИ-разбор, ограничения, контакты
+- Поддержка и коммерческие предложения: Telegram @oleg_ezhkov (https://t.me/oleg_ezhkov)
 - [Публичная оферта](https://helpmedoctor.ru/oferta/)
 - [Политика обработки данных](https://helpmedoctor.ru/privacy/)
 

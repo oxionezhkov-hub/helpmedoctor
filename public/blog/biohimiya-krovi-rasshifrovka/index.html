@@ -22,6 +22,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<script>try{var t=localStorage.getItem("hmd_theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preload" href="/fonts/literata-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
 <script src="/site.js" defer></script>
@@ -62,6 +63,7 @@
     <a href="/#pricing">Тарифы</a>
     <a href="/blog/">Блог</a>
   </nav>
+  <button class="theme-btn" type="button" data-theme-toggle aria-label="Сменить тему: светлая или тёмная" title="Светлая / тёмная тема"><svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg><svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></button>
   <button class="burger" type="button" aria-label="Меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <a class="btn btn-primary" href="/app?from=header">Открыть тренажёр</a>
 </div></header>
@@ -141,7 +143,7 @@
 </ul>
 
 <h2 id="где-тренировать-интерпретацию">Где тренировать интерпретацию</h2>
-<p>Разобрать биохимию по бланку из учебника — не то же самое, что увидеть её в контексте конкретного пациента с жалобами и историей. В тренажёре «Help me, Doctor» результаты анализов соответствуют скрытому диагнозу: вы решаете, какие обследования назначить, интерпретируете полученные цифры и получаете от эксперта разбор — какие выводы были верными, а какие показатели вы истолковали неправильно или упустили. Такой формат разбора случаев пригодится и при <a href="/blog/podgotovka-k-akkreditacii/">подготовке к аккредитации</a>, где ситуационные задачи строятся по такому же принципу.</p>
+<p>Разобрать биохимию по бланку из учебника — не то же самое, что увидеть её в контексте конкретного пациента с жалобами и историей. В тренажёре «Help me, Doctor» результаты анализов соответствуют скрытому диагнозу: вы решаете, какие обследования назначить, интерпретируете полученные цифры и получаете ИИ-разбор приёма — какие выводы были верными, а какие показатели вы истолковали неправильно или упустили. Такой формат разбора случаев пригодится и при <a href="/blog/podgotovka-k-akkreditacii/">подготовке к аккредитации</a>, где ситуационные задачи строятся по такому же принципу.</p>
   <h2 id="faq">Частые вопросы</h2><div class="faq article-faq"><details><summary>Что означает повышение АЛТ и АСТ в биохимическом анализе крови?</summary><p>Рост АЛТ и АСТ говорит о повреждении клеток, богатых этими ферментами, — чаще всего печени, реже сердца и мышц. Само по себе повышение не указывает на конкретный диагноз, важны степень роста, соотношение АСТ/АЛТ и сопутствующие изменения других показателей.</p></details><details><summary>Почему креатинин нужно переводить в СКФ?</summary><p>Уровень креатинина зависит не только от работы почек, но и от мышечной массы, возраста и пола, поэтому одно и то же значение может означать разную функцию почек у разных людей. Расчётная скорость клубочковой фильтрации (СКФ) учитывает эти факторы и точнее отражает реальную работу почек.</p></details><details><summary>О чём говорит повышенный прямой билирубин?</summary><p>Преобладание прямого (связанного) билирубина типично для подпечёночной желтухи — когда отток жёлчи механически нарушен камнем или опухолью, либо для внутрипечёночного холестаза. Это обычно сопровождается ростом ГГТ и щелочной фосфатазы.</p></details><details><summary>Нужно ли сдавать биохимический анализ крови натощак?</summary><p>Да, стандартная подготовка — забор крови утром натощак, после 8–12 часов голода, поскольку приём пищи меняет уровень глюкозы, триглицеридов и ряда других показателей и может исказить результат.</p></details><details><summary>Почему высокий калий в крови опасен?</summary><p>Калий регулирует электрическую активность клеток сердца, и его выраженное отклонение в любую сторону может нарушить сердечный ритм вплоть до жизнеугрожающих аритмий, поэтому значимую гипер- или гипокалиемию расценивают как неотложную ситуацию, а не как повод для планового наблюдения.</p></details></div>
   <h2 id="istochniki">Источники</h2><ol class="sources"><li><a href="https://rusnephrology.org/wp-content/uploads/2020/12/CKD_final.pdf" rel="noopener nofollow" target="_blank">Клинические рекомендации «Хроническая болезнь почек», Ассоциация нефрологов России</a></li><li><a href="https://fmza.ru/fund_assessment_means/lechebnoe-delo/perechen-prakticheskikh-navykov-umeniy/" rel="noopener nofollow" target="_blank">Перечень практических навыков (умений) — Методический центр аккредитации специалистов (ФМЗА)</a></li><li>Клиническая лабораторная диагностика: национальное руководство, под ред. В.В. Долгова</li><li>Кишкун А.А. Клиническая лабораторная диагностика: учебное пособие</li></ol>
   <nav class="topic-links" aria-label="По теме"><b>По теме</b><ul><li><a href="/specialnosti/terapiya/">Клинические случаи по терапии</a></li><li><a href="/klinicheskie-zadachi/">Клинические задачи онлайн с ответами</a></li><li><a href="/virtualnyj-pacient/">Виртуальный пациент: что это и как на нём учиться</a></li></ul></nav>
@@ -169,6 +171,7 @@
       <li><a href="/o-proekte/">О проекте и контакты</a></li>
       <li><a href="/#faq">Вопросы и ответы</a></li>
       <li><a href="https://t.me/helpmedoctor_aibot" rel="noopener">Бот в Telegram</a></li>
+      <li><a href="https://t.me/oleg_ezhkov" rel="noopener">Поддержка: @oleg_ezhkov</a></li>
     </ul></div>
     <div><b>Для кого</b><ul>
       <li><a href="/dlya-studentov/">Студентам-медикам</a></li><li><a href="/dlya-ordinatorov/">Ординаторам</a></li><li><a href="/dlya-vrachej/">Практикующим врачам</a></li><li><a href="/akkreditaciya/">Тренажёр к аккредитации</a></li><li><a href="/klinicheskie-zadachi/">Клинические задачи онлайн</a></li><li><a href="/virtualnyj-pacient/">Виртуальный пациент</a></li>
@@ -182,7 +185,7 @@
     </ul></div>
   </div>
   <div class="legal-line">
-    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</span>
+    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480 · поддержка и сотрудничество — <a href="https://t.me/oleg_ezhkov" rel="noopener">@oleg_ezhkov</a> в Telegram</span>
     <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></span>
   </div>
 </div></footer>

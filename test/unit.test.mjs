@@ -307,5 +307,26 @@ test("статьи блога из scripts/site/posts отвечают реда�
     for (const [, href] of body.matchAll(/href="(\/blog\/[^"#]+)"/g)) {
       assert.ok(slugs.some((s) => href === `/blog/${s}/`), `${at}: внутренняя ссылка ${href} ведёт на существующую статью`);
     }
+    // Правила после аудита блога (новые и обновлённые с 27.09.2026 статьи): против шаблонности и «машинного» почерка
+    if ((a.updated || a.date) >= "2026-09-27") {
+      assert.ok(words.length >= 1400, `${at}: минимум 1400 слов (сейчас ${words.length})`);
+      const dashes = (body.match(/—/g) || []).length;
+      assert.ok(dashes / words.length <= 0.02, `${at}: тире не больше 2 на 100 слов (сейчас ${(100 * dashes / words.length).toFixed(1)})`);
+      const low = text.toLowerCase().replace(/\s+/g, " ");
+      for (const ph of STOP_PHRASES) assert.ok(!low.includes(ph), `${at}: стоп-фраза «${ph}»`);
+      assert.ok(!/эксперт[а-я]* (после|отдельно|показ|разбира|оценива)/.test(low), `${at}: разбор в тренажёре делает ИИ — пишите «ИИ-разбор», не «эксперт»`);
+      const own = grams(words);
+      for (const o of ARTICLES) {
+        if (o.slug === a.slug) continue;
+        const other = grams(o.body.replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/g, " ").toLowerCase().match(/[а-яёa-z0-9-]+/g) || []);
+        let c = 0;
+        for (const g of own) if (other.has(g)) c++;
+        assert.ok(c / own.size <= 0.008, `${at}: ${(100 * c / own.size).toFixed(1)}% совпадающих оборотов (5 слов подряд) со статьёй ${o.slug} — перепишите общие куски`);
+      }
+    }
   }
 });
+
+// Шаблонные обороты, по которым видно конвейер (аудит блога 26.09.2026)
+const STOP_PHRASES = ["в этой статье", "разберём", "поддаётся алгоритму", "поддаётся системе", "шанс пропустить находку", "ниже — рабочий алгоритм", "удобно разбирать", "от находки к синдрому", "в отрыве от остальной картины", "какие находки вы", "а какие пропустили", "как тренировать навык", "важно отметить", "стоит отметить", "играет ключевую роль", "в современном мире"];
+const grams = (w) => { const s = new Set(); for (let i = 0; i + 5 <= w.length; i++) s.add(w.slice(i, i + 5).join(" ")); return s; };

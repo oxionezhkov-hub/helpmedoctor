@@ -22,6 +22,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<script>try{var t=localStorage.getItem("hmd_theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preload" href="/fonts/literata-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
 <script src="/site.js" defer></script>
@@ -62,6 +63,7 @@
     <a href="/#pricing">Тарифы</a>
     <a href="/blog/">Блог</a>
   </nav>
+  <button class="theme-btn" type="button" data-theme-toggle aria-label="Сменить тему: светлая или тёмная" title="Светлая / тёмная тема"><svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg><svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></button>
   <button class="burger" type="button" aria-label="Меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <a class="btn btn-primary" href="/app?from=header">Открыть тренажёр</a>
 </div></header>
@@ -145,7 +147,7 @@
 </ul>
 
 <h2 id="как-тренировать-навык">Как тренировать навык</h2>
-<p>ЭКГ читают быстрее и увереннее после разбора десятков разных плёнок с обратной связью, а не после пересказа теории. В тренажёре «Help me, Doctor» пациент с болью в груди или перебоями в работе сердца — это отдельный клинический случай: вы собираете анамнез, как в разделе про <a href="/blog/sbor-anamneza/">сбор анамнеза</a>, назначаете обследования, включая ЭКГ, и получаете разбор эксперта — какие находки вы верно интерпретировали, а какие пропустили. Тот же принцип разбора случаев с обратной связью пригодится и при <a href="/blog/podgotovka-k-akkreditacii/">подготовке к аккредитации</a>.</p>
+<p>ЭКГ читают быстрее и увереннее после разбора десятков разных плёнок с обратной связью, а не после пересказа теории. В тренажёре «Help me, Doctor» пациент с болью в груди или перебоями в работе сердца — это отдельный клинический случай: вы собираете анамнез, как в разделе про <a href="/blog/sbor-anamneza/">сбор анамнеза</a>, назначаете обследования, включая ЭКГ, и получаете ИИ-разбор приёма — какие находки вы верно интерпретировали, а какие пропустили. Тот же принцип разбора случаев с обратной связью пригодится и при <a href="/blog/podgotovka-k-akkreditacii/">подготовке к аккредитации</a>.</p>
   <h2 id="faq">Частые вопросы</h2><div class="faq article-faq"><details><summary>Как быстро посчитать ЧСС по ЭКГ?</summary><p>При регулярном ритме разделите 300 на число больших клеток (по 5 мм) между соседними зубцами R: одна клетка — 300 в минуту, две — 150, три — 100 и так далее. При неправильном ритме посчитайте число комплексов QRS за 6 секунд и умножьте на 10.</p></details><details><summary>Какая норма интервала PQ на ЭКГ?</summary><p>Нормальный интервал PQ составляет 120–200 мс. Более короткий интервал говорит об ускоренном АВ-проведении, а более длинный при сохранённой связи P и QRS — об АВ-блокаде I степени.</p></details><details><summary>Что такое электрическая ось сердца и как её определить?</summary><p>Электрическая ось — суммарное направление деполяризации желудочков. Её быстро оценивают по знаку QRS в отведениях I и aVF: если оба положительные, ось в пределах нормы (0°…+90°); норма в целом — от −30° до +90°.</p></details><details><summary>Зачем корригировать интервал QT?</summary><p>Длительность QT зависит от частоты сердечных сокращений, поэтому её приводят к единому стандарту по формуле Базетта (QTc = QT / √RR). Только скорректированное значение можно сравнивать с нормой и оценивать риск желудочковых аритмий.</p></details><details><summary>Чем отличается АВ-блокада II степени Мобитц I от Мобитц II?</summary><p>При Мобитц I интервал PQ постепенно удлиняется от комплекса к комплексу, пока один QRS не выпадет, — это обычно доброкачественный вариант. При Мобитц II QRS выпадает внезапно, без предшествующего удлинения PQ, и это более опасный вариант, часто требующий кардиостимуляции.</p></details></div>
   <h2 id="istochniki">Источники</h2><ol class="sources"><li><a href="https://fmza.ru/fund_assessment_means/lechebnoe-delo/perechen-prakticheskikh-navykov-umeniy/" rel="noopener nofollow" target="_blank">Перечень практических навыков (умений) — Методический центр аккредитации специалистов (ФМЗА)</a></li><li><a href="https://cr.minzdrav.gov.ru/schema/382_2" rel="noopener nofollow" target="_blank">Клинические рекомендации «Фибрилляция и трепетание предсердий у взрослых», Минздрав России</a></li><li>Орлов В.Н. Руководство по электрокардиографии</li><li>Мурашко В.В., Струтынский А.В. Электрокардиография: учебное пособие</li></ol>
   <nav class="topic-links" aria-label="По теме"><b>По теме</b><ul><li><a href="/virtualnyj-pacient/">Виртуальный пациент: что это и как на нём учиться</a></li></ul></nav>
@@ -173,6 +175,7 @@
       <li><a href="/o-proekte/">О проекте и контакты</a></li>
       <li><a href="/#faq">Вопросы и ответы</a></li>
       <li><a href="https://t.me/helpmedoctor_aibot" rel="noopener">Бот в Telegram</a></li>
+      <li><a href="https://t.me/oleg_ezhkov" rel="noopener">Поддержка: @oleg_ezhkov</a></li>
     </ul></div>
     <div><b>Для кого</b><ul>
       <li><a href="/dlya-studentov/">Студентам-медикам</a></li><li><a href="/dlya-ordinatorov/">Ординаторам</a></li><li><a href="/dlya-vrachej/">Практикующим врачам</a></li><li><a href="/akkreditaciya/">Тренажёр к аккредитации</a></li><li><a href="/klinicheskie-zadachi/">Клинические задачи онлайн</a></li><li><a href="/virtualnyj-pacient/">Виртуальный пациент</a></li>
@@ -186,7 +189,7 @@
     </ul></div>
   </div>
   <div class="legal-line">
-    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</span>
+    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480 · поддержка и сотрудничество — <a href="https://t.me/oleg_ezhkov" rel="noopener">@oleg_ezhkov</a> в Telegram</span>
     <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></span>
   </div>
 </div></footer>

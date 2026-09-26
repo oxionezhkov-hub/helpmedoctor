@@ -13,6 +13,7 @@ import { LEGAL_UPDATED, OFFER, PRIVACY, SELLER } from "./site/legal.mjs";
 
 const SITE = "https://helpmedoctor.ru";
 const BOT = "https://t.me/helpmedoctor_aibot";
+const SUPPORT = { handle: "@oleg_ezhkov", url: "https://t.me/oleg_ezhkov" }; // поддержка и коммерческие предложения
 const NAME = "Help me, Doctor";
 const OUT = path.resolve(process.env.SITE_OUT || "public");
 const SITE_UPDATED = "2026-09-25"; // дата изменения главной и посадочных — для sitemap
@@ -42,6 +43,8 @@ const METRIKA_NOSCRIPT = `<noscript><div><img src="https://mc.yandex.ru/watch/11
 
 const LOGO = `<svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8"/></svg>`;
 const BURGER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
+const MOON = `<svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg>`;
+const SUN = `<svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>`;
 const ARR = `<span class="arr" aria-hidden="true">→</span>`;
 
 const ORG_SCHEMA = {
@@ -81,6 +84,7 @@ ${noindex ? "" : `<link rel="canonical" href="${canonical}">\n`}<meta name="robo
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<script>try{var t=localStorage.getItem("hmd_theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preload" href="/fonts/literata-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
 <script src="/site.js" defer></script>
@@ -112,6 +116,7 @@ ${page === "home" ? "" : promo()}
     <a href="/#pricing">Тарифы</a>
     <a href="/blog/">Блог</a>
   </nav>
+  <button class="theme-btn" type="button" data-theme-toggle aria-label="Сменить тему: светлая или тёмная" title="Светлая / тёмная тема">${MOON}${SUN}</button>
   <button class="burger" type="button" aria-label="Меню" aria-expanded="false">${BURGER}</button>
   <a class="btn btn-primary" href="${app("header")}">Открыть тренажёр</a>
 </div></header>`;
@@ -130,6 +135,7 @@ const footer = () => `<footer><div class="wrap">
       <li><a href="/o-proekte/">О проекте и контакты</a></li>
       <li><a href="/#faq">Вопросы и ответы</a></li>
       <li><a href="${BOT}" rel="noopener">Бот в Telegram</a></li>
+      <li><a href="${SUPPORT.url}" rel="noopener">Поддержка: ${SUPPORT.handle}</a></li>
     </ul></div>
     <div><b>Для кого</b><ul>
       ${[...AUDIENCES, ...INTENTS].map((a) => `<li><a href="/${a.slug}/">${esc(a.nav)}</a></li>`).join("")}
@@ -143,7 +149,7 @@ const footer = () => `<footer><div class="wrap">
     </ul></div>
   </div>
   <div class="legal-line">
-    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</span>
+    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480 · поддержка и сотрудничество — <a href="${SUPPORT.url}" rel="noopener">${SUPPORT.handle}</a> в Telegram</span>
     <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></span>
   </div>
 </div></footer>`;
@@ -747,7 +753,8 @@ function aboutPage() {
   <h2>Контакты</h2>
   <ul>
     <li>Почта: <a href="mailto:${SELLER.email}">${SELLER.email}</a></li>
-    <li>Telegram-бот: <a href="${BOT}" rel="noopener">@${BOT.split("/").pop()}</a> — можно написать в поддержку прямо в чате</li>
+    <li>Поддержка и коммерческие предложения: <a href="${SUPPORT.url}" rel="noopener">${SUPPORT.handle}</a> в Telegram</li>
+    <li>Telegram-бот тренажёра: <a href="${BOT}" rel="noopener">@${BOT.split("/").pop()}</a></li>
     <li>${esc(SELLER.name)} · ИНН ${SELLER.inn} · ОГРНИП ${SELLER.ogrnip}</li>
   </ul>
   <p><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика обработки персональных данных</a></p>
@@ -799,6 +806,7 @@ function llmsTxt() {
 - [Веб-приложение](${SITE}/app): тренажёр в браузере
 - [Материалы](${SITE}/materialy/): бесплатный чек-лист сбора анамнеза (PDF) и первоисточники
 - [О проекте](${SITE}/o-proekte/): как устроены ИИ-пациенты и ИИ-разбор, ограничения, контакты
+- Поддержка и коммерческие предложения: Telegram ${SUPPORT.handle} (${SUPPORT.url})
 - [Публичная оферта](${SITE}/oferta/)
 - [Политика обработки данных](${SITE}/privacy/)
 

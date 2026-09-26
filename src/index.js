@@ -157,7 +157,7 @@ async function api(request, env, url) {
   // Лицо пациента (DiceBear Open Peeps): детерминировано параметрами, поэтому кэшируется навсегда
   if (path === "/face" && method === "GET") {
     const q = url.searchParams;
-    const params = { s: q.get("s") || "", g: q.get("g") === "f" ? "f" : "m", a: Math.max(0, Math.min(120, Number(q.get("a")) || 0)), m: ["good", "bad"].includes(q.get("m")) ? q.get("m") : "" };
+    const params = { s: q.get("s") || "", g: q.get("g") === "f" ? "f" : "m", a: Math.max(0, Math.min(120, Number(q.get("a")) || 0)), m: ["good", "bad", "odd", "sad"].includes(q.get("m")) ? q.get("m") : "" };
     const cacheKey = new Request(`https://face.cache/${params.s}/${params.g}/${params.a}/${params.m}/v3`);
     const cache = typeof caches !== "undefined" ? caches.default : null;
     const hit = cache && (await cache.match(cacheKey));
