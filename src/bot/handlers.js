@@ -2,7 +2,7 @@
 // Telegram-бот: разбор апдейтов и отрисовка ответов.
 // Вся логика и данные — в UserDO (общие с сайтом), здесь только интерфейс.
 // =====================================================
-import { adminIds, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
+import { adminIds, HINTS_PER_PATIENT, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
 import * as G from "../lib/game.js";
 import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
 import { appBtn, btn, tg, urlBtn } from "../lib/telegram.js";
@@ -417,6 +417,22 @@ async function onCallback(ctx, cb) {
   if (data === "act_test") return bot.editKeyboard(uid, mid, R.kbTests());
   if (data === "act_phys") return bot.editKeyboard(uid, mid, R.kbPhysical());
   if (data === "act_end") return bot.editKeyboard(uid, mid, R.kbEnd());
+  if (data === "act_hint") {
+    const used = (active.hints || []).length;
+    await bot.editKeyboard(uid, mid, []);
+    return bot.send(uid, R.hintConfirm(used), used < HINTS_PER_PATIENT ? R.kbHintConfirm() : R.kbActions());
+  }
+  if (data === "hint_ok") {
+    await bot.edit(uid, mid, "💡 Наставник думает…");
+    await bot.typing(uid);
+    try {
+      const res = await user.requestHint(patId);
+      return bot.edit(uid, mid, R.hintMsg(res), [[btn("👍 Всё понял", "act_close")]]);
+    } catch (e) {
+      await bot.edit(uid, mid, "💡 Подсказка не получилась.", R.kbActions());
+      throw e;
+    }
+  }
   if (data === "act_pause") {
     await bot.editKeyboard(uid, mid, []);
     await user.trackEvent("pause", { patient: patId });

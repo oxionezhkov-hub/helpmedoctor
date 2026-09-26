@@ -149,94 +149,137 @@
     });
   }
 
-  // ---------- Пациент в углу: один раз на браузер, после прокрутки ----------
-  // Клик — окно с жалобой и таймером 2 минуты. «Задать вопрос» и «Обследование» ведут в тренажёр,
-  // отказ (или истёкшее время) — пациент грустит в углу и больше не кликается, в том числе на других страницах.
+  // ---------- Пациент в углу: живой клинический случай ----------
+  // Появляется после прокрутки на любой странице — пока посетитель с ним не разобрался (состояние в localStorage).
+  // Клик — карточка: жалоба, анамнез, показатели, таймер 2 минуты. «Собрать анамнез» и «Назначить обследование»
+  // ведут в тренажёр; отказ или истёкшее время — пациент уходит без помощи и грустит в углу, больше не кликается.
   const PATIENTS = [
-    { n: "Аркадий", g: "m", a: 52, q: "Доктор, я третий день икаю в ритме вальса. Жена говорит — к врачу.", bub: "Доктор, можно без очереди?", sad: "Ну и ладно. Буду икать дальше." },
-    { n: "Зинаида Петровна", g: "f", a: 71, q: "Я всё про себя прочитала в интернете. Осталось, чтобы вы подтвердили.", bub: "Я вас надолго не задержу…", sad: "Пойду к другому доктору. В интернете." },
-    { n: "Виталик", g: "m", a: 19, q: "Голова кружится, только когда я смотрю на расписание сессии.", bub: "А справку дадите?", sad: "Ну вот. Придётся идти на экзамен." },
-    { n: "Ольга", g: "f", a: 34, q: "У меня болит вот тут. Нет, чуть левее. Нет, уже прошло. Опять болит!", bub: "Доктор, у меня тут странное…", sad: "Опять болит. Но вам уже неинтересно." },
-    { n: "Геннадий", g: "m", a: 45, q: "Я здоров, меня жена записала. Но раз уж я здесь — что-то колет в боку.", bub: "Я на минутку, я здоров.", sad: "Так и скажу жене: врач не стал смотреть." },
-    { n: "Лиза", g: "f", a: 27, q: "Мне срочно нужна справка, что я не устала. Потому что я очень устала.", bub: "Мне только спросить!", sad: "Устала ещё больше." },
+    { n: "Аркадий Н.", g: "m", a: 58, bub: "Давит за грудиной второй час",
+      q: "Давит за грудиной второй час, отдаёт в левую руку. Нитроглицерин не помог.",
+      hx: "Курит 30 лет, гипертония — таблетки пьёт «когда вспомнит».", v: ["АД 165/95", "ЧСС 104", "SpO₂ 95%", "t 36,8 °C"], data: "ЭКГ ещё не снимали",
+      out: "Через 40 минут его увезла скорая." },
+    { n: "Зинаида П.", g: "f", a: 71, bub: "Не могу подобрать слова",
+      q: "С утра не могу подобрать слова, а правая рука как чужая.",
+      hx: "Фибрилляция предсердий, антикоагулянт бросила месяц назад.", v: ["АД 185/100", "ЧСС 96, неритмичный", "глюкоза 6,1"], data: "Симптомы начались 2 часа назад",
+      out: "Время на тромболизис упущено." },
+    { n: "Виталий С.", g: "m", a: 19, bub: "Температура под сорок третий день",
+      q: "Третий день температура под сорок, голова раскалывается, свет режет глаза.",
+      hx: "Живёт в общежитии, у соседа по комнате неделю назад была «простуда».", v: ["t 39,4 °C", "ЧСС 118", "АД 100/60"], data: "На голенях мелкая сыпь, не бледнеет при надавливании",
+      out: "Вечером его привезли в реанимацию." },
+    { n: "Ольга К.", g: "f", a: 34, bub: "Живот болит справа внизу",
+      q: "Живот болит с утра: сначала вокруг пупка, теперь справа внизу. Тошнит.",
+      hx: "Последние месячные — 6 недель назад.", v: ["t 37,8 °C", "ЧСС 102", "АД 110/70"], data: "Лейкоциты 14,2 × 10⁹/л",
+      out: "Ночью — экстренная операция." },
+    { n: "Геннадий Р.", g: "m", a: 45, bub: "Пью по пять литров в день",
+      q: "Пью по пять литров в день, всё время бегаю в туалет. За месяц минус семь килограммов.",
+      hx: "Последнюю неделю — слабость и сонливость, сегодня дважды рвало.", v: ["ЧДД 24", "ЧСС 110", "АД 105/65"], data: "Глюкоза 21 ммоль/л, запах ацетона изо рта",
+      out: "Через сутки — реанимация." },
+    { n: "Елизавета М.", g: "f", a: 27, bub: "Задыхаюсь на втором этаже",
+      q: "Задыхаюсь на втором этаже, сердце колотится. Вчера прилетела из Новосибирска.",
+      hx: "Принимает оральные контрацептивы, курит.", v: ["ЧСС 112", "SpO₂ 91%", "АД 105/70"], data: "Левая голень отёчнее правой на 2 см",
+      out: "Утром её доставили в реанимацию." },
   ];
   const PKEY = "hmd_patient";
-  const pState = (() => { try { return JSON.parse(ls.get(PKEY) || "null"); } catch { return null; } })();
-  const face = (p, m) => `/api/face?${new URLSearchParams({ v: "3", s: `site-${p.n}`, g: p.g, a: String(p.a), m })}`;
-  const savePatient = (st, i) => ls.set(PKEY, JSON.stringify({ st, i }));
-  function mountPatient(p, sad) {
+  const WAIT_MS = 120000;
+  const readP = () => { try { return JSON.parse(ls.get(PKEY) || "null"); } catch { return null; } };
+  const saveP = (v) => ls.set(PKEY, JSON.stringify(v));
+  // c=1 — без медицинской маски и тёмных очков: эмоция должна читаться
+  const face = (p, m) => `/api/face?${new URLSearchParams({ v: "3", s: `case-${p.n}`, g: p.g, a: String(p.a), m, c: "1" })}`;
+  const years = (a) => `${a} ${plural(a, "год", "года", "лет")}`;
+  const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+  function mountPatient(p, mode) {
     const el = document.createElement("button");
     el.type = "button";
-    el.className = `patient${sad ? " sad" : ""}`;
-    el.innerHTML = `<img src="${face(p, sad ? "sad" : "odd")}" alt="" width="76" height="76"><span class="bubble"><b>${esc(p.n)}</b>${esc(sad ? p.sad : p.bub)}</span>`;
-    el.setAttribute("aria-label", sad ? `${p.n} ушёл без приёма` : `Пациент ${p.n} ждёт приёма — открыть`);
-    if (sad) { el.tabIndex = -1; el.setAttribute("aria-hidden", "true"); }
+    el.className = `patient${mode === "sad" ? " sad" : ""}`;
+    el.innerHTML = mode === "sad"
+      ? `<img src="${face(p, "sad")}" alt="" width="76" height="76"><span class="bubble"><b>${esc(p.n)} ${p.g === "f" ? "ушла" : "ушёл"} без помощи</b>${esc(p.out)}</span>`
+      : `<img src="${face(p, "bad")}" alt="" width="76" height="76"><span class="bubble"><b>Пациент ждёт · ${esc(p.n)}, ${years(p.a)}</b><span data-bub>«${esc(p.bub)}»</span></span>`;
+    el.setAttribute("aria-label", mode === "sad" ? `${p.n} ${p.g === "f" ? "ушла" : "ушёл"} без помощи` : `Пациент ${p.n} ждёт приёма — открыть карточку`);
+    if (mode === "sad") { el.tabIndex = -1; el.setAttribute("aria-hidden", "true"); }
     document.body.append(el);
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("in")));
     return el;
   }
-  // Грустный пациент молча сидит в углу; реплика видна только сразу после отказа
-  if (pState?.st === "refused" && PATIENTS[pState.i]) mountPatient(PATIENTS[pState.i], true).classList.add("quiet");
-  else if (!pState && typeof HTMLDialogElement === "function") {
-    const i = Math.floor(Math.random() * PATIENTS.length);
-    const p = PATIENTS[i];
-    let el = null, dlgP = null, deadline = 0, tick = 0, done = false;
+  let pst = readP();
+  if (!pst || !PATIENTS[pst.i]) { pst = { st: "wait", i: Math.floor(Math.random() * PATIENTS.length) }; saveP(pst); }
+  // Открыли и ушли со страницы, а время вышло — пациент ушёл
+  if (pst.st === "open" && !(pst.until > Date.now())) { pst = { st: "refused", i: pst.i }; saveP(pst); }
+  const P0 = PATIENTS[pst.i];
+  if (pst.st === "refused") mountPatient(P0, "sad").classList.add("quiet");
+  else if ((pst.st === "wait" || pst.st === "open") && typeof HTMLDialogElement === "function") {
+    let el = null, dlgP = null, tick = 0, done = false;
     const refuse = (why) => {
       if (done) return;
       done = true;
       clearInterval(tick);
       if (dlgP?.open) dlgP.close();
-      savePatient("refused", i);
-      el.remove();
-      const sadEl = mountPatient(p, true);
-      setTimeout(() => sadEl.classList.add("quiet"), 7000);
+      saveP({ st: "refused", i: pst.i });
+      el?.remove();
+      const sadEl = mountPatient(P0, "sad");
+      setTimeout(() => sadEl.classList.add("quiet"), 8000);
       goal("patient_refuse", { why, page });
     };
     const render = () => {
-      const s = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      const t = $(".pt-timer", dlgP);
-      if (t) { $("b", t).textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; $("i", t).style.setProperty("--left", String(s / 120)); }
-      if (s <= 0) refuse("timeout");
+      const left = pst.until - Date.now();
+      const t = dlgP && $(".pt-timer", dlgP);
+      if (t) { $("b", t).textContent = mmss(left); $("i", t).style.setProperty("--left", String(Math.max(0, left) / WAIT_MS)); }
+      const bub = el && $("[data-bub]", el);
+      if (bub) bub.textContent = `Ждёт ещё ${mmss(left)}`;
+      if (left <= 0) refuse("timeout");
     };
+    const startTimer = () => { if (!tick) tick = setInterval(render, 1000); render(); };
     const open = () => {
       if (done) return;
+      if (pst.st !== "open") { pst = { st: "open", i: pst.i, until: Date.now() + WAIT_MS }; saveP(pst); }
       if (!dlgP) {
-        deadline = Date.now() + 120000;
         dlgP = document.createElement("dialog");
         dlgP.className = "pop pt";
-        dlgP.setAttribute("aria-label", `Пациент ${p.n}`);
+        dlgP.setAttribute("aria-label", `Пациент ${P0.n}`);
         dlgP.innerHTML = `<div class="pt-in">
           <button class="pop-x" type="button" data-close aria-label="Свернуть">×</button>
-          <div class="pt-head"><img src="${face(p, "odd")}" alt="" width="72" height="72"><div><h2>${esc(p.n)}, ${p.a} ${plural(p.a, "год", "года", "лет")}</h2><span class="mono">без записи · очень ждёт</span></div></div>
-          <p class="pt-quote">«${esc(p.q)}»</p>
-          <div class="pt-timer"><span>Пациент ждёт</span><b>2:00</b><i></i></div>
+          <div class="pt-head"><img src="${face(P0, "bad")}" alt="" width="72" height="72"><div><span class="mono">без записи · ждёт в коридоре</span><h2>${esc(P0.n)}, ${years(P0.a)}</h2></div></div>
+          <p class="pt-quote">«${esc(P0.q)}»</p>
+          <dl class="pt-facts">
+            <dt>Анамнез</dt><dd>${esc(P0.hx)}</dd>
+            <dt>При поступлении</dt><dd class="pt-vitals">${P0.v.map((x) => `<span>${esc(x)}</span>`).join("")}</dd>
+            <dt>Уже известно</dt><dd>${esc(P0.data)}</dd>
+          </dl>
+          <div class="pt-timer"><span>Решение нужно через</span><b>2:00</b><i></i></div>
+          <p class="pt-ask">С чего начнёте?</p>
           <div class="pt-btns">
-            <a class="btn btn-primary" href="/app?from=patient_ask" data-act="ask">Задать вопрос</a>
-            <a class="btn btn-ghost" href="/app?from=patient_exam" data-act="exam">Сделать обследование</a>
+            <a class="btn btn-primary" href="/app?from=patient_ask" data-act="ask">Собрать анамнез</a>
+            <a class="btn btn-ghost" href="/app?from=patient_exam" data-act="exam">Назначить обследование</a>
             <button class="pt-no" type="button" data-act="refuse">Отказаться от пациента</button>
           </div>
+          <p class="pt-note">Случай учебный. В тренажёре — такие же пациенты: расспрос, осмотр, анализы и разбор по клиническим рекомендациям Минздрава.</p>
         </div>`;
         document.body.append(dlgP);
         dlgP.addEventListener("click", (e) => {
           const a = e.target.closest("[data-act]");
           if (a?.dataset.act === "refuse") return refuse("button");
-          if (a) { done = true; clearInterval(tick); savePatient(a.dataset.act, i); goal(`patient_${a.dataset.act}`, { page }); return; }
+          if (a) { done = true; clearInterval(tick); saveP({ st: a.dataset.act, i: pst.i }); goal(`patient_${a.dataset.act}`, { page }); return; }
           if (e.target === dlgP || e.target.closest("[data-close]")) dlgP.close();
         });
-        tick = setInterval(render, 1000);
       }
-      render();
-      if (!done) { dlgP.showModal(); goal("patient_open", { page }); }
+      startTimer();
+      if (!done && !dlgP.open) { dlgP.showModal(); goal("patient_open", { page }); }
     };
-    const onScrollP = () => {
-      if (scrollY < innerHeight * 0.8 || document.querySelector("dialog[open]")) return;
-      removeEventListener("scroll", onScrollP);
-      savePatient("shown", i);
-      el = mountPatient(p, false);
+    const show = () => {
+      el = mountPatient(P0, "wait");
       el.addEventListener("click", open);
-      goal("patient_show", { page });
+      if (pst.st === "open") startTimer();
+      else goal("patient_show", { page });
     };
-    addEventListener("scroll", onScrollP, { passive: true });
+    // Уже открывали — пациент сразу на месте и ждёт; иначе появляется после прокрутки
+    if (pst.st === "open") show();
+    else {
+      const onScrollP = () => {
+        if (scrollY < innerHeight * 0.8 || document.querySelector("dialog[open]")) return;
+        removeEventListener("scroll", onScrollP);
+        show();
+      };
+      addEventListener("scroll", onScrollP, { passive: true });
+    }
   }
 
   // ---------- Демо-приём ----------

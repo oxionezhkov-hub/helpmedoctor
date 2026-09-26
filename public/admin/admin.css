@@ -417,3 +417,11 @@ table.t { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 
 .report-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 900px) { .report-layout { grid-template-columns: minmax(0, 1fr); } .report-nav { display: none; } }
 .kbd { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: var(--surface-2); border-radius: 5px; padding: 1px 5px; }
+
+/* История задач */
+.history { display: flex; flex-direction: column; gap: 18px; max-width: 900px; }
+.h-date { font-weight: 700; margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+.h-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; cursor: pointer; }
+.h-item:hover { border-color: var(--accent); }
+.h-descr { margin-top: 4px; }
+.h-item a.badge { text-decoration: none; }

@@ -91,6 +91,8 @@ export class HubDO extends DurableObject {
     this.addColumn("logins", "owner", "TEXT");
     this.addColumn("logins", "ref", "TEXT");
     this.addColumn("feedback", "task_id", "INTEGER");
+    // Когда задача закрыта — для вкладки «История» в трекере
+    this.addColumn("tasks", "done_at", "INTEGER");
     for (const r of this.all("SELECT uid FROM users WHERE search IS NULL LIMIT 20000")) this.refreshSearch(r.uid);
     this.sql.exec("UPDATE payments SET status = 'paid' WHERE done = 1 AND (status IS NULL OR status = 'link')");
   }

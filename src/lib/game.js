@@ -1,6 +1,6 @@
 // Игровая механика: уровни, опыт, стрики, задания дня, лимиты
 import {
-  DAILY_TASKS, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, MAX_LEVEL, SPECIALIZATIONS,
+  DAILY_TASKS, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, HINT_RATING_PENALTY, HINT_XP_CUT, MAX_LEVEL, SPECIALIZATIONS,
 } from "../config.js";
 import { mskDate, mskMidnight, daysBetween, pick } from "./util.js";
 
@@ -251,6 +251,7 @@ export function consultationFacts(pat) {
     treatment: cur.treatment || treatmentFromDialog || null,
     referrals: cur.referrals || [],
     discharged: !!cur.discharged,
+    hints: (pat.hints || []).filter((h) => h.ts >= (cur.started_at || 0)).map((h) => h.text),
   };
 }
 
@@ -259,7 +260,8 @@ export function consultationXp(prof, facts, rating) {
   const mult = levelMeta(prof.level).xpMult;
   const active = facts.doctorMessages.length > 1 || facts.tests.length || facts.physicals.length || facts.diagnosis;
   const base = active ? Math.round((100 + rating * 20) * mult) : Math.round(10 * mult);
-  return Math.round(base * (1 + streakBonus(prof.streak || 0)));
+  const hintCut = Math.max(0, 1 - HINT_XP_CUT * (facts.hints?.length || 0));
+  return Math.round(base * (1 + streakBonus(prof.streak || 0)) * hintCut);
 }
 
 /**
@@ -285,5 +287,7 @@ export function scoreConsultation(ev, facts) {
   r = clamp(r, floor, cap);
   if (ev.critical_error) r = Math.min(r, 2);
   if (facts.discharged) r = Math.min(r, 1.5);
+  // Подсказки — после всех «полов»: даже верный диагноз с подсказками стоит меньше
+  r -= HINT_RATING_PENALTY * (facts.hints?.length || 0);
   return { rating: Math.round(clamp(r, 0, 5) * 10) / 10, axes: { diagnosis, communication, treatment }, diagnosis_correct: dx };
 }

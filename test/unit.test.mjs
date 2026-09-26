@@ -330,3 +330,29 @@ test("статьи блога из scripts/site/posts отвечают реда�
 // Шаблонные обороты, по которым видно конвейер (аудит блога 26.09.2026)
 const STOP_PHRASES = ["в этой статье", "разберём", "поддаётся алгоритму", "поддаётся системе", "шанс пропустить находку", "ниже — рабочий алгоритм", "удобно разбирать", "от находки к синдрому", "в отрыве от остальной картины", "какие находки вы", "а какие пропустили", "как тренировать навык", "важно отметить", "стоит отметить", "играет ключевую роль", "в современном мире"];
 const grams = (w) => { const s = new Set(); for (let i = 0; i + 5 <= w.length; i++) s.add(w.slice(i, i + 5).join(" ")); return s; };
+
+test("клинические рекомендации: поиск КР по диагнозу и МКБ, выжимка тезисов и доз", async () => {
+  const { matchKr, mkbCodes, krDigest } = await import("../src/lib/kr.js");
+  assert.deepEqual(mkbCodes("К26.3 / J18"), ["K26.3", "J18"], "кириллическая К — тоже код МКБ");
+  assert.equal(matchKr({ diagnosis: "Внебольничная пневмония, нетяжёлое течение", mkb: "J18.9" }).name, "Внебольничная пневмония у взрослых");
+  assert.match(matchKr({ diagnosis: "Внебольничная пневмония", mkb: "J18", pediatric: true }).name, /Пневмония \(внебольничная\)/, "ребёнку — детская КР");
+  assert.match(matchKr({ diagnosis: "Артериальная гипертензия 2 степени" }).name, /Артериальная гипертензия у взрослых/, "без кода — по словам");
+  assert.match(matchKr({ diagnosis: "Острый инфаркт миокарда с подъёмом ST", mkb: "I21.1" }).url, /^https:\/\/cr\.minzdrav\.gov\.ru\/view-cr\/\d+_\d+$/);
+  assert.equal(matchKr({ diagnosis: "Синдром Мюнхгаузена у инопланетянина" }), null);
+  const html = `<h2>3.1 Лечение</h2><p>Общие слова о лечении без тезиса.</p><ul><li><p>Рекомендуется амоксициллин** 500 мг 3 раза в сутки [1, 3] для лечения, не позднее</p></li></ul><p>8 ч с момента диагноза.</p><p><strong>Уровень убедительности рекомендаций C (уровень достоверности доказательств – 5)</strong></p><p>Комментарии: доза 1000 мг 2 раза в сутки при ожирении.</p>`;
+  const d = krDigest(html, 2000);
+  assert.ok(d.includes("## 3.1 Лечение"));
+  assert.ok(d.includes("Рекомендуется амоксициллин** 500 мг 3 раза в сутки для лечения, не позднее 8 ч"), d);
+  assert.ok(d.includes("1000 мг 2 раза в сутки"), "комментарий с дозой сохраняется");
+  assert.ok(!/Уровень убедительности|Общие слова|\[1/.test(d), "без уровней доказательности, воды и ссылок на литературу");
+});
+
+test("подсказки на приёме снижают оценку и опыт", async () => {
+  const G = await import("../src/lib/game.js");
+  const facts = (hints) => ({ doctorMessages: ["1", "2", "3", "4"], tests: ["ЭГДС"], physicals: ["Пальпация живота"], diagnosis: "Язва ДПК", treatment: "ИПП", referrals: [], discharged: false, hints });
+  const ev = { axes: { diagnosis: 5, communication: 5, treatment: 5 }, diagnosis_correct: "yes" };
+  assert.equal(G.scoreConsultation(ev, facts([])).rating, 5);
+  assert.equal(G.scoreConsultation(ev, facts(["a", "b"])).rating, 4.6);
+  const prof = { level: "студент", streak: 0 };
+  assert.ok(G.consultationXp(prof, facts(["a"]), 4.8) < G.consultationXp(prof, facts([]), 4.8));
+});

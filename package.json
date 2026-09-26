@@ -11,7 +11,8 @@
     "test": "node --test test/unit.test.mjs",
     "test:e2e": "scripts/local-test.sh",
     "webhook": "node scripts/set-webhook.mjs",
-    "site": "node scripts/build-site.mjs"
+    "site": "node scripts/build-site.mjs",
+    "kr:update": "node scripts/fetch-kr.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.137.0"
