@@ -13,6 +13,10 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/app.css">
   <script>
+    // Тема, выбранная на сайте или в приложении (общая настройка hmd_theme), — до отрисовки, без мигания
+    try { var t = localStorage.getItem("hmd_theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <script>
     // Параметры входа (?login=…) забираем до Метрики и убираем из адреса — одноразовый код не должен попасть в аналитику
     window.__hmdQs = location.search;
     if (location.search) history.replaceState(null, "", location.pathname + location.hash);
