@@ -639,18 +639,19 @@ export async function viewTasks(el, ctx) {
       ${t.due ? html`<span class="badge ${t.due < mskDay(Date.now()) && !["done", "rejected"].includes(t.status) ? "danger" : ""}">${ic("clock", "sm")} ${fDate(Date.parse(t.due))}</span>` : ""}
       ${t.comments ? html`<span class="muted">${ic("chat", "sm")} ${t.comments}</span>` : ""}
       ${t.checklist?.length ? html`<span class="muted">${ic("check", "sm")} ${t.checklist.filter((c) => c.done).length}/${t.checklist.length}</span>` : ""}
+      ${t.status === "done" && (t.done_at || t.updated_at) ? html`<span class="muted">${ic("check", "sm")} ${fDate(t.done_at || t.updated_at)}</span>` : ""}
       <span class="grow"></span>${t.assignee ? html`<span class="badge accent">${adminName(t.assignee)}</span>` : ""}
     </div></div>`;
   el.innerHTML = str(html`
     <div class="page-head">
-      <div class="seg"><button data-view="board" class="${TF.view === "board" ? "on" : ""}">Доска</button><button data-view="list" class="${TF.view === "list" ? "on" : ""}">Список</button></div>
+      <div class="seg"><button data-view="board" class="${TF.view === "board" ? "on" : ""}">Доска</button><button data-view="list" class="${TF.view === "list" ? "on" : ""}">Список</button><button data-view="history" class="${TF.view === "history" ? "on" : ""}">История</button></div>
       <select class="input" data-tf="assignee" style="width:auto"><option value="">Все исполнители</option><option value="me" ${TF.assignee === "me" ? "selected" : ""}>Мои</option>${S.admins.map((a) => html`<option value="${a.id}" ${TF.assignee === a.id ? "selected" : ""}>${a.name}</option>`)}<option value="none" ${TF.assignee === "none" ? "selected" : ""}>Без исполнителя</option></select>
       <select class="input" data-tf="type" style="width:auto"><option value="">Все типы</option>${TYPES.map(([k, l]) => html`<option value="${k}" ${TF.type === k ? "selected" : ""}>${l}</option>`)}</select>
       <input class="input" data-tf="q" value="${TF.q}" placeholder="Поиск" type="search" style="width:auto;min-width:140px;flex:1 1 140px;max-width:260px">
       <span class="grow"></span>
       <button class="btn" id="t-new">${ic("plus", "sm")}<span>Задача</span></button>
     </div>
-    ${TF.view === "board" ? html`<div class="board">${STATUSES.map(([k, l]) => {
+    ${TF.view === "history" ? historyView(rows) : TF.view === "board" ? html`<div class="board">${STATUSES.map(([k, l]) => {
       const list = rows.filter((t) => t.status === k);
       return html`<div class="col" data-col="${k}"><div class="col-head">${l} <span class="badge">${list.length}</span></div>${list.map(card)}
         ${k === "idea" || k === "backlog" ? html`<button class="btn ghost sm" data-add="${k}" style="width:100%">${ic("plus", "sm")}<span>Добавить</span></button>` : ""}</div>`;
@@ -671,7 +672,7 @@ export async function viewTasks(el, ctx) {
   $$("[data-view]", el).forEach((b) => (b.onclick = () => { TF.view = b.dataset.view; save(); viewTasks(el, ctx); }));
   const reload = debounce(() => viewTasks(el, ctx), 300);
   $$("[data-tf]", el).forEach((i) => i.addEventListener(i.tagName === "SELECT" ? "change" : "input", () => { TF[i.dataset.tf] = i.value; save(); reload(); }));
-  $$("[data-task]", el).forEach((c) => c.addEventListener("click", () => openTask(c.dataset.task, () => viewTasks(el, ctx))));
+  $$("[data-task]", el).forEach((c) => c.addEventListener("click", (e) => { if (e.target.closest("a")) return; openTask(c.dataset.task, () => viewTasks(el, ctx)); }));
   $("#t-new").onclick = () => newTaskFrom({}, () => viewTasks(el, ctx));
   $$("[data-add]", el).forEach((b) => (b.onclick = () => newTaskFrom({ status: b.dataset.add }, () => viewTasks(el, ctx))));
   // Перетаскивание между колонками (десктоп)
@@ -694,6 +695,26 @@ export async function viewTasks(el, ctx) {
       viewTasks(el, ctx);
     });
   });
+}
+
+/** История: что сделано и когда — закрытые задачи по дням, со ссылками на PR */
+function historyView(rows) {
+  const done = rows.filter((t) => t.status === "done" || t.status === "review")
+    .map((t) => ({ ...t, at: t.status === "review" ? t.updated_at : t.done_at || t.updated_at }))
+    .sort((a, b) => b.at - a.at);
+  if (!done.length) return html`<div class="card muted">Закрытых задач пока нет</div>`;
+  const days = [];
+  for (const t of done) {
+    const d = fDate(t.at);
+    if (days.at(-1)?.d !== d) days.push({ d, list: [] });
+    days.at(-1).list.push(t);
+  }
+  return html`<div class="history">${days.map((g) => html`<div class="h-day"><div class="h-date">${g.d} <span class="badge">${g.list.length}</span></div>
+    ${g.list.map((t) => html`<div class="h-item click" data-task="${t.id}">
+      <div class="row wrap" style="gap:6px"><b>${t.title}</b>${t.status === "review" ? html`<span class="badge warn">на проверке</span>` : ""}<span class="badge">${label(TYPES, t.type)}</span></div>
+      ${t.descr ? html`<div class="small muted h-descr">${t.descr.split("\n")[0]}</div>` : ""}
+      ${(t.links || []).filter((l) => l.kind === "url").length ? html`<div class="row wrap tiny" style="gap:6px;margin-top:4px">${t.links.filter((l) => l.kind === "url").map((l) => html`<a class="badge accent" href="${l.url}" target="_blank" rel="noopener">${l.label}</a>`)}</div>` : ""}
+    </div>`)}</div>`)}</div>`;
 }
 
 /** Новая задача (с заготовкой: из отзыва, пользователя, ошибки) */
