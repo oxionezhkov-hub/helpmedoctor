@@ -328,6 +328,7 @@ async function api(request, env, url) {
       if (action === "test") return json(await user.orderTest(id, (await readJson(request)).name));
       if (action === "exam") return json(await user.physicalExam(id, (await readJson(request)).action));
       if (action === "hint") return json(await user.requestHint(id));
+      if (action === "guide") return json(await user.requestGuide(id));
       if (action === "finish") return json(await user.finishConsultation(id, await readJson(request), "web"));
       if (action === "voice") {
         const buf = await request.arrayBuffer();

@@ -251,7 +251,6 @@
             <a class="btn btn-ghost" href="/app?from=patient_exam" data-act="exam">Назначить обследование</a>
             <button class="pt-no" type="button" data-act="refuse">Отказаться от пациента</button>
           </div>
-          <p class="pt-note">Случай учебный. В тренажёре — такие же пациенты: расспрос, осмотр, анализы и разбор по клиническим рекомендациям Минздрава.</p>
         </div>`;
         document.body.append(dlgP);
         dlgP.addEventListener("click", (e) => {

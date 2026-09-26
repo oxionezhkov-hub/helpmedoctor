@@ -224,8 +224,7 @@ export function evaluation(env, r) {
   }
   if (r.post_story) t += `\n📖 <b>Что было дальше</b>\n${esc(r.post_story)}\n`;
   if (r.hints) t += `\n💡 Подсказок взято: ${r.hints} — оценка ниже на ${String(Math.round(r.hints * HINT_RATING_PENALTY * 10) / 10).replace(".", ",")}\n`;
-  if (r.locked) t += `\n🔒 <i>В премиуме — полный разбор: цитаты из вашего диалога с комментариями эксперта, схемы лечения с дозами по клиническим рекомендациям Минздрава, «что было дальше» с пациентом и тест по ошибкам.</i>\n`;
-  t += `\n📚 <i>Разбор по клиническим рекомендациям Минздрава РФ придёт следующим сообщением.</i>\n`;
+  if (r.recommendation) t += `\n💡 <b>Совет:</b> ${esc(r.recommendation)}\n`;
   t += `\n⚡ <b>+${r.xp} XP</b>${r.streak_bonus > 0 ? ` (стрик ×${(1 + r.streak_bonus).toFixed(1)})` : ""}`;
   if (r.level_up) t += `\n🎉 <b>Новый уровень: ${r.level_up.from} → ${r.level_up.to}</b>`;
   t += `\n📊 Уровень ${r.level} · 🔥 ${r.streak} ${declDays(r.streak)} подряд`;
@@ -233,9 +232,10 @@ export function evaluation(env, r) {
   return {
     text: t,
     kb: [
-      r.locked
-        ? [appBtn(r.trial_available ? "💎 Премиум 7 дней за 1 ₽" : "💎 Открыть полный разбор", appUrl(env, r.trial_available ? "/plans?buy=trial" : "/plans"))]
-        : [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)],
+      [btn("📚 Разбор по КР Минздрава", `kr_${r.patient_id}`)],
+      r.premium
+        ? [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)]
+        : [appBtn(r.trial_available ? "💎 Премиум 7 дней за 1 ₽" : "💎 Премиум", appUrl(env, r.trial_available ? "/plans?buy=trial" : "/plans"))],
       [btn("➕ Новый пациент", "new"), appBtn("📋 Карточка", appUrl(env, `/patient/${r.patient_id}`))],
     ],
   };

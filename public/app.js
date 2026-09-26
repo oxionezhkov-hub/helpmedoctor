@@ -33,6 +33,7 @@ const TOKEN_KEY = "hmd_token";
 const IS_TOUCH = matchMedia("(pointer: coarse)").matches;
 
 const S = {
+  guidePending: new Set(),
   token: null,
   me: null,            // снимок: профиль, пациенты, тесты, конфиг
   patients: new Map(), // id -> { patient, quiz } полные карточки
@@ -658,7 +659,10 @@ function onSync(msg) {
   if (msg.scope === "evaluation") {
     onEvaluation(msg);
   }
-  if (msg.scope === "guide" && msg.patient_id) onGuide(msg.patient_id);
+  if (msg.scope === "guide" && msg.patient_id) {
+    if (!msg.pending) refreshGuide(msg.patient_id, msg.error);
+    return;
+  }
   // Пока идёт наш собственный запрос по этому пациенту — обновим после ответа
   if (msg.patient_id && S.inflight.has(msg.patient_id) && msg.scope === "consultation") {
     return;
@@ -779,8 +783,6 @@ function viewHome(fresh) {
   const waiting = active.filter((x) => !x.in_consultation);
   const pendingQuiz = S.me.quizzes.find((q) => q.status !== "done");
   const task = p.daily_task;
-  const xpPct = Math.round((lvl.progress || 0) * 100);
-
   const y = renderShell(html`<div class="page">
     <div class="hello">
       <a href="#/profile" class="avatar-link" aria-label="Профиль">${userAvatar(p)}</a>
@@ -792,15 +794,7 @@ function viewHome(fresh) {
     </div>
 
     ${trialNotice(p)}
-    ${p.onboarding_done ? html`<div class="card stack">
-      <div class="row between"><b>Уровень ${lvl.level}</b><span class="small muted">${p.xp || 0}${lvl.to ? ` / ${lvl.to}` : ""} XP</span></div>
-      <div class="xp-bar"><i style="width:${xpPct}%"></i></div>
-      <div class="stats">
-        <div class="stat"><b class="row-c">${ic("flame", "c-flame")}${p.streak || 0}</b><span>${plural(p.streak || 0, "день", "дня", "дней")} подряд</span></div>
-        <div class="stat"><b>${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}</b><span>средняя оценка</span></div>
-        <div class="stat"><b>${p.stats.consultations_total || 0}</b><span>${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")}</span></div>
-      </div>
-    </div>` : ""}
+    ${p.onboarding_done ? html`<a class="card lvl-card" href="#/profile/stats" aria-label="Статистика">${levelHead(p)}${kpis(p)}</a>` : ""}
 
     ${!p.onboarding_done ? onboardingCard() : ""}
 
@@ -837,6 +831,31 @@ function viewHome(fresh) {
   if (!fresh) window.scrollTo(0, y);
   bindNewPatient();
   bindOnboarding();
+}
+
+// ---------- Уровень и ключевые цифры ----------
+function levelHead(p) {
+  const lvl = p.level_info;
+  const left = lvl.to ? Math.max(0, lvl.to - (p.xp || 0)) : 0;
+  return html`<div class="lvl-top">
+    <div class="lvl-badge"><span>уровень</span><b>${lvl.level}</b></div>
+    <div class="grow">
+      <div class="row between"><b>${p.level_label}</b><span class="tiny muted">${p.xp || 0} XP</span></div>
+      <div class="xp-bar"><i style="width:${Math.round((lvl.progress || 0) * 100)}%"></i></div>
+      <div class="tiny muted">${lvl.to ? `ещё ${left} XP до уровня ${lvl.level + 1}` : "максимальный уровень"}</div>
+    </div>
+  </div>`;
+}
+function kpi(icon, cls, value, label) {
+  return html`<div class="kpi"><div class="kpi-ic ${cls}">${ic(icon)}</div><b>${value}</b><span>${label}</span></div>`;
+}
+function kpis(p) {
+  const st = p.stats || {};
+  return html`<div class="kpis">
+    ${kpi("flame", "flame", p.streak || 0, `${plural(p.streak || 0, "день", "дня", "дней")} подряд`)}
+    ${kpi("star", "star", st.ratings_count ? st.avg_rating.toFixed(1).replace(".", ",") : "—", "средняя оценка")}
+    ${kpi("steth", "steth", st.consultations_total || 0, plural(st.consultations_total || 0, "приём", "приёма", "приёмов"))}
+  </div>`;
 }
 
 // ---------- Анкета нового пользователя ----------
@@ -1013,8 +1032,7 @@ function newPatientBlock() {
       ${pack ? html`<a class="btn block ghost" href="#/plans" data-checkout="patients3">${ic("plus")}<span>${pack.label.replace(/^\+/, "")} — ${rub(pack.price)} ₽</span></a>` : ""}
     </div>`;
   }
-  return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>
-    <p class="tiny muted center kr-note">${ic("book")} Разбор каждого приёма — по клиническим рекомендациям Минздрава РФ</p>`;
+  return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>`;
 }
 
 function bindNewPatient() {
@@ -1117,7 +1135,7 @@ function viewPatient() {
         <div class="row between"><b>Приём №${consults.length - i}</b><span class="tiny muted">${dateText(c.date)}</span></div>
         ${c.evaluating ? etaBox("evaluation", c.date) : evaluationBlock(c)}
         ${actionsSummary(c)}
-        ${!c.evaluating ? guideBlock(c, { pending: i === 0 && Date.now() - c.date < 5 * 60000 }) : ""}
+        ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id)}</div>` : ""}
       </div>`)}` : ""}
 
     ${p.test_results?.length ? html`<div class="section-title">Результаты обследований</div>
@@ -1141,6 +1159,17 @@ function actionsSummary(c) {
   return html`<div class="facts">${rows.map(([i, k, v]) => html`<div class="fact">${ic(i, "c-muted")}<div><span class="muted">${k}${v ? ":" : ""}</span> ${v}</div></div>`)}</div>`;
 }
 
+/** Текст эксперта — короткими абзацами: по пустым строкам, а если модель прислала сплошной текст — по два предложения */
+function paragraphs(text) {
+  const t = String(text || "").trim();
+  const byLines = t.split(/\n+/).map((x) => x.trim()).filter(Boolean);
+  if (byLines.length > 1) return byLines;
+  const sentences = t.match(/[^.!?…]+[.!?…]+(\s|$)|[^.!?…]+$/g)?.map((x) => x.trim()).filter(Boolean) || [t];
+  const out = [];
+  for (let i = 0; i < sentences.length; i += 2) out.push(sentences.slice(i, i + 2).join(" "));
+  return out;
+}
+
 function evaluationBlock(c) {
   if (c.rating == null) return "";
   const f = c.feedback || {};
@@ -1150,22 +1179,29 @@ function evaluationBlock(c) {
     ${axes ? html`<div class="stack-sm">
       ${[["Диагностика", axes.diagnosis], ["Общение", axes.communication], ["Лечение", axes.treatment]].map(([k, v]) => html`<div class="axis"><span>${k}</span><span class="bar"><i style="width:${(v / 5) * 100}%"></i></span><b>${v}</b></div>`)}
     </div>` : ""}
-    ${f.expert_text ? html`<p>${f.expert_text}</p>` : (f.good || []).map((g) => html`<p>${g}</p>`)}
+    ${f.expert_text ? html`<div class="expert-text">${paragraphs(f.expert_text).map((p) => html`<p>${p}</p>`)}</div>` : (f.good || []).map((g) => html`<p>${g}</p>`)}
     ${c.hints ? html`<div class="small fact">${ic("bulb", "c-warn")}<span>Подсказок взято: ${c.hints} — оценка ниже на ${String(Math.round(c.hints * 2) / 10).replace(".", ",")}</span></div>` : ""}
-    ${c.locked ? html`<div class="locked-teaser" aria-hidden="true"><div class="quote small">«Где именно болит и когда началось?»</div><div class="small">Хороший открытый вопрос, но не уточнили…</div><div class="small">Что было дальше: через три недели…</div></div>
-      ${premiumCta("Полный разбор: цитаты из диалога, совет эксперта и «что было дальше»")}` : ""}
-    ${(f.dialog_moments || []).map((m) => html`<div class="stack-sm">${m.quote ? html`<div class="quote small">«${m.quote}»</div>` : ""}<div class="small">${m.comment}</div></div>`)}
+    ${(f.dialog_moments || []).length ? html`<div class="stack-sm"><div class="tiny muted">МОМЕНТЫ ИЗ ДИАЛОГА</div>${f.dialog_moments.map((m) => html`<div class="moment">${m.quote ? html`<div class="quote small">«${m.quote}»</div>` : ""}<div class="small">${m.comment}</div></div>`)}</div>` : ""}
     ${f.recommendation ? html`<div class="small fact">${ic("bulb", "c-warn")}<div><b>Совет:</b> ${f.recommendation}</div></div>` : ""}
     ${c.post_story ? html`<div class="card flat" style="background:var(--surface-2)"><div class="tiny muted row-c">${ic("book")} ЧТО БЫЛО ДАЛЬШЕ</div><div class="small">${c.post_story}</div></div>` : ""}
   </div>`;
 }
 
 /** Разбор по клиническим рекомендациям Минздрава: как распознать, обязательный минимум, диагностика, лечение с дозами */
-function guideBlock(c, { pending = false } = {}) {
+function guideBlock(c, id) {
   const g = c.guide;
   if (!g) {
-    if (!pending) return "";
-    return html`<div class="card flat guide guide-wait"><div class="row-c"><span class="spinner"></span><b>Готовим разбор по клиническим рекомендациям Минздрава РФ</b></div><p class="small muted">Чек-лист диагностики, препараты и схемы лечения с дозами — обычно около минуты.</p></div>`;
+    const pending = S.guidePending.has(id) || (c.guide_pending && Date.now() - c.guide_pending < 3 * 60000);
+    if (pending) {
+      return html`<div class="guide-cta pending" role="status"><div class="row-c"><span class="spinner"></span><b>Готовим разбор по клиническим рекомендациям Минздрава</b></div>
+        <p class="small">Как надо было распознать, обязательный минимум, препараты и дозы. Обычно 30–60 секунд — разбор появится здесь сам.</p></div>`;
+    }
+    const premium = S.me?.profile?.premium;
+    return html`<div class="guide-cta">
+      <div class="row-c"><div class="tile accent">${ic("book")}</div><div class="grow"><b>Разбор по клиническим рекомендациям Минздрава</b><div class="small muted">Как надо было распознать, что обязательно по КР, лучшая диагностика, препараты и дозы</div></div></div>
+      ${premium ? html`<button class="btn block" data-guide-req="${id}">${ic("book")}<span>Получить разбор по КР</span></button>`
+        : html`<a class="btn block" href="#/plans" ${S.me?.profile?.trial_available ? html`data-checkout="trial"` : ""}>${ic("gem")}<span>${S.me?.profile?.trial_available ? "Премиум: 7 дней за 1 ₽" : "Открыть в премиуме"}</span></a>`}
+    </div>`;
   }
   const missed = g.must.filter((x) => !x.done).length;
   return html`<div class="guide stack">
@@ -1784,36 +1820,49 @@ function onEvaluation(r) {
   haptic("success");
   const slot = $("#eval-slot");
   if (!slot) return;
-  const c = { rating: r.rating, xp: r.xp, hints: r.hints, post_story: r.post_story, locked: r.locked, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments } };
-  S.guideWaiting = r.patient_id;
+  const c = { rating: r.rating, xp: r.xp, hints: r.hints, post_story: r.post_story, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments, recommendation: r.recommendation } };
   slot.outerHTML = html`<div class="stack" style="margin-top:16px">
     <h3 class="row-c">${ic("card", "c-accent")}Разбор приёма</h3>
     ${evaluationBlock(c)}
     ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b></div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
-    <div id="guide-slot">${guideBlock({}, { pending: true })}</div>
+    <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id)}</div>
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
-    <p class="tiny muted center">${r.locked ? "Тест по вашим ошибкам уже готовится — он откроется в премиуме." : "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту."}</p>
+    <p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>
   </div>`[RAW];
   const nb = $("#eval-new");
   if (nb) nb.onclick = () => { closeSheet(); go("/"); };
 }
 
-/** Разбор по КР готов: дорисовываем его в листе завершения приёма */
-async function onGuide(id) {
-  if (S.guideWaiting !== id) return;
+/** Разбор по КР: запрос по кнопке, ожидание, готовый разбор — во всех местах, где он показан (лист завершения, карточка) */
+async function requestGuide(id, btn) {
+  btnBusy(btn);
+  goal("guide_request");
+  try {
+    const res = await api("POST", `/patients/${id}/guide`);
+    if (res.pending) S.guidePending.add(id);
+    await refreshGuide(id);
+  } catch (e) {
+    toast(e.message, "error");
+    if (document.body.contains(btn)) btnBusy(btn, false);
+  }
+}
+async function refreshGuide(id, error) {
+  if (error) { S.guidePending.delete(id); toast(error, "error"); }
   try {
     const { patient } = await loadPatient(id);
     const c = patient.consultations[patient.consultations.length - 1];
-    const slot = $("#guide-slot");
-    if (c?.guide && slot) {
-      S.guideWaiting = null;
-      slot.innerHTML = guideBlock(c)[RAW];
-    }
+    if (c?.guide) S.guidePending.delete(id);
+    document.querySelectorAll(`[data-guide-slot="${id}"]`).forEach((slot) => { slot.innerHTML = c ? guideBlock(c, id)[RAW] : ""; });
+    if (c?.guide) haptic("success");
   } catch {}
 }
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-guide-req]");
+  if (b) { e.preventDefault(); requestGuide(b.dataset.guideReq, b); }
+});
 // Если WebSocket молчит — спрашиваем сами
-setInterval(() => { if (S.guideWaiting && !S.wsOk) onGuide(S.guideWaiting); }, 6000);
+setInterval(() => { if (!S.wsOk) S.guidePending.forEach((id) => refreshGuide(id)); }, 6000);
 
 // ---------------------------------------------------
 // Тесты
@@ -2201,7 +2250,7 @@ function viewProfile() {
     <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
       <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
-      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, лечение по КР, тесты" : "Безлимит, лечение и дозы по КР, тесты")}
+      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разбор по КР, тесты" : "Безлимит, разбор по КР, тесты")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
       ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привяжите Telegram — приёмы в чате и напоминания")}
@@ -2320,27 +2369,45 @@ async function linkTelegram(btn) {
 
 function viewStats() {
   const p = S.me.profile;
-  const lvl = p.level_info;
+  const st = p.stats || {};
+  const rated = st.ratings_count || 0;
+  const avg = rated ? st.avg_rating : 0;
+  const quality = !rated ? "" : avg >= 4.5 ? "отлично — так держать" : avg >= 4 ? "хорошо, есть что подтянуть" : avg >= 3 ? "средне — смотрите советы ниже" : "ниже среднего — начните с советов ниже";
+  // Что сделать дальше: одна понятная подсказка из того, что уже известно
+  const next = !rated ? ["steth", "Примите первого пациента", "После разбора здесь появятся ваши оценки, сильные стороны и пробелы."]
+    : !p.streak ? ["flame", "Начните серию заново", "Один приём в день — и серия дней растёт, а вместе с ней бонус к опыту."]
+    : p.weaknesses?.length ? ["target", `Подтяните: ${p.weaknesses[0]}`, "Это чаще всего встречается в ваших разборах. Обратите внимание на следующем приёме."]
+    : ["trophy", "Попробуйте сложнее", "Оценки высокие — поднимите сложность в настройках, чтобы расти дальше."];
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Статистика</h2></div>
+
+    <div class="card lvl-card">${levelHead(p)}${kpis(p)}</div>
+
+    <div class="card next-step"><div class="tile accent">${ic(next[0])}</div><div class="grow"><div class="tiny muted">ЧТО ДЕЛАТЬ ДАЛЬШЕ</div><b>${next[1]}</b><div class="small muted">${next[2]}</div></div></div>
+    ${rated || !p.onboarding_done ? "" : html`<button class="btn block" data-go="/">${ic("plus")}<span>Принять пациента</span></button>`}
+
+    ${rated ? html`<div class="section-title">Качество приёмов</div>
     <div class="card stack">
-      <div class="row between"><b>Уровень ${lvl.level}</b><span class="small muted">${p.xp || 0}${lvl.to ? ` / ${lvl.to}` : ""} XP</span></div>
-      <div class="xp-bar"><i style="width:${Math.round((lvl.progress || 0) * 100)}%"></i></div>
-      <div class="stats">
-        <div class="stat"><b>${p.stats.consultations_total || 0}</b><span>${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")}</span></div>
-        <div class="stat"><b>${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}</b><span>средняя оценка</span></div>
-        <div class="stat"><b class="row-c">${ic("flame", "c-flame")}${p.streak || 0}</b><span>${plural(p.streak || 0, "день", "дня", "дней")} подряд</span></div>
-        <div class="stat"><b>${p.stats.patients_total || 0}</b><span>${plural(p.stats.patients_total || 0, "пациент", "пациента", "пациентов")}</span></div>
-        <div class="stat"><b>${p.stats.quizzes_done || 0}</b><span>${plural(p.stats.quizzes_done || 0, "тест", "теста", "тестов")}</span></div>
-        <div class="stat"><b>${p.stats.correct_diagnoses_streak || 0}</b><span>верных подряд</span></div>
+      <div class="row"><div class="rating-big">${avg.toFixed(1).replace(".", ",")}</div><div class="grow">${starsRow(avg)}<div class="small muted">средняя оценка за ${rated} ${plural(rated, "приём", "приёма", "приёмов")} · ${quality}</div></div></div>
+      <div class="stat-rows">
+        ${statRow("checkCircle", "Верных диагнозов подряд", st.correct_diagnoses_streak || 0, "сбрасывается при неверном диагнозе")}
+        ${statRow("quiz", "Тестов по ошибкам пройдено", st.quizzes_done || 0, "закрепляют пробелы конкретного приёма")}
+        ${statRow("users", "Пациентов принято", st.patients_total || 0, "")}
       </div>
-    </div>
-    ${p.strengths?.length ? html`<div class="card stack-sm"><div class="tiny muted">СИЛЬНЫЕ СТОРОНЫ</div><div class="row wrap" style="gap:6px">${p.strengths.slice(0, 8).map((s) => html`<span class="badge ok">${s}</span>`)}</div></div>` : ""}
-    ${p.weaknesses?.length ? html`<div class="card stack-sm"><div class="tiny muted">ЧТО ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px">${p.weaknesses.slice(0, 8).map((s) => html`<span class="badge warn">${s}</span>`)}</div></div>` : ""}
-    ${p.recommendations?.length ? html`<div class="card stack-sm"><div class="tiny muted">СОВЕТЫ ЭКСПЕРТА</div>${p.recommendations.slice(0, 3).map((r) => html`<div class="small fact">${ic("bulb", "c-warn")}<span>${r}</span></div>`)}</div>` : ""}
-    ${p.locked_insights ? premiumCta(`Слабые места и советы эксперта: ${p.locked_insights}`) : ""}
-    ${!p.stats.ratings_count ? html`<div class="empty"><div class="tile lg">${ic("chart")}</div>Статистика появится после первого разобранного приёма</div>` : ""}
+    </div>` : ""}
+
+    ${p.strengths?.length || p.weaknesses?.length ? html`<div class="section-title">Сильные стороны и пробелы</div>
+    <div class="card stack">
+      ${p.strengths?.length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("checkCircle", "c-ok")} ПОЛУЧАЕТСЯ</div><div class="row wrap" style="gap:6px">${p.strengths.slice(0, 6).map((x) => html`<span class="badge ok">${x}</span>`)}</div></div>` : ""}
+      ${p.weaknesses?.length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("target", "c-warn")} ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px">${p.weaknesses.slice(0, 6).map((x) => html`<span class="badge warn">${x}</span>`)}</div></div>` : ""}
+    </div>` : ""}
+
+    ${p.recommendations?.length ? html`<div class="section-title">Советы из разборов</div>
+    <div class="card stack-sm">${p.recommendations.slice(0, 3).map((r) => html`<div class="small fact">${ic("bulb", "c-warn")}<span>${r}</span></div>`)}</div>` : ""}
   </div>`);
+}
+function statRow(icon, label, value, hint) {
+  return html`<div class="stat-row">${ic(icon, "c-muted")}<div class="grow"><div>${label}</div>${hint ? html`<div class="tiny muted">${hint}</div>` : ""}</div><b>${value}</b></div>`;
 }
 
 // ---------- Отзыв ----------
@@ -2414,9 +2481,8 @@ function mountFeedbackPrompt() {
 const rub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
 const PREMIUM_PERKS = [
   ["users", "Безлимит пациентов"],
-  ["pill", "Лечение по клиническим рекомендациям Минздрава РФ: препараты, дозы, схемы"],
-  ["flask", "Лучшая диагностика по КР для каждого случая"],
-  ["card", "Полный разбор: цитаты из диалога и «что было дальше»"],
+  ["pill", "Разбор по клиническим рекомендациям Минздрава: препараты, дозы, схемы"],
+  ["flask", "Лучшая диагностика и обязательный минимум по КР для каждого случая"],
   ["quiz", "Тест по лечению и диагностике после каждого приёма"],
   ["flame", "«Очень сложные» случаи"],
   ["chart", "Слабые места и советы эксперта"],

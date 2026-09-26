@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Шпаргалка: ЭКГ за 7 шагов — Help me, Doctor</title>
+<meta name="author" content="Help me, Doctor — helpmedoctor.ru">
+<meta name="description" content="Порядок расшифровки ЭКГ, нормы интервалов, электрическая ось и признаки, при которых нужна срочная помощь">
+<link rel="stylesheet" href="_brand.css">
+<style>
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; }
+  .step { background: var(--card); border: .8pt solid var(--rule-2); border-radius: 2mm; padding: 2.6mm 3.2mm 2.4mm 11mm; position: relative; }
+  .step .n { position: absolute; left: 3mm; top: 2.2mm; font: 700 17pt/1 var(--serif); color: var(--green); }
+  .step ul { font-size: 8pt; } .step h3 { margin-bottom: .6mm; }
+  table { width: 100%; border-collapse: collapse; font-size: 8.4pt; }
+  th, td { text-align: left; padding: 1.6mm 2mm; border-bottom: .6pt solid var(--rule); vertical-align: top; }
+  th { font: 7pt var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  td b { font-family: var(--serif); }
+  .axis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm; }
+  .axis div { background: var(--green-soft); border-radius: 1.6mm; padding: 2mm 2.4mm; font-size: 8pt; line-height: 1.3; }
+  .axis b { display: block; font: 700 10pt/1.2 var(--serif); color: var(--green); margin-bottom: .6mm; }
+  .flags ul { font-size: 8.4pt; }
+  .flags h3::before { content: "▲ "; color: var(--red); font-size: 8pt; vertical-align: 1pt; }
+  .two { display: grid; grid-template-columns: 1.15fr 1fr; gap: 3mm; }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Шпаргалка · функциональная диагностика</span></div>
+  <p class="kicker">Для студентов-медиков, ординаторов и дежурств</p>
+  <h1>ЭКГ за&nbsp;7&nbsp;шагов</h1>
+  <p class="lead">Один и тот же порядок каждый раз — и ничего не пропустишь. Скорость записи — 25&nbsp;мм/с: большая клетка = 0,20&nbsp;с, маленькая = 0,04&nbsp;с.</p>
+
+  <div class="steps" style="margin-top:3mm">
+    <div class="step"><span class="n">1</span><h3>Ритм</h3><ul>
+      <li>Синусовый: зубец P перед каждым QRS, P положительный во II.</li>
+      <li>Регулярность: интервалы R–R одинаковые?</li>
+      <li>Нет P, «пила» или хаотичные волны f — трепетание / фибрилляция предсердий.</li></ul></div>
+    <div class="step"><span class="n">2</span><h3>ЧСС</h3><ul>
+      <li>Регулярный ритм: 300 ÷ число больших клеток между R–R.</li>
+      <li>Точнее: 1500 ÷ число маленьких клеток.</li>
+      <li>Нерегулярный: число QRS за 6 с × 10.</li></ul></div>
+    <div class="step"><span class="n">3</span><h3>Электрическая ось</h3><ul>
+      <li>Смотрите суммарный QRS в I и aVF.</li>
+      <li>Сомнение при I+, aVF− — решает отведение II.</li></ul></div>
+    <div class="step"><span class="n">4</span><h3>Зубец P и интервал PQ</h3><ul>
+      <li>P ≤ 0,10 с; расширенный, двугорбый — перегрузка левого предсердия.</li>
+      <li>PQ удлиняется, пока не выпадет QRS, — АВ-блокада II степени, Мобиц I.</li></ul></div>
+    <div class="step"><span class="n">5</span><h3>Комплекс QRS</h3><ul>
+      <li>Широкий QRS: блокада ножки пучка Гиса, желудочковый ритм, WPW.</li>
+      <li>Патологический Q: шире 0,03 с или глубже ¼ R.</li></ul></div>
+    <div class="step"><span class="n">6</span><h3>Сегмент ST и зубец T</h3><ul>
+      <li>Подъём или депрессия ST — в каких отведениях, соседние ли они.</li>
+      <li>Высокие заострённые T — подумайте о гиперкалиемии.</li></ul></div>
+    <div class="step"><span class="n">7</span><h3>Интервал QT</h3><ul>
+      <li>Корригированный QTc = QT ÷ √RR (Базетт). Удлинение — риск аритмий: лекарства, калий, магний.</li></ul></div>
+    <div class="step" style="padding-left:3.2mm"><h3>Ось: I и aVF</h3>
+      <div class="axis">
+        <div><b>I+ aVF+</b>норма</div>
+        <div><b>I+ aVF−</b>II+ — норма, II− — влево</div>
+        <div><b>I− aVF+</b>вправо</div>
+      </div></div>
+  </div>
+
+  <div style="margin-top:3mm">
+    <div class="box">
+      <h2>Нормы у взрослых</h2>
+      <table>
+        <tr><th>Показатель</th><th>Норма</th><th>Если отклонение</th></tr>
+        <tr><td>ЧСС в покое</td><td><b>60–90</b> в мин</td><td>&lt;60 брадикардия, &gt;90 тахикардия</td></tr>
+        <tr><td>Интервал PQ</td><td><b>0,12–0,20</b> с</td><td>&gt;0,20 с — АВ-блокада I ст.; &lt;0,12 с — думайте о предвозбуждении</td></tr>
+        <tr><td>Комплекс QRS</td><td><b>до 0,10</b> с</td><td>≥0,12 с — широкий комплекс</td></tr>
+        <tr><td>QTc</td><td><b>до 450 мс</b> ♂, <b>460 мс</b> ♀</td><td>выше — удлинённый QT</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="box flags" style="margin-top:3mm">
+    <h3>Срочно — к старшему и по протоколу, не «понаблюдаем»</h3>
+    <ul>
+      <li>Подъём ST ≥1 мм в двух соседних отведениях (в V2–V3 порог выше) при боли в груди — ОКС с подъёмом ST, время до реперфузии решает.</li>
+      <li>Полная АВ-блокада (P и QRS независимы), пауза &gt;3 с, желудочковая тахикардия.</li>
+      <li>Высокие T + широкий QRS — гиперкалиемия, возможна остановка сердца.</li>
+    </ul>
+  </div>
+
+  <div class="foot">
+    <span>Учебный материал. Сверяйте тактику с действующими клиническими рекомендациями Минздрава РФ.<br>© Help me, Doctor · helpmedoctor.ru</span>
+    <span class="cta">{{QR}}<span><b>Потренируйте на пациенте</b>ЭКГ и анализы под скрытый<br>диагноз · helpmedoctor.ru</span></span>
+  </div>
+</section>
+
+</body>
+</html>

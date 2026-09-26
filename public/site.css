@@ -630,6 +630,8 @@ body:has(.sticky-cta.show) .patient { bottom: calc(80px + env(safe-area-inset-bo
 @media (max-width: 600px) { .patient img { width: 62px; height: 62px; } .patient .bubble { max-width: 150px; font-size: 13px; margin-bottom: 36px; } }
 @media (prefers-reduced-motion: reduce) { .patient { transition: none; } .patient.in:not(.sad) img { animation: none; } }
 .pt-in { padding: 28px 26px 22px; position: relative; }
+.pt .pop-x { right: 12px; top: 12px; width: 38px; height: 38px; padding: 0; display: grid; place-items: center; border-radius: 50%; background: var(--paper-2); color: var(--ink-2); font-size: 24px; line-height: 1; z-index: 1; }
+.pt-head { padding-right: 44px; }
 .pt-head { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
 .pt-head img { width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); flex: none; }
 .pt-head h2 { font-size: 24px; margin: 2px 0 0; }
@@ -642,7 +644,13 @@ body:has(.sticky-cta.show) .patient { bottom: calc(80px + env(safe-area-inset-bo
 .pt-vitals span { font-family: var(--mono); font-size: 13px; padding: 2px 8px; border: 1px solid var(--rule-2); border-radius: 6px; background: var(--paper); white-space: nowrap; }
 .pt-ask { font-weight: 700; margin: 0 0 10px; }
 .pt-note { font-size: 13px; color: var(--muted); margin: 12px 0 0; text-align: center; }
-@media (max-width: 480px) { .pt-facts { grid-template-columns: 1fr; gap: 2px; } .pt-facts dd { margin-bottom: 8px; } .pt-quote { font-size: 18px; } .pt-in { padding: 24px 18px 18px; } }
+@media (max-width: 480px) {
+  .pt-facts { grid-template-columns: 1fr; gap: 1px; font-size: 14.5px; margin-bottom: 12px; } .pt-facts dd { margin-bottom: 6px; }
+  .pt-quote { font-size: 17px; margin-bottom: 10px; } .pt-in { padding: 20px 16px 14px; }
+  .pt-head { gap: 12px; margin-bottom: 10px; } .pt-head img { width: 56px; height: 56px; } .pt-head h2 { font-size: 20px; } .pt-head .mono { font-size: 11px; }
+  .pt-vitals span { font-size: 12px; padding: 1px 6px; } .pt-timer { margin-bottom: 10px; } .pt-timer b { font-size: 19px; }
+  .pt-ask { margin-bottom: 8px; } .pt-btns { gap: 6px; } .pt-btns .btn { min-height: 44px; } .pt-btns .pt-no { padding: 4px; }
+}
 .pt-timer { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 14px; color: var(--ink-2); margin-bottom: 16px; }
 .pt-timer b { font-size: 22px; color: var(--red); font-variant-numeric: tabular-nums; }
 .pt-timer i { flex: 1; height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; position: relative; }
