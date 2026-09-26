@@ -29,6 +29,9 @@ const EXPRESSION = { tired: 5, solemn: 5, serious: 4, calm: 4, blank: 4, eyesClo
 const EXPRESSION_OLD = { ...EXPRESSION, old: 6 };
 const EXPRESSION_GOOD = { smile: 6, calm: 4, cute: 2 };
 const EXPRESSION_BAD = { tired: 5, solemn: 5, eyesClosed: 3, serious: 2 };
+// Персонаж-зазывала на сайте: странные эмоции (odd) и обида после отказа (sad)
+const EXPRESSION_ODD = { awe: 3, cheeky: 3, concernedFear: 3, hectic: 3, suspicious: 2, smileTeethGap: 2, explaining: 2, contempt: 1 };
+const EXPRESSION_SAD = { concerned: 4, tired: 3, solemn: 3 };
 
 /** Параметры лица по пациенту: s — seed, g — пол (m/f), a — возраст, m — состояние (good/bad); clean — без маски и тёмных очков (обложки) */
 export function faceOptions({ s = "", g = "", a = 0, m = "", clean = false } = {}) {
@@ -42,7 +45,7 @@ export function faceOptions({ s = "", g = "", a = 0, m = "", clean = false } = {
     skinColor: SKIN,
     headContrastColor: old ? HAIR_OLD : HAIR,
     headVariant: head,
-    expressionVariant: m === "good" ? EXPRESSION_GOOD : m === "bad" ? EXPRESSION_BAD : old ? EXPRESSION_OLD : EXPRESSION,
+    expressionVariant: m === "good" ? EXPRESSION_GOOD : m === "bad" ? EXPRESSION_BAD : m === "odd" ? EXPRESSION_ODD : m === "sad" ? EXPRESSION_SAD : old ? EXPRESSION_OLD : EXPRESSION,
     accessoriesVariant: ACCESSORIES,
     accessoriesProbability: child ? 5 : old ? 45 : 20,
     facialHairProbability: female || child ? 0 : old ? 30 : 35,

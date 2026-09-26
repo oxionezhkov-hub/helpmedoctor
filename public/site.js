@@ -28,6 +28,19 @@
     const open = nav.classList.toggle("open");
     burger.setAttribute("aria-expanded", String(open));
   });
+  // ---------- Светлая / тёмная тема: выбор запоминается в браузере ----------
+  // Ранний скрипт в <head> ставит data-theme до отрисовки, здесь — только переключение
+  const root = document.documentElement;
+  const isDark = () => (root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
+  $$("[data-theme-toggle]").forEach((b) => b.addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    root.dataset.theme = next;
+    ls.set("hmd_theme", next);
+    $$('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", next === "dark" ? "#121514" : "#f6f4ee"));
+    goal("theme", { to: next });
+  }));
+  if (root.dataset.theme) $$('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", root.dataset.theme === "dark" ? "#121514" : "#f6f4ee"));
+
   // Выпадающие меню закрываются кликом мимо
   document.addEventListener("click", (e) => { $$(".nav details[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; }); });
 
@@ -134,6 +147,96 @@
       if (a) goal("popup_click", { to: a.getAttribute("href"), page });
       if (e.target === dlg || e.target.closest("[data-close]")) dlg.close();
     });
+  }
+
+  // ---------- Пациент в углу: один раз на браузер, после прокрутки ----------
+  // Клик — окно с жалобой и таймером 2 минуты. «Задать вопрос» и «Обследование» ведут в тренажёр,
+  // отказ (или истёкшее время) — пациент грустит в углу и больше не кликается, в том числе на других страницах.
+  const PATIENTS = [
+    { n: "Аркадий", g: "m", a: 52, q: "Доктор, я третий день икаю в ритме вальса. Жена говорит — к врачу.", bub: "Доктор, можно без очереди?", sad: "Ну и ладно. Буду икать дальше." },
+    { n: "Зинаида Петровна", g: "f", a: 71, q: "Я всё про себя прочитала в интернете. Осталось, чтобы вы подтвердили.", bub: "Я вас надолго не задержу…", sad: "Пойду к другому доктору. В интернете." },
+    { n: "Виталик", g: "m", a: 19, q: "Голова кружится, только когда я смотрю на расписание сессии.", bub: "А справку дадите?", sad: "Ну вот. Придётся идти на экзамен." },
+    { n: "Ольга", g: "f", a: 34, q: "У меня болит вот тут. Нет, чуть левее. Нет, уже прошло. Опять болит!", bub: "Доктор, у меня тут странное…", sad: "Опять болит. Но вам уже неинтересно." },
+    { n: "Геннадий", g: "m", a: 45, q: "Я здоров, меня жена записала. Но раз уж я здесь — что-то колет в боку.", bub: "Я на минутку, я здоров.", sad: "Так и скажу жене: врач не стал смотреть." },
+    { n: "Лиза", g: "f", a: 27, q: "Мне срочно нужна справка, что я не устала. Потому что я очень устала.", bub: "Мне только спросить!", sad: "Устала ещё больше." },
+  ];
+  const PKEY = "hmd_patient";
+  const pState = (() => { try { return JSON.parse(ls.get(PKEY) || "null"); } catch { return null; } })();
+  const face = (p, m) => `/api/face?${new URLSearchParams({ v: "3", s: `site-${p.n}`, g: p.g, a: String(p.a), m })}`;
+  const savePatient = (st, i) => ls.set(PKEY, JSON.stringify({ st, i }));
+  function mountPatient(p, sad) {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = `patient${sad ? " sad" : ""}`;
+    el.innerHTML = `<img src="${face(p, sad ? "sad" : "odd")}" alt="" width="76" height="76"><span class="bubble"><b>${esc(p.n)}</b>${esc(sad ? p.sad : p.bub)}</span>`;
+    el.setAttribute("aria-label", sad ? `${p.n} ушёл без приёма` : `Пациент ${p.n} ждёт приёма — открыть`);
+    if (sad) { el.tabIndex = -1; el.setAttribute("aria-hidden", "true"); }
+    document.body.append(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("in")));
+    return el;
+  }
+  // Грустный пациент молча сидит в углу; реплика видна только сразу после отказа
+  if (pState?.st === "refused" && PATIENTS[pState.i]) mountPatient(PATIENTS[pState.i], true).classList.add("quiet");
+  else if (!pState && typeof HTMLDialogElement === "function") {
+    const i = Math.floor(Math.random() * PATIENTS.length);
+    const p = PATIENTS[i];
+    let el = null, dlgP = null, deadline = 0, tick = 0, done = false;
+    const refuse = (why) => {
+      if (done) return;
+      done = true;
+      clearInterval(tick);
+      if (dlgP?.open) dlgP.close();
+      savePatient("refused", i);
+      el.remove();
+      const sadEl = mountPatient(p, true);
+      setTimeout(() => sadEl.classList.add("quiet"), 7000);
+      goal("patient_refuse", { why, page });
+    };
+    const render = () => {
+      const s = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      const t = $(".pt-timer", dlgP);
+      if (t) { $("b", t).textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; $("i", t).style.setProperty("--left", String(s / 120)); }
+      if (s <= 0) refuse("timeout");
+    };
+    const open = () => {
+      if (done) return;
+      if (!dlgP) {
+        deadline = Date.now() + 120000;
+        dlgP = document.createElement("dialog");
+        dlgP.className = "pop pt";
+        dlgP.setAttribute("aria-label", `Пациент ${p.n}`);
+        dlgP.innerHTML = `<div class="pt-in">
+          <button class="pop-x" type="button" data-close aria-label="Свернуть">×</button>
+          <div class="pt-head"><img src="${face(p, "odd")}" alt="" width="72" height="72"><div><h2>${esc(p.n)}, ${p.a} ${plural(p.a, "год", "года", "лет")}</h2><span class="mono">без записи · очень ждёт</span></div></div>
+          <p class="pt-quote">«${esc(p.q)}»</p>
+          <div class="pt-timer"><span>Пациент ждёт</span><b>2:00</b><i></i></div>
+          <div class="pt-btns">
+            <a class="btn btn-primary" href="/app?from=patient_ask" data-act="ask">Задать вопрос</a>
+            <a class="btn btn-ghost" href="/app?from=patient_exam" data-act="exam">Сделать обследование</a>
+            <button class="pt-no" type="button" data-act="refuse">Отказаться от пациента</button>
+          </div>
+        </div>`;
+        document.body.append(dlgP);
+        dlgP.addEventListener("click", (e) => {
+          const a = e.target.closest("[data-act]");
+          if (a?.dataset.act === "refuse") return refuse("button");
+          if (a) { done = true; clearInterval(tick); savePatient(a.dataset.act, i); goal(`patient_${a.dataset.act}`, { page }); return; }
+          if (e.target === dlgP || e.target.closest("[data-close]")) dlgP.close();
+        });
+        tick = setInterval(render, 1000);
+      }
+      render();
+      if (!done) { dlgP.showModal(); goal("patient_open", { page }); }
+    };
+    const onScrollP = () => {
+      if (scrollY < innerHeight * 0.8 || document.querySelector("dialog[open]")) return;
+      removeEventListener("scroll", onScrollP);
+      savePatient("shown", i);
+      el = mountPatient(p, false);
+      el.addEventListener("click", open);
+      goal("patient_show", { page });
+    };
+    addEventListener("scroll", onScrollP, { passive: true });
   }
 
   // ---------- Демо-приём ----------

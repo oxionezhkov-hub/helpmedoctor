@@ -2092,6 +2092,7 @@ function viewProfile() {
       ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привяжите Telegram — приёмы в чате и напоминания")}
       ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что нравится, что мешает, чего не хватает")}
       ${item({ a: `href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener"` }, "accent", "telegram", "Бот в Telegram", "Приёмы в чате и напоминания", ic("external", "c-muted"))}
+      ${item({ a: 'href="https://t.me/oleg_ezhkov" target="_blank" rel="noopener"' }, "", "telegram", "Поддержка", "@oleg_ezhkov в Telegram — вопросы, оплата, сотрудничество", ic("external", "c-muted"))}
       ${item({ a: `href="${DOCS.offer}" target="_blank" rel="noopener"` }, "", "book", "Документы", "Оферта и политика конфиденциальности", ic("external", "c-muted"))}
       ${!IN_TG ? item({ tag: "button", a: 'id="logout" type="button"', cls: "danger" }, "", "logout", "Выйти", "") : ""}
     </div>

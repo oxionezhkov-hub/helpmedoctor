@@ -22,6 +22,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<script>try{var t=localStorage.getItem("hmd_theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preload" href="/fonts/literata-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
 <script src="/site.js" defer></script>
@@ -62,6 +63,7 @@
     <a href="/#pricing">Тарифы</a>
     <a href="/blog/">Блог</a>
   </nav>
+  <button class="theme-btn" type="button" data-theme-toggle aria-label="Сменить тему: светлая или тёмная" title="Светлая / тёмная тема"><svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg><svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></button>
   <button class="burger" type="button" aria-label="Меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <a class="btn btn-primary" href="/app?from=header">Открыть тренажёр</a>
 </div></header>
@@ -129,7 +131,7 @@
   <li>писать «усиление лёгочного рисунка» как самостоятельный диагноз — эта расплывчатая формулировка ничего не говорит о локализации и причине находки и должна сопровождаться описанием конкретной картины;</li>
   <li>ограничиваться одной прямой проекцией там, где для локализации нужна ещё и боковая, особенно при подозрении на находку в области, скрытой тенью сердца или диафрагмы.</li>
 </ul>
-<p>Рентген грудной клетки редко читают в отрыве от остальной картины: результат сопоставляют с жалобами и данными <a href="/blog/sbor-anamneza/">сбора анамнеза</a>, а рабочий диагноз строят по тем же принципам, что и любой <a href="/blog/differencialnyj-diagnoz/">дифференциальный диагноз</a> — от находки к синдрому, от синдрома к причине. В тренажёре «Help me, Doctor» пациент с кашлем, одышкой или болью в груди — повод назначить и рентген как часть обследования, и сопоставить его с другими данными, например с <a href="/blog/gazy-krovi-rasshifrovka/">газами крови</a> при подозрении на дыхательную недостаточность: эксперт после разбора случая показывает, какие находки вы связали с клиникой верно, а какие пропустили или истолковали слишком буквально.</p>
+<p>Рентген грудной клетки редко читают в отрыве от остальной картины: результат сопоставляют с жалобами и данными <a href="/blog/sbor-anamneza/">сбора анамнеза</a>, а рабочий диагноз строят по тем же принципам, что и любой <a href="/blog/differencialnyj-diagnoz/">дифференциальный диагноз</a> — от находки к синдрому, от синдрома к причине. В тренажёре «Help me, Doctor» пациент с кашлем, одышкой или болью в груди — повод назначить и рентген как часть обследования, и сопоставить его с другими данными, например с <a href="/blog/gazy-krovi-rasshifrovka/">газами крови</a> при подозрении на дыхательную недостаточность: ИИ-разбор после приёма показывает, какие находки вы связали с клиникой верно, а какие пропустили или истолковали слишком буквально.</p>
   <h2 id="faq">Частые вопросы</h2><div class="faq article-faq"><details><summary>Почему нельзя оценивать размер сердца по снимку в AP-проекции?</summary><p>В переднезадней (AP) проекции рентгеновский луч проходит от груди к спине, и сердце, расположенное дальше от плёнки, проецируется с увеличением. Кардиоторакальный индекс достоверен только на прямой (PA) проекции, где луч идёт от спины к плёнке и такого искажения нет.</p></details><details><summary>Что такое симптом силуэта и зачем он нужен?</summary><p>Симптом силуэта — исчезновение контура органа (сердца, диафрагмы, аорты) там, где к нему прилегает патологическое уплотнение той же плотности, например пневмоническая инфильтрация. По тому, какой именно контур исчез, можно определить долю лёгкого с находкой без дополнительной боковой проекции.</p></details><details><summary>Как понять, что вдох на снимке был достаточным?</summary><p>Ориентир — видимость 9–10 задних отрезков рёбер или 5–6 передних отрезков над куполом диафрагмы. При меньшем числе видимых рёбер лёгкие расправлены не полностью, и это может имитировать усиление лёгочного рисунка или увеличение сердца.</p></details><details><summary>Какой объём плеврального выпота виден на рентгене грудной клетки?</summary><p>На прямой проекции стоя притупление рёберно-диафрагмального угла обычно становится заметным при накоплении примерно 200–300 мл жидкости. Меньшие объёмы выпота лучше выявляются на боковой проекции или при ультразвуковом исследовании плевральных полостей.</p></details><details><summary>Что означает свободный газ под куполом диафрагмы на рентгене?</summary><p>Тонкая полоска просветления над печенью или желудком, видимая на снимке в положении стоя или сидя, — признак свободного газа в брюшной полости, чаще всего из-за перфорации полого органа. Это неотложная находка, требующая немедленной хирургической консультации, а не рутинное описание.</p></details></div>
   <h2 id="istochniki">Источники</h2><ol class="sources"><li><a href="https://cr.minzdrav.gov.ru/schema/654_1" rel="noopener nofollow" target="_blank">Внебольничная пневмония у взрослых — клинические рекомендации, Минздрав России</a></li><li><a href="https://fmza.ru/fund_assessment_means/lechebnoe-delo/perechen-prakticheskikh-navykov-umeniy/" rel="noopener nofollow" target="_blank">Перечень практических навыков (умений) — Методический центр аккредитации специалистов (ФМЗА)</a></li><li><a href="https://apps.who.int/iris/handle/10665/252424" rel="noopener nofollow" target="_blank">Chest radiography in tuberculosis detection: summary of current WHO recommendations and guidance on programmatic approaches — World Health Organization</a></li><li>Линденбратен Л.Д., Королюк И.П. Медицинская радиология и рентгенология: учебник</li></ol>
   <nav class="topic-links" aria-label="По теме"><b>По теме</b><ul><li><a href="/virtualnyj-pacient/">Виртуальный пациент: что это и как на нём учиться</a></li></ul></nav>
@@ -157,6 +159,7 @@
       <li><a href="/o-proekte/">О проекте и контакты</a></li>
       <li><a href="/#faq">Вопросы и ответы</a></li>
       <li><a href="https://t.me/helpmedoctor_aibot" rel="noopener">Бот в Telegram</a></li>
+      <li><a href="https://t.me/oleg_ezhkov" rel="noopener">Поддержка: @oleg_ezhkov</a></li>
     </ul></div>
     <div><b>Для кого</b><ul>
       <li><a href="/dlya-studentov/">Студентам-медикам</a></li><li><a href="/dlya-ordinatorov/">Ординаторам</a></li><li><a href="/dlya-vrachej/">Практикующим врачам</a></li><li><a href="/akkreditaciya/">Тренажёр к аккредитации</a></li><li><a href="/klinicheskie-zadachi/">Клинические задачи онлайн</a></li><li><a href="/virtualnyj-pacient/">Виртуальный пациент</a></li>
@@ -170,7 +173,7 @@
     </ul></div>
   </div>
   <div class="legal-line">
-    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</span>
+    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480 · поддержка и сотрудничество — <a href="https://t.me/oleg_ezhkov" rel="noopener">@oleg_ezhkov</a> в Telegram</span>
     <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></span>
   </div>
 </div></footer>
