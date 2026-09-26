@@ -1,0 +1,39 @@
+name: Telegram-канал
+
+# Публикует посты из content/telegram-channel/queue/*.json в канал от имени бота.
+# Запуск: пуш ветки tg/** с новым файлом в очереди (публикуются только добавленные файлы) или вручную с указанием файла.
+on:
+  push:
+    branches: ["tg/**"]
+    paths: ["content/telegram-channel/queue/**"]
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Файл с постами, например content/telegram-channel/queue/2026-09-26-launch.json"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Публикация
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TG_CHANNEL: "@i_am_doctorrr"
+          BEFORE: ${{ github.event.before }}
+          INPUT_FILE: ${{ github.event.inputs.file }}
+        run: |
+          if [ -n "$INPUT_FILE" ]; then files="$INPUT_FILE"
+          elif [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            files=$(git diff --name-only --diff-filter=A origin/main...HEAD -- content/telegram-channel/queue)
+          else
+            files=$(git diff --name-only --diff-filter=A "$BEFORE" "$GITHUB_SHA" -- content/telegram-channel/queue)
+          fi
+          [ -z "$files" ] && { echo "Новых постов нет"; exit 0; }
+          for f in $files; do echo "== $f"; node scripts/tg-channel.mjs "$f"; done
