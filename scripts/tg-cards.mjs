@@ -6,7 +6,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 import { faceSvg } from "../src/lib/face.js";
-import { CASE, DECKS, PROMO, YULIA } from "../content/telegram-channel/decks.mjs";
+import { CASE, DECKS, PROMO, AUTHOR } from "../content/telegram-channel/decks.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIR = join(ROOT, "content/telegram-channel");
@@ -77,7 +77,7 @@ function cover(d, n) {
     <h1>${md(d.title)}</h1><p class="sub">${md(d.sub)}</p>
     <div class="grow"></div>
     <div class="pt"><img src="${face(d.patient)}"><div class="bubble">«${esc(d.patient.say)}»</div></div>
-    <div class="bottom" style="margin-top:34px"><div class="author"><img src="${face(YULIA)}">Юля · 5 курс лечфака</div><span class="swipe">Листай →</span></div>`);
+    <div class="bottom" style="margin-top:34px"><div class="author"><img src="${face(AUTHOR)}">Нина · 4 курс · Петербург</div><span class="swipe">Листай →</span></div>`);
 }
 
 function slide(d, s, i, n) {
@@ -97,7 +97,7 @@ function outro(d, i, n) {
     ${d.outro ? `<div class="card" style="margin-top:56px;font-size:42px;line-height:1.35;font-weight:700">${md(d.outro)}</div>` : ""}
     <div class="grow"></div>
     <div class="card" style="display:flex;gap:30px;align-items:center;background:var(--gsoft)">
-      <img src="${face(YULIA)}" style="width:150px;height:150px;border-radius:50%;background:var(--card);border:4px solid var(--green);flex:none">
+      <img src="${face(AUTHOR)}" style="width:150px;height:150px;border-radius:50%;background:var(--card);border:4px solid var(--green);flex:none">
       <div style="font-size:34px;line-height:1.35;font-weight:600">Потренировать такой приём на пациенте — <b style="color:var(--green)">ссылка в закрепе</b></div>
     </div>
     <div style="height:40px"></div>${foot(i, n)}`);
@@ -105,9 +105,9 @@ function outro(d, i, n) {
 
 function intro() {
   return page(`${top("Знакомство")}
-    <div style="display:flex;justify-content:center;margin-top:70px"><img src="${face(YULIA)}" style="width:430px;height:430px;border-radius:50%;background:var(--gsoft);border:6px solid var(--ink);box-shadow:14px 14px 0 rgba(13,92,85,.2)"></div>
-    <h1 style="text-align:center;font-size:104px;margin-top:60px">Юля <mark>станет</mark><br>врачом</h1>
-    <p class="sub" style="text-align:center;margin:30px auto 0">5 курс лечфака · готовлюсь к аккредитации</p>
+    <div style="display:flex;justify-content:center;margin-top:70px"><img src="${face(AUTHOR)}" style="width:430px;height:430px;border-radius:50%;background:var(--gsoft);border:6px solid var(--ink);box-shadow:14px 14px 0 rgba(13,92,85,.2)"></div>
+    <h1 style="text-align:center;font-size:104px;margin-top:60px">Нина <mark>станет</mark><br>врачом</h1>
+    <p class="sub" style="text-align:center;margin:30px auto 0">4 курс лечфака · Санкт-Петербург</p>
     <div class="grow"></div>
     <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;font-size:30px;font-weight:700">
       ${["📋 шпаргалки", "🩺 клинические задачи", "🔎 разборы ошибок"].map((t) => `<span class="card" style="padding:18px 28px;border-radius:999px;box-shadow:5px 5px 0 rgba(13,92,85,.18)">${t}</span>`).join("")}
@@ -143,13 +143,13 @@ function promo() {
     </div>
     <div style="margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:12px 26px">${p.points.map((t) => `<div style="font-size:27px;line-height:1.3;font-weight:700;display:flex;gap:12px"><span style="color:var(--green)">✓</span><span>${esc(t)}</span></div>`).join("")}</div>
     <div class="grow"></div>
-    <div class="bottom"><div class="author"><img src="${face(YULIA)}">Юля тренируется здесь</div><span class="swipe" style="background:var(--red)">Жми кнопку ↓</span></div>`);
+    <div class="bottom"><div class="author"><img src="${face(AUTHOR)}">Нина тренируется здесь</div><span class="swipe" style="background:var(--red)">Жми кнопку ↓</span></div>`);
 }
 
 function avatar() {
   return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:640px;height:640px;overflow:hidden}
     body{background:radial-gradient(circle at 50% 44%, #e7f1ed 0 60%, #cfe2db 60.2% 100%);position:relative}
-    img{position:absolute;left:50%;bottom:-8px;width:600px;height:600px;transform:translateX(-50%)}</style></head><body><img src="${face(YULIA)}"></body></html>`;
+    img{position:absolute;left:50%;bottom:-8px;width:600px;height:600px;transform:translateX(-50%)}</style></head><body><img src="${face(AUTHOR)}"></body></html>`;
 }
 
 const jobs = [];

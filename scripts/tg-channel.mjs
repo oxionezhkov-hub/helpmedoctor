@@ -2,7 +2,8 @@
 // Посты лежат в content/telegram-channel/queue/*.json: массив шагов по порядку.
 // Шаги: { text } — текст (HTML); { photo, caption } — картинка из репозитория; { album: [файлы], caption } — карусель до 10 картинок;
 // { document, caption } — файл; { quiz: { question, options, correct, explanation } } — викторина;
-// { delete: [id…] } — удалить сообщения; { channel: { photo, description } } — оформить канал.
+// { delete: [id…] } — удалить сообщения; { channel: { photo, description, title } } — оформить канал;
+// { edit: id, photo?, caption?, buttons? } — заменить картинку и/или подпись уже опубликованного поста.
 // У текста и картинки можно buttons: [[{ text, url }]] и pin: true (закреп; служебное «закреплено» удаляется).
 // Запуск: TELEGRAM_TOKEN=… node scripts/tg-channel.mjs <файл.json> [--dry]
 // В GitHub Actions — workflow «Telegram-канал» при пуше ветки tg/** (токен из секретов репозитория).
@@ -20,6 +21,7 @@ const posts = JSON.parse(readFileSync(file, "utf8"));
 const ALLOWED = /^\/?(b|i|u|s|a|code|pre|blockquote|tg-spoiler)$/;
 function check(p, i) {
   const text = p.text ?? p.caption ?? "";
+  if (p.edit && !p.photo && !p.caption) throw new Error(`пост ${i + 1}: в правке нужна картинка или подпись`);
   for (const [, tag] of text.matchAll(/<\s*(\/?[a-z-]+)[^>]*>/gi)) if (!ALLOWED.test(tag)) throw new Error(`пост ${i + 1}: тег <${tag}> Telegram не поддерживает`);
   const plain = text.replace(/<[^>]+>/g, "");
   if (p.text && plain.length > 4096) throw new Error(`пост ${i + 1}: ${plain.length} символов, лимит 4096`);
@@ -44,7 +46,7 @@ const form = (fields) => { const fd = new FormData(); for (const [k, v] of Objec
 const soft = async (what, fn) => { try { return await fn(); } catch (e) { console.warn(`⚠️ ${what}: ${e.message}`); return null; } };
 
 for (const [i, p] of posts.entries()) {
-  const kind = p.delete ? `удаление ${p.delete.length}` : p.channel ? "оформление канала" : p.quiz ? "викторина" : p.album ? `карусель ${p.album.length}` : p.photo ? "картинка" : p.document ? `файл ${basename(p.document)}` : "текст";
+  const kind = p.edit ? `правка ${p.edit}` : p.delete ? `удаление ${p.delete.length}` : p.channel ? "оформление канала" : p.quiz ? "викторина" : p.album ? `карусель ${p.album.length}` : p.photo ? "картинка" : p.document ? `файл ${basename(p.document)}` : "текст";
   if (dry) { console.log(`${i + 1}. ${kind}${p.pin ? " + закреп" : ""}${p.buttons ? ` + кнопок ${p.buttons.flat().length}` : ""}: ${String(p.text || p.caption || p.quiz?.question || "").replace(/<[^>]+>/g, "").slice(0, 60)}`); continue; }
   if (p.delete) {
     for (const id of p.delete) await soft(`удалить ${id}`, () => call("deleteMessage", { chat_id: chat, message_id: id }));
@@ -58,8 +60,21 @@ for (const [i, p] of posts.entries()) {
     console.log(`${i + 1}. канал оформлен`);
     continue;
   }
-  let msg;
   const kb = p.buttons ? JSON.stringify({ inline_keyboard: p.buttons }) : undefined;
+  if (p.edit) {
+    if (p.photo) {
+      const fd = form({ chat_id: chat, message_id: String(p.edit), reply_markup: kb });
+      fd.set("media", JSON.stringify({ type: "photo", media: "attach://p", ...(p.caption ? { caption: p.caption, parse_mode: "HTML" } : {}) }));
+      fd.set("p", blob(p.photo), basename(p.photo));
+      await soft(`картинка поста ${p.edit}`, () => call("editMessageMedia", fd));
+    } else if (p.caption) {
+      await soft(`подпись поста ${p.edit}`, () => call("editMessageCaption", { chat_id: chat, message_id: p.edit, caption: p.caption, parse_mode: "HTML", ...(kb ? { reply_markup: JSON.parse(kb) } : {}) }));
+    }
+    console.log(`${i + 1}. пост ${p.edit} исправлен`);
+    await new Promise((r) => setTimeout(r, 1200));
+    continue;
+  }
+  let msg;
   if (p.quiz) {
     msg = await call("sendPoll", { chat_id: chat, type: "quiz", question: p.quiz.question, options: p.quiz.options.map((text) => ({ text })), correct_option_id: p.quiz.correct, explanation: p.quiz.explanation, is_anonymous: true });
   } else if (p.album) {
