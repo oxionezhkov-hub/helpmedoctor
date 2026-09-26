@@ -73,6 +73,8 @@ const ICONS = {
   users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/><path d="M22 21a7 7 0 0 0-5-6.7"/>',
   quiz: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="m9 13 2 2 4-4"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>',
   flame: '<path d="M12 22c4 0 7-2.7 7-6.8 0-3.2-2-5.7-3.6-7.2-.3 1.8-1.3 3-2.4 3.5.4-3.4-1-6.6-3.5-8.5.1 3-1.6 5.1-3.2 7C4.9 11.4 5 13.4 5 15.2 5 19.3 8 22 12 22Z"/>',
   star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9Z"/>',
   activity: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
@@ -287,13 +289,14 @@ function morphChildren(from, to) {
   }
   for (let i = b.length; i < a.length; i++) a[i].remove();
 }
-/** Экран с тем же маршрутом обновляем точечно (без мигания и сброса прокрутки), новый — рисуем заново */
+/** Экран с тем же маршрутом обновляем точечно (без мигания и сброса прокрутки), новый — рисуем заново и с начала */
 function patchRoot(markup) {
   const key = `${S.route.name}:${S.route.params.id || ""}`;
   const same = root.dataset.view === key && !root.querySelector(".boot, .login");
   root.dataset.view = key;
   if (!same) {
     root.innerHTML = markup;
+    window.scrollTo(0, 0);
     // Небольшая анимация входа на новый экран
     root.classList.remove("enter");
     void root.offsetWidth;
@@ -772,6 +775,27 @@ function renderShell(content, withNav = true) {
   return scrollY;
 }
 
+// ---------- Светлая / тёмная тема (общая с сайтом настройка hmd_theme) ----------
+function isDark() {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-theme-toggle]");
+  if (!b) return;
+  const next = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("hmd_theme", next); } catch {}
+  goal("theme", { to: next });
+  rerender();
+});
+
+// Нажали на уже открытую вкладку меню — плавно наверх
+document.addEventListener("click", (e) => {
+  const a = e.target.closest(".nav a.active");
+  if (a) { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+});
+
 // ---------------------------------------------------
 // Главная
 // ---------------------------------------------------
@@ -787,10 +811,11 @@ function viewHome(fresh) {
     <div class="hello">
       <a href="#/profile" class="avatar-link" aria-label="Профиль">${userAvatar(p)}</a>
       <div class="grow">
-        <h1 class="ellipsis">Доктор ${p.name}</h1>
+        <h1 class="ellipsis">Врач ${p.name}</h1>
         <div class="muted small">${!p.onboarding_done ? "Настройка профиля" : html`${p.level_label} · ${p.profession}`}${p.has_sub ? html` · <span class="badge accent">${ic("gem")} Безлимит</span>` : ""}</div>
       </div>
-      ${IN_TG ? html`<button class="icon-btn site-btn" data-open-site aria-label="Открыть на сайте" title="Открыть на сайте">${ic("external")}</button>` : ""}
+      ${IN_TG ? html`<button class="icon-btn site-btn" data-open-site aria-label="Открыть на сайте" title="Открыть на сайте">${ic("external")}</button>`
+        : html`<button class="icon-btn" data-theme-toggle aria-label="Светлая или тёмная тема" title="Светлая / тёмная тема">${ic(isDark() ? "sun" : "moon")}</button>`}
     </div>
 
     ${trialNotice(p)}
@@ -809,12 +834,9 @@ function viewHome(fresh) {
 
     ${p.onboarding_done ? newPatientBlock() : ""}
 
-    ${inConsult.length ? html`<div class="section-title">Идёт приём</div>
-      ${patientCard(inConsult[0], `/consult/${inConsult[0].id}`, "Продолжить приём")}` : ""}
-
-    ${waiting.length ? html`<div class="section-title">Ждёт приёма</div>${patientCard(waiting[0])}` : ""}
-
-    ${active.length > (inConsult.length ? 1 : 0) + (waiting.length ? 1 : 0) ? html`<a class="more-link" href="#/patients">Все пациенты в очереди · ${active.length}${ic("chevron")}</a>` : ""}
+    ${active.length ? html`<div class="section-title">Пациенты</div>
+      ${inConsult.length ? patientCard(inConsult[0], `/consult/${inConsult[0].id}`, "Продолжить приём") : patientCard(waiting[0])}
+      ${active.length > 1 ? html`<a class="more-link" href="#/patients">Все пациенты в очереди · ${active.length}${ic("chevron")}</a>` : ""}` : ""}
 
     ${pendingQuiz ? html`<div class="section-title">Тест</div><a class="card tap row" href="#/quiz/${pendingQuiz.pat_id}" style="text-decoration:none;color:inherit">
       <div class="tile warn">${ic("quiz")}</div>
@@ -847,14 +869,14 @@ function levelHead(p) {
   </div>`;
 }
 function kpi(icon, cls, value, label) {
-  return html`<div class="kpi"><div class="kpi-ic ${cls}">${ic(icon)}</div><b>${value}</b><span>${label}</span></div>`;
+  return html`<div class="kpi"><div class="kpi-ic ${cls}">${ic(icon)}</div><div class="kpi-t"><b>${value}</b><span>${label}</span></div></div>`;
 }
-function kpis(p) {
+function kpis(p, full = false) {
   const st = p.stats || {};
-  return html`<div class="kpis">
+  return html`<div class="kpis${full ? " three" : ""}">
     ${kpi("flame", "flame", p.streak || 0, `${plural(p.streak || 0, "день", "дня", "дней")} подряд`)}
-    ${kpi("star", "star", st.ratings_count ? st.avg_rating.toFixed(1).replace(".", ",") : "—", "средняя оценка")}
-    ${kpi("steth", "steth", st.consultations_total || 0, plural(st.consultations_total || 0, "приём", "приёма", "приёмов"))}
+    ${kpi("star", "star", st.ratings_count ? st.avg_rating.toFixed(1).replace(".", ",") : "—", full ? "средняя оценка" : "ср. оценка")}
+    ${full ? kpi("steth", "steth", st.consultations_total || 0, plural(st.consultations_total || 0, "приём", "приёма", "приёмов")) : ""}
   </div>`;
 }
 
@@ -2247,7 +2269,7 @@ function viewProfile() {
   const item = (attrs, tile, icon, title, sub2, extra = "") => html`<${attrs.tag || "a"} class="menu-item${attrs.cls ? " " + attrs.cls : ""}" ${raw(attrs.a || "")}>
     <div class="tile ${tile}">${ic(icon)}</div><div class="grow"><b>${title}</b>${sub2 ? html`<div class="small muted ellipsis">${sub2}</div>` : ""}</div>${extra || ic("chevron", "c-muted")}</${attrs.tag || "a"}>`;
   renderShell(html`<div class="page">
-    <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
+    <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">Врач ${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
       <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
       ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разбор по КР, тесты" : "Безлимит, разбор по КР, тесты")}
@@ -2381,7 +2403,7 @@ function viewStats() {
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Статистика</h2></div>
 
-    <div class="card lvl-card">${levelHead(p)}${kpis(p)}</div>
+    <div class="card lvl-card">${levelHead(p)}${kpis(p, true)}</div>
 
     <div class="card next-step"><div class="tile accent">${ic(next[0])}</div><div class="grow"><div class="tiny muted">ЧТО ДЕЛАТЬ ДАЛЬШЕ</div><b>${next[1]}</b><div class="small muted">${next[2]}</div></div></div>
     ${rated || !p.onboarding_done ? "" : html`<button class="btn block" data-go="/">${ic("plus")}<span>Принять пациента</span></button>`}
