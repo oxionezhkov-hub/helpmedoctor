@@ -383,6 +383,23 @@ async function onCallback(ctx, cb) {
     return startPatient(ctx, data.slice(3));
   }
   if (data.startsWith("qz_")) return startQuiz(ctx, data.slice(3));
+  if (data.startsWith("kr_")) {
+    try {
+      const res = await user.requestGuide(data.slice(3), "bot");
+      if (res.guide) {
+        const pat = (await user.patientView(data.slice(3))).patient;
+        const m = R.guide(env, { patient_id: data.slice(3), patient_name: pat.name, guide: res.guide, premium: true });
+        return bot.send(uid, m.text, m.kb);
+      }
+      return bot.send(uid, "📚 Готовлю разбор по клиническим рекомендациям Минздрава: как надо было распознать, обязательный минимум, препараты и дозы. Пришлю через минуту.");
+    } catch (e) {
+      if (userError(e)?.code === "premium") {
+        const p = await user.profile();
+        return bot.send(uid, `📚 ${esc(userError(e).message)}`, [[appBtn(p.trial_used ? "💎 Премиум" : "💎 Премиум 7 дней за 1 ₽", R.appUrl(env, p.trial_used ? "/plans" : "/plans?buy=trial"))]]);
+      }
+      throw e;
+    }
+  }
 
   // Анкета нового пользователя
   if (data.startsWith("ob_")) return onboardingCallback(ctx, data, mid);

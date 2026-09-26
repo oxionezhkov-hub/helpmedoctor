@@ -32,7 +32,7 @@ const mockImpl = {
       return { response: JSON.stringify({ axes: { diagnosis: 5, communication: 4, treatment: 4 }, diagnosis_correct: "yes", critical_error: "", mkb10: "K26.3", expert_text: "Хороший сбор анамнеза, диагноз близок.", dialog_moments: [{ quote: "Где болит?", comment: "Хороший открытый вопрос" }], strengths: ["Сбор анамнеза"], weaknesses: ["Эрадикация H. pylori"], recommendation: "Назначайте ФГДС раньше.", outcome_update: "improving", post_story: "Через 3 недели боли ушли." }) };
     }
     if (prompt.includes("Врач попросил подсказку")) {
-      return { response: { hint: "Уточните, связана ли боль с приёмом пищи и принимает ли пациент обезболивающие от спины — это главный фактор риска здесь.", kind: "question" } };
+      return { response: { hint: "Пациент жалуется на боли под ложечкой по ночам, но вы ещё не выяснили, какие лекарства он принимает. Уточните приём обезболивающих — от этого зависит, о чём думать в первую очередь.", kind: "question" } };
     }
     if (prompt.includes("Составь учебный разбор случая")) {
       return { response: {

@@ -956,10 +956,10 @@ export class UserDO extends DurableObject {
       post_story: ev.post_story, xp: earned, streak: prof.streak, streak_bonus: G.streakBonus(prof.streak),
       level: lvlAfter, level_up: lvlAfter > lvlBefore ? { from: lvlBefore, to: lvlAfter } : null,
       task_done: taskDone ? prof.daily_task : null, consultation_number: fresh.consultations.length,
-      hints: facts.hints?.length || 0, guide_pending: true,
+      hints: facts.hints?.length || 0,
     };
-    // Без премиума: оценка и вывод эксперта; цитаты из диалога и «что было дальше» — закрыты
-    if (!G.isPremium(prof)) Object.assign(result, { dialog_moments: [], post_story: null, locked: true, trial_available: !prof.trial_used });
+    // Весь разбор приёма открыт всем; в премиуме — разбор по клиническим рекомендациям (по кнопке) и тест
+    Object.assign(result, { recommendation: ev.recommendation, premium: G.isPremium(prof), trial_available: !prof.trial_used });
     this.broadcast("evaluation", result);
     const evSource = { source: job.source || (job.origin === "bot" ? "bot" : "web") };
     await this.track("evaluation", {
@@ -983,24 +983,64 @@ export class UserDO extends DurableObject {
       }
     }
 
-    // Подробный разбор по клиническим рекомендациям Минздрава — отдельным шагом, чтобы оценка пришла быстрее
-    let guide = null;
+    // Тест «работа над ошибками» — с упором на диагностику и лечение по КР (название КР — по диагнозу)
     try {
-      guide = await this.buildGuide(job.patId, facts, ev);
-    } catch (e) {
-      console.error("guide", e);
-      await this.track("ai_error", { what: "guide", error: String(e.message || e).slice(0, 300) });
-    }
-    if (guide && job.origin === "bot") {
-      const m = R.guide(this.env, { patient_id: job.patId, patient_name: fresh.name, guide, premium: G.isPremium(prof) });
-      await tg(this.env).send(prof.uid, m.text, m.kb).catch((e) => console.error("guide tg", e));
-    }
-
-    // Тест «работа над ошибками» — с упором на диагностику и лечение по КР
-    try {
-      await this.generateQuiz(fresh, ev, facts, guide);
+      const kr = fresh.kr || matchKr({ diagnosis: fresh.true_diagnosis, mkb: ev.mkb10 || fresh.mkb10, pediatric: Number(fresh.age) < 18 && !fresh.is_alien });
+      await this.generateQuiz(fresh, ev, facts, kr ? { kr } : null);
     } catch (e) {
       console.error("quiz gen", e);
+    }
+  }
+
+  /**
+   * Разбор по клиническим рекомендациям — по кнопке после разбора приёма (премиум).
+   * Генерация идёт в очереди (alarm): ответ сразу, готовый разбор приходит событием «guide».
+   */
+  async requestGuide(patId, origin = "web") {
+    const pat = await this.patient(patId);
+    const rec = pat.consultations?.[pat.consultations.length - 1];
+    if (!rec || rec.evaluating) throw new UserError("Разбор приёма ещё готовится — подождите минуту", "guide_wait");
+    if (rec.guide) return { guide: rec.guide };
+    const prof = await this.profile();
+    if (!G.isPremium(prof)) {
+      await this.track("paywall", { what: "guide" });
+      throw new UserError(prof.trial_used
+        ? "Разбор по клиническим рекомендациям Минздрава — в премиуме. Оформите подписку в «Тарифах»."
+        : "Разбор по клиническим рекомендациям Минздрава — в премиуме. Попробуйте 7 дней за 1 ₽ в «Тарифах».", "premium");
+    }
+    if (rec.guide_pending && Date.now() - rec.guide_pending < 3 * 60000) return { pending: true, since: rec.guide_pending };
+    rec.guide_pending = Date.now();
+    await this.ctx.storage.put(patKey(patId), pat);
+    await this.enqueue({ type: "guide", patId, origin, source: this.source() });
+    this.broadcast("guide", { patient_id: patId, pending: true });
+    await this.track("guide_request", { patient: patId });
+    return { pending: true, since: rec.guide_pending };
+  }
+
+  async jobGuide(job) {
+    const pat = await this.patient(job.patId);
+    const rec = pat.consultations?.[pat.consultations.length - 1];
+    if (!rec || rec.guide) return;
+    const facts = factsFromRecord(pat, rec);
+    const guide = await this.buildGuide(job.patId, facts, { mkb10: pat.mkb10 });
+    if (guide && job.origin === "bot") {
+      const prof = await this.profile();
+      const m = R.guide(this.env, { patient_id: job.patId, patient_name: pat.name, guide, premium: true });
+      await tg(this.env).send(prof.uid, m.text, m.kb).catch((e) => console.error("guide tg", e));
+    }
+  }
+
+  async jobGuideFailed(job) {
+    const pat = await this.patient(job.patId).catch(() => null);
+    const rec = pat?.consultations?.[pat.consultations.length - 1];
+    if (rec) {
+      delete rec.guide_pending;
+      await this.ctx.storage.put(patKey(job.patId), pat);
+    }
+    this.broadcast("guide", { patient_id: job.patId, error: "Разбор по КР сейчас не получился — попробуйте ещё раз через минуту." });
+    if (job.origin === "bot") {
+      const prof = await this.profile();
+      await tg(this.env).send(prof.uid, "📚 Разбор по клиническим рекомендациям сейчас не получился — попробуйте ещё раз через минуту.").catch(() => {});
     }
   }
 
@@ -1026,6 +1066,7 @@ export class UserDO extends DurableObject {
     const rec = fresh.consultations[fresh.consultations.length - 1];
     if (!rec) return null;
     rec.guide = guide;
+    delete rec.guide_pending;
     if (!fresh.kr && kr) fresh.kr = kr;
     await this.ctx.storage.put(patKey(patId), fresh);
     this.broadcast("guide", { patient_id: patId });
@@ -1450,6 +1491,8 @@ export class UserDO extends DurableObject {
   // ---------------------------------------------------
 
   async cronTick(kind, uid, texts = {}) {
+    // Заодно подтягиваем фото из Telegram тем, у кого его ещё нет (раз в неделю, см. ensureTgAvatar)
+    this.ctx.waitUntil(this.ensureTgAvatar().catch(() => null));
     let prof = await this.ctx.storage.get(PROFILE);
     if (!prof && uid) {
       // Старый пользователь, ещё не заходивший после переезда — переносим данные из KV
@@ -1565,6 +1608,7 @@ export class UserDO extends DurableObject {
       try {
         if (job.type === "new_patient") await this.jobNewPatient(job);
         if (job.type === "evaluate") await this.jobEvaluate(job);
+        if (job.type === "guide") await this.jobGuide(job);
         await this.dropJob(job.id);
       } catch (e) {
         console.error(`job ${job.type} attempt ${job.attempt}`, e);
@@ -1574,6 +1618,7 @@ export class UserDO extends DurableObject {
           await this.dropJob(job.id);
           if (job.type === "new_patient") await this.jobNewPatientFailed(job, e);
           if (job.type === "evaluate") await this.jobEvaluateFailed(job, e);
+          if (job.type === "guide") await this.jobGuideFailed(job, e);
         }
       }
     }
@@ -1732,6 +1777,17 @@ function normalizeEvaluation(e) {
   };
 }
 
+/** Факты завершённого приёма из записи и ленты — для разбора по КР, который строится позже, по кнопке */
+function factsFromRecord(pat, rec) {
+  const from = rec.started_at || 0, to = rec.date || Date.now();
+  return {
+    doctorMessages: (pat.conversation_history || []).filter((m) => m.role === "doctor" && m.ts >= from && m.ts <= to).map((m) => m.text),
+    tests: rec.tests || [], physicals: rec.physicals || [], diagnosis: rec.diagnosis || null, treatment: rec.treatment || null,
+    referrals: rec.referrals || [], discharged: !!rec.discharged,
+    hints: (pat.hints || []).filter((h) => h.ts >= from && h.ts <= to).map((h) => h.text),
+  };
+}
+
 /** Разбор по КР: только ожидаемые поля и разумные длины */
 export function normalizeGuide(g) {
   const arr = (v, n) => (Array.isArray(v) ? v : []).slice(0, n);
@@ -1842,9 +1898,9 @@ export function publicProfile(prof) {
     patient_credits: prof.patient_credits || 0,
     streak_freezes: prof.streak_freezes || 0,
     // Слабые места и советы эксперта — в премиуме; бесплатным показываем, сколько их накопилось
-    weaknesses: G.isPremium(prof) ? prof.weaknesses || [] : [],
-    recommendations: G.isPremium(prof) ? prof.recommendations || [] : [],
-    locked_insights: G.isPremium(prof) ? 0 : (prof.weaknesses || []).length + (prof.recommendations || []).length,
+    weaknesses: prof.weaknesses || [],
+    recommendations: prof.recommendations || [],
+    locked_insights: 0,
     today_patients: G.todayPatientsCount(prof),
     can_accept: G.canAcceptPatient(prof),
     generating_patient: !!(prof.generating_patient && Date.now() - prof.generating_patient < 120000),
@@ -1872,16 +1928,12 @@ export function publicPatient(p, premium = true) {
   const { full_history, key_findings, findings, personality, last_facts, summary, mkb10, kr, ...rest } = p;
   // Без премиума: оценка, оси и вывод эксперта; цитаты, совет и «что было дальше» — закрыты.
   // В разборе по КР бесплатно — как надо было распознать и чек-лист; диагностика и лечение с дозами — в премиуме.
-  const lock = (c) => (premium || !c.feedback ? c : {
-    ...c, post_story: null, locked: true,
-    feedback: { axes: c.feedback.axes, expert_text: c.feedback.expert_text, diagnosis_correct: c.feedback.diagnosis_correct },
-    guide: lockGuide(c.guide),
-  });
+  const lock = (c) => (premium || !c.guide ? c : { ...c, guide: lockGuide(c.guide) });
   // Старые пациенты могли сохраниться с иероглифами от ИИ — чистим при показе
   return stripForeignDeep({
     ...rest,
     consultations: (p.consultations || []).map(lock),
-    post_story: premium ? p.post_story : null,
+    post_story: p.post_story,
     true_diagnosis: closed ? p.true_diagnosis : null,
     // Название КР выдаёт диагноз — показываем только после приёма
     kr: closed ? kr || null : null,
