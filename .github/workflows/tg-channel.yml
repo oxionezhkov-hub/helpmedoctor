@@ -31,7 +31,8 @@ jobs:
         run: |
           if [ -n "$INPUT_FILE" ]; then files="$INPUT_FILE"
           elif [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            files=$(git diff --name-only --diff-filter=A origin/main...HEAD -- content/telegram-channel/queue)
+            # Новая ветка: только файлы из последнего коммита — чтобы не переопубликовать старые посты
+            files=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- content/telegram-channel/queue)
           else
             files=$(git diff --name-only --diff-filter=A "$BEFORE" "$GITHUB_SHA" -- content/telegram-channel/queue)
           fi
