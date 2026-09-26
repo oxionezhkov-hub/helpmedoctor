@@ -8,11 +8,12 @@ import { DurableObject } from "cloudflare:workers";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   DIFFICULTIES, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
-  EARLY_UNTIL, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel,
+  EARLY_UNTIL, HINTS_PER_PATIENT, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel,
 } from "../config.js";
 import { SYSTEM_TEXTS } from "../lib/analytics.js";
 import { aiJson, aiText, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
+import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
 import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
@@ -28,7 +29,7 @@ const quizKey = (patId) => `quiz:${patId}`;
 // Откуда пришло действие: bot | miniapp | web | system — задаётся в rpc()
 const als = new AsyncLocalStorage();
 // Что нельзя делать заблокированному админом пользователю
-const BLOCKED_METHODS = new Set(["requestNewPatient", "startConsultation", "doctorMessage", "voiceMessage", "orderTest", "physicalExam", "finishConsultation", "answerQuiz", "reopenPatient"]);
+const BLOCKED_METHODS = new Set(["requestNewPatient", "startConsultation", "doctorMessage", "voiceMessage", "orderTest", "physicalExam", "requestHint", "finishConsultation", "answerQuiz", "reopenPatient"]);
 
 export class UserDO extends DurableObject {
   constructor(ctx, env) {
@@ -424,6 +425,7 @@ export class UserDO extends DurableObject {
       sex: data.sex,
       chief_complaint: clampStr(data.chief_complaint, 300),
       true_diagnosis: clampStr(data.true_diagnosis, 200),
+      mkb10: clampStr(data.mkb10, 20),
       full_history: clampStr(data.full_history, 1500),
       personality: clampStr(data.personality, 300),
       opening_phrase: clampStr(data.opening_phrase, 400),
@@ -438,8 +440,12 @@ export class UserDO extends DurableObject {
       summary: null,
       test_results: [],
       exam_results: [],
+      hints: [],
       current: null,
     };
+    // Клиническая рекомендация Минздрава по диагнозу: для подсказок и разбора. Текст подтягиваем заранее (кэш KV).
+    pat.kr = matchKr({ diagnosis: pat.true_diagnosis, mkb: pat.mkb10, pediatric: Number(pat.age) < 18 });
+    if (pat.kr) this.ctx.waitUntil(krText(this.env, pat.kr.id).catch(() => null));
 
     // Профиль перечитываем после ИИ — он мог измениться
     const prof = await this.profile();
@@ -770,6 +776,40 @@ export class UserDO extends DurableObject {
   }
 
   /**
+   * Подсказка на приёме: ИИ смотрит диалог и назначения и называет один следующий шаг.
+   * Не больше HINTS_PER_PATIENT на пациента; каждая снижает оценку и опыт за приём (см. game.js).
+   */
+  async requestHint(patId) {
+    return this.withLock(`hint:${patId}`, async () => {
+      const pat = await this.openPatient(patId);
+      const used = (pat.hints || []).length;
+      if (used >= HINTS_PER_PATIENT) throw new UserError(`Подсказки по этому пациенту закончились — все ${HINTS_PER_PATIENT} использованы`, "hints_out");
+      const kr = pat.kr === undefined ? matchKr({ diagnosis: pat.true_diagnosis, mkb: pat.mkb10, pediatric: Number(pat.age) < 18 && !pat.is_alien }) : pat.kr;
+      const text = kr ? await krText(this.env, kr.id) : null;
+      const p = P.hintPrompt(pat, G.consultationFacts(pat), (pat.hints || []).map((h) => h.text), text?.diagnostics || "");
+      let res;
+      const t0 = Date.now();
+      try {
+        res = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "hint", uid: pat.doctor_uid });
+      } catch (e) {
+        console.error("hint", e);
+        await this.track("ai_error", { what: "hint", error: String(e.message || e).slice(0, 300) });
+        throw new UserError("Наставник задумался — попробуйте ещё раз. Подсказка не списана.", "ai_error");
+      }
+      const hintText = clampStr(res.hint || res.text || "", 400);
+      if (!hintText) throw new UserError("Не получилось сформулировать подсказку — попробуйте ещё раз. Подсказка не списана.", "ai_error");
+      const hint = { n: used + 1, text: hintText, kind: ["question", "exam", "test"].includes(res.kind) ? res.kind : "question", ts: Date.now() };
+      const fresh = await this.patient(patId);
+      fresh.hints = [...(fresh.hints || []), hint];
+      if (fresh.kr === undefined) fresh.kr = kr;
+      await this.ctx.storage.put(patKey(patId), fresh);
+      this.broadcast("consultation", { patient_id: patId });
+      await this.track("hint", { patient: patId, n: hint.n, kind: hint.kind }, { dur: Date.now() - t0 });
+      return { hint, left: HINTS_PER_PATIENT - hint.n, total: HINTS_PER_PATIENT };
+    });
+  }
+
+  /**
    * Завершить приём.
    * @param {{type: "diagnosis"|"referral"|"discharge", value?: string, treatment?: string}} action
    */
@@ -815,6 +855,7 @@ export class UserDO extends DurableObject {
         referrals: facts.referrals,
         discharged: facts.discharged,
         doctor_messages: facts.doctorMessages.length,
+        hints: facts.hints.length,
         rating: null,
         feedback: null,
         evaluating: true,
@@ -915,6 +956,7 @@ export class UserDO extends DurableObject {
       post_story: ev.post_story, xp: earned, streak: prof.streak, streak_bonus: G.streakBonus(prof.streak),
       level: lvlAfter, level_up: lvlAfter > lvlBefore ? { from: lvlBefore, to: lvlAfter } : null,
       task_done: taskDone ? prof.daily_task : null, consultation_number: fresh.consultations.length,
+      hints: facts.hints?.length || 0, guide_pending: true,
     };
     // Без премиума: оценка и вывод эксперта; цитаты из диалога и «что было дальше» — закрыты
     if (!G.isPremium(prof)) Object.assign(result, { dialog_moments: [], post_story: null, locked: true, trial_available: !prof.trial_used });
@@ -941,27 +983,71 @@ export class UserDO extends DurableObject {
       }
     }
 
-    // Тест «работа над ошибками»
+    // Подробный разбор по клиническим рекомендациям Минздрава — отдельным шагом, чтобы оценка пришла быстрее
+    let guide = null;
     try {
-      await this.generateQuiz(fresh, ev, facts);
+      guide = await this.buildGuide(job.patId, facts, ev);
+    } catch (e) {
+      console.error("guide", e);
+      await this.track("ai_error", { what: "guide", error: String(e.message || e).slice(0, 300) });
+    }
+    if (guide && job.origin === "bot") {
+      const m = R.guide(this.env, { patient_id: job.patId, patient_name: fresh.name, guide, premium: G.isPremium(prof) });
+      await tg(this.env).send(prof.uid, m.text, m.kb).catch((e) => console.error("guide tg", e));
+    }
+
+    // Тест «работа над ошибками» — с упором на диагностику и лечение по КР
+    try {
+      await this.generateQuiz(fresh, ev, facts, guide);
     } catch (e) {
       console.error("quiz gen", e);
     }
   }
 
-  async generateQuiz(pat, ev, facts) {
+  /** Разбор по КР: находим рекомендацию, берём её текст, ИИ раскладывает случай по пунктам */
+  async buildGuide(patId, facts, ev) {
+    const pat = await this.patient(patId);
+    let kr = pat.kr || null;
+    if (!kr) kr = matchKr({ diagnosis: pat.true_diagnosis, mkb: ev.mkb10 || pat.mkb10, pediatric: Number(pat.age) < 18 && !pat.is_alien });
+    const text = kr ? await krText(this.env, kr.id) : null;
+    const p = P.guidePrompt(pat, facts, ev, kr, text);
+    const t0 = Date.now();
+    let raw;
+    for (let attempt = 0; attempt < 2 && !raw; attempt++) {
+      try {
+        raw = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "guide", uid: pat.doctor_uid });
+      } catch (e) {
+        if (attempt) throw e;
+      }
+    }
+    const guide = { ...normalizeGuide(raw), kr, grounded: !!text, at: Date.now() };
+    if (!guide.must.length && !guide.treatment.length) throw new Error("guide: пустой разбор");
+    const fresh = await this.patient(patId);
+    const rec = fresh.consultations[fresh.consultations.length - 1];
+    if (!rec) return null;
+    rec.guide = guide;
+    if (!fresh.kr && kr) fresh.kr = kr;
+    await this.ctx.storage.put(patKey(patId), fresh);
+    this.broadcast("guide", { patient_id: patId });
+    await this.track("guide", { patient: patId, kr: kr?.id || null, grounded: !!text, must: guide.must.length, missed: guide.must.filter((x) => !x.done).length, drugs: guide.treatment.length }, { dur: Date.now() - t0 });
+    return guide;
+  }
+
+  async generateQuiz(pat, ev, facts, guide = null) {
     const topics = [
+      ...(guide?.mistakes || []),
       ...(ev.weaknesses || []),
       ...(ev.dialog_moments || []).map((m) => m.comment),
       ev.recommendation,
-    ].filter(Boolean).slice(0, 5);
+    ].filter(Boolean).slice(0, 6);
     if (!topics.length) topics.push(`Диагностика и лечение: ${pat.true_diagnosis}`);
-    const p = P.quizPrompt(pat, topics);
+    const p = P.quizPrompt(pat, topics, guide, guide?.kr?.name || "");
     const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "quiz", uid: pat.doctor_uid });
     const questions = (data.questions || []).map(normalizeQuestion).filter(Boolean).slice(0, 5);
     if (questions.length < 3) throw new Error("quiz: мало валидных вопросов");
     const quiz = {
       pat_id: pat.id, pat_name: pat.name, pat_diagnosis: pat.true_diagnosis, specialization: pat.specialization,
+      kr: guide?.kr || null,
       created_at: Date.now(), status: "pending", questions, answers: [], score: null, finished_at: null,
     };
     const prof = await this.profile();
@@ -1642,15 +1728,36 @@ function normalizeEvaluation(e) {
     recommendation: clampStr(e.recommendation, 300),
     outcome_update: ["improving", "stable", "worsening", "critical"].includes(e.outcome_update) ? e.outcome_update : "stable",
     post_story: clampStr(e.post_story, 800),
+    mkb10: clampStr(e.mkb10, 20),
+  };
+}
+
+/** Разбор по КР: только ожидаемые поля и разумные длины */
+export function normalizeGuide(g) {
+  const arr = (v, n) => (Array.isArray(v) ? v : []).slice(0, n);
+  const str = (v, n) => clampStr(typeof v === "string" ? v : "", n);
+  return {
+    diagnosis_path: arr(g?.diagnosis_path, 6).map((x) => str(x, 300)).filter(Boolean),
+    must: arr(g?.must, 8).map((x) => (typeof x === "string" ? { item: str(x, 250), done: false } : { item: str(x?.item, 250), done: x?.done === true || x?.done === "true" })).filter((x) => x.item),
+    optional: arr(g?.optional, 4).map((x) => str(x, 250)).filter(Boolean),
+    tests: arr(g?.tests, 6).map((x) => (typeof x === "string" ? { name: str(x, 120), why: "" } : { name: str(x?.name, 120), why: str(x?.why, 300) })).filter((x) => x.name),
+    treatment: arr(g?.treatment, 6).map((x) => ({
+      drug: str(x?.drug, 120), dose: str(x?.dose, 200), duration: str(x?.duration, 120), note: str(x?.note, 250),
+      source: x?.source === "kr" ? "kr" : "instr",
+    })).filter((x) => x.drug),
+    non_drug: str(g?.non_drug, 500),
+    red_flags: arr(g?.red_flags, 3).map((x) => str(x, 250)).filter(Boolean),
+    mistakes: arr(g?.mistakes, 4).map((x) => str(x, 300)).filter(Boolean),
   };
 }
 
 function normalizeQuestion(q) {
   if (!q || !q.text || !Array.isArray(q.options) || q.options.length < 2) return null;
-  const options = q.options.map((o) => clampStr(o, 120)).slice(0, 4);
+  const options = q.options.map((o) => clampStr(o, 160)).slice(0, 4);
   const correct = Number(q.correct);
   if (!(correct >= 0 && correct < options.length)) return null;
-  return { text: clampStr(q.text, 400), options, correct, explanation: clampStr(q.explanation, 500) };
+  const topic = ["treatment", "diagnostics", "error"].includes(q.topic) ? q.topic : null;
+  return { text: clampStr(q.text, 500), options, correct, explanation: clampStr(q.explanation, 1000), ...(topic ? { topic } : {}) };
 }
 
 /** Приводим старых пациентов из KV к новому формату */
@@ -1687,7 +1794,7 @@ export function normalizePatient(p) {
 
 function normalizeQuiz(t) {
   return {
-    pat_id: t.pat_id, pat_name: t.pat_name, pat_diagnosis: t.pat_diagnosis, specialization: t.specialization,
+    pat_id: t.pat_id, pat_name: t.pat_name, pat_diagnosis: t.pat_diagnosis, specialization: t.specialization, kr: t.kr || null,
     created_at: t.created_at || Date.now(), status: t.status || "pending",
     questions: (t.questions || []).map(normalizeQuestion).filter(Boolean),
     answers: (t.answers || []).map((a) => ({ chosen: a.chosen, is_correct: !!a.is_correct })),
@@ -1762,11 +1869,13 @@ export function patientSummary(p) {
 
 export function publicPatient(p, premium = true) {
   const closed = p.status === "closed";
-  const { full_history, key_findings, findings, personality, last_facts, summary, ...rest } = p;
-  // Без премиума: оценка, оси и вывод эксперта; цитаты, совет и «что было дальше» — закрыты
+  const { full_history, key_findings, findings, personality, last_facts, summary, mkb10, kr, ...rest } = p;
+  // Без премиума: оценка, оси и вывод эксперта; цитаты, совет и «что было дальше» — закрыты.
+  // В разборе по КР бесплатно — как надо было распознать и чек-лист; диагностика и лечение с дозами — в премиуме.
   const lock = (c) => (premium || !c.feedback ? c : {
     ...c, post_story: null, locked: true,
     feedback: { axes: c.feedback.axes, expert_text: c.feedback.expert_text, diagnosis_correct: c.feedback.diagnosis_correct },
+    guide: lockGuide(c.guide),
   });
   // Старые пациенты могли сохраниться с иероглифами от ИИ — чистим при показе
   return stripForeignDeep({
@@ -1774,13 +1883,23 @@ export function publicPatient(p, premium = true) {
     consultations: (p.consultations || []).map(lock),
     post_story: premium ? p.post_story : null,
     true_diagnosis: closed ? p.true_diagnosis : null,
+    // Название КР выдаёт диагноз — показываем только после приёма
+    kr: closed ? kr || null : null,
     current: p.current,
   });
 }
 
+export function lockGuide(g) {
+  if (!g) return g;
+  return {
+    kr: g.kr, grounded: g.grounded, at: g.at, diagnosis_path: g.diagnosis_path, must: g.must, optional: g.optional,
+    locked: true, counts: { tests: g.tests?.length || 0, treatment: g.treatment?.length || 0, red_flags: g.red_flags?.length || 0 },
+  };
+}
+
 function quizSummary(q) {
   return {
-    pat_id: q.pat_id, pat_name: q.pat_name, pat_diagnosis: q.pat_diagnosis, status: q.status,
+    pat_id: q.pat_id, pat_name: q.pat_name, pat_diagnosis: q.pat_diagnosis, status: q.status, kr: q.kr || null,
     total: q.questions.length, answered: q.answers.length, score: q.score, created_at: q.created_at,
   };
 }
@@ -1792,6 +1911,7 @@ export function publicQuiz(q) {
     questions: q.questions.map((qq, i) => ({
       text: qq.text,
       options: qq.options,
+      topic: qq.topic || null,
       // Правильный ответ и объяснение — только для уже отвеченных вопросов
       ...(i < answered || q.status === "done" ? { correct: qq.correct, explanation: qq.explanation, chosen: q.answers[i]?.chosen } : {}),
     })),

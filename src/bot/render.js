@@ -1,5 +1,5 @@
 // Тексты и клавиатуры бота
-import { DIFFICULTIES, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
+import { DIFFICULTIES, HINTS_PER_PATIENT, HINT_RATING_PENALTY, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
 import { declDays, esc, firstName } from "../lib/util.js";
 import { appBtn, btn } from "../lib/telegram.js";
 
@@ -13,6 +13,7 @@ export const kbActions = () => [[btn("⚕️ Действия", "act")]];
 
 export const kbActionsMenu = () => [
   [btn("🔬 Обследование", "act_test"), btn("🤲 Осмотр", "act_phys")],
+  [btn("💡 Подсказка", "act_hint")],
   [btn("🏁 Завершить приём", "act_end")],
   [btn("⏸ Пауза", "act_pause"), btn("✖️ Закрыть", "act_close")],
 ];
@@ -41,6 +42,19 @@ export const kbEnd = () => [
   [btn("❌ Отказаться от пациента", "end_dis")],
   [btn("◀️ Назад", "act")],
 ];
+
+export const kbHintConfirm = () => [[btn("💡 Да, подскажите", "hint_ok")], [btn("◀️ Назад", "act")]];
+
+export function hintConfirm(used) {
+  const left = HINTS_PER_PATIENT - used;
+  return left > 0
+    ? `💡 <b>Подсказка наставника</b>\nИИ посмотрит ваш диалог и назначения и назовёт один следующий шаг: что спросить, осмотреть или назначить.\n\nОсталось <b>${left} из ${HINTS_PER_PATIENT}</b>. Каждая подсказка — минус ${String(HINT_RATING_PENALTY).replace(".", ",")} к оценке приёма и меньше опыта. Получить?`
+    : `💡 Подсказки по этому пациенту закончились — все ${HINTS_PER_PATIENT} использованы.`;
+}
+
+export function hintMsg(res) {
+  return `💡 <b>Подсказка ${res.hint.n} из ${res.total}</b>\n\n${esc(res.hint.text)}${res.left ? "" : "\n\n<i>Это была последняя подсказка по этому пациенту.</i>"}`;
+}
 
 export const kbConfirmDischarge = () => [[btn("✅ Да, завершить", "end_dis_ok")], [btn("◀️ Отмена", "act_end")]];
 
@@ -209,7 +223,9 @@ export function evaluation(env, r) {
     t += `\n💬 <i>«${esc(m.quote)}»</i>\n→ ${esc(m.comment)}\n`;
   }
   if (r.post_story) t += `\n📖 <b>Что было дальше</b>\n${esc(r.post_story)}\n`;
-  if (r.locked) t += `\n🔒 <i>В премиуме — полный разбор: цитаты из вашего диалога с комментариями эксперта, «что было дальше» с пациентом и тест по ошибкам.</i>\n`;
+  if (r.hints) t += `\n💡 Подсказок взято: ${r.hints} — оценка ниже на ${String(Math.round(r.hints * HINT_RATING_PENALTY * 10) / 10).replace(".", ",")}\n`;
+  if (r.locked) t += `\n🔒 <i>В премиуме — полный разбор: цитаты из вашего диалога с комментариями эксперта, схемы лечения с дозами по клиническим рекомендациям Минздрава, «что было дальше» с пациентом и тест по ошибкам.</i>\n`;
+  t += `\n📚 <i>Разбор по клиническим рекомендациям Минздрава РФ придёт следующим сообщением.</i>\n`;
   t += `\n⚡ <b>+${r.xp} XP</b>${r.streak_bonus > 0 ? ` (стрик ×${(1 + r.streak_bonus).toFixed(1)})` : ""}`;
   if (r.level_up) t += `\n🎉 <b>Новый уровень: ${r.level_up.from} → ${r.level_up.to}</b>`;
   t += `\n📊 Уровень ${r.level} · 🔥 ${r.streak} ${declDays(r.streak)} подряд`;
@@ -223,6 +239,26 @@ export function evaluation(env, r) {
       [btn("➕ Новый пациент", "new"), appBtn("📋 Карточка", appUrl(env, `/patient/${r.patient_id}`))],
     ],
   };
+}
+
+/** Разбор по клиническим рекомендациям — отдельным сообщением после оценки (лимит Telegram — 4096 символов) */
+export function guide(env, { patient_id, patient_name, guide: g, premium }) {
+  const kr = g.kr ? `по КР Минздрава «<a href="${g.kr.url}">${esc(g.kr.name)}</a>»` : "по российской клинической практике";
+  let t = `📚 <b>Разбор ${kr}</b>\n${esc(patient_name)}\n`;
+  if (g.diagnosis_path?.length) t += `\n<b>Как надо было распознать</b>\n${g.diagnosis_path.map((x, i) => `${i + 1}. ${esc(x)}`).join("\n")}\n`;
+  if (g.must?.length) t += `\n<b>Обязательно по КР</b>\n${g.must.map((x) => `${x.done ? "✅" : "❌"} ${esc(x.item)}`).join("\n")}\n`;
+  if (g.optional?.length) t += `\n<b>Желательно</b>\n${g.optional.map((x) => `▫️ ${esc(x)}`).join("\n")}\n`;
+  if (premium) {
+    if (g.tests?.length) t += `\n<b>Лучшая диагностика</b>\n${g.tests.map((x) => `🔬 ${esc(x.name)}${x.why ? ` — ${esc(x.why)}` : ""}`).join("\n")}\n`;
+    if (g.treatment?.length) t += `\n<b>Лечение</b>\n${g.treatment.map((x) => `💊 <b>${esc(x.drug)}</b> — ${esc(x.dose)}${x.duration ? `, ${esc(x.duration)}` : ""}${x.note ? ` (${esc(x.note)})` : ""}${x.source === "instr" ? " <i>[доза по инструкции]</i>" : ""}`).join("\n")}\n`;
+    if (g.non_drug) t += `${esc(g.non_drug)}\n`;
+    if (g.red_flags?.length) t += `\n<b>Нельзя пропустить</b>\n${g.red_flags.map((x) => `🚩 ${esc(x)}`).join("\n")}\n`;
+  } else {
+    t += `\n🔒 <i>Лучшая диагностика, препараты с дозами и схемы лечения по КР — в премиуме.</i>\n`;
+  }
+  t += `\n<i>Учебный ИИ-разбор на основе текста КР. Перед применением у реальных пациентов сверяйтесь с актуальной версией.</i>`;
+  if (t.length > 4000) t = `${t.slice(0, 3950)}…\n\nПолностью — в карточке пациента.`;
+  return { text: t, kb: [[appBtn("📋 Полный разбор в карточке", appUrl(env, `/patient/${patient_id}`))]] };
 }
 
 export function quizQuestion(quiz, index) {

@@ -579,3 +579,35 @@ img.avatar { object-fit: cover; background: var(--surface-2); padding: 0; }
   html:not(.tg) .login { background: #f6f4ee; }
   html:not(.tg) .login .card { background: #fffdf8; box-shadow: 0 1px 0 rgba(25, 28, 27, .04), 0 10px 30px -18px rgba(25, 28, 27, .28); border: 1px solid #dcd7ca; }
 }
+
+/* ---------- Подсказка наставника ---------- */
+.hint-btn { position: relative; color: var(--warn); }
+.hint-btn .hint-count { position: absolute; top: -2px; right: -2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--warn); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px var(--surface); }
+.hint-btn.out { color: var(--muted); }
+.hint-btn.out .hint-count { background: var(--muted); }
+.hint-meter { display: flex; align-items: center; gap: 6px; margin: 12px 0; }
+.hint-meter i { width: 26px; height: 8px; border-radius: 4px; background: var(--surface-2); }
+.hint-meter i.on { background: var(--warn); }
+.hint-meter span { margin-left: 6px; }
+.hint-text { font-size: 18px; line-height: 1.45; margin: 10px 0 12px; padding: 12px 14px; border-radius: 14px; background: var(--warn-soft); }
+.event.hint-event { background: var(--warn-soft); border-color: transparent; }
+
+/* ---------- Разбор по клиническим рекомендациям ---------- */
+.guide { border-top: 1px solid var(--border); padding-top: 14px; }
+.guide h4 { margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.guide-wait { display: flex; flex-direction: column; gap: 6px; }
+.guide-kr { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); text-decoration: none; font-weight: 600; font-size: 14px; line-height: 1.3; margin-top: 6px; }
+.guide-kr .i { width: 16px; height: 16px; flex: none; }
+.guide-path { margin: 0; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.checklist li { display: flex; gap: 8px; align-items: flex-start; }
+.checklist li .i { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.checklist li.miss span { font-weight: 600; }
+.guide-item { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.guide-item .i { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+.rx { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; background: var(--surface); }
+.rx b { display: inline-flex; align-items: center; gap: 6px; }
+.rx b .i { width: 16px; height: 16px; }
+.quiz-expl { font-size: 14.5px; line-height: 1.5; }
+.kr-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 0; }
+.kr-note .i { width: 14px; height: 14px; }

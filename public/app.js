@@ -658,6 +658,7 @@ function onSync(msg) {
   if (msg.scope === "evaluation") {
     onEvaluation(msg);
   }
+  if (msg.scope === "guide" && msg.patient_id) onGuide(msg.patient_id);
   // Пока идёт наш собственный запрос по этому пациенту — обновим после ответа
   if (msg.patient_id && S.inflight.has(msg.patient_id) && msg.scope === "consultation") {
     return;
@@ -1012,7 +1013,8 @@ function newPatientBlock() {
       ${pack ? html`<a class="btn block ghost" href="#/plans" data-checkout="patients3">${ic("plus")}<span>${pack.label.replace(/^\+/, "")} — ${rub(pack.price)} ₽</span></a>` : ""}
     </div>`;
   }
-  return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>`;
+  return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>
+    <p class="tiny muted center kr-note">${ic("book")} Разбор каждого приёма — по клиническим рекомендациям Минздрава РФ</p>`;
 }
 
 function bindNewPatient() {
@@ -1115,6 +1117,7 @@ function viewPatient() {
         <div class="row between"><b>Приём №${consults.length - i}</b><span class="tiny muted">${dateText(c.date)}</span></div>
         ${c.evaluating ? etaBox("evaluation", c.date) : evaluationBlock(c)}
         ${actionsSummary(c)}
+        ${!c.evaluating ? guideBlock(c, { pending: i === 0 && Date.now() - c.date < 5 * 60000 }) : ""}
       </div>`)}` : ""}
 
     ${p.test_results?.length ? html`<div class="section-title">Результаты обследований</div>
@@ -1148,11 +1151,44 @@ function evaluationBlock(c) {
       ${[["Диагностика", axes.diagnosis], ["Общение", axes.communication], ["Лечение", axes.treatment]].map(([k, v]) => html`<div class="axis"><span>${k}</span><span class="bar"><i style="width:${(v / 5) * 100}%"></i></span><b>${v}</b></div>`)}
     </div>` : ""}
     ${f.expert_text ? html`<p>${f.expert_text}</p>` : (f.good || []).map((g) => html`<p>${g}</p>`)}
+    ${c.hints ? html`<div class="small fact">${ic("bulb", "c-warn")}<span>Подсказок взято: ${c.hints} — оценка ниже на ${String(Math.round(c.hints * 2) / 10).replace(".", ",")}</span></div>` : ""}
     ${c.locked ? html`<div class="locked-teaser" aria-hidden="true"><div class="quote small">«Где именно болит и когда началось?»</div><div class="small">Хороший открытый вопрос, но не уточнили…</div><div class="small">Что было дальше: через три недели…</div></div>
       ${premiumCta("Полный разбор: цитаты из диалога, совет эксперта и «что было дальше»")}` : ""}
     ${(f.dialog_moments || []).map((m) => html`<div class="stack-sm">${m.quote ? html`<div class="quote small">«${m.quote}»</div>` : ""}<div class="small">${m.comment}</div></div>`)}
     ${f.recommendation ? html`<div class="small fact">${ic("bulb", "c-warn")}<div><b>Совет:</b> ${f.recommendation}</div></div>` : ""}
     ${c.post_story ? html`<div class="card flat" style="background:var(--surface-2)"><div class="tiny muted row-c">${ic("book")} ЧТО БЫЛО ДАЛЬШЕ</div><div class="small">${c.post_story}</div></div>` : ""}
+  </div>`;
+}
+
+/** Разбор по клиническим рекомендациям Минздрава: как распознать, обязательный минимум, диагностика, лечение с дозами */
+function guideBlock(c, { pending = false } = {}) {
+  const g = c.guide;
+  if (!g) {
+    if (!pending) return "";
+    return html`<div class="card flat guide guide-wait"><div class="row-c"><span class="spinner"></span><b>Готовим разбор по клиническим рекомендациям Минздрава РФ</b></div><p class="small muted">Чек-лист диагностики, препараты и схемы лечения с дозами — обычно около минуты.</p></div>`;
+  }
+  const missed = g.must.filter((x) => !x.done).length;
+  return html`<div class="guide stack">
+    <div class="guide-head">
+      <div class="tiny muted">РАЗБОР ПО КЛИНИЧЕСКИМ РЕКОМЕНДАЦИЯМ</div>
+      ${g.kr ? html`<a class="guide-kr" href="${g.kr.url}" target="_blank" rel="noopener">${ic("book")}<span>КР Минздрава РФ «${g.kr.name}»</span>${ic("external")}</a>`
+        : html`<div class="small muted">Действующих клинических рекомендаций Минздрава по этому диагнозу в рубрикаторе нет — разбор по российской клинической практике.</div>`}
+    </div>
+    ${g.diagnosis_path?.length ? html`<div class="stack-sm"><h4>Как надо было распознать</h4><ol class="guide-path">${g.diagnosis_path.map((x) => html`<li>${x}</li>`)}</ol></div>` : ""}
+    ${g.must?.length ? html`<div class="stack-sm"><h4>Обязательно по КР <span class="badge ${missed ? "warn" : "ok"}">${g.must.length - missed} из ${g.must.length}</span></h4>
+      <ul class="checklist">${g.must.map((x) => html`<li class="${x.done ? "done" : "miss"}">${ic(x.done ? "checkCircle" : "xCircle", x.done ? "c-ok" : "c-danger")}<span>${x.item}</span></li>`)}</ul></div>` : ""}
+    ${g.optional?.length ? html`<div class="stack-sm"><h4>Желательно, но не обязательно</h4><ul class="checklist soft">${g.optional.map((x) => html`<li>${ic("plus", "c-muted")}<span>${x}</span></li>`)}</ul></div>` : ""}
+    ${g.locked ? html`<div class="locked-teaser" aria-hidden="true"><h4>Лучшая диагностика</h4><div class="small">ЭГДС с биопсией — подтвердить…</div><h4>Лечение</h4><div class="small">Препарат — 20 мг 2 раза в сутки, 14 дней…</div></div>
+      ${premiumCta(`Лучшая диагностика${g.counts?.treatment ? `, ${g.counts.treatment} ${plural(g.counts.treatment, "препарат", "препарата", "препаратов")} с дозами` : ""} и схема лечения по КР`)}` : ""}
+    ${g.tests?.length ? html`<div class="stack-sm"><h4>Лучшая диагностика</h4>${g.tests.map((x) => html`<div class="guide-item">${ic("flask", "c-accent")}<div><b>${x.name}</b>${x.why ? html`<div class="small muted">${x.why}</div>` : ""}</div></div>`)}</div>` : ""}
+    ${g.treatment?.length ? html`<div class="stack-sm"><h4>Лечение и дозировки</h4>${g.treatment.map((x) => html`<div class="rx">
+        <div class="row between"><b>${ic("pill", "c-accent")} ${x.drug}</b><span class="badge ${x.source === "kr" ? "accent" : ""}" title="${x.source === "kr" ? "Доза из текста клинических рекомендаций" : "В тексте КР дозы нет — стандартная доза из инструкции к препарату"}">${x.source === "kr" ? "КР" : "инструкция"}</span></div>
+        <div class="small">${x.dose}${x.duration ? html` · <span class="muted">${x.duration}</span>` : ""}</div>
+        ${x.note ? html`<div class="tiny muted">${x.note}</div>` : ""}</div>`)}
+      ${g.non_drug ? html`<div class="small fact">${ic("activity", "c-muted")}<span>${g.non_drug}</span></div>` : ""}</div>` : ""}
+    ${g.red_flags?.length ? html`<div class="stack-sm"><h4>Нельзя пропустить</h4>${g.red_flags.map((x) => html`<div class="small fact red-flag">${ic("flag", "c-danger")}<span>${x}</span></div>`)}</div>` : ""}
+    ${g.mistakes?.length ? html`<div class="stack-sm"><h4>Ваши отступления от КР</h4>${g.mistakes.map((x) => html`<div class="small fact">${ic("xCircle", "c-warn")}<span>${x}</span></div>`)}</div>` : ""}
+    <p class="tiny muted">Учебный ИИ-разбор${g.grounded ? " на основе текста клинических рекомендаций из рубрикатора Минздрава" : ""}. Перед применением у реальных пациентов сверяйтесь с актуальной версией КР на cr.minzdrav.gov.ru.</p>
   </div>`;
 }
 
@@ -1283,6 +1319,7 @@ function viewConsult(fresh) {
         <div class="title ellipsis">${p.name}</div>
         <div class="tiny muted ellipsis">${open ? `Приём №${(p.consultations || []).length + 1} · ${ageText(p)}` : "Приём завершён"}</div>
       </div>
+      ${open && !IN_TG ? hintButton(p) : ""}
       <button class="icon-btn" id="summary-open" aria-label="Сводка пациента">${ic("card")}</button>
     </div>
     <div class="messages" id="messages">${timeline(p)}${pendingBlock(p)}</div>
@@ -1304,6 +1341,8 @@ function viewConsult(fresh) {
     ${!open ? html`<div class="composer"><a class="btn block" href="#/patient/${p.id}">К карточке пациента</a></div>` : ""}
   </div>`, false);
   $("#summary-open").onclick = () => sheetSummary(p);
+  const hb = $("#hint-open");
+  if (hb) hb.onclick = () => sheetHint(p);
   const toChat = $("#to-chat");
   if (toChat) toChat.onclick = async () => {
     btnBusy(toChat);
@@ -1379,6 +1418,7 @@ function timeline(p) {
   for (const m of p.conversation_history || []) items.push({ ts: m.ts, kind: m.role, m });
   for (const t of p.test_results || []) items.push({ ts: t.ordered_at, kind: "test", t });
   for (const x of p.exam_results || []) items.push({ ts: x.ts, kind: "exam", x });
+  for (const h of p.hints || []) items.push({ ts: h.ts, kind: "hint", h });
   (p.consultations || []).forEach((c, i) => items.push({ ts: c.date + 1, kind: "end", c, n: i + 1 }));
   (p._pending || []).forEach((m) => items.push({ ts: m.ts, kind: "doctor", m, pending: true }));
   items.sort((a, b) => a.ts - b.ts);
@@ -1399,6 +1439,9 @@ function timeline(p) {
     }
     if (it.kind === "exam") {
       return html`${sep}<div class="event${fresh}"><div class="event-title">${ic("steth", "c-accent")}Осмотр: ${it.x.action}</div><div class="event-body">${revealLines(it.x.sensation, fresh)}</div>${it.x.reaction ? html`<div class="event-body line" style="margin-top:8px;--i:${String(it.x.sensation || "").split("\n").length}"><b>Пациент:</b> ${it.x.reaction}</div>` : ""}</div>`;
+    }
+    if (it.kind === "hint") {
+      return html`${sep}<div class="event hint-event"><div class="event-title">${ic("bulb", "c-warn")}Подсказка ${it.h.n} из ${HINTS_TOTAL}</div><div class="event-body">${it.h.text}</div></div>`;
     }
     if (it.kind === "end") {
       return html`${sep}<div class="divider">${ic("flag")} Приём №${it.n} завершён${it.c.rating != null ? ` · ${Number(it.c.rating).toFixed(1)} из 5` : ""}</div>`;
@@ -1437,6 +1480,57 @@ function startReveal(p, since) {
       document.querySelector(`.msg[data-ts="${r.ts}"]`)?.classList.remove("revealing");
     }
   }, REVEAL_MS);
+}
+
+// ---------- Подсказка наставника ----------
+const HINTS_TOTAL = 3;
+const HINT_PENALTY = "0,2";
+function hintsLeft(p) {
+  return Math.max(0, HINTS_TOTAL - (p.hints || []).length);
+}
+function hintButton(p) {
+  const left = hintsLeft(p);
+  return html`<button class="icon-btn hint-btn${left ? "" : " out"}" id="hint-open" aria-label="Подсказка: осталось ${left} из ${HINTS_TOTAL}" title="Подсказка: что сделать дальше">${ic("bulb")}<span class="hint-count">${left}</span></button>`;
+}
+
+/** Подтверждение → ИИ генерирует подсказку по текущему диалогу → «Всё понял» */
+function sheetHint(p) {
+  haptic();
+  const left = hintsLeft(p);
+  if (!left) {
+    return openSheet(html`<h2 class="row-c">${ic("bulb", "c-warn")}Подсказки закончились</h2>
+      <p class="muted">По этому пациенту использованы все ${HINTS_TOTAL} подсказки. Прошлые остались в ленте приёма — пролистайте диалог вверх.</p>
+      <button class="btn block" data-close-sheet style="margin-top:14px">Понятно</button>`, (el) => { el.querySelector("[data-close-sheet]").onclick = () => closeSheet(); });
+  }
+  openSheet(html`<h2 class="row-c">${ic("bulb", "c-warn")}Нужна подсказка?</h2>
+    <p class="muted">Наставник посмотрит ваш диалог и назначения и назовёт <b>один следующий шаг</b>: что спросить у пациента, какой осмотр сделать или что назначить.</p>
+    <div class="hint-meter">${Array.from({ length: HINTS_TOTAL }, (_, i) => html`<i class="${i < left ? "on" : ""}"></i>`)}<span class="small">Осталось ${left} из ${HINTS_TOTAL}</span></div>
+    <p class="small muted">Каждая подсказка снижает оценку за приём на ${HINT_PENALTY} балла и опыт — на 15%. Эксперт в разборе учтёт, что было сделано по подсказке.</p>
+    <div class="grid-2" style="margin-top:14px"><button class="btn ghost" data-no>Сам справлюсь</button><button class="btn" data-yes>${ic("bulb")}<span>Получить</span></button></div>`, (el) => {
+    el.querySelector("[data-no]").onclick = () => closeSheet();
+    const yes = el.querySelector("[data-yes]");
+    yes.onclick = async () => {
+      btnBusy(yes);
+      el.querySelector("[data-no]").disabled = true;
+      goal("hint_request");
+      try {
+        const res = await api("POST", `/patients/${p.id}/hint`);
+        haptic("success");
+        el.innerHTML = html`<div class="grip"></div><div class="tiny muted row-c">${ic("bulb", "c-warn")}ПОДСКАЗКА ${res.hint.n} ИЗ ${res.total}</div>
+          <p class="hint-text">${res.hint.text}</p>
+          <p class="small muted">${res.left ? `Осталось подсказок: ${res.left}. ` : "Это была последняя подсказка по этому пациенту. "}Подсказка сохранена в ленте приёма.</p>
+          <button class="btn lg block" data-ok>${ic("check")}<span>Всё понял</span></button>`[RAW];
+        el.querySelector("[data-ok]").onclick = () => closeSheet();
+        const fresh = S.patients.get(p.id);
+        if (fresh) fresh.patient.hints = [...(fresh.patient.hints || []), res.hint];
+        if (S.route.name === "consult") { viewConsult(); scrollChatDown(); }
+      } catch (e) {
+        toast(e.message, "error");
+        btnBusy(yes, false);
+        el.querySelector("[data-no]").disabled = false;
+      }
+    };
+  });
 }
 
 /** Сводка пациента поверх диалога: закрыли — остались в чате */
@@ -1690,18 +1784,36 @@ function onEvaluation(r) {
   haptic("success");
   const slot = $("#eval-slot");
   if (!slot) return;
-  const c = { rating: r.rating, xp: r.xp, post_story: r.post_story, locked: r.locked, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments } };
+  const c = { rating: r.rating, xp: r.xp, hints: r.hints, post_story: r.post_story, locked: r.locked, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments } };
+  S.guideWaiting = r.patient_id;
   slot.outerHTML = html`<div class="stack" style="margin-top:16px">
-    <h3 class="row-c">${ic("card", "c-accent")}Разбор эксперта</h3>
+    <h3 class="row-c">${ic("card", "c-accent")}Разбор приёма</h3>
     ${evaluationBlock(c)}
     ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b></div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
+    <div id="guide-slot">${guideBlock({}, { pending: true })}</div>
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
     <p class="tiny muted center">${r.locked ? "Тест по вашим ошибкам уже готовится — он откроется в премиуме." : "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту."}</p>
   </div>`[RAW];
   const nb = $("#eval-new");
   if (nb) nb.onclick = () => { closeSheet(); go("/"); };
 }
+
+/** Разбор по КР готов: дорисовываем его в листе завершения приёма */
+async function onGuide(id) {
+  if (S.guideWaiting !== id) return;
+  try {
+    const { patient } = await loadPatient(id);
+    const c = patient.consultations[patient.consultations.length - 1];
+    const slot = $("#guide-slot");
+    if (c?.guide && slot) {
+      S.guideWaiting = null;
+      slot.innerHTML = guideBlock(c)[RAW];
+    }
+  } catch {}
+}
+// Если WebSocket молчит — спрашиваем сами
+setInterval(() => { if (S.guideWaiting && !S.wsOk) onGuide(S.guideWaiting); }, 6000);
 
 // ---------------------------------------------------
 // Тесты
@@ -1726,6 +1838,7 @@ function viewQuizzes() {
 }
 
 let quizState = null; // { id, quiz, index, answer }
+const QUIZ_TOPIC = { treatment: "Лечение", diagnostics: "Диагностика", error: "Ваша ошибка" };
 async function viewQuiz(fresh) {
   const id = S.route.params.id;
   if (fresh || !quizState || quizState.id !== id) {
@@ -1750,8 +1863,9 @@ async function viewQuiz(fresh) {
       <div class="grow"><div class="tiny muted">РАБОТА НАД ОШИБКАМИ</div><b class="ellipsis" style="display:block">${quiz.pat_diagnosis}</b></div>
       <button class="icon-btn" data-delete-quiz="${id}" aria-label="Удалить тест">${ic("trash")}</button></div>
     <div class="steps">${quiz.questions.map((qq, k) => html`<i class="${qq.chosen != null ? (qq.chosen === qq.correct ? "ok" : "bad") : k === i ? "cur" : ""}"></i>`)}</div>
+    ${quiz.kr ? html`<a class="guide-kr small" href="${quiz.kr.url}" target="_blank" rel="noopener">${ic("book")}<span>По КР Минздрава РФ «${quiz.kr.name}»</span>${ic("external")}</a>` : ""}
     <div class="card stack">
-      <div class="tiny muted">Вопрос ${i + 1} из ${quiz.total}</div>
+      <div class="row between"><span class="tiny muted">Вопрос ${i + 1} из ${quiz.total}</span>${q.topic ? html`<span class="badge ${q.topic === "treatment" ? "accent" : q.topic === "diagnostics" ? "ok" : "warn"}">${QUIZ_TOPIC[q.topic]}</span>` : ""}</div>
       <h2>${q.text}</h2>
       <div class="stack-sm">${q.options.map((o, k) => {
         let cls = "";
@@ -1762,7 +1876,7 @@ async function viewQuiz(fresh) {
         return html`<button class="quiz-opt ${cls}" data-opt="${k}" ${ans ? "disabled" : ""}>${["А", "Б", "В", "Г"][k]}. ${o}</button>`;
       })}</div>
       ${ans ? html`<div class="card flat" style="background:${ans.is_correct ? "var(--ok-soft)" : "var(--danger-soft)"}">
-        <b class="row-c">${ic(ans.is_correct ? "checkCircle" : "xCircle", ans.is_correct ? "c-ok" : "c-danger")}${ans.is_correct ? "Верно!" : "Неверно"}</b><div class="small" style="margin-top:4px">${ans.explanation || ""}</div></div>
+        <b class="row-c">${ic(ans.is_correct ? "checkCircle" : "xCircle", ans.is_correct ? "c-ok" : "c-danger")}${ans.is_correct ? "Верно!" : `Неверно. Правильно: ${q.options[ans.correct]}`}</b><div class="quiz-expl" style="margin-top:6px">${ans.explanation || ""}</div></div>
         <button class="btn lg block" id="quiz-next">${ans.done ? "Результат" : "Следующий вопрос"}</button>` : ""}
     </div>
   </div>`);
@@ -1831,8 +1945,9 @@ function renderQuizResult() {
     ${quiz.questions.map((q, k) => html`<div class="card stack-sm">
       <div class="small fact">${ic(q.chosen === q.correct ? "checkCircle" : "xCircle", q.chosen === q.correct ? "c-ok" : "c-danger")}<b>${k + 1}. ${q.text}</b></div>
       ${q.chosen !== q.correct ? html`<div class="small">Правильно: <b>${q.options[q.correct]}</b></div>` : ""}
-      <div class="small muted fact">${ic("bulb")}<span>${q.explanation || ""}</span></div>
+      <div class="small fact">${ic("bulb", "c-warn")}<span>${q.explanation || ""}</span></div>
     </div>`)}
+    ${quiz.kr ? html`<a class="guide-kr small" href="${quiz.kr.url}" target="_blank" rel="noopener">${ic("book")}<span>Перечитать КР «${quiz.kr.name}»</span>${ic("external")}</a>` : ""}
     <a class="btn block" href="#/">На главную</a>
     <button class="btn block ghost c-danger" data-delete-quiz="${quizState.id}">${ic("trash")}<span>Удалить тест</span></button>
   </div>`);
@@ -2086,7 +2201,7 @@ function viewProfile() {
     <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
       <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
-      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разборы, тесты" : "Безлимит, полный разбор, тесты по ошибкам")}
+      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, лечение по КР, тесты" : "Безлимит, лечение и дозы по КР, тесты")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
       ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привяжите Telegram — приёмы в чате и напоминания")}
@@ -2299,8 +2414,10 @@ function mountFeedbackPrompt() {
 const rub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
 const PREMIUM_PERKS = [
   ["users", "Безлимит пациентов"],
+  ["pill", "Лечение по клиническим рекомендациям Минздрава РФ: препараты, дозы, схемы"],
+  ["flask", "Лучшая диагностика по КР для каждого случая"],
   ["card", "Полный разбор: цитаты из диалога и «что было дальше»"],
-  ["quiz", "Тест по вашим ошибкам после каждого приёма"],
+  ["quiz", "Тест по лечению и диагностике после каждого приёма"],
   ["flame", "«Очень сложные» случаи"],
   ["chart", "Слабые места и советы эксперта"],
 ];

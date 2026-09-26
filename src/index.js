@@ -157,8 +157,8 @@ async function api(request, env, url) {
   // Лицо пациента (DiceBear Open Peeps): детерминировано параметрами, поэтому кэшируется навсегда
   if (path === "/face" && method === "GET") {
     const q = url.searchParams;
-    const params = { s: q.get("s") || "", g: q.get("g") === "f" ? "f" : "m", a: Math.max(0, Math.min(120, Number(q.get("a")) || 0)), m: ["good", "bad", "odd", "sad"].includes(q.get("m")) ? q.get("m") : "" };
-    const cacheKey = new Request(`https://face.cache/${params.s}/${params.g}/${params.a}/${params.m}/v3`);
+    const params = { s: q.get("s") || "", g: q.get("g") === "f" ? "f" : "m", a: Math.max(0, Math.min(120, Number(q.get("a")) || 0)), m: ["good", "bad", "odd", "sad"].includes(q.get("m")) ? q.get("m") : "", clean: q.get("c") === "1" };
+    const cacheKey = new Request(`https://face.cache/${params.s}/${params.g}/${params.a}/${params.m}/${params.clean ? "c" : ""}/v3`);
     const cache = typeof caches !== "undefined" ? caches.default : null;
     const hit = cache && (await cache.match(cacheKey));
     if (hit) return hit;
@@ -327,6 +327,7 @@ async function api(request, env, url) {
       if (action === "message") return json(await user.doctorMessage(id, (await readJson(request)).text));
       if (action === "test") return json(await user.orderTest(id, (await readJson(request)).name));
       if (action === "exam") return json(await user.physicalExam(id, (await readJson(request)).action));
+      if (action === "hint") return json(await user.requestHint(id));
       if (action === "finish") return json(await user.finishConsultation(id, await readJson(request), "web"));
       if (action === "voice") {
         const buf = await request.arrayBuffer();

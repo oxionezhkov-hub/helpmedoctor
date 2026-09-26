@@ -29,10 +29,25 @@ const mockImpl = {
       return { response: { sensation: "Болезненность в эпигастрии при пальпации, живот мягкий.", reaction: "Ай, вот тут больно!" } };
     }
     if (prompt.includes("Разбери приём")) {
-      return { response: JSON.stringify({ axes: { diagnosis: 5, communication: 4, treatment: 4 }, diagnosis_correct: "yes", critical_error: "", expert_text: "Хороший сбор анамнеза, диагноз близок.", dialog_moments: [{ quote: "Где болит?", comment: "Хороший открытый вопрос" }], strengths: ["Сбор анамнеза"], weaknesses: ["Эрадикация H. pylori"], recommendation: "Назначайте ФГДС раньше.", outcome_update: "improving", post_story: "Через 3 недели боли ушли." }) };
+      return { response: JSON.stringify({ axes: { diagnosis: 5, communication: 4, treatment: 4 }, diagnosis_correct: "yes", critical_error: "", mkb10: "K26.3", expert_text: "Хороший сбор анамнеза, диагноз близок.", dialog_moments: [{ quote: "Где болит?", comment: "Хороший открытый вопрос" }], strengths: ["Сбор анамнеза"], weaknesses: ["Эрадикация H. pylori"], recommendation: "Назначайте ФГДС раньше.", outcome_update: "improving", post_story: "Через 3 недели боли ушли." }) };
+    }
+    if (prompt.includes("Врач попросил подсказку")) {
+      return { response: { hint: "Уточните, связана ли боль с приёмом пищи и принимает ли пациент обезболивающие от спины — это главный фактор риска здесь.", kind: "question" } };
+    }
+    if (prompt.includes("Составь учебный разбор случая")) {
+      return { response: {
+        diagnosis_path: ["Голодные ночные боли в эпигастрии → язвенный анамнез", "Приём НПВС → фактор риска язвы", "ЭГДС подтверждает язву луковицы ДПК"],
+        must: [{ item: "Спросить о связи боли с едой и ночных болях", done: true }, { item: "Спросить о приёме НПВС", done: false }, { item: "ЭГДС с биопсией и тестом на H. pylori", done: false }, { item: "Общий анализ крови (анемия)", done: true }],
+        optional: ["Анализ кала на скрытую кровь"],
+        tests: [{ name: "ЭГДС", why: "увидеть язву и взять биопсию" }, { name: "Дыхательный уреазный тест", why: "подтвердить H. pylori" }],
+        treatment: [{ drug: "Омепразол", dose: "20 мг внутрь 2 раза в сутки", duration: "14 дней, затем 20 мг 1 раз", note: "ИПП в составе эрадикации", source: "kr" }, { drug: "Амоксициллин", dose: "1000 мг внутрь 2 раза в сутки", duration: "14 дней", note: "эрадикация H. pylori", source: "kr" }],
+        non_drug: "Отменить НПВС, дробное питание, отказ от курения. Контрольная ЭГДС через 6-8 недель.",
+        red_flags: ["Мелена или рвота кофейной гущей — срочная госпитализация"],
+        mistakes: ["Не спросили о приёме НПВС"],
+      } };
     }
     if (prompt.includes("работа над ошибками")) {
-      return { response: { questions: Array.from({ length: 5 }, (_, i) => ({ text: `Вопрос ${i + 1}: что первым при подозрении на язву?`, options: ["ФГДС", "КТ", "МРТ", "ЭКГ"], correct: 0, explanation: "ФГДС — золотой стандарт." })) } };
+      return { response: { questions: Array.from({ length: 5 }, (_, i) => ({ text: `Вопрос ${i + 1}: что первым при подозрении на язву?`, options: ["ФГДС", "КТ", "МРТ", "ЭКГ"], correct: 0, topic: i < 2 ? "treatment" : "diagnostics", explanation: "По КР «Язвенная болезнь» ФГДС — метод выбора." })) } };
     }
     if (prompt.includes("клинических разделов")) return { response: { sections: ["Желтуха новорождённых", "недоношенность", "родовая травма"] } };
     if (prompt.includes("Сожми диалог")) return { response: "Пациент жалуется на боли в эпигастрии." };
