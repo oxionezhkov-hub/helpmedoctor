@@ -1,0 +1,117 @@
+[
+ {
+  "delete": [
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ]
+ },
+ {
+  "channel": {
+   "photo": "content/telegram-channel/img/avatar-1.jpg",
+   "description": "Дневник студентки 5 курса лечфака: шпаргалки к практике и аккредитации, клинические задачи, разборы ошибок 🩺\nЮля — персонаж проекта Help me, Doctor.\nТренажёр приёма: @helpmedoctor_aibot"
+  }
+ },
+ {
+  "photo": "content/telegram-channel/img/intro-1.jpg",
+  "caption": "<b>Привет! Я Юля, 5 курс лечфака 👋</b>\n\nВесной аккредитация. Теории в голове — тонна, а первого пациента, которого я расспрашивала сама, помню до сих пор: забыла спросить про лекарства — и всё рассуждение поехало не туда.\n\nПроблема не в учебниках. Проблема в том, что <b>практики почти нет</b>.\n\nЧто здесь будет:\n📋 шпаргалки к практике и ОСКЭ — в карточках, удобно сохранять\n🩺 клинические задачи с ответами\n🔎 разборы моих ошибок\n\nЕсли тебе знакомо «знаю, но не умею» — оставайся."
+ },
+ {
+  "album": [
+   "content/telegram-channel/img/anamnez-1.jpg",
+   "content/telegram-channel/img/anamnez-2.jpg",
+   "content/telegram-channel/img/anamnez-3.jpg",
+   "content/telegram-channel/img/anamnez-4.jpg",
+   "content/telegram-channel/img/anamnez-5.jpg",
+   "content/telegram-channel/img/anamnez-6.jpg",
+   "content/telegram-channel/img/anamnez-7.jpg"
+  ],
+  "caption": "<b>📋 Сбор анамнеза за 10 минут</b>\n\nЛистай карточки → порядок, который спас меня на практике: контакт, жалобы с OPQRST, история болезни и жизни, опрос по системам и резюме вслух.\n\nPDF-чек-лист для печати — следующим сообщением 👇\n\n#шпаргалка #анамнез #ОСКЭ"
+ },
+ {
+  "document": "public/files/chek-list-sbor-anamneza.pdf",
+  "filename": "Чек-лист — сбор анамнеза за 10 минут.pdf",
+  "caption": "<b>PDF · Сбор анамнеза за 10 минут</b>\n2 страницы: порядок расспроса, OPQRST, красные флаги по системам и готовые фразы для начала и конца приёма. Сохрани 📌"
+ },
+ {
+  "album": [
+   "content/telegram-channel/img/zhivot-1.jpg",
+   "content/telegram-channel/img/zhivot-2.jpg",
+   "content/telegram-channel/img/zhivot-3.jpg",
+   "content/telegram-channel/img/zhivot-4.jpg",
+   "content/telegram-channel/img/zhivot-5.jpg",
+   "content/telegram-channel/img/zhivot-6.jpg",
+   "content/telegram-channel/img/zhivot-7.jpg"
+  ],
+  "caption": "<b>🔎 Боль в животе: 5 вопросов, которые забывают задать</b>\n\nМесячные, лекарства, цвет стула, связь с едой, куда отдаёт. Каждый из них я хотя бы раз забывала сама — листай, почему любой из них может перевернуть диагноз.\n\n#разборошибок #хирургия"
+ },
+ {
+  "album": [
+   "content/telegram-channel/img/golova-1.jpg",
+   "content/telegram-channel/img/golova-2.jpg",
+   "content/telegram-channel/img/golova-3.jpg",
+   "content/telegram-channel/img/golova-4.jpg",
+   "content/telegram-channel/img/golova-5.jpg",
+   "content/telegram-channel/img/golova-6.jpg",
+   "content/telegram-channel/img/golova-7.jpg"
+  ],
+  "caption": "<b>🧠 Головная боль: когда это опасно</b>\n\nМнемоника SNOOP — 5 красных флагов, при которых «выпейте таблетку» не работает. Особенно запомни громоподобное начало и сыпь, которая не бледнеет при надавливании.\n\n#красныефлаги #неврология"
+ },
+ {
+  "album": [
+   "content/telegram-channel/img/ekg-1.jpg",
+   "content/telegram-channel/img/ekg-2.jpg",
+   "content/telegram-channel/img/ekg-3.jpg",
+   "content/telegram-channel/img/ekg-4.jpg",
+   "content/telegram-channel/img/ekg-5.jpg",
+   "content/telegram-channel/img/ekg-6.jpg"
+  ],
+  "caption": "<b>📈 ЭКГ за 7 шагов</b>\n\nРитм → ЧСС → ось → PQ → QRS → ST и T → QT. Один и тот же порядок каждый раз — и плёнка перестаёт пугать. Сохрани и проверь себя на следующей ЭКГ на цикле.\n\n#ЭКГ #кардиология"
+ },
+ {
+  "album": [
+   "content/telegram-channel/img/grud-1.jpg",
+   "content/telegram-channel/img/grud-2.jpg",
+   "content/telegram-channel/img/grud-3.jpg",
+   "content/telegram-channel/img/grud-4.jpg",
+   "content/telegram-channel/img/grud-5.jpg",
+   "content/telegram-channel/img/grud-6.jpg",
+   "content/telegram-channel/img/grud-7.jpg"
+  ],
+  "caption": "<b>🫀 Боль в груди: 5 причин, которые убивают быстро</b>\n\nОКС, ТЭЛА, расслоение аорты, напряжённый пневмоторакс, разрыв пищевода. Сначала исключаем их — потом «остеохондроз».\n\n#неотложка #красныефлаги"
+ },
+ {
+  "photo": "content/telegram-channel/img/case-1.jpg",
+  "caption": "<b>🩺 Клиническая задача</b>\n\nАркадий, 58 лет: давящая боль за грудиной 40 минут, отдаёт в левую руку, холодный пот. Курит, гипертония.\n\nЧто делаем первым? Голосуй в опросе ниже — объяснение откроется после ответа 👇"
+ },
+ {
+  "quiz": {
+   "question": "Аркадий, 58 лет: давящая боль за грудиной 40 минут, холодный пот. Что делаем в первую очередь?",
+   "options": [
+    "ЭКГ в 12 отведениях в первые 10 минут",
+    "Взять тропонин и дождаться результата",
+    "Эхокардиография",
+    "Рентген органов грудной клетки"
+   ],
+   "correct": 0,
+   "explanation": "ЭКГ — в течение 10 минут от первого контакта. Подъём ST → срочная реперфузия. Ждать тропонин нельзя: время — это миокард."
+  }
+ },
+ {
+  "photo": "content/telegram-channel/img/promo-1.jpg",
+  "caption": "<b>📌 Нет практики? Тренируй приём уже сегодня</b>\n\nЯ тренируюсь на виртуальных пациентах в <b>Help me, Doctor</b>:\n\n🗣 пациент приходит с жалобой — расспрашиваешь сам, текстом или голосом\n🔬 назначаешь анализы, УЗИ, ЭКГ — результаты под скрытый диагноз\n📚 после приёма — разбор по клиническим рекомендациям Минздрава: что пропустил, как надо было, препараты и дозы\n💡 застрял — подсказка наставника\n\n10 специальностей, сложность под твой курс.\n<b>Первый пациент каждый день — бесплатно</b>, без карты и установки 👇",
+  "buttons": [
+   [
+    {
+     "text": "🩺 Принять первого пациента бесплатно",
+     "url": "https://t.me/helpmedoctor_aibot?start=tg_ch_pin"
+    }
+   ]
+  ],
+  "pin": true
+ }
+]
