@@ -179,12 +179,14 @@ const g0 = (await api(webToken, "GET", `/patients/${patId}`)).data.patient;
 assert.ok(g0.kr?.name.includes("Язвенная болезнь"), "после приёма КР видна");
 assert.equal(g0.consultations[0].guide, undefined, "разбор по КР не строится сам — только по кнопке");
 assert.ok(JSON.stringify(evalMsg.reply_markup).includes(`kr_${patId}`), "в разборе в боте — кнопка «Разбор по КР»");
+assert.ok(JSON.stringify(evalMsg.reply_markup).includes("в подарок"), "первый пациент: разбор по КР в подарок");
+assert.equal(g0.gift_kr, true, "первый пациент помечен подарком");
 r = await api(webToken, "POST", `/patients/${patId}/guide`);
-assert.equal(r.status, 409);
-assert.equal(r.data.code, "premium", "разбор по КР — в премиуме");
-await press(U, `kr_${patId}`);
-await waitFor(() => sent(U).some((m) => m.text.includes("Разбор по клиническим рекомендациям Минздрава — в премиуме")), "guide paywall in bot");
-step("разбор по КР: по кнопке и только в премиуме (сайт и бот)");
+assert.equal(r.status, 200, JSON.stringify(r.data));
+assert.equal(r.data.pending, true, "разбор по КР первого пациента ставится в очередь без премиума");
+const giftGuide = await waitFor(async () => (await api(webToken, "GET", `/patients/${patId}`)).data.patient.consultations[0].guide, "gift guide ready");
+assert.ok(!giftGuide.locked && giftGuide.treatment.length && giftGuide.treatment[0].dose, "подарочный разбор — полный, с дозами");
+step("разбор по КР: по кнопке; у первого пациента нового пользователя — в подарок без премиума");
 
 // Лимит бесплатного тарифа
 r = await api(webToken, "POST", "/patients/new");
@@ -193,7 +195,7 @@ assert.equal(r.data.code, "limit");
 step("лимит: второй бесплатный пациент за день запрещён");
 
 // ---------------------------------------------------------------- премиум: закрытые функции, пробный период за 1 ₽
-assert.ok(JSON.stringify(evalMsg.reply_markup).includes("1 ₽"), "кнопка пробного периода");
+assert.ok(JSON.stringify(evalMsg.reply_markup).includes(`qz_${patId}`), "первый пациент: тест в подарок — кнопка теста в боте");
 assert.ok(evalMsg.text.includes("Совет:"), "совет эксперта виден без премиума");
 let pv0 = (await api(webToken, "GET", `/patients/${patId}`)).data;
 assert.ok(pv0.patient.consultations[0].feedback.dialog_moments.length, "цитаты из диалога открыты всем");
@@ -201,8 +203,8 @@ assert.ok(pv0.patient.post_story, "«что было дальше» открыт
 assert.ok(pv0.patient.consultations[0].feedback.expert_text, "вывод эксперта виден");
 await waitFor(async () => (await api(webToken, "GET", `/patients/${patId}`)).data.quiz, "quiz generated");
 r = await api(webToken, "GET", `/quiz/${patId}`);
-assert.equal(r.status, 409);
-assert.equal(r.data.code, "premium", "тест по ошибкам — в премиуме");
+assert.equal(r.status, 200, "тест первого пациента открыт без премиума (подарок)");
+assert.equal((await api(webToken, "GET", "/me")).data.quizzes.find((q) => q.pat_id === patId)?.locked, false, "подарочный тест не под замком");
 me = (await api(webToken, "GET", "/me")).data;
 assert.equal(me.profile.trial_available, true);
 assert.ok(me.profile.weaknesses.length > 0, "слабые места видны без премиума");
@@ -230,7 +232,7 @@ await waitFor(() => sent(U).some((m) => m.text.includes("Премиум на 7 �
 assert.equal((await api(webToken, "POST", "/pay", { plan: "trial", consent: true })).data.code, "trial_used");
 assert.ok((await api(webToken, "GET", `/patients/${patId}`)).data.patient.consultations[0].feedback.dialog_moments.length, "после оплаты разбор открыт");
 r = await api(webToken, "POST", `/patients/${patId}/guide`);
-assert.equal(r.data.pending, true, "разбор по КР ставится в очередь");
+assert.ok(r.data.guide, "разбор по КР уже готов (подарок первого пациента)");
 const guide1 = await waitFor(async () => (await api(webToken, "GET", `/patients/${patId}`)).data.patient.consultations[0].guide, "guide ready");
 assert.ok(guide1.must.length >= 3 && guide1.diagnosis_path.length, "чек-лист и как распознать");
 assert.ok(guide1.treatment.length && guide1.treatment[0].dose, "препараты с дозами");
@@ -240,7 +242,7 @@ assert.ok(r.data.guide, "повторный запрос — готовый ра
 await press(U, `kr_${patId}`);
 const guideMsg = await waitFor(() => sent(U).find((m) => m.text.includes("Разбор по КР Минздрава")), "guide in bot");
 assert.ok(guideMsg.text.includes("❌") && guideMsg.text.includes("✅"), "в боте: чек-лист сделано / пропущено");
-step("премиум: разбор и тест закрыты, пробный период 7 дней за 1 ₽ с привязкой карты");
+step("премиум: первый пациент — КР и тест в подарок, пробный период 7 дней за 1 ₽ с привязкой карты");
 
 const quiz = await waitFor(async () => (await api(webToken, "GET", `/quiz/${patId}`)).data.quiz, "quiz");
 assert.equal(quiz.total, 5);
