@@ -5,6 +5,8 @@ import { parseJsonLoose } from "../src/lib/ai.js";
 import * as G from "../src/lib/game.js";
 import { daysBetween, mskDate, UserError, userError } from "../src/lib/util.js";
 import { webhookOperationId, planFromPurpose } from "../src/lib/tochka.js";
+import { b64u, encryptPayload, validSubscription } from "../src/lib/webpush.js";
+import nodeCrypto from "node:crypto";
 
 test("parseJsonLoose достаёт JSON из болтовни модели", () => {
   assert.deepEqual(parseJsonLoose('Вот:\n```json\n{"a":1}\n```'), { a: 1 });
@@ -355,4 +357,38 @@ test("подсказки на приёме снижают оценку и опы
   assert.equal(G.scoreConsultation(ev, facts(["a", "b"])).rating, 4.6);
   const prof = { level: "студент", streak: 0 };
   assert.ok(G.consultationXp(prof, facts(["a"]), 4.8) < G.consultationXp(prof, facts([]), 4.8));
+});
+
+test("звания по уровням", () => {
+  assert.equal(G.rankInfo(1).title, "Боюсь пациентов");
+  assert.equal(G.rankInfo(2).index, 0);
+  assert.deepEqual(G.rankInfo(3), { index: 1, title: "Пропедевт", from: 3, to: 6 });
+  assert.equal(G.rankInfo(200).title, "Живая легенда");
+  assert.equal(G.rankInfo(200).to, null);
+});
+
+test("Web Push: сообщение расшифровывается как в браузере (RFC 8291)", async () => {
+  // «Браузер»: ключи подписки
+  const ua = nodeCrypto.createECDH("prime256v1");
+  ua.generateKeys();
+  const auth = nodeCrypto.randomBytes(16);
+  const sub = { endpoint: "https://fcm.googleapis.com/fcm/send/abc", keys: { p256dh: b64u.encode(ua.getPublicKey()), auth: b64u.encode(auth) } };
+  assert.ok(validSubscription(sub));
+  assert.ok(!validSubscription({ ...sub, endpoint: "https://evil.example.com/x" }));
+
+  const body = Buffer.from(await encryptPayload(sub, JSON.stringify({ title: "Пациент ждёт" })));
+  const salt = body.subarray(0, 16);
+  const idlen = body[20];
+  const asPublic = body.subarray(21, 21 + idlen);
+  const cipher = body.subarray(21 + idlen);
+  const shared = ua.computeSecret(asPublic);
+  const hk = (s, ikm, info, n) => Buffer.from(nodeCrypto.hkdfSync("sha256", ikm, s, info, n));
+  const ikm = hk(auth, shared, Buffer.concat([Buffer.from("WebPush: info\0"), ua.getPublicKey(), asPublic]), 32);
+  const cek = hk(salt, ikm, Buffer.from("Content-Encoding: aes128gcm\0"), 16);
+  const nonce = hk(salt, ikm, Buffer.from("Content-Encoding: nonce\0"), 12);
+  const d = nodeCrypto.createDecipheriv("aes-128-gcm", cek, nonce);
+  d.setAuthTag(cipher.subarray(cipher.length - 16));
+  const plain = Buffer.concat([d.update(cipher.subarray(0, cipher.length - 16)), d.final()]);
+  assert.equal(plain[plain.length - 1], 2);
+  assert.deepEqual(JSON.parse(plain.subarray(0, -1).toString()), { title: "Пациент ждёт" });
 });

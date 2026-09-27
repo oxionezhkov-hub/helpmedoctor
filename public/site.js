@@ -21,6 +21,17 @@
     if (a) goal("cta_app", { from: new URL(a.href, location.href).searchParams.get("from") || page });
   });
 
+  // ---------- Согласие на cookie (общая с приложением настройка hmd_cookies) ----------
+  if (!ls.get("hmd_cookies")) {
+    const bar = document.createElement("div");
+    bar.className = "cookie";
+    bar.setAttribute("role", "region");
+    bar.setAttribute("aria-label", "Cookie");
+    bar.innerHTML = '<p>Мы используем cookie и Яндекс Метрику, чтобы сайт работал и становился удобнее. Оставаясь на сайте, вы соглашаетесь с <a href="/privacy/">политикой обработки персональных данных</a>.</p><button type="button" class="btn btn-primary">Хорошо</button>';
+    bar.querySelector("button").addEventListener("click", () => { ls.set("hmd_cookies", "1"); bar.remove(); goal("cookie_ok"); });
+    document.body.append(bar);
+  }
+
   // ---------- Меню на телефоне ----------
   const burger = $(".burger");
   if (burger) burger.addEventListener("click", () => {

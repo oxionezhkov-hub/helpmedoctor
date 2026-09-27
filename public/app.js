@@ -84,6 +84,10 @@ const ICONS = {
   x: '<path d="M6 6l12 12M18 6 6 18"/>',
   xCircle: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  bell: '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  phone: '<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/>',
+  share: '<path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
+  dots: '<circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/>',
   play: '<path d="M8 5v14l11-7Z"/>',
   repeat: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
   chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>',
@@ -386,6 +390,7 @@ async function boot() {
   tg = window.Telegram?.WebApp || null;
   IN_TG = !!tg?.initData;
   if (IN_TG) sessionStore("hmd_tg", "1");
+  else { registerSw(); cookieBar(); }
   // Ссылки из бота: /app?go=/patient/123 → #/patient/123
   const goParam = new URLSearchParams(window.__hmdQs ?? location.search).get("go");
   if (goParam && goParam.startsWith("/")) {
@@ -707,6 +712,7 @@ function parseRoute() {
   if (parts[0] === "profile" && parts[1] === "stats") return { name: "stats", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "settings") return { name: "settings", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "accounts") return { name: "accounts", params: {}, q };
+  if (parts[0] === "profile" && parts[1] === "app") return { name: "install", params: {}, q };
   if (parts[0] === "profile") return { name: "profile", params: {}, q };
   if (parts[0] === "plans") return { name: "plans", params: {}, q };
   return { name: "home", params: {}, q };
@@ -755,7 +761,7 @@ async function route() {
 function rerender(fresh = false) {
   const r = S.route;
   if (!S.me) return;
-  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts };
+  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall };
   (views[r.name] || viewHome)(fresh);
 }
 
@@ -763,7 +769,7 @@ function renderShell(content, withNav = true) {
   const r = S.route.name;
   const pendingQuizzes = (S.me?.quizzes || []).filter((q) => q.status !== "done").length;
   const queue = (S.me?.patients || []).filter((p) => p.status !== "closed").length;
-  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts"].includes(r)) ? "active" : ""}">
+  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install"].includes(r)) ? "active" : ""}">
     ${ic(ico, "nav-i")}<span>${label}</span>${badge ? html`<span class="dot">${badge}</span>` : ""}</a>`;
   const scrollY = window.scrollY;
   patchRoot(html`${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
@@ -834,11 +840,9 @@ function viewHome(fresh) {
 
     ${p.onboarding_done ? newPatientBlock() : ""}
 
-    ${active.length ? html`<div class="section-title">Пациенты</div>
-      ${inConsult.length ? patientCard(inConsult[0], `/consult/${inConsult[0].id}`, "Продолжить приём") : patientCard(waiting[0])}
-      ${active.length > 1 ? html`<a class="more-link" href="#/patients">Все пациенты в очереди · ${active.length}${ic("chevron")}</a>` : ""}` : ""}
+    ${active.length ? (inConsult.length ? patientCard(inConsult[0], `/consult/${inConsult[0].id}`, "Продолжить приём") : patientCard(waiting[0])) : ""}
 
-    ${pendingQuiz ? html`<div class="section-title">Тест</div><a class="card tap row" href="#/quiz/${pendingQuiz.pat_id}" style="text-decoration:none;color:inherit">
+    ${pendingQuiz ? html`<a class="card tap row" href="#/quiz/${pendingQuiz.pat_id}" style="text-decoration:none;color:inherit">
       <div class="tile warn">${ic("quiz")}</div>
       <div class="grow"><b>Работа над ошибками</b><div class="small muted ellipsis">${pendingQuiz.pat_name} · ${pendingQuiz.pat_diagnosis}</div></div>
       ${pendingQuiz.locked ? html`<span class="badge accent">${ic("gem")}</span>` : html`<span class="badge warn">${pendingQuiz.answered}/${pendingQuiz.total}</span>`}
@@ -856,27 +860,44 @@ function viewHome(fresh) {
 }
 
 // ---------- Уровень и ключевые цифры ----------
+// Кольцо с номером уровня, звание, лестница званий; серия и оценка — плитки с такими же шкалами-сегментами
 function levelHead(p) {
   const lvl = p.level_info;
   const left = lvl.to ? Math.max(0, lvl.to - (p.xp || 0)) : 0;
+  const pct = Math.round((lvl.progress || 0) * 100);
+  const ranks = S.me.config.level_ranks || [];
+  const rank = p.level_rank || { index: 0, title: "", from: 1, to: null };
+  // Окно из 4 ступеней: одна пройденная, текущая и две следующие
+  const start = Math.max(0, Math.min(rank.index - 1, ranks.length - 4));
+  const inRank = rank.to ? Math.min(1, (lvl.level - rank.from + (lvl.progress || 0)) / (rank.to - rank.from)) : 1;
   return html`<div class="lvl-top">
-    <div class="lvl-badge"><span>уровень</span><b>${lvl.level}</b></div>
+    <div class="lvl-ring" style="--p:${pct}"><b>${lvl.level}</b></div>
     <div class="grow">
-      <div class="row between"><b>${p.level_label}</b><span class="tiny muted">${p.xp || 0} XP</span></div>
-      <div class="xp-bar"><i style="width:${Math.round((lvl.progress || 0) * 100)}%"></i></div>
-      <div class="tiny muted">${lvl.to ? `ещё ${left} XP до уровня ${lvl.level + 1}` : "максимальный уровень"}</div>
+      <b class="lvl-title">${rank.title}</b>
+      <div class="small muted">${lvl.to ? `ещё ${left} XP до повышения` : "максимальный уровень"}</div>
     </div>
-  </div>`;
+  </div>
+  ${ranks.length ? html`<div class="ladder">${ranks.slice(start, start + 4).map(([, title], k) => {
+    const i = start + k;
+    const cls = i < rank.index ? "done" : i === rank.index ? "now" : "";
+    return html`<div class="${cls}"><i style="${i === rank.index ? `--f:${Math.round(inRank * 100)}%` : ""}"></i><span>${title}</span></div>`;
+  })}</div>` : ""}`;
 }
-function kpi(icon, cls, value, label) {
-  return html`<div class="kpi"><div class="kpi-ic ${cls}">${ic(icon)}</div><div class="kpi-t"><b>${value}</b><span>${label}</span></div></div>`;
+function segs(n, filled) {
+  return html`<div class="segs">${Array.from({ length: n }, (_, i) => html`<i style="--f:${Math.round(Math.max(0, Math.min(1, filled - i)) * 100)}%"></i>`)}</div>`;
+}
+function kpi(icon, cls, value, label, bar) {
+  return html`<div class="kpi ${cls}"><div class="kpi-h">${ic(icon)}<b>${value}</b></div><span>${label}</span>${bar}</div>`;
 }
 function kpis(p, full = false) {
   const st = p.stats || {};
+  const streak = p.streak || 0;
+  const week = streak ? streak % 7 || 7 : 0; // неделя серии: каждые 7 дней — бонус к опыту
+  const total = st.consultations_total || 0;
   return html`<div class="kpis${full ? " three" : ""}">
-    ${kpi("flame", "flame", p.streak || 0, `${plural(p.streak || 0, "день", "дня", "дней")} подряд`)}
-    ${kpi("star", "star", st.ratings_count ? st.avg_rating.toFixed(1).replace(".", ",") : "—", full ? "средняя оценка" : "ср. оценка")}
-    ${full ? kpi("steth", "steth", st.consultations_total || 0, plural(st.consultations_total || 0, "приём", "приёма", "приёмов")) : ""}
+    ${kpi("flame", "flame", streak, `${plural(streak, "день", "дня", "дней")} подряд`, segs(7, week))}
+    ${kpi("star", "star", st.ratings_count ? st.avg_rating.toFixed(1).replace(".", ",") : "—", full ? "средняя оценка" : "ср. оценка", segs(5, st.ratings_count ? st.avg_rating : 0))}
+    ${full ? kpi("steth", "steth", total, plural(total, "приём", "приёма", "приёмов"), segs(5, total % 5 || (total ? 5 : 0))) : ""}
   </div>`;
 }
 
@@ -1846,7 +1867,7 @@ function onEvaluation(r) {
   slot.outerHTML = html`<div class="stack" style="margin-top:16px">
     <h3 class="row-c">${ic("card", "c-accent")}Разбор приёма</h3>
     ${evaluationBlock(c)}
-    ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b></div>` : ""}
+    ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b>${r.rank_up ? html`<div class="small">Новое звание — «${r.rank_up}»</div>` : ""}</div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
     <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id)}</div>
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
@@ -2116,7 +2137,7 @@ function viewSettings(fresh) {
         ${!pf.suggesting && !pf.options.length ? html`<div class="small muted">${custom ? (pf.custom ? "Добавьте разделы ниже — или сохраните без них: пациенты будут по всей специальности." : "Введите специальность — разделы подберутся автоматически.") : "Добавьте хотя бы один раздел."}</div>` : ""}
         ${inlineForm("pf-spec-add", "Свой раздел, например: желтуха новорождённых", 60, ic("plus"), "btn ghost")}
       </div>
-      <label class="row" style="justify-content:space-between"><span>Напоминания в Telegram о стрике</span><input type="checkbox" id="pf-notify" ${p.notifications === false ? "" : "checked"} style="width:22px;height:22px;accent-color:var(--accent)"></label>
+      <label class="row" style="justify-content:space-between"><span>Напоминания о серии (Telegram и браузер)</span><input type="checkbox" id="pf-notify" ${p.notifications === false ? "" : "checked"} style="width:22px;height:22px;accent-color:var(--accent)"></label>
       <button class="btn block" id="pf-save">Сохранить</button>
     </div>
 
@@ -2275,6 +2296,7 @@ function viewProfile() {
       ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разбор по КР, тесты" : "Безлимит, разбор по КР, тесты")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
+      ${item({ a: 'href="#/profile/app"' }, "accent", "phone", "Приложение на телефон", IN_TG ? "Как установить на iPhone и Android" : pushLabel())}
       ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привяжите Telegram — приёмы в чате и напоминания")}
       ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что нравится, что мешает, чего не хватает")}
       ${item({ a: `href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener"` }, "accent", "telegram", "Бот в Telegram", "Приёмы в чате и напоминания", ic("external", "c-muted"))}
@@ -2286,6 +2308,149 @@ function viewProfile() {
   $("#feedback-open").onclick = () => sheetFeedback();
   const lo = $("#logout");
   if (lo) lo.onclick = async () => { if (await confirmDialog("Выйти?", "На этом устройстве нужно будет войти снова.", "Выйти")) logout(); };
+}
+
+// ---------- Согласие на cookie (общая с сайтом настройка hmd_cookies; в Telegram не показываем) ----------
+function cookieBar() {
+  try { if (localStorage.getItem("hmd_cookies")) return; } catch { return; }
+  const bar = document.createElement("div");
+  bar.className = "cookie";
+  bar.innerHTML = `<p>Мы используем cookie и Яндекс Метрику, чтобы приложение работало и становилось удобнее. Продолжая, вы соглашаетесь с <a href="${DOCS.privacy}" target="_blank" rel="noopener">политикой обработки данных</a>.</p><button type="button" class="btn sm">Хорошо</button>`;
+  bar.querySelector("button").onclick = () => { try { localStorage.setItem("hmd_cookies", "1"); } catch {} bar.remove(); goal("cookie_ok"); };
+  document.body.append(bar);
+}
+
+// ---------- Приложение на телефоне и уведомления в браузере ----------
+const PLATFORM = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ? "ios" : /Android/i.test(navigator.userAgent) ? "android" : "desktop";
+const STANDALONE = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const PUSH_OK = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+let swReg = null;
+let installPrompt = null; // событие beforeinstallprompt (Chrome, Яндекс, Edge на Android и компьютере)
+let pushSub = null;
+let pushBusy = false;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; if (S.route?.name === "install") rerender(); });
+
+function registerSw() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.register("/sw.js").then(async (reg) => {
+    swReg = reg;
+    pushSub = await reg.pushManager?.getSubscription().catch(() => null) || null;
+    if (S.route?.name === "install" || S.route?.name === "profile") rerender();
+  }).catch((e) => console.warn("sw", e));
+}
+function pushLabel() {
+  if (pushSub && Notification.permission === "granted") return "Уведомления включены на этом устройстве";
+  return PLATFORM === "ios" && !STANDALONE ? "Установите на экран «Домой» и включите уведомления" : "Установка и уведомления о пациентах";
+}
+function b64uToBytes(s) {
+  const b = atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4));
+  return Uint8Array.from(b, (c) => c.charCodeAt(0));
+}
+async function pushEnable() {
+  if (pushBusy) return;
+  pushBusy = true; rerender();
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") {
+      toast(perm === "denied" ? "Уведомления запрещены в настройках браузера" : "Уведомления не включены", "error");
+      return;
+    }
+    const reg = swReg || (await navigator.serviceWorker.ready);
+    const { key } = await api("GET", "/push/key");
+    let sub = await reg.pushManager.getSubscription();
+    // Подписка на старый ключ сервера — пересоздаём
+    if (sub && sub.options?.applicationServerKey && btoa(String.fromCharCode(...new Uint8Array(sub.options.applicationServerKey))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "") !== key) {
+      await sub.unsubscribe().catch(() => {});
+      sub = null;
+    }
+    sub ||= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(key) });
+    await api("POST", "/push/subscribe", { subscription: sub.toJSON() });
+    pushSub = sub;
+    goal("push_on", { platform: PLATFORM, standalone: STANDALONE });
+    await api("POST", "/push/test").catch(() => {});
+    toast("Уведомления включены");
+  } catch (e) {
+    toast(e.message || "Не удалось включить уведомления", "error");
+  } finally {
+    pushBusy = false; rerender();
+  }
+}
+async function pushDisable() {
+  if (!pushSub) return;
+  pushBusy = true; rerender();
+  try {
+    await api("POST", "/push/unsubscribe", { endpoint: pushSub.endpoint }).catch(() => {});
+    await pushSub.unsubscribe().catch(() => {});
+    pushSub = null;
+    goal("push_off");
+    toast("Уведомления на этом устройстве выключены");
+  } finally {
+    pushBusy = false; rerender();
+  }
+}
+
+function pushCard() {
+  if (IN_TG) return "";
+  const head = html`<div class="row"><div class="tile accent">${ic("bell")}</div><div class="grow"><b>Уведомления в браузере</b><div class="small muted">Пациент готов, разбор готов, серия скоро сгорит</div></div></div>`;
+  let body;
+  if (PLATFORM === "ios" && !STANDALONE) {
+    body = html`<p class="small muted">На iPhone уведомления работают только в установленном приложении (iOS 16.4 и новее). Добавьте его на экран «Домой» по инструкции ниже, откройте с иконки и включите уведомления здесь.</p>`;
+  } else if (!PUSH_OK) {
+    body = html`<p class="small muted">Этот браузер не поддерживает уведомления. Откройте приложение в Chrome, Яндекс Браузере или Safari.</p>`;
+  } else if (Notification.permission === "denied") {
+    body = html`<p class="small muted">Уведомления запрещены для сайта. Разрешите их в настройках браузера (значок замка у адреса → Уведомления) и вернитесь сюда.</p>`;
+  } else if (pushSub && Notification.permission === "granted") {
+    body = html`<div class="row between"><span class="badge ok">${ic("check")} Включены на этом устройстве</span><button class="btn ghost sm" id="push-off" ${pushBusy ? "disabled" : ""}>Выключить</button></div>`;
+  } else {
+    body = html`<button class="btn primary block" id="push-on" ${pushBusy ? "disabled" : ""}>${ic("bell")} ${pushBusy ? "Включаем…" : "Включить уведомления"}</button>`;
+  }
+  return html`<div class="card stack">${head}${body}</div>`;
+}
+
+function installSteps(kind) {
+  const step = (n, text) => html`<li><span class="num">${n}</span><div>${text}</div></li>`;
+  if (kind === "ios") {
+    return html`<ol class="steps-list">
+      ${step(1, html`Откройте <b>helpmedoctor.ru/app</b> в <b>Safari</b> (в других браузерах на iPhone кнопки может не быть).`)}
+      ${step(2, html`Нажмите <b>«Поделиться»</b> ${ic("share", "inline-i")} внизу экрана (на iPad — вверху).`)}
+      ${step(3, html`Прокрутите список и выберите <b>«На экран „Домой“»</b>, затем <b>«Добавить»</b>.`)}
+      ${step(4, html`Откройте Help me, Doctor <b>с иконки</b> и один раз войдите — приложение хранит вход отдельно от Safari.`)}
+      ${step(5, html`Здесь же, в профиле → «Приложение на телефон», включите уведомления.`)}
+    </ol>`;
+  }
+  return html`<ol class="steps-list">
+    ${step(1, html`Откройте <b>helpmedoctor.ru/app</b> в <b>Chrome</b> или <b>Яндекс Браузере</b>.`)}
+    ${step(2, html`Нажмите меню ${ic("dots", "inline-i")} справа вверху (в Яндекс Браузере — внизу).`)}
+    ${step(3, html`Выберите <b>«Установить приложение»</b> или <b>«Добавить на главный экран»</b>.`)}
+    ${step(4, html`Иконка появится на главном экране и в списке приложений. Уведомления включите кнопкой выше.`)}
+  </ol>`;
+}
+
+function viewInstall() {
+  const other = PLATFORM === "ios" ? "android" : "ios";
+  const first = PLATFORM === "desktop" ? "ios" : PLATFORM;
+  const names = { ios: "iPhone и iPad", android: "Android" };
+  renderShell(html`<div class="page">
+    <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Приложение на телефон</h2></div>
+    <p class="small muted">Help me, Doctor можно поставить на телефон как обычное приложение: иконка на экране, открывается без адресной строки, приходят уведомления. Ничего скачивать из магазина не нужно.</p>
+    ${IN_TG ? html`<div class="card stack"><p class="small">Вы сейчас в Telegram. Чтобы установить приложение, откройте его в браузере телефона.</p><button class="btn primary block" data-open-site>${ic("external")} Открыть в браузере</button></div>` : ""}
+    ${STANDALONE ? html`<div class="card row"><div class="tile ok">${ic("checkCircle")}</div><div class="grow"><b>Приложение уже установлено</b><div class="small muted">Вы открыли его с иконки на экране</div></div></div>` : ""}
+    ${!STANDALONE && installPrompt ? html`<button class="btn primary block" id="install-now">${ic("phone")} Установить приложение</button>` : ""}
+    ${pushCard()}
+    <div class="card stack"><b class="row-c">${ic("phone", "c-accent")}${names[first]}</b>${installSteps(first)}</div>
+    ${PLATFORM === "desktop" ? html`<div class="card stack"><b class="row-c">${ic("phone", "c-accent")}${names.android}</b>${installSteps("android")}</div>`
+      : html`<details class="card"><summary><b>${names[other]}</b></summary>${installSteps(other)}</details>`}
+  </div>`);
+  const on = $("#push-on"); if (on) on.onclick = pushEnable;
+  const off = $("#push-off"); if (off) off.onclick = pushDisable;
+  const inst = $("#install-now");
+  if (inst) inst.onclick = async () => {
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice.catch(() => ({}));
+    goal("pwa_install", { outcome });
+    installPrompt = null;
+    rerender();
+  };
 }
 
 // ---------- Способы входа ----------

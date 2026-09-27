@@ -227,7 +227,8 @@ export function evaluation(env, r) {
   if (r.recommendation) t += `\n💡 <b>Совет:</b> ${esc(r.recommendation)}\n`;
   t += `\n⚡ <b>+${r.xp} XP</b>${r.streak_bonus > 0 ? ` (стрик ×${(1 + r.streak_bonus).toFixed(1)})` : ""}`;
   if (r.level_up) t += `\n🎉 <b>Новый уровень: ${r.level_up.from} → ${r.level_up.to}</b>`;
-  t += `\n📊 Уровень ${r.level} · 🔥 ${r.streak} ${declDays(r.streak)} подряд`;
+  if (r.rank_up) t += `\n🏅 <b>Новое звание: «${esc(r.rank_up)}»</b>`;
+  t += `\n📊 Уровень ${r.level}${r.rank ? ` · ${esc(r.rank)}` : ""} · 🔥 ${r.streak} ${declDays(r.streak)} подряд`;
   if (r.task_done) t += `\n🎯 <b>Задание дня выполнено!</b> +${r.task_done.xp} XP`;
   return {
     text: t,

@@ -214,7 +214,7 @@ async function onStart(ctx, payload) {
     const m = R.onboardingStart(profile.name);
     return bot.send(uid, m.text, m.kb);
   }
-  let t = `С возвращением, ${esc(profile.name)}! 👋\n\n📊 Уровень ${profile.level_info.level} · 🔥 ${profile.streak || 0} · ⚡ ${profile.xp || 0} XP`;
+  let t = `С возвращением, ${esc(profile.name)}! 👋\n\n📊 Уровень ${profile.level_info.level}${profile.level_rank ? ` · ${esc(profile.level_rank.title)}` : ""} · 🔥 ${profile.streak || 0} · ⚡ ${profile.xp || 0} XP`;
   if (profile.daily_task) t += `\n🎯 Задание дня: ${esc(profile.daily_task.desc)}${profile.daily_task.done ? " ✅" : ` (${profile.daily_task.progress || 0}/${profile.daily_task.target})`}`;
   if (waiting.length) t += `\n\n⏳ Ждут приёма: ${waiting.length} ${declPatients(waiting.length)}`;
   await bot.send(uid, t, R.kbMain(env));
