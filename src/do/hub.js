@@ -97,6 +97,8 @@ export class HubDO extends DurableObject {
     this.addColumn("tasks", "done_at", "INTEGER");
     for (const r of this.all("SELECT uid FROM users WHERE search IS NULL LIMIT 20000")) this.refreshSearch(r.uid);
     this.sql.exec("UPDATE payments SET status = 'paid' WHERE done = 1 AND (status IS NULL OR status = 'link')");
+    // Разовые рассылки из кода — после миграций (сегмент пользователей читает новые колонки)
+    if (env.AI_MOCK !== "1") this.seedBroadcasts(ctx);
   }
 
   addColumn(table, col, type) {
@@ -428,6 +430,19 @@ export class HubDO extends DurableObject {
     PT.partnersMerge(this, from, to);
     this.refreshSearch(to);
     return { ok: true };
+  }
+
+  /** Разовые рассылки из кода: создаются один раз при первом запуске после деплоя (не позже дедлайна) */
+  seedBroadcasts(ctx) {
+    for (const b of SEED_BROADCASTS) {
+      const key = `bc_seed:${b.key}`;
+      if (this.getMeta(key) || Date.now() > b.deadline) continue;
+      this.setMeta(key, Date.now());
+      const filter = { ...b.filter, exclude_uids: [...(b.filter.exclude_uids || []), ...adminIds(this.env)] };
+      const bid = this.createBroadcast({ admin: adminIds(this.env)[0] || "system", text: b.text, buttons: b.buttons, filter, scheduled_at: b.at });
+      ctx.blockConcurrencyWhile(() => this.wake(Math.max(b.at, Date.now() + 1000))).catch(() => {});
+      console.log(`seed broadcast ${b.key} → №${bid}`);
+    }
   }
 
   // ---------------------------------------------------
@@ -1021,6 +1036,32 @@ export class HubDO extends DurableObject {
     return fn(this, args, String(adminId));
   }
 }
+
+// ---------------------------------------------------
+// Разовые рассылки из кода (статистика — в админке → Сообщения → Рассылки)
+// ---------------------------------------------------
+const SEED_BROADCASTS = [
+  {
+    key: "relaunch_0927",
+    at: Date.parse("2026-09-27T14:00:00Z"), // 17:00 МСК; если деплой позже — уходит сразу после него
+    deadline: Date.parse("2026-09-29T21:00:00Z"), // не рассылать, если деплой случится позже 30 сентября
+    // Не отправляем админам (добавляются автоматически), Нине и Насте Ежковой — они уже пользуются
+    filter: { exclude_like: ["%ежков%", "нина%", "% нина%", "%nina%"] },
+    buttons: [{ type: "new", text: "🩺 Принять пациента" }, { type: "app", text: "📱 Открыть приложение" }],
+    text: `{имя}, мы перезапустили Help me, Doctor 🩺
+
+За сентябрь тренажёр сильно вырос:
+
+📚 <b>Разбор по клиническим рекомендациям Минздрава</b> — чек-лист обязательных шагов, лучшая диагностика и схема лечения с дозами
+💡 <b>Подсказка наставника</b> — если зашли в тупик на приёме
+📝 <b>Тест по вашим ошибкам</b> после приёма — с подробными объяснениями
+🏅 <b>Звания и уровни</b> — от «Боюсь пациентов» до «Живой легенды», серия дней и календарь приёмов
+🌗 <b>Новое приложение</b> — светлая и тёмная тема, установка на телефон и уведомления
+🤝 <b>Партнёрская программа</b> — приглашайте однокурсников и получайте 30% с их первой оплаты и 15% со всех следующих
+
+Новый пациент уже ждёт — один приём в день бесплатно. Проверим, как вы справитесь?`,
+  },
+];
 
 // ---------------------------------------------------
 // Партнёрская программа: операции админки

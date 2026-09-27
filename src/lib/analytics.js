@@ -49,6 +49,16 @@ export function userWhere(f = {}) {
   if (f.bot_blocked === "no") w.push("COALESCE(u.bot_blocked, 0) = 0");
   if (f.blocked === "yes") w.push("COALESCE(u.blocked, 0) = 1");
   if (f.source) { w.push("u.last_source = ?"); args.push(f.source); }
+  // Исключения: конкретные uid и совпадения в имени / @username (например, свои и тестовые аккаунты)
+  if (Array.isArray(f.exclude_uids) && f.exclude_uids.length) {
+    const ids = f.exclude_uids.map(String).slice(0, 5000);
+    w.push(`u.uid NOT IN (${ids.map(() => "?").join(",")})`);
+    args.push(...ids);
+  }
+  for (const pat of Array.isArray(f.exclude_like) ? f.exclude_like.slice(0, 50) : []) {
+    w.push("LOWER(COALESCE(u.name, '') || ' ' || COALESCE(u.username, '')) NOT LIKE ?");
+    args.push(String(pat).toLowerCase());
+  }
   if (Array.isArray(f.uids)) {
     const ids = f.uids.map(String).slice(0, 5000);
     if (!ids.length) w.push("0 = 1");

@@ -494,6 +494,10 @@ assert.ok(inbox.rows.some((r) => String(r.uid) === U));
 step("админка: сообщение от имени бота, ответ пользователя уходит админам, а не пациенту");
 
 const segCount = await aq("segment_count", { filter: { uids: [U] } });
+const segAll = (await aq("segment_count", { filter: {} })).count;
+assert.ok(segAll > 1);
+assert.equal((await aq("segment_count", { filter: { exclude_uids: [U] } })).count, segAll - 1, "исключение по uid");
+assert.equal((await aq("segment_count", { filter: { exclude_like: [`%u${U}%`] } })).count, segAll - 1, "исключение по имени / username");
 assert.equal(segCount.count, 1);
 const bc = await aq("broadcast_create", { title: "Тест", text: "Новый **кейс** для {имя}", filter: { uids: [U] }, buttons: [{ type: "new", text: "Взять пациента" }] });
 const bcDone = await waitFor(async () => { const b = await aq("broadcast", { id: bc.id }); return b?.status === "done" && b; }, "broadcast done", 20000);
