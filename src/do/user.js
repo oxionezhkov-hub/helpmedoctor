@@ -8,7 +8,7 @@ import { DurableObject } from "cloudflare:workers";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   DIFFICULTIES, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
-  EARLY_UNTIL, HINTS_PER_PATIENT, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel,
+  EARLY_UNTIL, HINTS_PER_PATIENT, LEVEL_RANKS, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel,
 } from "../config.js";
 import { SYSTEM_TEXTS } from "../lib/analytics.js";
 import { aiJson, aiText, transcribe } from "../lib/ai.js";
@@ -17,6 +17,7 @@ import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
 import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
+import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
 import * as R from "../bot/render.js";
 
 const PROFILE = "profile";
@@ -267,7 +268,7 @@ export class UserDO extends DurableObject {
       quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map((q) => ({ ...quizSummary(q), locked: !G.isPremium(prof) })),
       plans: offerPlans().plans,
       offer: offerPlans(),
-      config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, difficulties: DIFFICULTIES, tests: TEST_TYPES, exams: PHYSICAL_EXAMPLES, max_active: MAX_ACTIVE_PATIENTS },
+      config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, difficulties: DIFFICULTIES, tests: TEST_TYPES, exams: PHYSICAL_EXAMPLES, max_active: MAX_ACTIVE_PATIENTS, level_ranks: LEVEL_RANKS },
     };
   }
 
@@ -467,6 +468,8 @@ export class UserDO extends DurableObject {
       await bot.del(prof.uid, job.botMsgId);
       const m = R.newPatientReady(this.env, pat);
       await bot.send(prof.uid, m.text, m.kb);
+    } else {
+      await this.pushNotify({ title: "🩺 Пациент ждёт приёма", body: `${pat.name}${pat.chief_complaint ? ` — «${pat.chief_complaint}»` : ""}`, url: `/app#/patient/${id}`, tag: `pat-${id}` }, { away: true });
     }
     await this.track("patient_ready", { spec, diagnosis: pat.true_diagnosis, name: pat.name }, { dur: job.requested_at ? Date.now() - job.requested_at : null, source: job.source });
     if (prof.stats.patients_total === 1) {
@@ -955,6 +958,8 @@ export class UserDO extends DurableObject {
       rating: ev.rating, axes: ev.axes, expert_text: ev.expert_text, dialog_moments: ev.dialog_moments,
       post_story: ev.post_story, xp: earned, streak: prof.streak, streak_bonus: G.streakBonus(prof.streak),
       level: lvlAfter, level_up: lvlAfter > lvlBefore ? { from: lvlBefore, to: lvlAfter } : null,
+      rank: G.rankInfo(lvlAfter).title,
+      rank_up: G.rankInfo(lvlAfter).index > G.rankInfo(lvlBefore).index ? G.rankInfo(lvlAfter).title : null,
       task_done: taskDone ? prof.daily_task : null, consultation_number: fresh.consultations.length,
       hints: facts.hints?.length || 0,
     };
@@ -970,6 +975,9 @@ export class UserDO extends DurableObject {
     if (taskDone) await this.track("task_done", { id: prof.daily_task.id, desc: prof.daily_task.desc, xp: prof.daily_task.xp }, evSource);
     if (prof.streak !== prevStreak) await this.track(prof.streak > prevStreak ? "streak_up" : "streak_reset", { streak: prof.streak, before: prevStreak }, evSource);
 
+    if (job.origin !== "bot") {
+      await this.pushNotify({ title: `✅ Разбор приёма готов — ${ev.rating}/5`, body: `${fresh.name}: ${fresh.true_diagnosis}. +${earned} XP`, url: `/app#/patient/${job.patId}`, tag: `ev-${job.patId}` }, { away: true });
+    }
     if (job.origin === "bot") {
       const m = R.evaluation(this.env, result);
       await tg(this.env).send(prof.uid, m.text, m.kb);
@@ -1027,6 +1035,8 @@ export class UserDO extends DurableObject {
       const prof = await this.profile();
       const m = R.guide(this.env, { patient_id: job.patId, patient_name: pat.name, guide, premium: true });
       await tg(this.env).send(prof.uid, m.text, m.kb).catch((e) => console.error("guide tg", e));
+    } else if (guide) {
+      await this.pushNotify({ title: "📚 Разбор по КР Минздрава готов", body: `${pat.name}: препараты, дозы и обследования по рекомендациям`, url: `/app#/patient/${job.patId}`, tag: `guide-${job.patId}` }, { away: true });
     }
   }
 
@@ -1513,8 +1523,10 @@ export class UserDO extends DurableObject {
     const bot = tg(this.env, { kind: "system" });
     const vars = { стрик: streak, дней: declDays(streak), имя: prof.name };
     const send = async (what, key, kb, v = vars) => {
-      await bot.send(prof.uid, sysText(texts, key, v), kb);
-      const delivered = bot.last.ok;
+      const text = sysText(texts, key, v);
+      await bot.send(prof.uid, text, kb);
+      const pushed = key === "review_request" ? false : await this.pushNotify({ body: text, url: "/app", tag: "reminder" }).catch(() => false);
+      const delivered = bot.last.ok || pushed;
       if (!delivered && bot.last.code === 403) {
         prof.bot_blocked = true;
         await this.ctx.storage.put(PROFILE, prof);
@@ -1658,6 +1670,50 @@ export class UserDO extends DurableObject {
 
   async webSocketClose(ws, code) {
     try { ws.close(code, "bye"); } catch {}
+  }
+
+  // ---------- Уведомления в браузере (Web Push) ----------
+  async pushSubscribe(sub, ua = "") {
+    if (!validSubscription(sub)) throw new UserError("Браузер вернул неверную подписку на уведомления", "bad_push");
+    const prof = await this.profile();
+    const list = (prof.push_subs || []).filter((x) => x.endpoint !== sub.endpoint);
+    list.push({ endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }, ua: String(ua).slice(0, 120), at: Date.now() });
+    prof.push_subs = list.slice(-5); // не больше 5 устройств
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.track("push_on", { devices: prof.push_subs.length });
+    return { devices: prof.push_subs.length };
+  }
+
+  async pushUnsubscribe(endpoint) {
+    const prof = await this.profile();
+    const before = (prof.push_subs || []).length;
+    prof.push_subs = (prof.push_subs || []).filter((x) => x.endpoint !== endpoint);
+    if (prof.push_subs.length !== before) {
+      await this.ctx.storage.put(PROFILE, prof);
+      await this.track("push_off", { devices: prof.push_subs.length });
+    }
+    return { devices: prof.push_subs.length };
+  }
+
+  /**
+   * Пуш на все устройства пользователя. away — только если приложение сейчас не открыто (нет живого WebSocket).
+   * @returns {Promise<boolean>} доставлено хотя бы на одно устройство
+   */
+  async pushNotify({ title = "Help me, Doctor", body = "", url = "/app", tag } = {}, { away = false } = {}) {
+    const prof = await this.profile();
+    const subs = prof.push_subs || [];
+    if (!subs.length || prof.notifications === false) return false;
+    if (away && this.ctx.getWebSockets().length) return false;
+    const keys = await vapidKeys(this.env);
+    const text = String(body).replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").trim().slice(0, 300);
+    const results = await Promise.all(subs.map((sub) => sendPush(this.env, sub, { title, body: text, url, tag }, { keys })));
+    const gone = subs.filter((_, i) => results[i].gone).map((x) => x.endpoint);
+    if (gone.length) {
+      const fresh = await this.profile();
+      fresh.push_subs = (fresh.push_subs || []).filter((x) => !gone.includes(x.endpoint));
+      await this.ctx.storage.put(PROFILE, fresh);
+    }
+    return results.some((r) => r.ok);
   }
 
   broadcast(scope, data = {}) {
@@ -1884,10 +1940,12 @@ const fmtRub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 
 
 export function publicProfile(prof) {
   const lvl = G.levelInfo(prof.xp || 0);
-  const { payments, daily_patients, ...rest } = prof;
+  const { payments, daily_patients, push_subs, ...rest } = prof;
   return {
     ...rest,
     level_info: lvl,
+    level_rank: G.rankInfo(lvl.level),
+    push_devices: (push_subs || []).length,
     level_label: G.levelMeta(prof.level).label,
     complexity: G.complexityFor(prof),
     has_sub: G.hasActiveSub(prof),

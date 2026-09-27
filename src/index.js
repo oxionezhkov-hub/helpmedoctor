@@ -2,6 +2,7 @@
 // Cloudflare Worker — Help me, Doctor 👩‍⚕️
 // Telegram-бот + веб-приложение (/app) на общих данных (Durable Objects)
 // =====================================================
+import { vapidKeys } from "./lib/webpush.js";
 import { PACKS, PLANS, TRIAL, productLabel } from "./config.js";
 import { bearer, createSession, loginLinks, newLoginCode, randomToken, readSignedData, signData, verifyInitData, verifySession } from "./lib/auth.js";
 import { authorizeUrl, enabledProviders, fetchIdentity, isTelegramUid, newWebUid, PROVIDERS, redirectUri } from "./lib/oauth.js";
@@ -226,6 +227,16 @@ async function api(request, env, url) {
     }
     if (path === "/profile" && method === "PATCH") {
       return json({ profile: await user.updateProfile(await readJson(request)) });
+    }
+    // --- Уведомления в браузере (Web Push) ---
+    if (path === "/push/key" && method === "GET") return json({ key: (await vapidKeys(env)).publicKey });
+    if (path === "/push/subscribe" && method === "POST") {
+      const body = await readJson(request);
+      return json(await user.pushSubscribe(body.subscription, request.headers.get("User-Agent") || ""));
+    }
+    if (path === "/push/unsubscribe" && method === "POST") return json(await user.pushUnsubscribe(String((await readJson(request)).endpoint || "")));
+    if (path === "/push/test" && method === "POST") {
+      return json({ ok: await user.pushNotify({ title: "🔔 Уведомления включены", body: "Сюда придут напоминания о серии и новости о пациентах.", url: "/app#/profile/app", tag: "test" }) });
     }
     // Мини-приложение → сайт в браузере: одноразовый код входа, уже подтверждённый этим пользователем
     if (path === "/auth/handoff" && method === "POST") {

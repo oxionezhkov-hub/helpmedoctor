@@ -1,6 +1,6 @@
 // Игровая механика: уровни, опыт, стрики, задания дня, лимиты
 import {
-  DAILY_TASKS, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, HINT_RATING_PENALTY, HINT_XP_CUT, MAX_LEVEL, SPECIALIZATIONS,
+  DAILY_TASKS, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, HINT_RATING_PENALTY, HINT_XP_CUT, LEVEL_RANKS, MAX_LEVEL, SPECIALIZATIONS,
 } from "../config.js";
 import { mskDate, mskMidnight, daysBetween, pick } from "./util.js";
 
@@ -21,6 +21,13 @@ export function levelInfo(xp = 0) {
   const from = totalXpForLevel(level);
   const to = level < MAX_LEVEL ? totalXpForLevel(level + 1) : null;
   return { level, from, to, progress: to ? (xp - from) / (to - from) : 1 };
+}
+
+/** Звание по уровню: название, номер ступени и диапазон уровней [from, to) */
+export function rankInfo(level = 1) {
+  let i = 0;
+  while (i + 1 < LEVEL_RANKS.length && level >= LEVEL_RANKS[i + 1][0]) i++;
+  return { index: i, title: LEVEL_RANKS[i][1], from: LEVEL_RANKS[i][0], to: LEVEL_RANKS[i + 1]?.[0] ?? null };
 }
 
 export function streakBonus(streak) {
