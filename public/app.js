@@ -390,7 +390,7 @@ async function boot() {
   tg = window.Telegram?.WebApp || null;
   IN_TG = !!tg?.initData;
   if (IN_TG) sessionStore("hmd_tg", "1");
-  else registerSw();
+  else { registerSw(); cookieBar(); }
   // Ссылки из бота: /app?go=/patient/123 → #/patient/123
   const goParam = new URLSearchParams(window.__hmdQs ?? location.search).get("go");
   if (goParam && goParam.startsWith("/")) {
@@ -2308,6 +2308,16 @@ function viewProfile() {
   $("#feedback-open").onclick = () => sheetFeedback();
   const lo = $("#logout");
   if (lo) lo.onclick = async () => { if (await confirmDialog("Выйти?", "На этом устройстве нужно будет войти снова.", "Выйти")) logout(); };
+}
+
+// ---------- Согласие на cookie (общая с сайтом настройка hmd_cookies; в Telegram не показываем) ----------
+function cookieBar() {
+  try { if (localStorage.getItem("hmd_cookies")) return; } catch { return; }
+  const bar = document.createElement("div");
+  bar.className = "cookie";
+  bar.innerHTML = `<p>Мы используем cookie и Яндекс Метрику, чтобы приложение работало и становилось удобнее. Продолжая, вы соглашаетесь с <a href="${DOCS.privacy}" target="_blank" rel="noopener">политикой обработки данных</a>.</p><button type="button" class="btn sm">Хорошо</button>`;
+  bar.querySelector("button").onclick = () => { try { localStorage.setItem("hmd_cookies", "1"); } catch {} bar.remove(); goal("cookie_ok"); };
+  document.body.append(bar);
 }
 
 // ---------- Приложение на телефоне и уведомления в браузере ----------

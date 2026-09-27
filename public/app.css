@@ -670,3 +670,9 @@ details.card summary::-webkit-details-marker { display: none; }
 details.card summary::after { content: "+"; font-size: 20px; color: var(--muted); }
 details.card[open] summary::after { content: "−"; }
 details.card[open] summary { margin-bottom: 12px; }
+
+/* ---------- Согласие на cookie ---------- */
+.cookie { position: fixed; left: 12px; right: 12px; bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom)); z-index: 60; max-width: 520px; margin: 0 auto; display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow); animation: fade .25s; }
+.cookie p { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+.cookie a { color: var(--accent); }
+.cookie .btn { flex: none; }

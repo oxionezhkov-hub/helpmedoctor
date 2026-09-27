@@ -658,3 +658,13 @@ body:has(.sticky-cta.show) .patient { bottom: calc(80px + env(safe-area-inset-bo
 .pt-btns { display: grid; gap: 8px; }
 .pt-btns .btn { width: 100%; }
 .pt-btns .pt-no { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font: inherit; font-size: 15px; padding: 8px; }
+
+/* ---------- Согласие на cookie ---------- */
+.cookie { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 45; max-width: 400px; display: flex; gap: 14px; align-items: center; background: var(--card); color: var(--ink); border: 1px solid var(--rule-2); border-radius: 14px; padding: 12px 14px; box-shadow: 0 10px 30px -12px rgba(0,0,0,.35); animation: cookie-in .35s ease-out; }
+.cookie p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.cookie a { color: var(--accent); }
+.cookie .btn { min-height: 40px; padding: 0 16px; flex: none; }
+body:has(.sticky-cta.show) .cookie { bottom: calc(80px + env(safe-area-inset-bottom)); }
+@media (max-width: 600px) { .cookie { left: 12px; right: 12px; max-width: none; } }
+@keyframes cookie-in { from { opacity: 0; transform: translateY(12px); } }
+@media (prefers-reduced-motion: reduce) { .cookie { animation: none; } }
