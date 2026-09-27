@@ -1175,12 +1175,13 @@ export const ADMIN_OPS = {
   broadcast_create: async (h, a, admin) => {
     const text = String(a.text || "").trim().slice(0, 4000);
     if (!text) throw new Error("Пустой текст рассылки");
+    if (a.photo && text.length > 1024) throw new Error("С картинкой текст идёт подписью — не длиннее 1024 символов");
     const id = h.createBroadcast({ ...a, text: toTelegramHtml(text), admin });
     await h.startBroadcast(id);
     return { id };
   },
   broadcast_stop: (h, a, admin) => { h.stopBroadcast(Number(a.id), admin); return { ok: true }; },
-  broadcast_test: (h, a, admin) => h.testBroadcast(admin, toTelegramHtml(String(a.text || "").slice(0, 4000)), a.buttons),
+  broadcast_test: (h, a, admin) => h.testBroadcast(admin, toTelegramHtml(String(a.text || "").slice(0, 4000)), a.buttons, a.photo),
   templates: (h) => ({ rows: h.all("SELECT * FROM templates ORDER BY name").map((t) => ({ ...t, buttons: JSON.parse(t.buttons || "[]") })) }),
   template_save: (h, a, admin) => {
     const now = Date.now();

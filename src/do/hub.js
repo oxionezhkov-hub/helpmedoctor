@@ -95,6 +95,8 @@ export class HubDO extends DurableObject {
     this.addColumn("feedback", "task_id", "INTEGER");
     // Когда задача закрыта — для вкладки «История» в трекере
     this.addColumn("tasks", "done_at", "INTEGER");
+    // Рассылка с картинкой: ссылка на фото, текст уходит подписью
+    this.addColumn("broadcasts", "photo", "TEXT");
     for (const r of this.all("SELECT uid FROM users WHERE search IS NULL LIMIT 20000")) this.refreshSearch(r.uid);
     this.sql.exec("UPDATE payments SET status = 'paid' WHERE done = 1 AND (status IS NULL OR status = 'link')");
     // Разовые рассылки из кода — после миграций (сегмент пользователей читает новые колонки)
@@ -439,7 +441,8 @@ export class HubDO extends DurableObject {
       if (this.getMeta(key) || Date.now() > b.deadline) continue;
       this.setMeta(key, Date.now());
       const filter = { ...b.filter, exclude_uids: [...(b.filter.exclude_uids || []), ...adminIds(this.env)] };
-      const bid = this.createBroadcast({ admin: adminIds(this.env)[0] || "system", text: b.text, buttons: b.buttons, filter, scheduled_at: b.at });
+      const photo = b.photo ? `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}${b.photo}` : null;
+      const bid = this.createBroadcast({ admin: adminIds(this.env)[0] || "system", text: b.text, buttons: b.buttons, filter, scheduled_at: b.at, photo });
       ctx.blockConcurrencyWhile(() => this.wake(Math.max(b.at, Date.now() + 1000))).catch(() => {});
       console.log(`seed broadcast ${b.key} → №${bid}`);
     }
@@ -888,13 +891,13 @@ export class HubDO extends DurableObject {
     return this.all(`SELECT uid, name, username, streak, lvl, level FROM users u WHERE ${where} AND COALESCE(u.blocked, 0) = 0 AND COALESCE(u.bot_blocked, 0) = 0 AND u.uid NOT GLOB 'w*'`, ...args);
   }
 
-  createBroadcast({ admin, text, buttons = [], filter = {}, scheduled_at = null }) {
+  createBroadcast({ admin, text, buttons = [], filter = {}, scheduled_at = null, photo = null }) {
     const targets = this.segment(filter);
     const now = Date.now();
     const status = scheduled_at && scheduled_at > now + 30000 ? "scheduled" : "sending";
     this.sql.exec(
-      "INSERT INTO broadcasts (created_at, admin, text, buttons, filter, status, scheduled_at, total, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      now, String(admin), text, JSON.stringify(buttons || []), JSON.stringify(filter || {}), status, scheduled_at || null, targets.length, status === "sending" ? now : null,
+      "INSERT INTO broadcasts (created_at, admin, text, buttons, filter, status, scheduled_at, total, started_at, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      now, String(admin), text, JSON.stringify(buttons || []), JSON.stringify(filter || {}), status, scheduled_at || null, targets.length, status === "sending" ? now : null, photoUrl(photo),
     );
     const bid = this.one("SELECT last_insert_rowid() AS id").id;
     for (const t of targets) this.sql.exec("INSERT OR IGNORE INTO bc_targets (bid, uid, status) VALUES (?, ?, 'pending')", bid, t.uid);
@@ -928,10 +931,11 @@ export class HubDO extends DurableObject {
     await Promise.all(batch.map(async (t) => {
       const text = personalize(b.text, t);
       const bot = tg(this.env, { log: false });
-      const mid = await bot.send(t.uid, text, buildKeyboard(this.env, buttons, b.id));
+      const kb = buildKeyboard(this.env, buttons, b.id);
+      const mid = b.photo ? await bot.sendPhotoUrl(t.uid, b.photo, text, kb) : await bot.send(t.uid, text, kb);
       const ok = bot.last.ok;
       this.sql.exec("UPDATE bc_targets SET status = ?, ts = ?, err = ?, tg_mid = ? WHERE bid = ? AND uid = ?", ok ? "sent" : "failed", Date.now(), ok ? null : bot.last.description, mid || 0, b.id, t.uid);
-      await this.logChat({ uid: t.uid, dir: "out", kind: "broadcast", text: stripTags(text), admin: b.admin, ref: b.id, tg_mid: mid || 0, ok: ok ? 1 : 0, err: ok ? "" : bot.last.description, buttons: buttons.map((x) => x.text).join(" · ") });
+      await this.logChat({ uid: t.uid, dir: "out", kind: "broadcast", text: `${b.photo ? "🖼 " : ""}${stripTags(text)}`, admin: b.admin, ref: b.id, tg_mid: mid || 0, ok: ok ? 1 : 0, err: ok ? "" : bot.last.description, buttons: buttons.map((x) => x.text).join(" · ") });
     }));
     const c = this.one("SELECT SUM(status = 'sent') AS sent, SUM(status = 'failed') AS failed FROM bc_targets WHERE bid = ?", b.id);
     this.sql.exec("UPDATE broadcasts SET sent = ?, failed = ? WHERE id = ?", c.sent || 0, c.failed || 0, b.id);
@@ -943,10 +947,13 @@ export class HubDO extends DurableObject {
   }
 
   /** Тестовая отправка рассылки самому админу */
-  async testBroadcast(admin, text, buttons) {
+  async testBroadcast(admin, text, buttons, photo = null) {
     const u = this.userRow(admin) || { name: "Админ", streak: 3, lvl: 5 };
     const bot = tg(this.env, { log: false });
-    await bot.send(admin, `🧪 <i>Тест рассылки</i>\n\n${personalize(text, u)}`, buildKeyboard(this.env, buttons || [], 0));
+    const body = `🧪 <i>Тест рассылки</i>\n\n${personalize(text, u)}`;
+    const url = photoUrl(photo);
+    if (url) await bot.sendPhotoUrl(admin, url, body, buildKeyboard(this.env, buttons || [], 0));
+    else await bot.send(admin, body, buildKeyboard(this.env, buttons || [], 0));
     return { ok: bot.last.ok, error: bot.last.ok ? null : bot.last.description };
   }
 
@@ -1048,6 +1055,7 @@ const SEED_BROADCASTS = [
     // Не отправляем админам (добавляются автоматически), Нине и Насте Ежковой — они уже пользуются
     filter: { exclude_like: ["%ежков%", "нина%", "% нина%", "%nina%"] },
     buttons: [{ type: "new", text: "🩺 Принять пациента" }, { type: "app", text: "📱 Открыть приложение" }],
+    photo: "/files/relaunch-0927.jpg", // scripts/broadcast-image.mjs; текст уходит подписью (≤ 1024 символов)
     text: `{имя}, мы перезапустили Help me, Doctor 🩺
 
 За сентябрь тренажёр сильно вырос:
@@ -1163,6 +1171,12 @@ export function personalize(text, u = {}) {
  * Кнопки рассылки/сообщения: {type: "new"|"app"|"plans"|"url", text, url?}.
  * «Принять пациента» идёт через callback — так считаем клики.
  */
+/** Ссылка на картинку рассылки: только https (Telegram скачивает её сам) */
+function photoUrl(url) {
+  const s = String(url || "").trim();
+  return /^https:\/\/\S+$/i.test(s) ? s.slice(0, 500) : null;
+}
+
 export function buildKeyboard(env, buttons, bid = 0) {
   const base = (env.PUBLIC_URL || "").replace(/\/$/, "");
   const rows = [];
