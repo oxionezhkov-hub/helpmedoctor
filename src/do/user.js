@@ -252,8 +252,24 @@ export class UserDO extends DurableObject {
   }
 
   /** Всё для главного экрана веб-версии */
+  /** Календарь приёмов для тех, кто пришёл до его появления: собираем даты из сохранённых пациентов (один раз) */
+  async backfillConsultDays(prof) {
+    if (prof.consult_days) return;
+    const cut = Date.now() - 60 * 86400000;
+    const days = {};
+    const pats = await this.ctx.storage.list({ prefix: "pat:" });
+    for (const pat of pats.values()) {
+      for (const c of pat?.consultations || []) {
+        if (c.date >= cut && c.rating !== null) days[mskDate(c.date)] = (days[mskDate(c.date)] || 0) + 1;
+      }
+    }
+    prof.consult_days = days;
+    await this.ctx.storage.put(PROFILE, prof);
+  }
+
   async snapshot() {
     const prof = await this.profile();
+    await this.backfillConsultDays(prof).catch((e) => console.warn("consult_days", e.message));
     if (!prof.avatar && !prof.avatar_off && (!prof.avatar_checked || Date.now() - prof.avatar_checked > 7 * 86400000)) {
       this.ctx.waitUntil(this.ensureTgAvatar().catch((e) => console.warn("avatar", e.message)));
     }
@@ -459,6 +475,8 @@ export class UserDO extends DurableObject {
     }
     prof.daily_patients = [...prof.daily_patients.filter((ts) => ts >= now - 2 * 86400000), now];
     prof.stats.patients_total = (prof.stats.patients_total || 0) + 1;
+    // Самый первый пациент нового пользователя — разбор по КР с дозами в подарок, чтобы увидеть премиум в деле
+    if (prof.stats.patients_total === 1) pat.gift_kr = true;
     delete prof.generating_patient;
     await this.ctx.storage.put({ [patKey(id)]: pat, [PROFILE]: prof });
     this.broadcast("patients", { new_patient_id: id });
@@ -923,6 +941,7 @@ export class UserDO extends DurableObject {
     const prevXp = prof.xp || 0;
     const prevStreak = prof.streak || 0;
     G.applyStreak(prof);
+    G.recordConsultDay(prof);
     const correct = ev.diagnosis_correct === "yes" || (ev.diagnosis_correct !== "no" && ev.rating >= 4 && facts.diagnosis);
     prof.stats.correct_diagnoses_streak = correct ? (prof.stats.correct_diagnoses_streak || 0) + 1 : 0;
     const earned = G.consultationXp(prof, facts, ev.rating);
@@ -959,6 +978,7 @@ export class UserDO extends DurableObject {
       post_story: ev.post_story, xp: earned, streak: prof.streak, streak_bonus: G.streakBonus(prof.streak),
       level: lvlAfter, level_up: lvlAfter > lvlBefore ? { from: lvlBefore, to: lvlAfter } : null,
       rank: G.rankInfo(lvlAfter).title,
+      gift_kr: !!fresh.gift_kr,
       rank_up: G.rankInfo(lvlAfter).index > G.rankInfo(lvlBefore).index ? G.rankInfo(lvlAfter).title : null,
       task_done: taskDone ? prof.daily_task : null, consultation_number: fresh.consultations.length,
       hints: facts.hints?.length || 0,
@@ -1010,7 +1030,7 @@ export class UserDO extends DurableObject {
     if (!rec || rec.evaluating) throw new UserError("Разбор приёма ещё готовится — подождите минуту", "guide_wait");
     if (rec.guide) return { guide: rec.guide };
     const prof = await this.profile();
-    if (!G.isPremium(prof)) {
+    if (!G.isPremium(prof) && !pat.gift_kr) {
       await this.track("paywall", { what: "guide" });
       throw new UserError(prof.trial_used
         ? "Разбор по клиническим рекомендациям Минздрава — в премиуме. Оформите подписку в «Тарифах»."
@@ -1984,7 +2004,7 @@ export function publicPatient(p, premium = true) {
   const { full_history, key_findings, findings, personality, last_facts, summary, mkb10, kr, ...rest } = p;
   // Без премиума: оценка, оси и вывод эксперта; цитаты, совет и «что было дальше» — закрыты.
   // В разборе по КР бесплатно — как надо было распознать и чек-лист; диагностика и лечение с дозами — в премиуме.
-  const lock = (c) => (premium || !c.guide ? c : { ...c, guide: lockGuide(c.guide) });
+  const lock = (c) => (premium || p.gift_kr || !c.guide ? c : { ...c, guide: lockGuide(c.guide) });
   // Старые пациенты могли сохраниться с иероглифами от ИИ — чистим при показе
   return stripForeignDeep({
     ...rest,

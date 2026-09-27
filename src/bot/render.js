@@ -233,7 +233,7 @@ export function evaluation(env, r) {
   return {
     text: t,
     kb: [
-      [btn("📚 Разбор по КР Минздрава", `kr_${r.patient_id}`)],
+      [btn(r.gift_kr && !r.premium ? "🎁 Разбор по КР Минздрава — в подарок" : "📚 Разбор по КР Минздрава", `kr_${r.patient_id}`)],
       [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)],
       [btn("➕ Новый пациент", "new"), appBtn("📋 Карточка", appUrl(env, `/patient/${r.patient_id}`))],
     ],

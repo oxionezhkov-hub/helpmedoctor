@@ -392,3 +392,11 @@ test("Web Push: сообщение расшифровывается как в б
   assert.equal(plain[plain.length - 1], 2);
   assert.deepEqual(JSON.parse(plain.subarray(0, -1).toString()), { title: "Пациент ждёт" });
 });
+
+test("календарь приёмов: дни МСК за 60 дней", () => {
+  const prof = { consult_days: { "2020-01-01": 3 } };
+  const now = Date.UTC(2026, 8, 27, 22, 30); // 01:30 МСК 28 сентября
+  G.recordConsultDay(prof, now);
+  G.recordConsultDay(prof, now);
+  assert.deepEqual(prof.consult_days, { "2026-09-28": 2 });
+});

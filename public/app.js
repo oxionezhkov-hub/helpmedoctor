@@ -893,11 +893,9 @@ function kpis(p, full = false) {
   const st = p.stats || {};
   const streak = p.streak || 0;
   const week = streak ? streak % 7 || 7 : 0; // неделя серии: каждые 7 дней — бонус к опыту
-  const total = st.consultations_total || 0;
-  return html`<div class="kpis${full ? " three" : ""}">
+  return html`<div class="kpis">
     ${kpi("flame", "flame", streak, `${plural(streak, "день", "дня", "дней")} подряд`, segs(7, week))}
     ${kpi("star", "star", st.ratings_count ? st.avg_rating.toFixed(1).replace(".", ",") : "—", full ? "средняя оценка" : "ср. оценка", segs(5, st.ratings_count ? st.avg_rating : 0))}
-    ${full ? kpi("steth", "steth", total, plural(total, "приём", "приёма", "приёмов"), segs(5, total % 5 || (total ? 5 : 0))) : ""}
   </div>`;
 }
 
@@ -1178,7 +1176,7 @@ function viewPatient() {
         <div class="row between"><b>Приём №${consults.length - i}</b><span class="tiny muted">${dateText(c.date)}</span></div>
         ${c.evaluating ? etaBox("evaluation", c.date) : evaluationBlock(c)}
         ${actionsSummary(c)}
-        ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id)}</div>` : ""}
+        ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id, p.gift_kr)}</div>` : ""}
       </div>`)}` : ""}
 
     ${p.test_results?.length ? html`<div class="section-title">Результаты обследований</div>
@@ -1231,7 +1229,7 @@ function evaluationBlock(c) {
 }
 
 /** Разбор по клиническим рекомендациям Минздрава: как распознать, обязательный минимум, диагностика, лечение с дозами */
-function guideBlock(c, id) {
+function guideBlock(c, id, gift = false) {
   const g = c.guide;
   if (!g) {
     const pending = S.guidePending.has(id) || (c.guide_pending && Date.now() - c.guide_pending < 3 * 60000);
@@ -1239,8 +1237,10 @@ function guideBlock(c, id) {
       return html`<div class="guide-cta pending" role="status"><div class="row-c"><span class="spinner"></span><b>Готовим разбор по клиническим рекомендациям Минздрава</b></div>
         <p class="small">Как надо было распознать, обязательный минимум, препараты и дозы. Обычно 30–60 секунд — разбор появится здесь сам.</p></div>`;
     }
-    const premium = S.me?.profile?.premium;
+    // Первый пациент нового пользователя — разбор по КР в подарок
+    const premium = S.me?.profile?.premium || gift;
     return html`<div class="guide-cta">
+      ${gift && !S.me?.profile?.premium ? html`<span class="badge accent gift-badge">${ic("gem")} Первый пациент — разбор по КР в подарок</span>` : ""}
       <div class="row-c"><div class="tile accent">${ic("book")}</div><div class="grow"><b>Разбор по клиническим рекомендациям Минздрава</b><div class="small muted">Как надо было распознать, что обязательно по КР, лучшая диагностика, препараты и дозы</div></div></div>
       ${premium ? html`<button class="btn block" data-guide-req="${id}">${ic("book")}<span>Получить разбор по КР</span></button>`
         : html`<a class="btn block" href="#/plans" ${S.me?.profile?.trial_available ? html`data-checkout="trial"` : ""}>${ic("gem")}<span>${S.me?.profile?.trial_available ? "Премиум: 7 дней за 1 ₽" : "Открыть в премиуме"}</span></a>`}
@@ -1869,7 +1869,7 @@ function onEvaluation(r) {
     ${evaluationBlock(c)}
     ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b>${r.rank_up ? html`<div class="small">Новое звание — «${r.rank_up}»</div>` : ""}</div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
-    <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id)}</div>
+    <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id, r.gift_kr)}</div>
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
     <p class="tiny muted center">Тест «работа над ошибками» появится во вкладке «Тесты» через минуту.</p>
   </div>`[RAW];
@@ -1896,7 +1896,7 @@ async function refreshGuide(id, error) {
     const { patient } = await loadPatient(id);
     const c = patient.consultations[patient.consultations.length - 1];
     if (c?.guide) S.guidePending.delete(id);
-    document.querySelectorAll(`[data-guide-slot="${id}"]`).forEach((slot) => { slot.innerHTML = c ? guideBlock(c, id)[RAW] : ""; });
+    document.querySelectorAll(`[data-guide-slot="${id}"]`).forEach((slot) => { slot.innerHTML = c ? guideBlock(c, id, patient.gift_kr)[RAW] : ""; });
     if (c?.guide) haptic("success");
   } catch {}
 }
@@ -2569,6 +2569,7 @@ function viewStats() {
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Статистика</h2></div>
 
     <div class="card lvl-card">${levelHead(p)}${kpis(p, true)}</div>
+    ${consultCalendar(p)}
 
     <div class="card next-step"><div class="tile accent">${ic(next[0])}</div><div class="grow"><div class="tiny muted">ЧТО ДЕЛАТЬ ДАЛЬШЕ</div><b>${next[1]}</b><div class="small muted">${next[2]}</div></div></div>
     ${rated || !p.onboarding_done ? "" : html`<button class="btn block" data-go="/">${ic("plus")}<span>Принять пациента</span></button>`}
@@ -2592,6 +2593,31 @@ function viewStats() {
     ${p.recommendations?.length ? html`<div class="section-title">Советы из разборов</div>
     <div class="card stack-sm">${p.recommendations.slice(0, 3).map((r) => html`<div class="small fact">${ic("bulb", "c-warn")}<span>${r}</span></div>`)}</div>` : ""}
   </div>`);
+}
+// Календарь приёмов за 30 дней (даты МСК, как на сервере): без чисел — только дни с приёмами и без
+const mskDay = (ts) => new Date(ts).toLocaleDateString("sv-SE", { timeZone: "Europe/Moscow" });
+function consultCalendar(p) {
+  const days = p.consult_days || {};
+  const now = Date.now();
+  const list = Array.from({ length: 30 }, (_, i) => {
+    const ts = now - (29 - i) * 86400000;
+    return { n: days[mskDay(ts)] || 0, today: i === 29, wd: (new Date(ts + 3 * 3600000).getUTCDay() + 6) % 7 };
+  });
+  const active = list.filter((d) => d.n).length;
+  const total = p.stats?.consultations_total || 0;
+  const lead = list[0].wd; // пустые клетки до первого дня, чтобы недели шли строками Пн–Вс
+  return html`<div class="card stack cal-card">
+    <div class="row between"><b>Приёмы за 30 дней</b><span class="small muted">всего ${total} ${plural(total, "приём", "приёма", "приёмов")}</span></div>
+    <div class="cal">
+      ${["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((d) => html`<span class="cal-wd">${d}</span>`)}
+      ${Array.from({ length: lead }, () => html`<i class="cal-pad"></i>`)}
+      ${list.map((d) => html`<i class="${d.n >= 3 ? "l3" : d.n === 2 ? "l2" : d.n ? "l1" : ""}${d.today ? " today" : ""}" title="${d.n ? `${d.n} ${plural(d.n, "приём", "приёма", "приёмов")}` : "без приёмов"}"></i>`)}
+    </div>
+    <div class="cal-sum">
+      <div><b class="c-accent">${active}</b><span>${plural(active, "день", "дня", "дней")} с приёмами</span></div>
+      <div><b>${30 - active}</b><span>без приёмов</span></div>
+    </div>
+  </div>`;
 }
 function statRow(icon, label, value, hint) {
   return html`<div class="stat-row">${ic(icon, "c-muted")}<div class="grow"><div>${label}</div>${hint ? html`<div class="tiny muted">${hint}</div>` : ""}</div><b>${value}</b></div>`;

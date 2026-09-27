@@ -179,12 +179,14 @@ const g0 = (await api(webToken, "GET", `/patients/${patId}`)).data.patient;
 assert.ok(g0.kr?.name.includes("Язвенная болезнь"), "после приёма КР видна");
 assert.equal(g0.consultations[0].guide, undefined, "разбор по КР не строится сам — только по кнопке");
 assert.ok(JSON.stringify(evalMsg.reply_markup).includes(`kr_${patId}`), "в разборе в боте — кнопка «Разбор по КР»");
+assert.ok(JSON.stringify(evalMsg.reply_markup).includes("в подарок"), "первый пациент: разбор по КР в подарок");
+assert.equal(g0.gift_kr, true, "первый пациент помечен подарком");
 r = await api(webToken, "POST", `/patients/${patId}/guide`);
-assert.equal(r.status, 409);
-assert.equal(r.data.code, "premium", "разбор по КР — в премиуме");
-await press(U, `kr_${patId}`);
-await waitFor(() => sent(U).some((m) => m.text.includes("Разбор по клиническим рекомендациям Минздрава — в премиуме")), "guide paywall in bot");
-step("разбор по КР: по кнопке и только в премиуме (сайт и бот)");
+assert.equal(r.status, 200, JSON.stringify(r.data));
+assert.equal(r.data.pending, true, "разбор по КР первого пациента ставится в очередь без премиума");
+const giftGuide = await waitFor(async () => (await api(webToken, "GET", `/patients/${patId}`)).data.patient.consultations[0].guide, "gift guide ready");
+assert.ok(!giftGuide.locked && giftGuide.treatment.length && giftGuide.treatment[0].dose, "подарочный разбор — полный, с дозами");
+step("разбор по КР: по кнопке; у первого пациента нового пользователя — в подарок без премиума");
 
 // Лимит бесплатного тарифа
 r = await api(webToken, "POST", "/patients/new");
@@ -230,7 +232,7 @@ await waitFor(() => sent(U).some((m) => m.text.includes("Премиум на 7 �
 assert.equal((await api(webToken, "POST", "/pay", { plan: "trial", consent: true })).data.code, "trial_used");
 assert.ok((await api(webToken, "GET", `/patients/${patId}`)).data.patient.consultations[0].feedback.dialog_moments.length, "после оплаты разбор открыт");
 r = await api(webToken, "POST", `/patients/${patId}/guide`);
-assert.equal(r.data.pending, true, "разбор по КР ставится в очередь");
+assert.ok(r.data.guide, "разбор по КР уже готов (подарок первого пациента)");
 const guide1 = await waitFor(async () => (await api(webToken, "GET", `/patients/${patId}`)).data.patient.consultations[0].guide, "guide ready");
 assert.ok(guide1.must.length >= 3 && guide1.diagnosis_path.length, "чек-лист и как распознать");
 assert.ok(guide1.treatment.length && guide1.treatment[0].dose, "препараты с дозами");

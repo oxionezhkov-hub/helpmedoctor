@@ -243,6 +243,16 @@ export function applyStreak(prof, now = Date.now()) {
   prof.last_consult_date = today;
 }
 
+/** Дни с приёмами (дата МСК → число приёмов) за последние 60 дней — для календаря в статистике */
+export function recordConsultDay(prof, now = Date.now()) {
+  const days = { ...(prof.consult_days || {}) };
+  const today = mskDate(now);
+  days[today] = (days[today] || 0) + 1;
+  const cut = mskDate(now - 60 * 86400000);
+  for (const d of Object.keys(days)) if (d < cut) delete days[d];
+  prof.consult_days = days;
+}
+
 // ---------- Факты приёма ----------
 const TREATMENT_RE = /назнач|принима|примите|пейте|таблетк|препарат|лечени|терапи|доз[аы]|курс |капсул|сироп|укол|инъекц|мазь|крем|спрей|капли|антибиотик|обезбол|диет|режим|постельн|ингаляц|массаж|лфк|омепразол|амоксицилл|ибупрофен|парацетамол|дротаверин|но-шп/i;
 
