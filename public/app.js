@@ -84,6 +84,9 @@ const ICONS = {
   x: '<path d="M6 6l12 12M18 6 6 18"/>',
   xCircle: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>',
+  wallet: '<path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3v3a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5"/>',
+  handshake: '<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>',
   bell: '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   phone: '<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/>',
   share: '<path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
@@ -428,6 +431,10 @@ async function boot() {
     const qs = new URLSearchParams(window.__hmdQs ?? location.search);
     const handoff = qs.get("login");
     if (qs.get("from")) sessionStore("hmd_from", qs.get("from").slice(0, 40));
+    // Личная ссылка партнёра (?ref=r_<код>, или сохранённая сайтом) — метка уходит в регистрацию любым способом входа
+    let refLabel = qs.get("ref") || "";
+    try { if (!refLabel) { const saved = JSON.parse(localStorage.getItem("hmd_ref") || "null"); if (saved && Date.now() - saved.at < 30 * 86400000) refLabel = saved.r; } } catch {}
+    if (/^r_[a-z0-9]{4,12}$/i.test(refLabel)) sessionStore("hmd_from", refLabel);
     S.authNotice = AUTH_NOTICES[qs.get("auth_error")] || (qs.get("linked") ? `${PROVIDER_LABEL[qs.get("linked")] || "Аккаунт"} привязан — теперь можно входить и так` : null)
       || (qs.get("link_error") ? LINK_ERRORS[qs.get("link_error")] || "Не удалось привязать аккаунт" : null);
     S.authNoticeKind = qs.get("linked") ? "ok" : "error";
@@ -667,6 +674,12 @@ function onSync(msg) {
   if (msg.scope === "evaluation") {
     onEvaluation(msg);
   }
+  if (msg.scope === "partner") {
+    if (msg.reward) toast(`+${rub(msg.reward)} ₽ партнёрского вознаграждения`, "ok");
+    partnerData = null;
+    if (S.route.name === "partner") viewPartner(true);
+    return;
+  }
   if (msg.scope === "guide" && msg.patient_id) {
     if (!msg.pending) refreshGuide(msg.patient_id, msg.error);
     return;
@@ -713,6 +726,7 @@ function parseRoute() {
   if (parts[0] === "profile" && parts[1] === "settings") return { name: "settings", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "accounts") return { name: "accounts", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "app") return { name: "install", params: {}, q };
+  if (parts[0] === "partner") return { name: "partner", params: {}, q };
   if (parts[0] === "profile") return { name: "profile", params: {}, q };
   if (parts[0] === "plans") return { name: "plans", params: {}, q };
   return { name: "home", params: {}, q };
@@ -761,7 +775,7 @@ async function route() {
 function rerender(fresh = false) {
   const r = S.route;
   if (!S.me) return;
-  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall };
+  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner };
   (views[r.name] || viewHome)(fresh);
 }
 
@@ -769,7 +783,7 @@ function renderShell(content, withNav = true) {
   const r = S.route.name;
   const pendingQuizzes = (S.me?.quizzes || []).filter((q) => q.status !== "done").length;
   const queue = (S.me?.patients || []).filter((p) => p.status !== "closed").length;
-  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install"].includes(r)) ? "active" : ""}">
+  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install", "partner"].includes(r)) ? "active" : ""}">
     ${ic(ico, "nav-i")}<span>${label}</span>${badge ? html`<span class="dot">${badge}</span>` : ""}</a>`;
   const scrollY = window.scrollY;
   patchRoot(html`${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
@@ -2296,6 +2310,7 @@ function viewProfile() {
       ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разбор по КР, тесты" : "Безлимит, разбор по КР, тесты")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
+      ${item({ a: 'href="#/partner"' }, "ok", "handshake", "Партнёрская программа", p.partner ? "Вы партнёр · 50% с каждой оплаты приглашённых" : "Приглашайте друзей — 30% с их первой оплаты и 15% со всех следующих")}
       ${item({ a: 'href="#/profile/app"' }, "accent", "phone", "Приложение на телефон", IN_TG ? "Как установить на iPhone и Android" : pushLabel())}
       ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привяжите Telegram — приёмы в чате и напоминания")}
       ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что нравится, что мешает, чего не хватает")}
@@ -2451,6 +2466,224 @@ function viewInstall() {
     installPrompt = null;
     rerender();
   };
+}
+
+// ---------- Партнёрская программа ----------
+let partnerData = null;
+const pct = (r) => `${Math.round(Number(r) * 100)}%`;
+const REF_STATUS = { joined: ["Зарегистрировался", ""], active: ["Принимает пациентов", "accent"], paid: ["Оплатил", "ok"] };
+function inviteTexts(link) {
+  return [
+    ["В чат группы", `Ребят, нашла тренажёр, где можно принимать ИИ-пациентов: расспрашиваешь, назначаешь анализы, ставишь диагноз — и сразу разбор по клиническим рекомендациям Минздрава. Один пациент в день бесплатно. Попробуйте: ${link}`],
+    ["Перед аккредитацией", `Кто готовится к станциям по сбору анамнеза и клиническому мышлению — тут можно тренироваться на пациентах с характером, и сразу видно, что упустил: ${link}`],
+    ["Коротко в сторис", `Поставила диагноз ИИ-пациенту и получила разбор по КР 🩺 А вы бы справились? ${link}`],
+  ];
+}
+async function copyText(text, okMsg = "Скопировано") {
+  try { await navigator.clipboard.writeText(text); toast(okMsg, "ok"); haptic("success"); }
+  catch { prompt("Скопируйте:", text); }
+}
+async function viewPartner(fresh) {
+  const head = html`<div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Партнёрская программа</h2></div>`;
+  if (fresh || !partnerData) {
+    if (!partnerData) renderShell(html`<div class="page">${head}<div class="skeleton" style="height:200px"></div><div class="skeleton"></div></div>`);
+    try {
+      partnerData = await api("GET", "/partner");
+    } catch (e) {
+      renderShell(html`<div class="page">${head}<div class="card center small muted">${e.message}</div></div>`);
+      return;
+    }
+    if (S.route.name !== "partner") return;
+  }
+  const d = partnerData;
+  const isPartner = d.partner?.status === "active";
+  const link = IN_TG ? d.links.bot : d.links.site;
+  const b = d.balance;
+  const shareText = "Тренажёр врача: ИИ-пациенты, анализы, диагноз и разбор по клиническим рекомендациям Минздрава. Попробуй:";
+  const shareLinks = [
+    ["telegram", "Telegram", `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`],
+    ["external", "ВКонтакте", `https://vk.com/share.php?url=${encodeURIComponent(link)}`],
+    ["chat", "WhatsApp", `https://wa.me/?text=${encodeURIComponent(`${shareText} ${link}`)}`],
+  ];
+  const canWithdraw = b.available >= d.min_payout && !b.requested;
+  renderShell(html`<div class="page">
+    ${head}
+
+    <div class="card stack ref-hero">
+      <div class="row-c"><div class="tile ok">${ic("handshake")}</div><div class="grow">
+        ${isPartner ? html`<span class="badge ok">${ic("check")} Партнёр · ${pct(d.partner.rate || d.rates.partner)} с каждой оплаты</span>`
+          : html`<b>Приглашайте коллег — получайте деньги</b>`}
+      </div></div>
+      <p class="small">${isPartner
+        ? html`Вы получаете <b>${pct(d.partner.rate || d.rates.partner)}</b> с каждой оплаты тех, кто пришёл по вашей ссылке, — навсегда. Доступ к тренажёру у вас бессрочный.`
+        : html`<b>${pct(d.rates.first)}</b> с первой оплаты каждого приглашённого и <b>${pct(d.rates.next)}</b> со всех следующих. Человек закрепляется за вами навсегда.`}</p>
+      <div class="ref-link"><span class="ellipsis">${link.replace(/^https?:\/\//, "")}</span><button class="btn sm" data-copy="${link}">${ic("copy")}<span>Копировать</span></button></div>
+      <div class="ref-share">
+        ${navigator.share ? html`<button class="btn ghost sm" id="ref-native">${ic("share")}<span>Поделиться</span></button>` : ""}
+        ${shareLinks.map(([i, t, u]) => html`<a class="btn ghost sm" href="${u}" target="_blank" rel="noopener">${ic(i)}<span>${t}</span></a>`)}
+      </div>
+    </div>
+
+    <div class="card stack">
+      <div class="row between"><b class="row-c">${ic("wallet", "c-accent")}Баланс</b><span class="tiny muted">вывод от ${rub(d.min_payout)} ₽</span></div>
+      <div class="bal-main"><b>${rub(b.available)} ₽</b><span class="small muted">доступно к выводу</span></div>
+      <div class="bal-grid">
+        <div><b>${rub(b.hold)} ₽</b><span>в ожидании ${d.hold_days} дней</span></div>
+        <div><b>${rub(b.requested)} ₽</b><span>выводится</span></div>
+        <div><b>${rub(b.paid)} ₽</b><span>выплачено</span></div>
+      </div>
+      <button class="btn block" id="payout-open" ${canWithdraw ? "" : "disabled"}>${ic("wallet")}<span>${b.requested ? "Выплата в работе" : "Вывести на карту или по СБП"}</span></button>
+      <p class="tiny muted">${b.requested ? "Мы переведём деньги в течение нескольких рабочих дней и напишем в Telegram."
+        : b.available < d.min_payout ? `Вывести можно, когда на балансе будет от ${rub(d.min_payout)} ₽. Новые начисления доступны через ${d.hold_days} дней — на случай возврата оплаты.`
+        : "Реквизиты спросим на следующем шаге."}</p>
+    </div>
+
+    <div class="ref-kpis">
+      <div><b>${d.counts.invited}</b><span>${plural(d.counts.invited, "приглашён", "приглашено", "приглашено")}</span></div>
+      <div><b>${d.counts.active}</b><span>принимают пациентов</span></div>
+      <div><b>${d.counts.paying}</b><span>${plural(d.counts.paying, "оплатил", "оплатили", "оплатили")}</span></div>
+      <div><b>${rub(b.earned)} ₽</b><span>заработано всего</span></div>
+    </div>
+
+    <div class="section-title">Приглашённые</div>
+    ${d.referrals.length ? html`<div class="card ref-list">${d.referrals.map((r) => html`<div class="ref-row">
+        <div class="grow"><b>${r.name}</b><div class="tiny muted">с ${dateText(r.at)}${r.patients ? ` · ${r.patients} ${plural(r.patients, "пациент", "пациента", "пациентов")}` : ""}</div>
+          <span class="badge ${REF_STATUS[r.status][1]}">${REF_STATUS[r.status][0]}${r.payments > 1 ? ` · ${r.payments} ${plural(r.payments, "оплата", "оплаты", "оплат")}` : ""}</span></div>
+        <div class="ref-sum"><b>${r.reward_sum ? `+${rub(r.reward_sum)} ₽` : "—"}</b><span class="tiny muted">${r.paid_sum ? `оплатил ${rub(r.paid_sum)} ₽` : "пока без оплат"}</span></div>
+      </div>`)}</div>`
+      : html`<div class="card center stack-sm"><div class="tile accent lg">${ic("users")}</div><b>Пока никого</b><p class="small muted">Отправьте ссылку в чат группы или потока — как только кто-то зарегистрируется, он появится здесь, а после оплаты вы увидите сумму и свою долю.</p></div>`}
+
+    ${d.recent.length ? html`<div class="section-title">Начисления</div>
+    <div class="card ref-list">${d.recent.map((e) => html`<div class="ref-row"><div class="grow"><b>${e.name}</b><div class="tiny muted">${dateText(e.at)} · оплата ${rub(e.amount)} ₽ · ${pct(e.rate)}</div></div><div class="ref-sum"><b class="c-ok">+${rub(e.reward)} ₽</b></div></div>`)}</div>` : ""}
+
+    ${d.payouts.length ? html`<div class="section-title">Выплаты</div>
+    <div class="card ref-list">${d.payouts.map((p) => html`<div class="ref-row"><div class="grow"><b>${rub(p.amount)} ₽</b><div class="tiny muted">${dateText(p.created_at)} · ${p.method === "sbp" ? "СБП" : "карта"}${p.note ? ` · ${p.note}` : ""}</div></div>
+      <span class="badge ${p.status === "paid" ? "ok" : p.status === "rejected" ? "danger" : "warn"}">${p.status === "paid" ? "Выплачено" : p.status === "rejected" ? "Отклонено" : "В работе"}</span></div>`)}</div>` : ""}
+
+    ${partnerBlock(d)}
+
+    <div class="section-title">Готовые тексты</div>
+    <div class="stack-sm">${inviteTexts(link).map(([t, text], i) => html`<div class="card stack-sm ref-tpl"><div class="row between"><b class="small">${t}</b><button class="btn ghost sm" data-copy-tpl="${i}">${ic("copy")}<span>Скопировать</span></button></div><p class="small muted">${text}</p></div>`)}</div>
+
+    <div class="card stack-sm">
+      <b class="row-c">${ic("bulb", "c-warn")}Как приглашать, чтобы работало</b>
+      <div class="small fact">${ic("check", "c-ok")}<span>Сначала примите 2–3 пациентов сами — рассказывать своими словами проще и честнее.</span></div>
+      <div class="small fact">${ic("check", "c-ok")}<span>Лучшие места: чат группы и потока, сторис, староста; лучшее время — перед сессией, аккредитацией и практикой.</span></div>
+      <div class="small fact">${ic("check", "c-ok")}<span>Показывайте, а не рекламируйте: скриншот своего разбора с оценкой работает лучше любого текста.</span></div>
+      <div class="small fact">${ic("xCircle", "c-danger")}<span>Без спама в чужих чатах, обещаний «сдашь аккредитацию» и регистрации самого себя — начисления за такое аннулируются.</span></div>
+      <a class="more-link" href="/partneram/" target="_blank" rel="noopener">Все подсказки и правила ${ic("chevron")}</a>
+    </div>
+    <p class="tiny muted center">Участвуя, вы принимаете <a href="/partner-oferta/" target="_blank" rel="noopener">партнёрское соглашение</a>. Налоги с вознаграждения уплачиваете самостоятельно.</p>
+  </div>`);
+  document.querySelectorAll("[data-copy]").forEach((el) => { el.onclick = () => { copyText(el.dataset.copy, "Ссылка скопирована"); goal("ref_copy"); }; });
+  document.querySelectorAll("[data-copy-tpl]").forEach((el) => { el.onclick = () => { copyText(inviteTexts(link)[Number(el.dataset.copyTpl)][1], "Текст со ссылкой скопирован"); goal("ref_copy_tpl"); }; });
+  const nat = $("#ref-native");
+  if (nat) nat.onclick = () => { navigator.share({ title: "Help me, Doctor", text: shareText, url: link }).catch(() => {}); goal("ref_share"); };
+  const po = $("#payout-open");
+  if (po) po.onclick = () => sheetPayout(d);
+  const ap = $("#partner-apply");
+  if (ap) ap.onclick = () => sheetPartnerApply();
+  if (S.route.q?.apply && !d.partner && !S.partnerApplyShown) { S.partnerApplyShown = true; sheetPartnerApply(); }
+}
+
+function partnerBlock(d) {
+  const st = d.partner?.status;
+  if (st === "active") {
+    return html`<div class="card stack-sm">
+      <b class="row-c">${ic("target", "c-accent")}Первые 48 часов партнёра</b>
+      <div class="small fact"><span class="num-dot">1</span><span>Примите 2–3 пациентов и сохраните скриншот лучшего разбора.</span></div>
+      <div class="small fact"><span class="num-dot">2</span><span>Скопируйте текст «В чат группы» ниже и отправьте в чат группы или потока.</span></div>
+      <div class="small fact"><span class="num-dot">3</span><span>Выложите сторис со скриншотом разбора и ссылкой — вопрос «а вы бы справились?» работает лучше всего.</span></div>
+      <div class="tiny muted">Вопросы и идеи — <a href="https://t.me/oleg_ezhkov" target="_blank" rel="noopener">@oleg_ezhkov</a></div>
+    </div>`;
+  }
+  if (st === "applied") {
+    return html`<div class="card row-c"><div class="tile warn">${ic("clock")}</div><div class="grow"><b>Заявка в партнёры на рассмотрении</b><div class="small muted">Обычно отвечаем за 1–2 дня в Telegram. Пока вы получаете обычные ${pct(d.rates.first)} / ${pct(d.rates.next)}.</div></div></div>`;
+  }
+  if (st === "excluded") return "";
+  return html`<div class="card stack partner-cta">
+    <div class="row-c"><div class="tile accent">${ic("gem")}</div><div class="grow"><b>Станьте партнёром: ${pct(d.rates.partner)} с каждой оплаты</b><div class="small muted">и бессрочный доступ к тренажёру</div></div></div>
+    <p class="small">Для тех, кто готов рассказывать о тренажёре регулярно: в своей группе, на потоке, в чатах курса или в своём канале. Мы дадим готовые тексты и материалы.</p>
+    ${st === "rejected" ? html`<p class="tiny muted">Прошлая заявка не одобрена${d.partner.note ? `: ${d.partner.note}` : ""}. Можно подать новую.</p>` : ""}
+    <button class="btn block" id="partner-apply">${ic("handshake")}<span>Подать заявку</span></button>
+    <a class="more-link" href="/partneram/" target="_blank" rel="noopener">Как это работает ${ic("chevron")}</a>
+  </div>`;
+}
+
+function sheetPartnerApply() {
+  const p = S.me.profile;
+  openSheet(html`<h2 class="row-c">${ic("handshake", "c-accent")}Заявка в партнёры</h2>
+    <p class="small muted">${pct(partnerData?.rates?.partner || 0.5)} с каждой оплаты приглашённых и бессрочный доступ. Ответим в Telegram за 1–2 дня.</p>
+    <div class="stack" style="margin-top:12px">
+      <div class="field"><label>Вуз</label><input class="input" id="pa-uni" maxlength="200" placeholder="Например: ПСПбГМУ им. Павлова"></div>
+      <div class="grid-2"><div class="field"><label>Курс</label><input class="input" id="pa-course" maxlength="40" placeholder="4 курс / ординатура"></div>
+        <div class="field"><label>Город</label><input class="input" id="pa-city" maxlength="80" placeholder="Санкт-Петербург"></div></div>
+      <div class="field"><label>Где будете рассказывать</label><textarea id="pa-ch" maxlength="500" placeholder="Чат группы (25 чел.), чат потока (~300), свой канал в Telegram…"></textarea></div>
+      <div class="field"><label>Ссылки на соцсети <span class="muted">— необязательно</span></label><input class="input" id="pa-links" maxlength="300" placeholder="t.me/…, vk.com/…"></div>
+      <div class="field"><label>Пара слов о себе <span class="muted">— необязательно</span></label><textarea id="pa-about" maxlength="500"></textarea></div>
+      <label class="row-c small"><input type="checkbox" id="pa-agree" style="width:20px;height:20px;accent-color:var(--accent)"><span>Принимаю <a href="/partner-oferta/" target="_blank" rel="noopener">партнёрское соглашение</a> и сам(а) плачу налоги с вознаграждения</span></label>
+      <button class="btn block" id="pa-send">Отправить заявку</button>
+      ${!(p.stats?.consultations_total > 0) ? html`<p class="tiny muted">Совет: перед заявкой примите хотя бы одного пациента — так проще рассказывать о тренажёре.</p>` : ""}
+    </div>`, (el) => {
+    $("#pa-send", el).onclick = async (e) => {
+      const btn = e.currentTarget;
+      btnBusy(btn);
+      try {
+        const res = await api("POST", "/partner/apply", {
+          university: $("#pa-uni", el).value, course: $("#pa-course", el).value, city: $("#pa-city", el).value,
+          channels: $("#pa-ch", el).value, links: $("#pa-links", el).value, about: $("#pa-about", el).value, agree: $("#pa-agree", el).checked,
+        });
+        goal("partner_apply");
+        closeSheet();
+        toast(res.status === "active" ? "Вы уже партнёр" : "Заявка отправлена — ответим в Telegram", "ok");
+        partnerData = null;
+        viewPartner(true);
+      } catch (err) {
+        toast(err.message, "error");
+        btnBusy(btn, false);
+      }
+    };
+  });
+}
+
+function sheetPayout(d) {
+  let method = "card";
+  const render = () => html`<h2 class="row-c">${ic("wallet", "c-accent")}Вывод ${rub(d.balance.available)} ₽</h2>
+    <p class="small muted">Переведём всю доступную сумму на карту любого банка РФ или по СБП. Обычно — в течение нескольких рабочих дней.</p>
+    <div class="row" style="gap:8px;margin-top:12px">
+      <button class="chip ${method === "card" ? "on" : ""}" data-m="card">${ic("card")} Карта</button>
+      <button class="chip ${method === "sbp" ? "on" : ""}" data-m="sbp">${ic("phone")} СБП</button>
+    </div>
+    <div class="stack" style="margin-top:12px">
+      ${method === "card" ? html`<div class="field"><label>Номер карты</label><input class="input" id="po-card" inputmode="numeric" autocomplete="cc-number" maxlength="23" placeholder="0000 0000 0000 0000"></div>`
+        : html`<div class="field"><label>Телефон, привязанный к СБП</label><input class="input" id="po-phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="+7 900 000-00-00"></div>
+          <div class="field"><label>Банк</label><input class="input" id="po-bank" maxlength="80" placeholder="Т-Банк, Сбер, Альфа…"></div>`}
+      <div class="field"><label>Имя и фамилия получателя</label><input class="input" id="po-name" autocomplete="name" maxlength="120" placeholder="Как в банке"></div>
+      <label class="row-c small"><input type="checkbox" id="po-agree" style="width:20px;height:20px;accent-color:var(--accent)"><span>Реквизиты верны; налоги с вознаграждения уплачиваю самостоятельно (<a href="/partner-oferta/" target="_blank" rel="noopener">соглашение</a>)</span></label>
+      <button class="btn block" id="po-send">Запросить выплату</button>
+    </div>`;
+  const bind = (el) => {
+    el.querySelectorAll("[data-m]").forEach((b) => { b.onclick = () => { method = b.dataset.m; el.innerHTML = `<div class="grip"></div>${render()[RAW]}`; bind(el); }; });
+    $("#po-send", el).onclick = async (e) => {
+      if (!$("#po-agree", el).checked) return toast("Подтвердите реквизиты и условия", "error");
+      const btn = e.currentTarget;
+      btnBusy(btn);
+      try {
+        const body = method === "card" ? { method, card: $("#po-card", el).value, name: $("#po-name", el).value }
+          : { method, phone: $("#po-phone", el).value, bank: $("#po-bank", el).value, name: $("#po-name", el).value };
+        const res = await api("POST", "/partner/payout", body);
+        goal("payout_request", { amount: res.amount });
+        closeSheet();
+        toast(`Запрос на ${rub(res.amount)} ₽ отправлен`, "ok");
+        partnerData = null;
+        viewPartner(true);
+      } catch (err) {
+        toast(err.message, "error");
+        btnBusy(btn, false);
+      }
+    };
+  };
+  openSheet(render(), bind);
 }
 
 // ---------- Способы входа ----------

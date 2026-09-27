@@ -123,6 +123,7 @@ async function onMessage(ctx, msg) {
     if (command === "/new") return newPatient(ctx);
     if (command === "/patients") return listPatients(ctx);
     if (command === "/app") return bot.send(uid, "Откройте приложение:", R.kbMain(env));
+    if (command === "/partner" || command === "/invite") return partnerInfo(ctx);
     await clearSoftPending(ctx);
     if (command === "/stop") {
       await user.setBotPending(null);
@@ -223,7 +224,7 @@ async function onStart(ctx, payload) {
 async function help(ctx) {
   await ctx.bot.send(ctx.uid,
     `<b>Help me, Doctor</b> — тренажёр врача.\n\n` +
-    `/new — принять нового пациента\n/patients — мои пациенты\n/app — открыть приложение\n/feedback — оставить отзыв\n/stop — отменить ввод\n\n` +
+    `/new — принять нового пациента\n/patients — мои пациенты\n/app — открыть приложение\n/partner — пригласить друзей и зарабатывать\n/feedback — оставить отзыв\n/stop — отменить ввод\n\n` +
     `Во время приёма просто пишите пациенту (можно голосом), а обследования, осмотр и диагноз — через кнопку «⚕️ Действия».\n\n` +
     `Всё синхронизировано с сайтом: начали в боте — продолжайте в приложении, и наоборот.`,
     R.kbMain(ctx.env));
@@ -262,6 +263,24 @@ export async function startInBot(env, uid, patId) {
   const start = await user.startConsultation(patId);
   await sendConsultationStart({ user, bot: tg(env), uid }, start);
   return start;
+}
+
+/** Партнёрская программа в боте: ссылка, доля, баланс — подробности в приложении */
+async function partnerInfo(ctx) {
+  const { env, uid, bot } = ctx;
+  const info = await hubStub(env).partnerInfo(uid);
+  const link = `https://t.me/${env.BOT_USERNAME}?start=r_${info.code}`;
+  const rub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
+  const partner = info.partner?.status === "active";
+  const rate = partner
+    ? `<b>${Math.round((info.partner.rate || info.rates.partner) * 100)}%</b> с каждой оплаты приглашённых — вы партнёр`
+    : `<b>${Math.round(info.rates.first * 100)}%</b> с первой оплаты приглашённого и <b>${Math.round(info.rates.next * 100)}%</b> со всех следующих — навсегда`;
+  const text = `🤝 <b>Партнёрская программа</b>\n\nВаша ссылка:\n${link}\n\n${rate}.\n\n` +
+    `👥 Приглашено: ${info.counts.invited} · оплатили: ${info.counts.paying}\n` +
+    `💰 Доступно к выводу: <b>${rub(info.balance.available)} ₽</b>${info.balance.hold ? ` · в ожидании ${rub(info.balance.hold)} ₽` : ""}\n\n` +
+    `Список приглашённых, вывод на карту или по СБП и готовые тексты — в приложении.`;
+  return bot.send(uid, text, [[appBtn("🤝 Открыть партнёрский раздел", R.appUrl(env, "/partner"))],
+    [{ text: "📤 Поделиться ссылкой", url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("Тренажёр врача: ИИ-пациенты и разбор по клиническим рекомендациям — попробуй")}` }]]);
 }
 
 async function sendConsultationStart(ctx, start) {

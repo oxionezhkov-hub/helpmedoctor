@@ -58,6 +58,15 @@ export function tg(env, { log = true, kind = "bot", admin = null, ref = null } =
       await record(chatId, stripHtml(text), { tg_mid: res?.message_id || 0, buttons: keyboard ? buttonsText(keyboard) : "" });
       return res?.message_id || 0;
     },
+    /** Фото по публичной ссылке с подписью (до 1024 символов) — для рассылок */
+    async sendPhotoUrl(chatId, url, caption, keyboard) {
+      caption = stripForeignScripts(caption || "");
+      const body = { chat_id: chatId, photo: url, caption, parse_mode: "HTML" };
+      if (keyboard) body.reply_markup = { inline_keyboard: keyboard };
+      const res = await call("sendPhoto", body);
+      await record(chatId, `🖼 ${stripHtml(caption)}`, { tg_mid: res?.message_id || 0, buttons: keyboard ? buttonsText(keyboard) : "" });
+      return res?.message_id || 0;
+    },
     async sendPhoto(chatId, blob, caption, keyboard) {
       caption = caption ? stripForeignScripts(caption) : caption;
       const fd = new FormData();

@@ -4,11 +4,12 @@
 // платежи, коды входа, задачи, рассылки и настройки админки. Хранилище — SQLite Durable Object.
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
-import { adminIds, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel } from "../config.js";
+import { adminIds, REFERRAL, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel } from "../config.js";
 import { cancelSubscription, chargeSubscription } from "../lib/tochka.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
 import { tg, btn } from "../lib/telegram.js";
 import * as A from "../lib/analytics.js";
+import * as PT from "../lib/partners.js";
 
 const NOTIFY_KINDS = A.NOTIFY_KINDS;
 
@@ -77,6 +78,7 @@ export class HubDO extends DurableObject {
         fails INTEGER DEFAULT 0, trial INTEGER DEFAULT 0, notified INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER, last_charge_at INTEGER, last_error TEXT);
       CREATE TABLE IF NOT EXISTS bc_targets (bid INTEGER, uid TEXT, status TEXT, ts INTEGER, err TEXT, clicked INTEGER DEFAULT 0, tg_mid INTEGER DEFAULT 0, PRIMARY KEY (bid, uid));
     `);
+    PT.initPartnerTables(this.sql);
     // Миграции: новые колонки в старых таблицах
     for (const [col, type] of Object.entries(USER_COLS)) this.addColumn("users", col, type);
     this.addColumn("payments", "amount", "REAL DEFAULT 0");
@@ -93,8 +95,12 @@ export class HubDO extends DurableObject {
     this.addColumn("feedback", "task_id", "INTEGER");
     // Когда задача закрыта — для вкладки «История» в трекере
     this.addColumn("tasks", "done_at", "INTEGER");
+    // Рассылка с картинкой: ссылка на фото, текст уходит подписью
+    this.addColumn("broadcasts", "photo", "TEXT");
     for (const r of this.all("SELECT uid FROM users WHERE search IS NULL LIMIT 20000")) this.refreshSearch(r.uid);
     this.sql.exec("UPDATE payments SET status = 'paid' WHERE done = 1 AND (status IS NULL OR status = 'link')");
+    // Разовые рассылки из кода — после миграций (сегмент пользователей читает новые колонки)
+    if (env.AI_MOCK !== "1") this.seedBroadcasts(ctx);
   }
 
   addColumn(table, col, type) {
@@ -423,8 +429,69 @@ export class HubDO extends DurableObject {
         src.ref || "", src.registered_at || Date.now(), src.registered_at || Date.now(), to);
       this.sql.exec("DELETE FROM users WHERE uid = ?", from);
     }
+    PT.partnersMerge(this, from, to);
     this.refreshSearch(to);
     return { ok: true };
+  }
+
+  /** Разовые рассылки из кода: создаются один раз при первом запуске после деплоя (не позже дедлайна) */
+  seedBroadcasts(ctx) {
+    for (const b of SEED_BROADCASTS) {
+      const key = `bc_seed:${b.key}`;
+      if (this.getMeta(key) || Date.now() > b.deadline) continue;
+      this.setMeta(key, Date.now());
+      const filter = { ...b.filter, exclude_uids: [...(b.filter.exclude_uids || []), ...adminIds(this.env)] };
+      const photo = b.photo ? `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}${b.photo}` : null;
+      const bid = this.createBroadcast({ admin: adminIds(this.env)[0] || "system", text: b.text, buttons: b.buttons, filter, scheduled_at: b.at, photo });
+      ctx.blockConcurrencyWhile(() => this.wake(Math.max(b.at, Date.now() + 1000))).catch(() => {});
+      console.log(`seed broadcast ${b.key} → №${bid}`);
+    }
+  }
+
+  // ---------------------------------------------------
+  // Партнёрская программа (src/lib/partners.js)
+  // ---------------------------------------------------
+  async refBindCode(uid, code) {
+    return PT.refBind(this, uid, code);
+  }
+
+  async partnerInfo(uid) {
+    return PT.partnerInfo(this, uid);
+  }
+
+  /** Оплата приглашённого: начисление пригласившему и сообщение ему в Telegram */
+  async refAccrue({ uid, op, amount, plan }) {
+    const r = PT.refAccrue(this, { uid, op, amount, plan });
+    if (!r) return null;
+    const who = this.one("SELECT name FROM users WHERE uid = ?", String(uid))?.name || "Приглашённый";
+    const pct = Math.round(r.rate * 100);
+    await tg(this.env, { kind: "system" }).send(r.referrer,
+      `💸 <b>+${fmtRub(r.reward)} ₽</b> — партнёрское вознаграждение\n${esc(who)} оплатил(а) ${fmtRub(amount)} ₽, ваша доля ${pct}%.\n\nБаланс и вывод — в приложении: Профиль → «Партнёрская программа».`,
+      [[{ text: "💰 Мой баланс", web_app: { url: `${(this.env.PUBLIC_URL || "").replace(/\/$/, "")}/app?go=/partner` } }]]).catch(() => {});
+    await this.env.USER.get(this.env.USER.idFromName(r.referrer)).partnerEvent({ reward: r.reward }).catch(() => {});
+    return r;
+  }
+
+  async partnerApply(uid, info) {
+    const res = PT.partnerApply(this, uid, info);
+    if (res.status === "applied") {
+      const u = this.one("SELECT name, username FROM users WHERE uid = ?", String(uid)) || {};
+      const lines = [["Вуз", info.university], ["Курс", info.course], ["Город", info.city], ["Где расскажет", info.channels], ["Соцсети", info.links], ["О себе", info.about]]
+        .filter(([, v]) => v).map(([k, v]) => `${k}: ${esc(v)}`).join("\n");
+      await this.notifyAdmin(`🤝 <b>Заявка в партнёры</b>\n${esc(u.name || "")} ${u.username ? "@" + esc(u.username) : ""} (uid ${uid})\n\n${lines}`, "partner",
+        { kb: [[{ text: "Открыть заявки", url: this.adminUrl("/partners") }]] });
+    }
+    return res;
+  }
+
+  async payoutRequest(uid, req) {
+    const res = PT.payoutRequest(this, uid, req);
+    if (res.ok) {
+      const u = this.one("SELECT name, username FROM users WHERE uid = ?", String(uid)) || {};
+      await this.notifyAdmin(`💰 <b>Запрос выплаты: ${fmtRub(res.amount)} ₽</b>\n${esc(u.name || "")} ${u.username ? "@" + esc(u.username) : ""} (uid ${uid})\nСпособ: ${req.method === "sbp" ? "СБП" : "карта"}`, "partner",
+        { kb: [[{ text: "Открыть выплаты", url: this.adminUrl("/partners?tab=payouts") }]] });
+    }
+    return res;
   }
 
   async getPayment(op) {
@@ -824,13 +891,13 @@ export class HubDO extends DurableObject {
     return this.all(`SELECT uid, name, username, streak, lvl, level FROM users u WHERE ${where} AND COALESCE(u.blocked, 0) = 0 AND COALESCE(u.bot_blocked, 0) = 0 AND u.uid NOT GLOB 'w*'`, ...args);
   }
 
-  createBroadcast({ admin, text, buttons = [], filter = {}, scheduled_at = null }) {
+  createBroadcast({ admin, text, buttons = [], filter = {}, scheduled_at = null, photo = null }) {
     const targets = this.segment(filter);
     const now = Date.now();
     const status = scheduled_at && scheduled_at > now + 30000 ? "scheduled" : "sending";
     this.sql.exec(
-      "INSERT INTO broadcasts (created_at, admin, text, buttons, filter, status, scheduled_at, total, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      now, String(admin), text, JSON.stringify(buttons || []), JSON.stringify(filter || {}), status, scheduled_at || null, targets.length, status === "sending" ? now : null,
+      "INSERT INTO broadcasts (created_at, admin, text, buttons, filter, status, scheduled_at, total, started_at, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      now, String(admin), text, JSON.stringify(buttons || []), JSON.stringify(filter || {}), status, scheduled_at || null, targets.length, status === "sending" ? now : null, photoUrl(photo),
     );
     const bid = this.one("SELECT last_insert_rowid() AS id").id;
     for (const t of targets) this.sql.exec("INSERT OR IGNORE INTO bc_targets (bid, uid, status) VALUES (?, ?, 'pending')", bid, t.uid);
@@ -864,10 +931,11 @@ export class HubDO extends DurableObject {
     await Promise.all(batch.map(async (t) => {
       const text = personalize(b.text, t);
       const bot = tg(this.env, { log: false });
-      const mid = await bot.send(t.uid, text, buildKeyboard(this.env, buttons, b.id));
+      const kb = buildKeyboard(this.env, buttons, b.id);
+      const mid = b.photo ? await bot.sendPhotoUrl(t.uid, b.photo, text, kb) : await bot.send(t.uid, text, kb);
       const ok = bot.last.ok;
       this.sql.exec("UPDATE bc_targets SET status = ?, ts = ?, err = ?, tg_mid = ? WHERE bid = ? AND uid = ?", ok ? "sent" : "failed", Date.now(), ok ? null : bot.last.description, mid || 0, b.id, t.uid);
-      await this.logChat({ uid: t.uid, dir: "out", kind: "broadcast", text: stripTags(text), admin: b.admin, ref: b.id, tg_mid: mid || 0, ok: ok ? 1 : 0, err: ok ? "" : bot.last.description, buttons: buttons.map((x) => x.text).join(" · ") });
+      await this.logChat({ uid: t.uid, dir: "out", kind: "broadcast", text: `${b.photo ? "🖼 " : ""}${stripTags(text)}`, admin: b.admin, ref: b.id, tg_mid: mid || 0, ok: ok ? 1 : 0, err: ok ? "" : bot.last.description, buttons: buttons.map((x) => x.text).join(" · ") });
     }));
     const c = this.one("SELECT SUM(status = 'sent') AS sent, SUM(status = 'failed') AS failed FROM bc_targets WHERE bid = ?", b.id);
     this.sql.exec("UPDATE broadcasts SET sent = ?, failed = ? WHERE id = ?", c.sent || 0, c.failed || 0, b.id);
@@ -879,10 +947,13 @@ export class HubDO extends DurableObject {
   }
 
   /** Тестовая отправка рассылки самому админу */
-  async testBroadcast(admin, text, buttons) {
+  async testBroadcast(admin, text, buttons, photo = null) {
     const u = this.userRow(admin) || { name: "Админ", streak: 3, lvl: 5 };
     const bot = tg(this.env, { log: false });
-    await bot.send(admin, `🧪 <i>Тест рассылки</i>\n\n${personalize(text, u)}`, buildKeyboard(this.env, buttons || [], 0));
+    const body = `🧪 <i>Тест рассылки</i>\n\n${personalize(text, u)}`;
+    const url = photoUrl(photo);
+    if (url) await bot.sendPhotoUrl(admin, url, body, buildKeyboard(this.env, buttons || [], 0));
+    else await bot.send(admin, body, buildKeyboard(this.env, buttons || [], 0));
     return { ok: bot.last.ok, error: bot.last.ok ? null : bot.last.description };
   }
 
@@ -967,11 +1038,112 @@ export class HubDO extends DurableObject {
   // API админки: один вход, чтобы не плодить RPC-методы
   // ---------------------------------------------------
   async admin(op, args = {}, adminId = "") {
-    const fn = A.ADMIN_OPS[op];
+    const fn = A.ADMIN_OPS[op] || PARTNER_OPS[op];
     if (!fn) throw new Error(`unknown admin op ${op}`);
     return fn(this, args, String(adminId));
   }
 }
+
+// ---------------------------------------------------
+// Разовые рассылки из кода (статистика — в админке → Сообщения → Рассылки)
+// ---------------------------------------------------
+const SEED_BROADCASTS = [
+  {
+    key: "relaunch_0927",
+    at: Date.parse("2026-09-27T14:00:00Z"), // 17:00 МСК; если деплой позже — уходит сразу после него
+    deadline: Date.parse("2026-09-29T21:00:00Z"), // не рассылать, если деплой случится позже 30 сентября
+    // Не отправляем админам (добавляются автоматически), Нине и Насте Ежковой — они уже пользуются
+    filter: { exclude_like: ["%ежков%", "нина%", "% нина%", "%nina%"] },
+    buttons: [{ type: "new", text: "🩺 Принять пациента" }, { type: "app", text: "📱 Открыть приложение" }],
+    photo: "/files/relaunch-0927.jpg", // scripts/broadcast-image.mjs; текст уходит подписью (≤ 1024 символов)
+    text: `{имя}, мы перезапустили Help me, Doctor 🩺
+
+За сентябрь тренажёр сильно вырос:
+
+📚 <b>Разбор по клиническим рекомендациям Минздрава</b> — чек-лист обязательных шагов, лучшая диагностика и схема лечения с дозами
+💡 <b>Подсказка наставника</b> — если зашли в тупик на приёме
+📝 <b>Тест по вашим ошибкам</b> после приёма — с подробными объяснениями
+🏅 <b>Звания и уровни</b> — от «Боюсь пациентов» до «Живой легенды», серия дней и календарь приёмов
+🌗 <b>Новое приложение</b> — светлая и тёмная тема, установка на телефон и уведомления
+🤝 <b>Партнёрская программа</b> — приглашайте однокурсников и получайте 30% с их первой оплаты и 15% со всех следующих
+
+Новый пациент уже ждёт — один приём в день бесплатно. Проверим, как вы справитесь?`,
+  },
+];
+
+// ---------------------------------------------------
+// Партнёрская программа: операции админки
+// ---------------------------------------------------
+const PARTNER_WELCOME = (env, rate) => `🤝 <b>Вы — партнёр Help me, Doctor!</b>
+
+Ваша доля — <b>${Math.round(rate * 100)}% с каждой оплаты</b> приглашённых, навсегда. Доступ к тренажёру у вас теперь бессрочный.
+
+<b>С чего начать (первые 48 часов):</b>
+1. Примите 2–3 пациентов, чтобы рассказывать своими словами.
+2. Откройте Профиль → «Партнёрская программа», скопируйте ссылку и готовый текст — отправьте в чат группы или потока.
+3. Выложите сторис со скриншотом своего разбора и ссылкой.
+
+Подсказки, тексты и правила — на странице ${(env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/partneram/
+Вопросы — @oleg_ezhkov`;
+
+const PARTNER_OPS = {
+  partners: (h) => PT.adminPartners(h),
+  partner_decide: async (h, a, admin) => {
+    const uid = String(a.uid || "");
+    const status = String(a.status || "");
+    if (!uid || !["active", "rejected", "excluded"].includes(status)) throw new Error("Неверные параметры");
+    const rate = Math.min(0.9, Math.max(0.01, Number(a.rate) || REFERRAL.partner));
+    const row = h.one("SELECT status, granted FROM partners WHERE uid = ?", uid);
+    h.sql.exec(
+      `INSERT INTO partners (uid, status, rate, applied_at, decided_at, admin, note) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(uid) DO UPDATE SET status = excluded.status, rate = excluded.rate, decided_at = excluded.decided_at, admin = excluded.admin, note = excluded.note`,
+      uid, status, rate, Date.now(), Date.now(), admin, String(a.note || "").slice(0, 500),
+    );
+    const user = h.env.USER.get(h.env.USER.idFromName(uid));
+    const bot = tg(h.env, { kind: "admin", admin });
+    if (status === "active") {
+      const { granted } = await user.partnerAccess(true);
+      if (granted) h.sql.exec("UPDATE partners SET granted = 1 WHERE uid = ?", uid);
+      if (row?.status !== "active") {
+        await bot.send(uid, PARTNER_WELCOME(h.env, rate), [[{ text: "🤝 Партнёрский раздел", web_app: { url: `${(h.env.PUBLIC_URL || "").replace(/\/$/, "")}/app?go=/partner` } }]]).catch(() => {});
+      }
+    } else {
+      if (row?.granted) {
+        await user.partnerAccess(false);
+        h.sql.exec("UPDATE partners SET granted = 0 WHERE uid = ?", uid);
+      }
+      if (a.notify !== false) {
+        const text = status === "rejected"
+          ? `Спасибо за заявку в партнёры Help me, Doctor! Сейчас мы не можем её одобрить${a.note ? `: ${esc(a.note)}` : "."}\n\nВы по-прежнему получаете ${Math.round(REFERRAL.first * 100)}% с первой оплаты и ${Math.round(REFERRAL.next * 100)}% со всех следующих оплат приглашённых друзей.`
+          : `Участие в партнёрской программе Help me, Doctor прекращено${a.note ? `: ${esc(a.note)}` : "."}`;
+        await bot.send(uid, text).catch(() => {});
+      }
+    }
+    h.audit(admin, "partner_decide", uid, { status, rate, note: a.note || "" });
+    return { ok: true };
+  },
+  payout_decide: async (h, a, admin) => {
+    const id = Number(a.id);
+    const status = String(a.status || "");
+    if (!["paid", "rejected"].includes(status)) throw new Error("Неверный статус");
+    const row = h.one("SELECT uid, amount, status FROM ref_payouts WHERE id = ?", id);
+    if (!row) throw new Error("Выплата не найдена");
+    if (row.status !== "requested") throw new Error("Выплата уже обработана");
+    h.sql.exec("UPDATE ref_payouts SET status = ?, decided_at = ?, admin = ?, note = ? WHERE id = ?", status, Date.now(), admin, String(a.note || "").slice(0, 500), id);
+    await tg(h.env, { kind: "admin", admin }).send(row.uid, status === "paid"
+      ? `✅ <b>Выплата ${fmtRub(row.amount)} ₽ отправлена</b> на указанные реквизиты. Спасибо, что рассказываете о Help me, Doctor!`
+      : `Выплату ${fmtRub(row.amount)} ₽ не удалось провести${a.note ? `: ${esc(a.note)}` : ""}. Сумма вернулась на баланс — проверьте реквизиты и запросите снова.`).catch(() => {});
+    h.audit(admin, "payout_decide", String(id), { status, amount: row.amount, uid: row.uid });
+    return { ok: true };
+  },
+  earning_cancel: (h, a, admin) => {
+    const op = String(a.op || "");
+    const restore = a.restore === true;
+    h.sql.exec("UPDATE ref_earnings SET status = ?, note = ? WHERE op = ?", restore ? "ok" : "cancelled", String(a.note || "").slice(0, 300), op);
+    h.audit(admin, restore ? "earning_restore" : "earning_cancel", op, { note: a.note || "" });
+    return { ok: true };
+  },
+};
 
 // ---------------------------------------------------
 // Вспомогательное
@@ -999,6 +1171,12 @@ export function personalize(text, u = {}) {
  * Кнопки рассылки/сообщения: {type: "new"|"app"|"plans"|"url", text, url?}.
  * «Принять пациента» идёт через callback — так считаем клики.
  */
+/** Ссылка на картинку рассылки: только https (Telegram скачивает её сам) */
+function photoUrl(url) {
+  const s = String(url || "").trim();
+  return /^https:\/\/\S+$/i.test(s) ? s.slice(0, 500) : null;
+}
+
 export function buildKeyboard(env, buttons, bid = 0) {
   const base = (env.PUBLIC_URL || "").replace(/\/$/, "");
   const rows = [];

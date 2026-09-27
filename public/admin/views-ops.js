@@ -378,6 +378,7 @@ const MSG = {
           </div>
           <div class="card"><div class="card-head"><h2>2. Сообщение</h2>${tpl.rows.length ? html`<select class="input" id="bc-tpl" style="width:auto"><option value="">Шаблон…</option>${tpl.rows.map((t) => html`<option value="${t.id}">${t.name}</option>`)}</select>` : ""}</div>
             <div class="stack">${composerHtml({ placeholders: true })}</div>
+            <div class="field mt"><label>Картинка — ссылка https://… <span class="muted">(необязательно; текст станет подписью, до 1024 символов)</span></label><input class="input" id="bc-photo" placeholder="https://helpmedoctor.ru/files/….jpg"></div>
             <div class="row wrap mt"><button class="btn ghost sm" id="bc-save-tpl">${ic("note", "sm")}<span>Сохранить как шаблон</span></button><button class="btn ghost sm" id="bc-test">${ic("send", "sm")}<span>Отправить себе</span></button></div>
           </div>
         </div>
@@ -413,7 +414,7 @@ const MSG = {
     $("#bc-test", el).onclick = (e) => withBusy(e.currentTarget, async () => {
       const m = c.get();
       if (!m.text) return toast("Напишите текст", "error");
-      const r = await q("broadcast_test", { text: m.text, buttons: m.buttons });
+      const r = await q("broadcast_test", { text: m.text, buttons: m.buttons, photo: $("#bc-photo", el).value.trim() });
       toast(r.ok ? "Отправлено вам в Telegram" : `Не доставлено: ${r.error}`, r.ok ? "ok" : "error");
     });
     $("#bc-save-tpl", el).onclick = () => {
@@ -427,6 +428,9 @@ const MSG = {
       const m = c.get();
       if (!m.text) return toast("Напишите текст", "error");
       if (m.text.length > 4000) return toast("Текст длиннее 4000 символов", "error");
+      const photo = $("#bc-photo", el).value.trim();
+      if (photo && !/^https:\/\//.test(photo)) return toast("Ссылка на картинку должна начинаться с https://", "error");
+      if (photo && m.text.length > 1024) return toast("С картинкой текст не длиннее 1024 символов", "error");
       let at = null;
       if (when === "later") {
         const v = $("#bc-at", el).value;
@@ -438,7 +442,7 @@ const MSG = {
       if (!n) return toast("Получателей нет — измените фильтры", "error");
       if (!(await confirmDialog(at ? "Запланировать рассылку?" : "Отправить рассылку?", `${n} ${plural(n, "получатель", "получателя", "получателей")}${at ? `, ${fDT(at)}` : ", сразу"}. Отменить отправленное нельзя.`, at ? "Запланировать" : "Отправить"))) return;
       await withBusy(e.currentTarget, async () => {
-        const r = await q("broadcast_create", { text: m.text, buttons: m.buttons, filter: cleanF(), scheduled_at: at });
+        const r = await q("broadcast_create", { text: m.text, buttons: m.buttons, filter: cleanF(), scheduled_at: at, photo });
         sessionStorage.removeItem("adm_bc_preset");
         toast(at ? "Рассылка запланирована" : "Рассылка началась", "ok");
         location.hash = `#/messages/broadcast/${r.id}`;
@@ -521,7 +525,7 @@ export async function viewBroadcast(el, ctx) {
           <div class="tile"><div class="label">Оплатили за 7 дней</div><div class="value">${s.paid7}</div><div class="sub">${pctOf(s.paid7)}</div></div>
         </div>
       </div>
-      <div class="card"><div class="card-head"><h2>Сообщение</h2></div><div class="tg-preview"><div class="msg">${raw(b.text.replace(/\n/g, "<br>"))}</div>${b.buttons?.length ? html`<div class="kb">${b.buttons.map((x) => html`<span>${x.text}</span>`)}</div>` : ""}</div></div>
+      <div class="card"><div class="card-head"><h2>Сообщение</h2></div><div class="tg-preview">${b.photo ? html`<img src="${b.photo}" alt="" style="display:block;width:100%;border-radius:12px 12px 0 0">` : ""}<div class="msg">${raw(b.text.replace(/\n/g, "<br>"))}</div>${b.buttons?.length ? html`<div class="kb">${b.buttons.map((x) => html`<span>${x.text}</span>`)}</div>` : ""}</div></div>
     </div>
     <div class="card pad-0 mt"><div class="card-head" style="padding:14px 16px 0"><h2>Получатели</h2></div>${table({
       columns: [

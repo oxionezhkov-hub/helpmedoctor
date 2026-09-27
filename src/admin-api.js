@@ -17,6 +17,7 @@ const HUB_OPS = new Set([
   "segment_count", "broadcast_create", "broadcast_stop", "broadcast_test", "templates", "template_save", "template_delete", "texts", "texts_save",
   "feedback", "feedback_status", "onboarding", "notes_add", "notes_delete", "tasks", "task", "task_create", "task_update", "task_delete",
   "task_comment", "payment_status", "audit_log", "notify_get", "notify_save", "backfill_status", "counts", "ai_models_get", "ai_models_set", "autopay_list", "autopay_run",
+  "partners", "partner_decide", "payout_decide", "earning_cancel",
 ]);
 
 const ADMIN_NAMES = { "1326867567": "Олег", "1062804986": "Саша" };

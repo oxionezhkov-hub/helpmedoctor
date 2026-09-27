@@ -18,6 +18,7 @@ import * as G from "../lib/game.js";
 import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
+import { refFromLabel } from "../lib/partners.js";
 import * as R from "../bot/render.js";
 
 const PROFILE = "profile";
@@ -81,6 +82,15 @@ export class UserDO extends DurableObject {
       G.ensureDailyTask(prof);
       await this.ctx.storage.put(PROFILE, prof);
       await this.hub().registerUser(prof.uid, { name: prof.name, username: prof.username, isNew, ref: prof.ref || "" });
+      // Пришёл по личной ссылке (r_<код>) — навсегда закрепляем за пригласившим
+      const code = isNew && refFromLabel(prof.ref);
+      if (code) {
+        const referrer = await this.hub().refBindCode(prof.uid, code).catch(() => null);
+        if (referrer) {
+          prof.referrer = referrer;
+          await this.ctx.storage.put(PROFILE, prof);
+        }
+      }
       if (isNew) await this.track("signup", { ref: prof.ref || null });
     } else {
       let changed = G.ensureDailyTask(prof);
@@ -1244,6 +1254,7 @@ export class UserDO extends DurableObject {
       await this.ctx.storage.put(PROFILE, prof);
       this.broadcast("profile", { paid: planKey });
       await this.track("paid", { plan: planKey, op: operationId }, { val: price });
+      await this.referralAccrue(operationId, price, planKey);
       await bot.send(prof.uid, pack.patients
         ? `✅ <b>+${pack.patients} пациента</b> — можно принимать сверх бесплатного лимита в любой день.`
         : `❄️ <b>Заморозка стрика</b> добавлена. Если пропустите день, серия не сгорит.`, [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
@@ -1270,6 +1281,7 @@ export class UserDO extends DurableObject {
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile", { paid: planKey });
     await this.track(planKey === TRIAL.key ? "trial_start" : "paid", { plan: planKey, op: operationId }, { val: price });
+    await this.referralAccrue(operationId, price, planKey);
     const until = prof.sub_until === -1 ? "навсегда" : fmtDay(prof.sub_until);
     const renewNote = prof.autopay?.status === "active" && recurring
       ? `\n\nДальше — автопродление: ${fmtRub(prof.autopay.price)} ₽ в месяц, первое списание ${fmtDay(prof.autopay.next_at)}. Отключить можно в профиле → «Подписка».` : "";
@@ -1278,6 +1290,47 @@ export class UserDO extends DurableObject {
       : `✅ <b>Подписка активирована!</b>\n\nТариф: ${productLabel(planKey)}\nДоступ: ${until}${renewNote}\n\nТеперь можно принимать сколько угодно пациентов.`,
     [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
     return publicProfile(prof);
+  }
+
+  /** Оплата пользователя → доля пригласившему (партнёрская программа). Сбой не мешает оплате. */
+  async referralAccrue(op, amount, plan) {
+    try {
+      await this.hub().refAccrue({ uid: (await this.profile()).uid, op: String(op || ""), amount: Number(amount), plan });
+    } catch (e) {
+      console.error("refAccrue", e);
+    }
+  }
+
+  /** Партнёр одобрен (on) или исключён: бессрочный доступ. Действующее автопродление отключаем, чтобы карта не списывалась. */
+  async partnerAccess(on) {
+    let prof = await this.profile();
+    if (on) {
+      if (prof.sub_until === -1 && !prof.partner) return { granted: false };
+      if (prof.autopay?.status === "active") {
+        await this.hub().autopayCancel(prof.uid, "partner");
+        await this.autopayEnded("partner");
+        prof = await this.profile();
+      }
+      prof.partner = true;
+      prof.partner_prev_until = prof.sub_until || 0;
+      prof.sub_until = -1;
+      await this.ctx.storage.put(PROFILE, prof);
+      this.broadcast("profile");
+      await this.track("partner_on", {}, { source: "admin" });
+      return { granted: true };
+    }
+    if (prof.partner && prof.sub_until === -1) prof.sub_until = Math.max(prof.partner_prev_until || 0, Date.now() - 1);
+    prof.partner = false;
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track("partner_off", {}, { source: "admin" });
+    return { granted: false };
+  }
+
+  /** Начисление по партнёрке — обновить раздел в открытом приложении и прислать пуш */
+  async partnerEvent({ reward }) {
+    this.broadcast("partner", { reward });
+    await this.pushNotify({ title: `💸 +${reward} ₽ партнёрского вознаграждения`, body: "Приглашённый вами пользователь оплатил доступ. Баланс — в разделе «Партнёрская программа».", url: "/app#/partner", tag: "partner" });
   }
 
   /** Можно ли купить: пробный период — один раз и без действующей подписки; вторую подписку с автопродлением не оформляем */
@@ -1303,6 +1356,7 @@ export class UserDO extends DurableObject {
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile");
     await this.track(wasTrial ? "trial_converted" : "renewed", { plan, op }, { val: Number(amount), source: "system" });
+    await this.referralAccrue(op, amount, plan);
     await tg(this.env, { kind: "system" }).send(prof.uid, `💳 <b>Подписка продлена</b>: списано ${fmtRub(amount)} ₽, доступ до ${fmtDay(until)}.\nОтключить автопродление можно в профиле → «Подписка».`);
     return publicProfile(prof);
   }
