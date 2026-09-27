@@ -3,6 +3,7 @@ import { S, $, $$, api, q, html, str, ic, store, toast, setPeriod } from "./core
 import { renderCharts } from "./charts.js";
 import { viewDashboard, viewAnalytics } from "./views-stats.js";
 import { viewUsers, viewUser, viewPatient } from "./views-users.js";
+import { viewPartners } from "./views-partners.js";
 import { viewSubs, viewMessages, viewBroadcast, viewFeedback, viewTasks, viewSettings, quickIdea, openTask } from "./views-ops.js";
 
 const app = $("#app");
@@ -129,6 +130,7 @@ const NAV = [
   ["analytics", "/analytics", "chart", "Аналитика"],
   ["users", "/users", "users", "Пользователи"],
   ["subs", "/subs", "gem", "Подписки и платежи"],
+  ["partners", "/partners", "handshake", "Партнёры"],
   ["messages", "/messages", "send", "Сообщения"],
   ["feedback", "/feedback", "star", "Отзывы и анкеты"],
   ["tasks", "/tasks", "tasks", "Задачи"],
@@ -179,6 +181,7 @@ async function refreshBadges() {
     set("messages", c.unanswered);
     set("feedback", c.feedback_new);
     set("tasks", c.my_tasks);
+    set("partners", c.partners);
   } catch {}
 }
 setInterval(() => { if (S.token && !document.hidden) refreshBadges(); }, 60000);
@@ -196,6 +199,7 @@ function parseRoute() {
   if (parts[0] === "users" && parts[1]) return r("user", { uid: parts[1] });
   if (parts[0] === "users") return r("users");
   if (parts[0] === "subs") return r("subs");
+  if (parts[0] === "partners") return r("partners");
   if (parts[0] === "messages" && parts[1] === "broadcast" && parts[2]) return r("broadcast", { id: parts[2] });
   if (parts[0] === "messages") return r("messages");
   if (parts[0] === "feedback") return r("feedback");
@@ -212,6 +216,7 @@ const VIEWS = {
   user: [viewUser, "Пользователь", "users"],
   patient: [viewPatient, "Пациент", "users"],
   subs: [viewSubs, "Подписки и платежи", "subs"],
+  partners: [viewPartners, "Партнёры", "partners"],
   messages: [viewMessages, "Сообщения", "messages"],
   broadcast: [viewBroadcast, "Рассылка", "messages"],
   feedback: [viewFeedback, "Отзывы и анкеты", "feedback"],

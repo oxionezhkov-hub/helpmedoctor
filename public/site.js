@@ -21,6 +21,13 @@
     if (a) goal("cta_app", { from: new URL(a.href, location.href).searchParams.get("from") || page });
   });
 
+  // ---------- Личная ссылка партнёра: ?ref=r_<код> запоминаем на 30 дней — приложение передаст её при регистрации ----------
+  const refParam = new URLSearchParams(location.search).get("ref") || "";
+  if (/^r_[a-z0-9]{4,12}$/i.test(refParam)) {
+    ls.set("hmd_ref", JSON.stringify({ r: refParam, at: Date.now() }));
+    goal("ref_visit");
+  }
+
   // ---------- Согласие на cookie (общая с приложением настройка hmd_cookies) ----------
   if (!ls.get("hmd_cookies")) {
     const bar = document.createElement("div");

@@ -5,11 +5,11 @@
 // Все кнопки ведут в веб-версию /app с меткой from=<место> (для аналитики и Метрики).
 import fs from "node:fs";
 import path from "node:path";
-import { EARLY_UNTIL, FREE_DAILY_LIMIT, PACKS, PLANS, SPECIALIZATIONS, TRIAL } from "../src/config.js";
+import { EARLY_UNTIL, FREE_DAILY_LIMIT, PACKS, PLANS, REFERRAL, SPECIALIZATIONS, TRIAL } from "../src/config.js";
 import { ARTICLES } from "./site/articles.mjs";
 import { withFigures } from "./site/figures.mjs";
 import { AUDIENCES, INTENTS, SPECIALTIES } from "./site/landings.mjs";
-import { LEGAL_UPDATED, OFFER, PRIVACY, SELLER } from "./site/legal.mjs";
+import { LEGAL_UPDATED, OFFER, PARTNER_OFFER, PRIVACY, SELLER } from "./site/legal.mjs";
 
 const SITE = "https://helpmedoctor.ru";
 const BOT = "https://t.me/helpmedoctor_aibot";
@@ -133,6 +133,7 @@ const footer = () => `<footer><div class="wrap">
       <li><a href="/#pricing">Тарифы</a></li>
       <li><a href="/materialy/">Материалы</a></li>
       <li><a href="/o-proekte/">О проекте и контакты</a></li>
+      <li><a href="/partneram/">Партнёрам: до 50% с оплат</a></li>
       <li><a href="/#faq">Вопросы и ответы</a></li>
       <li><a href="${BOT}" rel="noopener">Бот в Telegram</a></li>
       <li><a href="${SUPPORT.url}" rel="noopener">Поддержка: ${SUPPORT.handle}</a></li>
@@ -767,6 +768,132 @@ function aboutPage() {
   return layout({ page: "about", headOpts: { title: "О проекте: как устроен тренажёр и кто его делает", description: "Как устроены ИИ-пациенты и разбор приёма в «Help me, Doctor», ограничения ИИ, источники материалов, контакты и реквизиты.", canonical: url, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
 }
 
+// ---------------------------------------------------------------- Партнёрам: страница привлечения и база знаний
+function partnersPage() {
+  const url = `${SITE}/partneram/`;
+  const c = crumbs([["Главная", "/"], ["Партнёрам", "/partneram/"]]);
+  const pc = (v) => `${Math.round(v * 100)}%`;
+  const month = Number(MONTH.early || MONTH.price);
+  const apply = `/app?from=partneram&go=${encodeURIComponent("/partner?apply=1")}`;
+  const myLink = `/app?from=partneram_link&go=${encodeURIComponent("/partner")}`;
+  const calc = [[10, "одна учебная группа"], [30, "пара групп или чат потока"], [100, "поток или свой канал"]]
+    .map(([n, who]) => `<tr><td><b>${n}</b> оплачивающих друзей<div class="per">${who}</div></td><td class="price">${rub(Math.round(n * month * REFERRAL.partner))} ₽</td><td>${rub(Math.round(n * month * REFERRAL.next))} ₽</td></tr>`).join("");
+  const tpl = [
+    ["В чат группы", "Ребят, нашла тренажёр, где можно принимать ИИ-пациентов: расспрашиваешь, назначаешь анализы, ставишь диагноз — и сразу разбор по клиническим рекомендациям Минздрава. Один пациент в день бесплатно. Попробуйте: <ваша ссылка>"],
+    ["Перед аккредитацией", "Кто готовится к станциям по сбору анамнеза и клиническому мышлению — тут можно тренироваться на пациентах с характером, и сразу видно, что упустил: <ваша ссылка>"],
+    ["Сторис", "Скриншот своего разбора с оценкой + «Поставила диагноз ИИ-пациенту — а вы бы справились?» + ссылка или стикер-ссылка"],
+    ["Когда кто-то жалуется на нехватку практики", "Попробуй тренажёр приёма: пациенты с характером, анализы под скрытый диагноз, разбор по КР. Мне помогает перед практикой — <ваша ссылка>"],
+  ];
+  const faq = [
+    ["Кто может стать партнёром?", `Любой пользователь тренажёра старше 16 лет. Лучше всего получается у студентов-медиков 2–6 курсов, ординаторов, старост и админов студенческих чатов — у тех, кого слушают однокурсники. Приглашать друзей по ссылке может каждый и без заявки — за ${pc(REFERRAL.first)} с первой оплаты и ${pc(REFERRAL.next)} со всех следующих.`],
+    ["Чем партнёр отличается от обычного приглашения?", `Обычный пользователь получает ${pc(REFERRAL.first)} с первой оплаты друга и ${pc(REFERRAL.next)} с каждой следующей. Партнёр — ${pc(REFERRAL.partner)} с каждой оплаты и бессрочный доступ к премиуму. Статус партнёра даём по заявке.`],
+    ["Как долго приглашённый «мой»?", "Навсегда: человек закрепляется за вами при регистрации по вашей ссылке, и вы получаете долю со всех его оплат — первой, продлений и докупок."],
+    ["Когда и как я получу деньги?", `Начисление становится доступно через ${REFERRAL.hold_days} дней (на случай возврата оплаты). От ${rub(REFERRAL.min_payout)} ₽ нажмите «Вывести» в разделе «Партнёрская программа», укажите номер карты или телефон для СБП — переведём в течение нескольких рабочих дней.`],
+    ["Нужно ли оформлять самозанятость?", "Выплаты делаем всем. Налоги с вознаграждения вы платите сами — проще всего оформить самозанятость в приложении «Мой налог» (с 16 лет, 4% с дохода от физлиц и 6% от ИП). Подробности — в партнёрском соглашении."],
+    ["Засчитается, если друг уже зарегистрирован?", "Нет — закрепляются только новые пользователи, которые впервые пришли по вашей ссылке. Поэтому лучше рассказывать до того, как однокурсники найдут тренажёр сами."],
+    ["Где смотреть, кто пришёл и сколько я заработал?", "В приложении: Профиль → «Партнёрская программа». Там список приглашённых, кто принимает пациентов и кто оплатил, суммы их оплат и ваша доля, баланс и история выплат. В боте — команда /partner."],
+    ["Что будет за спам или накрутку?", "Начисления аннулируем, участие прекратим. Регистрироваться по своей ссылке, заводить фейковые аккаунты и писать незнакомым людям в личку нельзя."],
+  ];
+  const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a.replace(/<[^>]+>/g, "") } })) };
+  const main = `
+<section class="page-hero solo" data-hero><div class="wrap">
+  ${c.html}
+  <p class="mono muted">Партнёрская программа</p>
+  <h1>Рассказывайте однокурсникам о тренажёре — получайте ${pc(REFERRAL.partner)} с их оплат</h1>
+  <p class="lead">Нет практики — это боль каждого студента-медика. Покажите им тренажёр приёма и получайте долю с каждой оплаты тех, кто пришёл по вашей ссылке. Навсегда, а не только с первой покупки.</p>
+  <div class="cta"><a class="btn btn-primary btn-lg" href="${apply}">Стать партнёром ${ARR}</a><a class="btn btn-ghost btn-lg" href="${myLink}">Получить свою ссылку</a></div>
+</div></section>
+
+<section class="tint"><div class="wrap">
+  <div class="sec-head"><div><h2>Два формата участия</h2><p>Начните с личной ссылки — она есть у каждого пользователя. Если готовы рассказывать регулярно, подайте заявку в партнёры.</p></div></div>
+  <ul class="feat">
+    <li><span class="k">${pc(REFERRAL.first)}</span><div><b>Приглашение друзей — для всех</b><span>${pc(REFERRAL.first)} с первой оплаты каждого приглашённого и ${pc(REFERRAL.next)} со всех следующих оплат. Без заявки: ссылка в профиле приложения или по команде /partner в боте.</span></div></li>
+    <li><span class="k">${pc(REFERRAL.partner)}</span><div><b>Партнёр — по заявке</b><span>${pc(REFERRAL.partner)} с каждой оплаты приглашённых, бессрочный доступ к премиуму, готовые тексты и материалы, прямая связь с командой.</span></div></li>
+    <li><span class="k">∞</span><div><b>Приглашённый — ваш навсегда</b><span>Человек закрепляется за вами при регистрации: доля идёт со всех его оплат — первой, продлений и докупок пациентов.</span></div></li>
+    <li><span class="k">₽</span><div><b>Вывод на карту или по СБП</b><span>От ${rub(REFERRAL.min_payout)} ₽. Реквизиты указываете при выводе, переводим в течение нескольких рабочих дней.</span></div></li>
+  </ul>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-head"><div><h2>Сколько можно заработать</h2><p>Пример при месячной подписке ${rub(month)} ₽ — в месяц, пока друзья продлевают подписку. Квартал и год — больше за один платёж.</p></div></div>
+  <div class="prose" style="max-width:none"><div class="table-wrap"><table>
+    <thead><tr><th>Сколько друзей платят</th><th>Партнёру, ${pc(REFERRAL.partner)}</th><th>По обычной ссылке, ${pc(REFERRAL.next)} с продлений</th></tr></thead>
+    <tbody>${calc}</tbody>
+  </table></div></div>
+  <p class="note">Это пример, а не обещание дохода: сколько людей оплатят, зависит от вас и от того, насколько тренажёр им полезен.</p>
+</div></section>
+
+<section class="tint"><div class="wrap">
+  <div class="sec-head"><div><h2>Как это работает</h2></div></div>
+  <ol class="steps">
+    <li><span class="n">1</span><h3>Попробуйте сами</h3><p>Примите 2–3 пациентов. Рассказывать своими словами проще, а скриншот своего разбора — лучший аргумент.</p></li>
+    <li><span class="n">2</span><h3>Возьмите ссылку</h3><p>Профиль → «Партнёрская программа» в приложении или /partner в боте. Там же готовые тексты с вашей ссылкой.</p></li>
+    <li><span class="n">3</span><h3>Расскажите своим</h3><p>Чат группы, поток, сторис, староста. Друг регистрируется по ссылке — и закрепляется за вами навсегда.</p></li>
+    <li><span class="n">4</span><h3>Выводите деньги</h3><p>Видите, кто пришёл, кто оплатил и сколько. От ${rub(REFERRAL.min_payout)} ₽ — вывод на карту или по СБП.</p></li>
+  </ol>
+</div></section>
+
+<section><div class="wrap"><div class="prose">
+  <h2>Кого мы ищем в партнёры</h2>
+  <p>Студентов-медиков 2–6 курсов, ординаторов, старост групп, админов студенческих чатов и научных кружков — тех, кого слушают однокурсники. Опыт продаж не нужен: нужно честно рассказать о полезном инструменте людям, которым он нужен.</p>
+  <ul>
+    <li><b>${pc(REFERRAL.partner)} с каждой оплаты</b> приглашённых — навсегда;</li>
+    <li><b>бессрочный премиум</b> на время партнёрства;</li>
+    <li><b>готовые тексты, идеи для сторис и скриншоты</b> — ничего не нужно придумывать;</li>
+    <li><b>прямая связь с командой</b> — ваши идеи попадают в продукт;</li>
+    <li>строчка в резюме: амбассадор EdTech-проекта для медиков.</li>
+  </ul>
+
+  <h2>Как приглашать, чтобы работало</h2>
+  <h3>Где</h3>
+  <ul>
+    <li><b>Чат своей группы и потока</b> — самое тёплое место: вас знают и вам доверяют.</li>
+    <li><b>Сторис в Telegram и ВК</b> — скриншот разбора с оценкой и вопрос «а вы бы справились?».</li>
+    <li><b>Старосты и активисты</b> — попросите переслать в чат курса, если сами там не состоите.</li>
+    <li><b>Свой канал или блог</b> — короткий пост с личным опытом.</li>
+  </ul>
+  <h3>Когда</h3>
+  <ul>
+    <li>перед пропедевтикой, сессией, аккредитацией и летней практикой;</li>
+    <li>после сложного случая на паре — «а давайте прогоним такой же в тренажёре»;</li>
+    <li>когда в чате жалуются, что «нет практики» и «не понимаю, что спрашивать у пациента».</li>
+  </ul>
+  <h3>Что показывать</h3>
+  <ul>
+    <li>свой разбор с оценкой и пропущенными вопросами — честная ошибка убеждает лучше похвалы;</li>
+    <li>фразу пациента с характером — это вызывает улыбку и желание попробовать;</li>
+    <li>разбор по клиническим рекомендациям Минздрава с дозами — то, чего нет в учебнике.</li>
+  </ul>
+
+  <h2>Готовые тексты</h2>
+  <p>В приложении эти тексты уже содержат вашу ссылку — достаточно нажать «Скопировать».</p>
+  ${tpl.map(([t, x]) => `<h3>${esc(t)}</h3><blockquote><p>${esc(x)}</p></blockquote>`).join("\n  ")}
+
+  <h2>Что нельзя</h2>
+  <ul>
+    <li>спамить: писать незнакомым людям в личку и в чужие чаты вопреки их правилам;</li>
+    <li>регистрироваться по своей ссылке и заводить фейковые аккаунты;</li>
+    <li>обещать «сдашь аккредитацию», называть тренажёр медицинской помощью, представляться врачом, если вы им не являетесь;</li>
+    <li>размещать платную рекламу без маркировки там, где она обязательна.</li>
+  </ul>
+  <p>За нарушения начисления аннулируются, а участие прекращается. Полные условия — в <a href="/partner-oferta/">партнёрском соглашении</a>.</p>
+
+  <h2>Выплаты и налоги</h2>
+  <p>Выплачиваем всем — физлицам, самозанятым и ИП. Начисление становится доступно через ${REFERRAL.hold_days} дней после оплаты друга. Когда на балансе от ${rub(REFERRAL.min_payout)} ₽, нажмите «Вывести» и укажите номер карты или телефон для СБП. Налоги с вознаграждения вы платите самостоятельно; проще всего — оформить самозанятость в приложении «Мой налог».</p>
+</div></div></section>
+
+<section class="tint"><div class="wrap">
+  <div class="sec-head"><div><h2>Вопросы и ответы</h2></div></div>
+  ${faqBlock(faq)}
+</div></section>
+
+<section class="final"><div class="wrap">
+  <div><p class="final-h">Станьте партнёром Help me, Doctor</p><p>Заявка — 2 минуты. Ответим в Telegram за 1–2 дня. Вопросы — <a href="${SUPPORT.url}" rel="noopener">${SUPPORT.handle}</a>.</p></div>
+  <div class="cta"><a class="btn btn-primary btn-lg" href="${apply}">Подать заявку ${ARR}</a></div>
+</div></section>`;
+  return layout({ page: "partners", headOpts: { title: "Партнёрская программа: до 50% с оплат приглашённых", description: `Партнёрская программа тренажёра врача Help me, Doctor: ${pc(REFERRAL.partner)} с каждой оплаты приглашённых навсегда и бессрочный доступ. Как стать партнёром, как приглашать, готовые тексты, выплаты на карту и по СБП.`, canonical: url, extra: [c.schema, faqSchema].filter(Boolean).map(ldjson).join("\n") }, main });
+}
+
 function notFound() {
   const main = `<div class="notfound"><p class="mono muted">Ошибка 404</p><h1>Страница не найдена</h1><p class="muted">Возможно, ссылка устарела. Начните с главной, пройдите демо или загляните в блог.</p>
 <div class="cta" style="justify-content:center"><a class="btn btn-primary" href="/">На главную</a><a class="btn btn-ghost" href="/demo/">Демо</a><a class="btn btn-ghost" href="/blog/">Блог</a></div></div>`;
@@ -782,6 +909,7 @@ const PAGES = [
   ...SPEC_LIST.map((s) => ({ loc: `/specialnosti/${s.slug}/`, pr: "0.7" })),
   { loc: "/materialy/", pr: "0.6" },
   { loc: "/o-proekte/", pr: "0.5" },
+  { loc: "/partneram/", pr: "0.5" },
 ];
 
 function sitemap() {
@@ -790,7 +918,7 @@ function sitemap() {
     ...PAGES.map((p) => ({ loc: `${SITE}${p.loc}`, lastmod: SITE_UPDATED, pr: p.pr })),
     { loc: `${SITE}/blog/`, lastmod: ARTICLES.map((a) => a.updated || a.date).sort().pop(), pr: "0.8" },
     ...ARTICLES.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, lastmod: a.updated || a.date, pr: "0.7" })),
-    ...[OFFER, PRIVACY].map((d) => ({ loc: `${SITE}/${d.slug}/`, lastmod: LEGAL_UPDATED, pr: "0.2" })),
+    ...[OFFER, PRIVACY, PARTNER_OFFER].map((d) => ({ loc: `${SITE}/${d.slug}/`, lastmod: LEGAL_UPDATED, pr: "0.2" })),
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -811,6 +939,7 @@ function llmsTxt() {
 - [Веб-приложение](${SITE}/app): тренажёр в браузере
 - [Материалы](${SITE}/materialy/): бесплатный чек-лист сбора анамнеза (PDF) и первоисточники
 - [О проекте](${SITE}/o-proekte/): как устроены ИИ-пациенты и ИИ-разбор, ограничения, контакты
+- [Партнёрская программа](${SITE}/partneram/): до 50% с оплат приглашённых, как стать партнёром, выплаты
 - Поддержка и коммерческие предложения: Telegram ${SUPPORT.handle} (${SUPPORT.url})
 - [Публичная оферта](${SITE}/oferta/)
 - [Политика обработки данных](${SITE}/privacy/)
@@ -841,9 +970,10 @@ write("specialnosti/index.html", specialtiesIndex());
 for (const s of SPEC_LIST) write(`specialnosti/${s.slug}/index.html`, specialtyPage(s));
 write("materialy/index.html", materialsPage());
 write("o-proekte/index.html", aboutPage());
+write("partneram/index.html", partnersPage());
 write("blog/index.html", blogIndex());
 for (const a of ARTICLES) write(`blog/${a.slug}/index.html`, articlePage(a));
-for (const d of [OFFER, PRIVACY]) write(`${d.slug}/index.html`, legalPage(d));
+for (const d of [OFFER, PRIVACY, PARTNER_OFFER]) write(`${d.slug}/index.html`, legalPage(d));
 write("404.html", notFound());
 write("sitemap.xml", sitemap());
 write("llms.txt", llmsTxt());

@@ -228,6 +228,27 @@ async function api(request, env, url) {
     if (path === "/profile" && method === "PATCH") {
       return json({ profile: await user.updateProfile(await readJson(request)) });
     }
+    // --- Партнёрская программа ---
+    if (path === "/partner" && method === "GET") {
+      const info = await hubStub(env).partnerInfo(uid);
+      const base = (env.PUBLIC_URL || new URL(request.url).origin).replace(/\/$/, "");
+      return json({ ...info, links: { site: `${base}/?ref=r_${info.code}`, app: `${base}/app?ref=r_${info.code}`, bot: `https://t.me/${env.BOT_USERNAME}?start=r_${info.code}` } });
+    }
+    if (path === "/partner/apply" && method === "POST") {
+      const b = await readJson(request);
+      if (!b.agree) return json({ error: "Нужно принять партнёрское соглашение", code: "agree" }, 400);
+      const info = Object.fromEntries(["university", "course", "city", "channels", "links", "about"].map((k) => [k, String(b[k] || "").trim().slice(0, 500)]));
+      if (!info.channels) return json({ error: "Расскажите, где будете рассказывать о тренажёре", code: "channels" }, 400);
+      return json(await hubStub(env).partnerApply(uid, info));
+    }
+    if (path === "/partner/payout" && method === "POST") {
+      const b = await readJson(request);
+      const details = payoutDetails(b);
+      if (details.error) return json({ error: details.error, code: "details" }, 400);
+      const res = await hubStub(env).payoutRequest(uid, { method: details.method, details: details.data });
+      return json(res, res.error ? 409 : 200);
+    }
+
     // --- Уведомления в браузере (Web Push) ---
     if (path === "/push/key" && method === "GET") return json({ key: (await vapidKeys(env)).publicKey });
     if (path === "/push/subscribe" && method === "POST") {
@@ -490,4 +511,30 @@ function robotsTxt(canonicalHost) {
     ? `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nDisallow: /app\n\nUser-agent: Yandex\nAllow: /\nDisallow: /api/\nDisallow: /admin\nDisallow: /app\nClean-param: from /app\n\nSitemap: https://${MAIN_HOST}/sitemap.xml\n`
     : "User-agent: *\nDisallow: /\n";
   return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
+}
+
+/** Реквизиты для выплаты партнёрского вознаграждения: номер карты (с проверкой Луна) или телефон для СБП и банк */
+function payoutDetails(b) {
+  const name = String(b.name || "").trim().replace(/\s+/g, " ").slice(0, 120);
+  if (name.split(" ").length < 2) return { error: "Укажите имя и фамилию получателя" };
+  if (b.method === "sbp") {
+    const digits = String(b.phone || "").replace(/\D/g, "").replace(/^8/, "7");
+    if (!/^7\d{10}$/.test(digits)) return { error: "Телефон для СБП: +7 и 10 цифр" };
+    const bank = String(b.bank || "").trim().slice(0, 80);
+    if (!bank) return { error: "Укажите банк для перевода по СБП" };
+    return { method: "sbp", data: { phone: `+${digits}`, bank, name } };
+  }
+  const card = String(b.card || "").replace(/\D/g, "");
+  if (card.length < 16 || card.length > 19 || !luhn(card)) return { error: "Проверьте номер карты" };
+  return { method: "card", data: { card, name } };
+}
+
+function luhn(num) {
+  let sum = 0;
+  for (let i = 0; i < num.length; i++) {
+    let d = Number(num[num.length - 1 - i]);
+    if (i % 2) { d *= 2; if (d > 9) d -= 9; }
+    sum += d;
+  }
+  return sum % 10 === 0;
 }

@@ -4,11 +4,12 @@
 // платежи, коды входа, задачи, рассылки и настройки админки. Хранилище — SQLite Durable Object.
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
-import { adminIds, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel } from "../config.js";
+import { adminIds, REFERRAL, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel } from "../config.js";
 import { cancelSubscription, chargeSubscription } from "../lib/tochka.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
 import { tg, btn } from "../lib/telegram.js";
 import * as A from "../lib/analytics.js";
+import * as PT from "../lib/partners.js";
 
 const NOTIFY_KINDS = A.NOTIFY_KINDS;
 
@@ -77,6 +78,7 @@ export class HubDO extends DurableObject {
         fails INTEGER DEFAULT 0, trial INTEGER DEFAULT 0, notified INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER, last_charge_at INTEGER, last_error TEXT);
       CREATE TABLE IF NOT EXISTS bc_targets (bid INTEGER, uid TEXT, status TEXT, ts INTEGER, err TEXT, clicked INTEGER DEFAULT 0, tg_mid INTEGER DEFAULT 0, PRIMARY KEY (bid, uid));
     `);
+    PT.initPartnerTables(this.sql);
     // Миграции: новые колонки в старых таблицах
     for (const [col, type] of Object.entries(USER_COLS)) this.addColumn("users", col, type);
     this.addColumn("payments", "amount", "REAL DEFAULT 0");
@@ -423,8 +425,55 @@ export class HubDO extends DurableObject {
         src.ref || "", src.registered_at || Date.now(), src.registered_at || Date.now(), to);
       this.sql.exec("DELETE FROM users WHERE uid = ?", from);
     }
+    PT.partnersMerge(this, from, to);
     this.refreshSearch(to);
     return { ok: true };
+  }
+
+  // ---------------------------------------------------
+  // Партнёрская программа (src/lib/partners.js)
+  // ---------------------------------------------------
+  async refBindCode(uid, code) {
+    return PT.refBind(this, uid, code);
+  }
+
+  async partnerInfo(uid) {
+    return PT.partnerInfo(this, uid);
+  }
+
+  /** Оплата приглашённого: начисление пригласившему и сообщение ему в Telegram */
+  async refAccrue({ uid, op, amount, plan }) {
+    const r = PT.refAccrue(this, { uid, op, amount, plan });
+    if (!r) return null;
+    const who = this.one("SELECT name FROM users WHERE uid = ?", String(uid))?.name || "Приглашённый";
+    const pct = Math.round(r.rate * 100);
+    await tg(this.env, { kind: "system" }).send(r.referrer,
+      `💸 <b>+${fmtRub(r.reward)} ₽</b> — партнёрское вознаграждение\n${esc(who)} оплатил(а) ${fmtRub(amount)} ₽, ваша доля ${pct}%.\n\nБаланс и вывод — в приложении: Профиль → «Партнёрская программа».`,
+      [[{ text: "💰 Мой баланс", web_app: { url: `${(this.env.PUBLIC_URL || "").replace(/\/$/, "")}/app?go=/partner` } }]]).catch(() => {});
+    await this.env.USER.get(this.env.USER.idFromName(r.referrer)).partnerEvent({ reward: r.reward }).catch(() => {});
+    return r;
+  }
+
+  async partnerApply(uid, info) {
+    const res = PT.partnerApply(this, uid, info);
+    if (res.status === "applied") {
+      const u = this.one("SELECT name, username FROM users WHERE uid = ?", String(uid)) || {};
+      const lines = [["Вуз", info.university], ["Курс", info.course], ["Город", info.city], ["Где расскажет", info.channels], ["Соцсети", info.links], ["О себе", info.about]]
+        .filter(([, v]) => v).map(([k, v]) => `${k}: ${esc(v)}`).join("\n");
+      await this.notifyAdmin(`🤝 <b>Заявка в партнёры</b>\n${esc(u.name || "")} ${u.username ? "@" + esc(u.username) : ""} (uid ${uid})\n\n${lines}`, "partner",
+        { kb: [[{ text: "Открыть заявки", url: this.adminUrl("/partners") }]] });
+    }
+    return res;
+  }
+
+  async payoutRequest(uid, req) {
+    const res = PT.payoutRequest(this, uid, req);
+    if (res.ok) {
+      const u = this.one("SELECT name, username FROM users WHERE uid = ?", String(uid)) || {};
+      await this.notifyAdmin(`💰 <b>Запрос выплаты: ${fmtRub(res.amount)} ₽</b>\n${esc(u.name || "")} ${u.username ? "@" + esc(u.username) : ""} (uid ${uid})\nСпособ: ${req.method === "sbp" ? "СБП" : "карта"}`, "partner",
+        { kb: [[{ text: "Открыть выплаты", url: this.adminUrl("/partners?tab=payouts") }]] });
+    }
+    return res;
   }
 
   async getPayment(op) {
@@ -967,11 +1016,85 @@ export class HubDO extends DurableObject {
   // API админки: один вход, чтобы не плодить RPC-методы
   // ---------------------------------------------------
   async admin(op, args = {}, adminId = "") {
-    const fn = A.ADMIN_OPS[op];
+    const fn = A.ADMIN_OPS[op] || PARTNER_OPS[op];
     if (!fn) throw new Error(`unknown admin op ${op}`);
     return fn(this, args, String(adminId));
   }
 }
+
+// ---------------------------------------------------
+// Партнёрская программа: операции админки
+// ---------------------------------------------------
+const PARTNER_WELCOME = (env, rate) => `🤝 <b>Вы — партнёр Help me, Doctor!</b>
+
+Ваша доля — <b>${Math.round(rate * 100)}% с каждой оплаты</b> приглашённых, навсегда. Доступ к тренажёру у вас теперь бессрочный.
+
+<b>С чего начать (первые 48 часов):</b>
+1. Примите 2–3 пациентов, чтобы рассказывать своими словами.
+2. Откройте Профиль → «Партнёрская программа», скопируйте ссылку и готовый текст — отправьте в чат группы или потока.
+3. Выложите сторис со скриншотом своего разбора и ссылкой.
+
+Подсказки, тексты и правила — на странице ${(env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/partneram/
+Вопросы — @oleg_ezhkov`;
+
+const PARTNER_OPS = {
+  partners: (h) => PT.adminPartners(h),
+  partner_decide: async (h, a, admin) => {
+    const uid = String(a.uid || "");
+    const status = String(a.status || "");
+    if (!uid || !["active", "rejected", "excluded"].includes(status)) throw new Error("Неверные параметры");
+    const rate = Math.min(0.9, Math.max(0.01, Number(a.rate) || REFERRAL.partner));
+    const row = h.one("SELECT status, granted FROM partners WHERE uid = ?", uid);
+    h.sql.exec(
+      `INSERT INTO partners (uid, status, rate, applied_at, decided_at, admin, note) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(uid) DO UPDATE SET status = excluded.status, rate = excluded.rate, decided_at = excluded.decided_at, admin = excluded.admin, note = excluded.note`,
+      uid, status, rate, Date.now(), Date.now(), admin, String(a.note || "").slice(0, 500),
+    );
+    const user = h.env.USER.get(h.env.USER.idFromName(uid));
+    const bot = tg(h.env, { kind: "admin", admin });
+    if (status === "active") {
+      const { granted } = await user.partnerAccess(true);
+      if (granted) h.sql.exec("UPDATE partners SET granted = 1 WHERE uid = ?", uid);
+      if (row?.status !== "active") {
+        await bot.send(uid, PARTNER_WELCOME(h.env, rate), [[{ text: "🤝 Партнёрский раздел", web_app: { url: `${(h.env.PUBLIC_URL || "").replace(/\/$/, "")}/app?go=/partner` } }]]).catch(() => {});
+      }
+    } else {
+      if (row?.granted) {
+        await user.partnerAccess(false);
+        h.sql.exec("UPDATE partners SET granted = 0 WHERE uid = ?", uid);
+      }
+      if (a.notify !== false) {
+        const text = status === "rejected"
+          ? `Спасибо за заявку в партнёры Help me, Doctor! Сейчас мы не можем её одобрить${a.note ? `: ${esc(a.note)}` : "."}\n\nВы по-прежнему получаете ${Math.round(REFERRAL.first * 100)}% с первой оплаты и ${Math.round(REFERRAL.next * 100)}% со всех следующих оплат приглашённых друзей.`
+          : `Участие в партнёрской программе Help me, Doctor прекращено${a.note ? `: ${esc(a.note)}` : "."}`;
+        await bot.send(uid, text).catch(() => {});
+      }
+    }
+    h.audit(admin, "partner_decide", uid, { status, rate, note: a.note || "" });
+    return { ok: true };
+  },
+  payout_decide: async (h, a, admin) => {
+    const id = Number(a.id);
+    const status = String(a.status || "");
+    if (!["paid", "rejected"].includes(status)) throw new Error("Неверный статус");
+    const row = h.one("SELECT uid, amount, status FROM ref_payouts WHERE id = ?", id);
+    if (!row) throw new Error("Выплата не найдена");
+    if (row.status !== "requested") throw new Error("Выплата уже обработана");
+    h.sql.exec("UPDATE ref_payouts SET status = ?, decided_at = ?, admin = ?, note = ? WHERE id = ?", status, Date.now(), admin, String(a.note || "").slice(0, 500), id);
+    await tg(h.env, { kind: "admin", admin }).send(row.uid, status === "paid"
+      ? `✅ <b>Выплата ${fmtRub(row.amount)} ₽ отправлена</b> на указанные реквизиты. Спасибо, что рассказываете о Help me, Doctor!`
+      : `Выплату ${fmtRub(row.amount)} ₽ не удалось провести${a.note ? `: ${esc(a.note)}` : ""}. Сумма вернулась на баланс — проверьте реквизиты и запросите снова.`).catch(() => {});
+    h.audit(admin, "payout_decide", String(id), { status, amount: row.amount, uid: row.uid });
+    return { ok: true };
+  },
+  earning_cancel: (h, a, admin) => {
+    const op = String(a.op || "");
+    const restore = a.restore === true;
+    h.sql.exec("UPDATE ref_earnings SET status = ?, note = ? WHERE op = ?", restore ? "ok" : "cancelled", String(a.note || "").slice(0, 300), op);
+    h.audit(admin, restore ? "earning_restore" : "earning_cancel", op, { note: a.note || "" });
+    return { ok: true };
+  },
+};
 
 // ---------------------------------------------------
 // Вспомогательное
