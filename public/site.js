@@ -28,6 +28,15 @@
     goal("ref_visit");
   }
 
+  // ---------- Кнопки «Скопировать» (готовые тексты на странице для партнёров) ----------
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-copy-text]");
+    if (!b) return;
+    const done = () => { const t = b.querySelector("span"); const old = t.textContent; b.classList.add("done"); t.textContent = "Скопировано"; setTimeout(() => { b.classList.remove("done"); t.textContent = old; }, 1800); };
+    (navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copyText) : Promise.reject()).then(done).catch(() => prompt("Скопируйте текст:", b.dataset.copyText));
+    goal("partner_tpl_copy");
+  });
+
   // ---------- Согласие на cookie (общая с приложением настройка hmd_cookies) ----------
   if (!ls.get("hmd_cookies")) {
     const bar = document.createElement("div");

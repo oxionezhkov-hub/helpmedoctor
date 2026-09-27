@@ -832,7 +832,7 @@ function viewHome(fresh) {
       <a href="#/profile" class="avatar-link" aria-label="Профиль">${userAvatar(p)}</a>
       <div class="grow">
         <h1 class="ellipsis">Врач ${p.name}</h1>
-        <div class="muted small">${!p.onboarding_done ? "Настройка профиля" : html`${p.level_label} · ${p.profession}`}${p.has_sub ? html` · <span class="badge accent">${ic("gem")} Безлимит</span>` : ""}</div>
+        <div class="muted small">${!p.onboarding_done ? "Настройка профиля" : html`${p.level_label} · ${p.profession}`}</div>
       </div>
       ${IN_TG ? html`<button class="icon-btn site-btn" data-open-site aria-label="Открыть на сайте" title="Открыть на сайте">${ic("external")}</button>`
         : html`<button class="icon-btn" data-theme-toggle aria-label="Светлая или тёмная тема" title="Светлая / тёмная тема">${ic(isDark() ? "sun" : "moon")}</button>`}

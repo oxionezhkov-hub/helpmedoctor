@@ -49,7 +49,6 @@
   <a class="brand" href="/" aria-label="Help me, Doctor — на главную"><svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8"/></svg>Help me, Doctor</a>
   <nav class="nav" aria-label="Основное меню">
     <a href="/#how">Как это работает</a>
-    <a href="/demo/">Демо</a>
     <details><summary>Для кого</summary><div class="menu">
       <a href="/dlya-studentov/">Студентам-медикам<small>3–6 курс, практика и экзамены</small></a><a href="/dlya-ordinatorov/">Ординаторам<small>Кейсы по своей специальности</small></a><a href="/dlya-vrachej/">Практикующим врачам<small>Сложные случаи и смежные области</small></a>
       <a href="/akkreditaciya/">Тренажёр к аккредитации<small>Станция анамнеза и кейсы</small></a><a href="/klinicheskie-zadachi/">Клинические задачи онлайн<small>Интерактивно, с разбором</small></a><a href="/virtualnyj-pacient/">Виртуальный пациент<small>Что это и как работает</small></a>
@@ -60,6 +59,7 @@
     </div></details>
     <a href="/#pricing">Тарифы</a>
     <a href="/blog/">Блог</a>
+    <a href="/partneram/">Партнёрам</a>
   </nav>
   <button class="theme-btn" type="button" data-theme-toggle aria-label="Сменить тему: светлая или тёмная" title="Светлая / тёмная тема"><svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"/></svg><svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></button>
   <button class="burger" type="button" aria-label="Меню" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
@@ -97,36 +97,39 @@
 </div></section>
 </main>
 <footer><div class="wrap">
-  <div class="cols">
-    <div>
+  <div class="foot-top">
+    <div class="foot-brand">
       <a class="brand" href="/"><svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8"/></svg>Help me, Doctor</a>
-      <p style="margin-top:14px">Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей. Пациенты вымышлены; сервис не оказывает медицинских услуг и не заменяет консультацию врача.</p>
+      <p>Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей: ИИ-пациенты, обследования и разбор по клиническим рекомендациям Минздрава.</p>
+      <div class="foot-cta"><a class="btn btn-primary" href="/app?from=footer">Открыть тренажёр <span class="arr" aria-hidden="true">→</span></a><a class="btn btn-ghost" href="https://t.me/helpmedoctor_aibot" rel="noopener">Telegram-бот</a></div>
     </div>
-    <div><b>Тренажёр</b><ul>
-      <li><a href="/app?from=footer">Веб-версия</a></li>
-      <li><a href="/demo/">Демо-приём</a></li>
-      <li><a href="/#pricing">Тарифы</a></li>
-      <li><a href="/materialy/">Материалы</a></li>
-      <li><a href="/o-proekte/">О проекте и контакты</a></li>
-      <li><a href="/partneram/">Партнёрам: до 50% с оплат</a></li>
-      <li><a href="/#faq">Вопросы и ответы</a></li>
-      <li><a href="https://t.me/helpmedoctor_aibot" rel="noopener">Бот в Telegram</a></li>
-      <li><a href="https://t.me/oleg_ezhkov" rel="noopener">Поддержка: @oleg_ezhkov</a></li>
-    </ul></div>
-    <div><b>Для кого</b><ul>
-      <li><a href="/dlya-studentov/">Студентам-медикам</a></li><li><a href="/dlya-ordinatorov/">Ординаторам</a></li><li><a href="/dlya-vrachej/">Практикующим врачам</a></li><li><a href="/akkreditaciya/">Тренажёр к аккредитации</a></li><li><a href="/klinicheskie-zadachi/">Клинические задачи онлайн</a></li><li><a href="/virtualnyj-pacient/">Виртуальный пациент</a></li>
-    </ul></div>
-    <div><b>Специальности</b><ul>
-      <li><a href="/specialnosti/terapiya/">Терапия</a></li><li><a href="/specialnosti/kardiologiya/">Кардиология</a></li><li><a href="/specialnosti/hirurgiya/">Хирургия</a></li><li><a href="/specialnosti/pediatriya/">Педиатрия</a></li><li><a href="/specialnosti/nevrologiya/">Неврология</a></li><li><a href="/specialnosti/onkologiya/">Онкология</a></li><li><a href="/specialnosti/psihiatriya/">Психиатрия</a></li><li><a href="/specialnosti/dermatologiya/">Дерматология</a></li><li><a href="/specialnosti/anesteziologiya-reanimatologiya/">Анестезиология и реаниматология</a></li><li><a href="/specialnosti/skoraya-pomoshch/">Скорая и неотложная помощь</a></li>
-    </ul></div>
-    <div><b>Блог</b><ul>
-      <li><a href="/blog/spirometriya-rasshifrovka/">Спирометрия для студента</a></li><li><a href="/blog/gazy-krovi-rasshifrovka/">Как расшифровать газы крови</a></li><li><a href="/blog/kak-chitat-rentgen-legkih/">Как читать рентген грудной клетки</a></li><li><a href="/blog/koagulogramma-rasshifrovka/">Коагулограмма</a></li><li><a href="/blog/biohimiya-krovi-rasshifrovka/">Биохимический анализ крови</a></li><li><a href="/blog/oam-rasshifrovka/">Общий анализ мочи</a></li>
-      <li><a href="/blog/">Все статьи</a></li>
-    </ul></div>
+    <nav class="foot-nav" aria-label="Разделы сайта">
+      <div><b>Тренажёр</b><ul>
+        <li><a href="/#how">Как это работает</a></li>
+        <li><a href="/demo/">Демо-приём</a></li>
+        <li><a href="/#pricing">Тарифы</a></li>
+        <li><a href="/materialy/">Материалы</a></li>
+        <li><a href="/blog/">Блог</a></li>
+        <li><a href="/#faq">Вопросы и ответы</a></li>
+      </ul></div>
+      <div><b>Для кого</b><ul>
+        <li><a href="/dlya-studentov/">Студентам-медикам</a></li><li><a href="/dlya-ordinatorov/">Ординаторам</a></li><li><a href="/dlya-vrachej/">Практикующим врачам</a></li><li><a href="/akkreditaciya/">Тренажёр к аккредитации</a></li><li><a href="/klinicheskie-zadachi/">Клинические задачи онлайн</a></li><li><a href="/virtualnyj-pacient/">Виртуальный пациент</a></li>
+      </ul></div>
+      <div><b>Проект</b><ul>
+        <li><a href="/o-proekte/">О проекте и контакты</a></li>
+        <li><a href="/partneram/">Партнёрам — 50% с оплат</a></li>
+        <li><a href="https://t.me/oleg_ezhkov" rel="noopener">Поддержка: @oleg_ezhkov</a></li>
+        <li><a href="https://t.me/i_am_doctorrr" rel="noopener">Канал «Нина станет врачом»</a></li>
+      </ul></div>
+    </nav>
   </div>
+  <div class="foot-specs"><b>Специальности</b><div class="foot-chips">
+    <a href="/specialnosti/terapiya/">Терапия</a><a href="/specialnosti/kardiologiya/">Кардиология</a><a href="/specialnosti/hirurgiya/">Хирургия</a><a href="/specialnosti/pediatriya/">Педиатрия</a><a href="/specialnosti/nevrologiya/">Неврология</a><a href="/specialnosti/onkologiya/">Онкология</a><a href="/specialnosti/psihiatriya/">Психиатрия</a><a href="/specialnosti/dermatologiya/">Дерматология</a><a href="/specialnosti/anesteziologiya-reanimatologiya/">Анестезиология и реаниматология</a><a href="/specialnosti/skoraya-pomoshch/">Скорая и неотложная помощь</a>
+    <a href="/specialnosti/" class="all">Все специальности →</a>
+  </div></div>
   <div class="legal-line">
-    <span>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480 · поддержка и сотрудничество — <a href="https://t.me/oleg_ezhkov" rel="noopener">@oleg_ezhkov</a> в Telegram</span>
-    <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a></span>
+    <span>Пациенты вымышлены; сервис не оказывает медицинских услуг и не заменяет консультацию врача.<br>ИП Ежков Олег Михайлович · ИНН 780454134703 · ОГРНИП 325784700383480</span>
+    <span><a href="/oferta/">Публичная оферта</a> · <a href="/privacy/">Политика конфиденциальности</a> · <a href="/partner-oferta/">Партнёрское соглашение</a></span>
   </div>
 </div></footer>
 <div class="sticky-cta" role="complementary" aria-label="Быстрый старт"><p data-sticky-text>Первый пациент каждый день — бесплатно, без карты</p><a class="btn btn-primary" href="/app?from=sticky_demo" data-sticky-btn>Принять пациента <span class="arr" aria-hidden="true">→</span></a></div>

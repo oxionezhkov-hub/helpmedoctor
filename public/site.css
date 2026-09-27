@@ -334,14 +334,25 @@ table.cmp { width: 100%; border-collapse: collapse; font-size: 15.5px; min-width
 @media (max-width: 800px) { .final .wrap { grid-template-columns: 1fr; } .final .cta { justify-content: flex-start; } }
 
 /* ---------- Подвал ---------- */
-footer { padding: 56px 0 90px; color: var(--muted); font-size: 14.5px; background: var(--paper); }
-footer .cols { display: grid; grid-template-columns: 1.5fr repeat(4, 1fr); gap: 28px; }
-footer b { color: var(--ink); display: block; margin-bottom: 10px; font-size: 14px; }
-footer a { color: var(--muted); text-decoration: none; }
-footer a:hover { color: var(--ink); text-decoration: underline; }
-footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 7px; }
-footer .legal-line { margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; font-size: 13.5px; }
-@media (max-width: 960px) { footer .cols { grid-template-columns: 1fr 1fr; } footer .cols > div:first-child { grid-column: 1 / -1; } }
+footer { padding: 64px 0 90px; color: var(--muted); font-size: 14.5px; background: var(--paper-2); border-top: 1px solid var(--rule); }
+footer a { color: var(--ink-2); text-decoration: none; }
+footer a:hover { color: var(--green); text-decoration: underline; }
+footer b { color: var(--ink); display: block; margin-bottom: 12px; font-size: 13px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.foot-top { display: grid; grid-template-columns: 1.1fr 1.6fr; gap: 48px; align-items: start; }
+.foot-brand p { margin: 14px 0 20px; max-width: 30em; line-height: 1.55; }
+.foot-cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.foot-cta .btn { min-height: 46px; font-size: 15px; }
+.foot-cta .btn-primary, .foot-cta .btn-primary:hover { color: var(--on-green); text-decoration: none; }
+.foot-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; }
+.foot-specs { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.foot-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.foot-chips a { padding: 7px 14px; border: 1px solid var(--rule-2); border-radius: 999px; background: var(--card); font-size: 14px; }
+.foot-chips a:hover { border-color: var(--green); text-decoration: none; }
+.foot-chips a.all { border-color: transparent; background: transparent; color: var(--green); font-weight: 600; }
+footer .legal-line { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; font-size: 13px; line-height: 1.6; }
+@media (max-width: 960px) { .foot-top { grid-template-columns: 1fr; gap: 36px; } }
+@media (max-width: 600px) { .foot-nav { grid-template-columns: 1fr 1fr; } .foot-nav > div:last-child { grid-column: 1 / -1; } }
 
 /* ---------- Внутренние страницы (лендинги под аудитории и специальности) ---------- */
 .page-hero { padding: 48px 0 56px; border-bottom: 1px solid var(--rule); }
@@ -668,3 +679,57 @@ body:has(.sticky-cta.show) .cookie { bottom: calc(80px + env(safe-area-inset-bot
 @media (max-width: 600px) { .cookie { left: 12px; right: 12px; max-width: none; } }
 @keyframes cookie-in { from { opacity: 0; transform: translateY(12px); } }
 @media (prefers-reduced-motion: reduce) { .cookie { animation: none; } }
+
+/* Главная: шапка не липкая — якорь (#pricing, #how…) открывает раздел ровно от верха */
+body[data-page="home"] section { scroll-margin-top: 0; }
+
+/* ---------- Страница «Партнёрам» ---------- */
+.pt-plans { display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+.pt-plan { background: var(--card); border: 1px solid var(--rule-2); border-radius: 22px; padding: 30px; display: flex; flex-direction: column; gap: 18px; }
+.pt-plan.main { background: var(--green); color: var(--on-green); border-color: var(--green); }
+.pt-plan.main .pt-list svg { stroke: #f4e4a1; }
+.pt-plan.main .btn-primary { background: var(--on-green); color: var(--green); }
+.pt-plan .btn { align-self: flex-start; margin-top: auto; }
+.pt-tag { font-family: var(--mono); font-size: 12.5px; text-transform: uppercase; letter-spacing: .08em; opacity: .8; }
+.pt-big { font-family: var(--serif); font-weight: 800; font-size: clamp(56px, 7vw, 84px); line-height: .95; letter-spacing: -.02em; }
+.pt-big em { font-style: normal; font-size: .55em; margin: 0 .12em; opacity: .6; vertical-align: .25em; }
+.pt-big small { display: block; font-family: var(--sans); font-weight: 600; font-size: 16px; letter-spacing: 0; margin-top: 10px; opacity: .85; }
+.pt-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pt-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 16px; line-height: 1.45; }
+.pt-list svg { width: 20px; height: 20px; flex: none; margin-top: 2px; fill: none; stroke: var(--green); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.pt-plan.main a { color: inherit; }
+.pt-plan a:not(.btn) { color: var(--green); font-weight: 600; }
+.pt-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+.pt-facts > div, .pt-pay > div { display: flex; gap: 14px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 18px 20px; }
+.pt-facts svg, .pt-pay svg, .pt-how svg { width: 40px; height: 40px; padding: 9px; border-radius: 12px; background: var(--green-soft); flex: none; fill: none; stroke: var(--green); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pt-facts b { display: block; color: var(--ink); }
+.pt-facts span { color: var(--ink-2); font-size: 15px; line-height: 1.4; }
+.pt-earn { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.pt-earn > div { background: var(--card); border: 1px solid var(--rule-2); border-radius: 22px; padding: 26px; display: flex; flex-direction: column; gap: 6px; }
+.pt-earn > div:last-child { background: var(--green); border-color: var(--green); color: var(--on-green); }
+.pt-earn b { font-family: var(--serif); font-size: clamp(36px, 4.4vw, 52px); line-height: 1; letter-spacing: -.02em; }
+.pt-earn span { font-size: 15px; opacity: .85; }
+.pt-n { font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; font-size: 13px !important; }
+.steps a { color: var(--green); font-weight: 600; }
+.pt-two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.pt-card { background: var(--card); border: 1px solid var(--rule-2); border-radius: 22px; padding: 30px; display: flex; flex-direction: column; gap: 14px; }
+.pt-card h2 { font-size: clamp(24px, 2.6vw, 32px); margin: 0; }
+.pt-card > p { margin: 0; color: var(--ink-2); }
+.pt-card.accent { background: var(--green-soft); border-color: transparent; }
+.pt-how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.pt-how > div { background: var(--card); border: 1px solid var(--rule); border-radius: 20px; padding: 24px; }
+.pt-how h3 { margin: 14px 0 10px; font-size: 20px; }
+.pt-how ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); font-size: 15.5px; }
+.pt-tpls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pt-tpl { background: var(--card); border: 1px solid var(--rule-2); border-radius: 18px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+.pt-tpl-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.pt-tpl p { margin: 0; color: var(--ink-2); font-size: 15.5px; line-height: 1.5; }
+.pt-copy { display: inline-flex; align-items: center; gap: 6px; flex: none; border: 1px solid var(--control); background: transparent; color: var(--ink); border-radius: 10px; padding: 7px 12px; font: 600 14px var(--sans); cursor: pointer; }
+.pt-copy:hover { border-color: var(--green); color: var(--green); }
+.pt-copy svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+.pt-copy.done { background: var(--green); border-color: var(--green); color: var(--on-green); }
+.pt-pay { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.pt-pay > div { flex-direction: column; align-items: flex-start; gap: 8px; }
+.pt-pay b { font-family: var(--serif); font-size: 26px; color: var(--ink); }
+.pt-pay span { color: var(--ink-2); font-size: 15px; }
+@media (max-width: 860px) { .pt-plans, .pt-two, .pt-tpls, .pt-facts { grid-template-columns: 1fr; } .pt-earn, .pt-how, .pt-pay { grid-template-columns: 1fr; } }
