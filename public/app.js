@@ -1871,7 +1871,7 @@ function onEvaluation(r) {
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
     <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id)}</div>
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
-    <p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>
+    <p class="tiny muted center">Тест «работа над ошибками» появится во вкладке «Тесты» через минуту.</p>
   </div>`[RAW];
   const nb = $("#eval-new");
   if (nb) nb.onclick = () => { closeSheet(); go("/"); };
@@ -2293,7 +2293,7 @@ function viewProfile() {
     <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">Врач ${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
       <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
-      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разбор по КР, тесты" : "Безлимит, разбор по КР, тесты")}
+      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит и разбор по КР" : "Безлимит и разбор по КР с дозами")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
       ${item({ a: 'href="#/profile/app"' }, "accent", "phone", "Приложение на телефон", IN_TG ? "Как установить на iPhone и Android" : pushLabel())}
@@ -2670,9 +2670,7 @@ const PREMIUM_PERKS = [
   ["users", "Безлимит пациентов"],
   ["pill", "Разбор по клиническим рекомендациям Минздрава: препараты, дозы, схемы"],
   ["flask", "Лучшая диагностика и обязательный минимум по КР для каждого случая"],
-  ["quiz", "Тест по лечению и диагностике после каждого приёма"],
   ["flame", "«Очень сложные» случаи"],
-  ["chart", "Слабые места и советы эксперта"],
 ];
 
 // Документы: публичная оферта и политика обработки персональных данных (статичные страницы сайта)

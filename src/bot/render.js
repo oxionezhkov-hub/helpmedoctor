@@ -234,9 +234,7 @@ export function evaluation(env, r) {
     text: t,
     kb: [
       [btn("📚 Разбор по КР Минздрава", `kr_${r.patient_id}`)],
-      r.premium
-        ? [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)]
-        : [appBtn(r.trial_available ? "💎 Премиум 7 дней за 1 ₽" : "💎 Премиум", appUrl(env, r.trial_available ? "/plans?buy=trial" : "/plans"))],
+      [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)],
       [btn("➕ Новый пациент", "new"), appBtn("📋 Карточка", appUrl(env, `/patient/${r.patient_id}`))],
     ],
   };
