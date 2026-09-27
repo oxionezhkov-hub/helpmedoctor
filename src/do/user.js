@@ -281,7 +281,7 @@ export class UserDO extends DurableObject {
       profile: publicProfile(prof),
       active_patient_id: st.active_patient_id,
       patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => patientSummary(p)),
-      quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map((q) => ({ ...quizSummary(q), locked: false })),
+      quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map((q) => ({ ...quizSummary(q), locked: !G.isPremium(prof) })),
       plans: offerPlans().plans,
       offer: offerPlans(),
       config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, difficulties: DIFFICULTIES, tests: TEST_TYPES, exams: PHYSICAL_EXAMPLES, max_active: MAX_ACTIVE_PATIENTS, level_ranks: LEVEL_RANKS },
@@ -292,7 +292,7 @@ export class UserDO extends DurableObject {
     const pat = await this.patient(id);
     const quiz = await this.ctx.storage.get(quizKey(id));
     const premium = G.isPremium(await this.profile());
-    return { patient: publicPatient(pat, premium), quiz: quiz ? { ...quizSummary(quiz), locked: false } : null };
+    return { patient: publicPatient(pat, premium), quiz: quiz ? { ...quizSummary(quiz), locked: !premium } : null };
   }
 
   // ---------------------------------------------------
@@ -1145,6 +1145,7 @@ export class UserDO extends DurableObject {
   async quiz(patId) {
     const q = await this.ctx.storage.get(quizKey(patId));
     if (!q) throw new UserError("Тест ещё готовится — загляните через минуту", "quiz_pending");
+    await this.requirePremium("quiz");
     if (q.status !== "done") await this.track("quiz_open", { patient: patId, answered: q.answers.length });
     return publicQuiz(q);
   }
@@ -1153,6 +1154,7 @@ export class UserDO extends DurableObject {
   async answerQuiz(patId, index, chosen) {
     const q = await this.ctx.storage.get(quizKey(patId));
     if (!q) throw new UserError("Тест не найден");
+    await this.requirePremium("quiz");
     if (q.status === "done") return { done: true, quiz: publicQuiz(q) };
     if (index !== q.answers.length) {
       // Ответ на уже отвеченный/будущий вопрос (двойной клик, вторая вкладка) — просто отдаём состояние
