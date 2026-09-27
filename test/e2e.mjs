@@ -195,7 +195,7 @@ assert.equal(r.data.code, "limit");
 step("лимит: второй бесплатный пациент за день запрещён");
 
 // ---------------------------------------------------------------- премиум: закрытые функции, пробный период за 1 ₽
-assert.ok(JSON.stringify(evalMsg.reply_markup).includes("1 ₽"), "кнопка пробного периода");
+assert.ok(JSON.stringify(evalMsg.reply_markup).includes(`qz_${patId}`), "первый пациент: тест в подарок — кнопка теста в боте");
 assert.ok(evalMsg.text.includes("Совет:"), "совет эксперта виден без премиума");
 let pv0 = (await api(webToken, "GET", `/patients/${patId}`)).data;
 assert.ok(pv0.patient.consultations[0].feedback.dialog_moments.length, "цитаты из диалога открыты всем");
@@ -203,8 +203,8 @@ assert.ok(pv0.patient.post_story, "«что было дальше» открыт
 assert.ok(pv0.patient.consultations[0].feedback.expert_text, "вывод эксперта виден");
 await waitFor(async () => (await api(webToken, "GET", `/patients/${patId}`)).data.quiz, "quiz generated");
 r = await api(webToken, "GET", `/quiz/${patId}`);
-assert.equal(r.status, 409);
-assert.equal(r.data.code, "premium", "тест по ошибкам — в премиуме");
+assert.equal(r.status, 200, "тест первого пациента открыт без премиума (подарок)");
+assert.equal((await api(webToken, "GET", "/me")).data.quizzes.find((q) => q.pat_id === patId)?.locked, false, "подарочный тест не под замком");
 me = (await api(webToken, "GET", "/me")).data;
 assert.equal(me.profile.trial_available, true);
 assert.ok(me.profile.weaknesses.length > 0, "слабые места видны без премиума");
@@ -242,7 +242,7 @@ assert.ok(r.data.guide, "повторный запрос — готовый ра
 await press(U, `kr_${patId}`);
 const guideMsg = await waitFor(() => sent(U).find((m) => m.text.includes("Разбор по КР Минздрава")), "guide in bot");
 assert.ok(guideMsg.text.includes("❌") && guideMsg.text.includes("✅"), "в боте: чек-лист сделано / пропущено");
-step("премиум: разбор и тест закрыты, пробный период 7 дней за 1 ₽ с привязкой карты");
+step("премиум: первый пациент — КР и тест в подарок, пробный период 7 дней за 1 ₽ с привязкой карты");
 
 const quiz = await waitFor(async () => (await api(webToken, "GET", `/quiz/${patId}`)).data.quiz, "quiz");
 assert.equal(quiz.total, 5);

@@ -277,11 +277,12 @@ export class UserDO extends DurableObject {
     const ids = [...prof.active_patient_ids, ...prof.closed_patient_ids.slice(-60).reverse()];
     const pats = await this.ctx.storage.get(ids.map(patKey));
     const quizzes = await this.ctx.storage.get(prof.test_ids.slice(0, 40).map(quizKey));
+    await this.healQuizzes(prof, [...pats.values()]).catch((e) => console.warn("heal quiz", e.message));
     return {
       profile: publicProfile(prof),
       active_patient_id: st.active_patient_id,
       patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => patientSummary(p)),
-      quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map((q) => ({ ...quizSummary(q), locked: !G.isPremium(prof) })),
+      quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map((q) => ({ ...quizSummary(q), locked: !G.isPremium(prof) && !q.gift })),
       plans: offerPlans().plans,
       offer: offerPlans(),
       config: { specializations: SPECIALIZATIONS, levels: DOCTOR_LEVELS, difficulties: DIFFICULTIES, tests: TEST_TYPES, exams: PHYSICAL_EXAMPLES, max_active: MAX_ACTIVE_PATIENTS, level_ranks: LEVEL_RANKS },
@@ -292,7 +293,7 @@ export class UserDO extends DurableObject {
     const pat = await this.patient(id);
     const quiz = await this.ctx.storage.get(quizKey(id));
     const premium = G.isPremium(await this.profile());
-    return { patient: publicPatient(pat, premium), quiz: quiz ? { ...quizSummary(quiz), locked: !premium } : null };
+    return { patient: publicPatient(pat, premium), quiz: quiz ? { ...quizSummary(quiz), locked: !premium && !quiz.gift } : null };
   }
 
   // ---------------------------------------------------
@@ -568,6 +569,9 @@ export class UserDO extends DurableObject {
     prof.test_ids = prof.test_ids.filter((id) => id !== patId);
     await this.ctx.storage.put(PROFILE, prof);
     await this.ctx.storage.delete(quizKey(patId));
+    // Удалён пользователем — не пересоздавать
+    const pat = await this.ctx.storage.get(patKey(patId));
+    if (pat) { pat.quiz_heal = Date.now(); await this.ctx.storage.put(patKey(patId), pat); }
     await this.track("quiz_delete", { patient: patId });
     this.broadcast("patients");
     return { ok: true };
@@ -968,7 +972,10 @@ export class UserDO extends DurableObject {
     fresh.post_story = ev.post_story;
     fresh.condition_trajectory = ev.outcome_update || fresh.condition_trajectory;
     delete fresh.last_facts;
+    fresh.quiz_facts = { hints: facts.hints || [] };
     await this.ctx.storage.put({ [patKey(job.patId)]: fresh, [PROFILE]: prof });
+    // Тест — отдельной задачей в очереди: сбой уведомлений ниже или ответа ИИ не оставит приём без теста
+    await this.enqueue({ type: "quiz", patId: job.patId, source: job.source });
 
     const lvlBefore = G.levelInfo(prevXp).level;
     const lvlAfter = G.levelInfo(prof.xp).level;
@@ -1011,13 +1018,6 @@ export class UserDO extends DurableObject {
       }
     }
 
-    // Тест «работа над ошибками» — с упором на диагностику и лечение по КР (название КР — по диагнозу)
-    try {
-      const kr = fresh.kr || matchKr({ diagnosis: fresh.true_diagnosis, mkb: ev.mkb10 || fresh.mkb10, pediatric: Number(fresh.age) < 18 && !fresh.is_alien });
-      await this.generateQuiz(fresh, ev, facts, kr ? { kr } : null);
-    } catch (e) {
-      console.error("quiz gen", e);
-    }
   }
 
   /**
@@ -1104,6 +1104,32 @@ export class UserDO extends DurableObject {
     return guide;
   }
 
+  /** Разобранный за последние 3 дня приём без теста (сбой генерации) — ставим тест в очередь ещё раз, один раз на пациента */
+  async healQuizzes(prof, pats) {
+    const since = Date.now() - 3 * 86400000;
+    const jobs = (await this.ctx.storage.get(JOBS)) || [];
+    for (const pat of pats) {
+      const rec = pat?.consultations?.[pat.consultations.length - 1];
+      if (!rec?.feedback || rec.evaluating || !(rec.date >= since) || pat.quiz_heal) continue;
+      if (prof.test_ids.includes(pat.id) || jobs.some((j) => j.type === "quiz" && j.patId === pat.id)) continue;
+      pat.quiz_heal = Date.now();
+      await this.ctx.storage.put(patKey(pat.id), pat);
+      await this.enqueue({ type: "quiz", patId: pat.id, source: "system" });
+      await this.track("quiz_heal", { patient: pat.id }, { source: "system" });
+    }
+  }
+
+  /** Тест «работа над ошибками» по последнему разобранному приёму — с упором на диагностику и лечение по КР */
+  async jobQuiz(job) {
+    if (await this.ctx.storage.get(quizKey(job.patId))) return;
+    const pat = await this.ctx.storage.get(patKey(job.patId));
+    const rec = pat?.consultations?.[pat.consultations.length - 1];
+    if (!rec?.feedback || rec.evaluating) return;
+    const ev = { ...rec.feedback, mkb10: pat.mkb10 };
+    const kr = pat.kr || matchKr({ diagnosis: pat.true_diagnosis, mkb: pat.mkb10, pediatric: Number(pat.age) < 18 && !pat.is_alien });
+    await this.generateQuiz(pat, ev, pat.quiz_facts || {}, kr ? { kr } : null);
+  }
+
   async generateQuiz(pat, ev, facts, guide = null) {
     const topics = [
       ...(guide?.mistakes || []),
@@ -1119,6 +1145,7 @@ export class UserDO extends DurableObject {
     const quiz = {
       pat_id: pat.id, pat_name: pat.name, pat_diagnosis: pat.true_diagnosis, specialization: pat.specialization,
       kr: guide?.kr || null,
+      gift: !!pat.gift_kr, // первый пациент нового пользователя — тест в подарок, как и разбор по КР
       created_at: Date.now(), status: "pending", questions, answers: [], score: null, finished_at: null,
     };
     const prof = await this.profile();
@@ -1145,7 +1172,7 @@ export class UserDO extends DurableObject {
   async quiz(patId) {
     const q = await this.ctx.storage.get(quizKey(patId));
     if (!q) throw new UserError("Тест ещё готовится — загляните через минуту", "quiz_pending");
-    await this.requirePremium("quiz");
+    if (!q.gift) await this.requirePremium("quiz");
     if (q.status !== "done") await this.track("quiz_open", { patient: patId, answered: q.answers.length });
     return publicQuiz(q);
   }
@@ -1154,7 +1181,7 @@ export class UserDO extends DurableObject {
   async answerQuiz(patId, index, chosen) {
     const q = await this.ctx.storage.get(quizKey(patId));
     if (!q) throw new UserError("Тест не найден");
-    await this.requirePremium("quiz");
+    if (!q.gift) await this.requirePremium("quiz");
     if (q.status === "done") return { done: true, quiz: publicQuiz(q) };
     if (index !== q.answers.length) {
       // Ответ на уже отвеченный/будущий вопрос (двойной клик, вторая вкладка) — просто отдаём состояние
@@ -1641,6 +1668,7 @@ export class UserDO extends DurableObject {
         if (job.type === "new_patient") await this.jobNewPatient(job);
         if (job.type === "evaluate") await this.jobEvaluate(job);
         if (job.type === "guide") await this.jobGuide(job);
+        if (job.type === "quiz") await this.jobQuiz(job);
         await this.dropJob(job.id);
       } catch (e) {
         console.error(`job ${job.type} attempt ${job.attempt}`, e);
@@ -1651,6 +1679,7 @@ export class UserDO extends DurableObject {
           if (job.type === "new_patient") await this.jobNewPatientFailed(job, e);
           if (job.type === "evaluate") await this.jobEvaluateFailed(job, e);
           if (job.type === "guide") await this.jobGuideFailed(job, e);
+          if (job.type === "quiz") await this.track("quiz_failed", { patient: job.patId, error: String(e?.message || e).slice(0, 300) }, { source: "system" });
         }
       }
     }
@@ -1719,7 +1748,17 @@ export class UserDO extends DurableObject {
    * Пуш на все устройства пользователя. away — только если приложение сейчас не открыто (нет живого WebSocket).
    * @returns {Promise<boolean>} доставлено хотя бы на одно устройство
    */
-  async pushNotify({ title = "Help me, Doctor", body = "", url = "/app", tag } = {}, { away = false } = {}) {
+  async pushNotify(msg = {}, opts = {}) {
+    // Уведомление — побочное действие: его сбой не должен ломать разбор, тест или создание пациента
+    try {
+      return await this.pushSend(msg, opts);
+    } catch (e) {
+      console.warn("push", e?.message || e);
+      return false;
+    }
+  }
+
+  async pushSend({ title = "Help me, Doctor", body = "", url = "/app", tag } = {}, { away = false } = {}) {
     const prof = await this.profile();
     const subs = prof.push_subs || [];
     if (!subs.length || prof.notifications === false) return false;
