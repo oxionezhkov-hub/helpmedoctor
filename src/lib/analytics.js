@@ -2,6 +2,7 @@
 // Все функции получают hub (с методами all/one/sql) — выполняются внутри HubDO.
 import { AI_CAP_DEFAULT, AI_DEFAULT_MODEL, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AI_MODELS, AI_ROUTING_DEFAULT, AI_STEPS, AI_USD_PER_1000_NEURONS, PLANS, SPECIALIZATIONS, DOCTOR_LEVELS } from "../config.js";
 import { mskDate, toTelegramHtml, utcDate } from "./util.js";
+import GENERATED_HISTORY from "../data/history.json" with { type: "json" };
 
 const DAY = 86400000;
 const MSK = 3 * 3600000;
@@ -1052,6 +1053,47 @@ function runHistoryImport(h) {
   });
 }
 
+/**
+ * История из src/data/history.json (scripts/build-history.mjs пересобирает его при каждом деплое): все PR в main,
+ * статьи блога и публикации в Telegram. Недостающие записи досоздаются как выполненные задачи с датой мержа.
+ * Не дублирует: запись с тем же ключом, PR, уже привязанный к задаче (кроме статей блога — у них своя запись), и то же название.
+ */
+function runHistorySync(h, items = GENERATED_HISTORY) {
+  const seen = new Set(h.getMeta("history_keys", []) || []);
+  const before = seen.size;
+  const now = Date.now();
+  const tasks = h.all("SELECT id, title, status, links, created_by FROM tasks");
+  const titles = new Set(tasks.map((t) => String(t.title).trim().toLowerCase()));
+  items.forEach((it, i) => {
+    if (seen.has(it.key)) return;
+    seen.add(it.key);
+    const ts = Date.parse(it.date) || now;
+    const url = it.url || "";
+    if (it.pr && it.type !== "content") {
+      const linked = tasks.filter((t) => String(t.links || "").includes(`/pull/${it.pr}"`));
+      if (linked.length) {
+        // Задача ждала мержа («на проверке») — PR смержен, переносим в «Готово»
+        for (const t of linked) {
+          if (t.created_by === "system" && t.status === "review") {
+            h.sql.exec("UPDATE tasks SET status = 'done', done_at = ?, updated_at = ? WHERE id = ?", ts, now, t.id);
+            h.sql.exec("INSERT INTO task_history (task_id, ts, admin, field, old, new) VALUES (?, ?, 'system', 'status', 'review', 'done')", t.id, now);
+          }
+        }
+        return;
+      }
+    }
+    if (titles.has(String(it.title).trim().toLowerCase())) return;
+    titles.add(String(it.title).trim().toLowerCase());
+    const label = it.pr ? `PR #${it.pr}` : it.key.startsWith("tg:") ? "Ветка публикации" : "Коммит";
+    h.sql.exec(
+      "INSERT INTO tasks (title, descr, type, status, priority, assignee, labels, links, checklist, created_by, created_at, updated_at, done_at, sort) VALUES (?, ?, ?, 'done', 'medium', NULL, ?, ?, '[]', 'system', ?, ?, ?, ?)",
+      String(it.title).slice(0, 300), String(it.descr || ""), it.type || "feature", JSON.stringify(it.labels || [HISTORY_LABEL]),
+      JSON.stringify(url ? [{ kind: "url", url, label }] : []), ts, ts, ts, -6000 + i,
+    );
+  });
+  if (seen.size !== before) h.setMeta("history_keys", [...seen]);
+}
+
 function runTaskImports(h) {
   const now = Date.now();
   for (const [key, list] of Object.entries(TASK_IMPORTS)) {
@@ -1064,6 +1106,7 @@ function runTaskImports(h) {
   }
   runTaskStatusUpdates(h); // после импортов: обновляет и только что добавленные задачи
   runHistoryImport(h);
+  runHistorySync(h);
   runPartnerTasks(h);
   runB2bTasks(h);
 }

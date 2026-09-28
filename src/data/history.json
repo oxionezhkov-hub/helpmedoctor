@@ -1,0 +1,512 @@
+[
+ {
+  "key": "commit:9bb85c6d11",
+  "pr": null,
+  "date": "2026-09-24T09:53:21+00:00",
+  "title": "Help me, Doctor 2.0: бот + веб-приложение на общих данных",
+  "descr": "- Durable Objects: UserDO на каждого врача (единый источник правды для бота и сайта,\n  WebSocket-синхронизация, тяжёлые ИИ-задачи в alarm) и HubDO (реестр, вход, платежи, статистика)\n- Workers AI вместо Gemini/Vertex: короткие промпты, лимиты токенов, сжатие истории,\n  кэш результатов анализов, разбор + пост-история одним вызовом\n- Веб-приложение (public/): работает в Telegram и в браузере, адаптивное, светлая/тёмная тема,\n  голосовые, обследования, осмотр, диагноз, разбор, тесты, профиль, тарифы\n- Безопасность: секреты в env, проверка initData, подписанные сессии, вход через бота,\n  перепроверка платежей через API Точки, секрет вебхука\n- Автоматическая миграция данных из старого KV\n- Тесты: юнит, сквозной (бот+сайт+миграция+вход), скриншоты; деплой через GitHub Actions",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/commit/9bb85c6d11e85c90f4ff92d0866dcfd6dfaedca8",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "commit:88c28e3df5",
+  "pr": null,
+  "date": "2026-09-24T10:19:06+00:00",
+  "title": "Веб: иконки вместо эмодзи, плавные обновления без рывков, прогресс с оценкой времени, приём из мини-приложения — в чате с ботом",
+  "descr": "- Единый набор SVG-иконок, аватары пациентов с инициалами\n- Точечное обновление DOM вместо полной перерисовки: нет мигания и сброса прокрутки\n- Кнопки при загрузке не меняют размер; блок «Новый пациент» не прыгает\n- Ожидание с этапами и «осталось ≈ N сек», оценка подстраивается под реальную скорость\n- Плавный экран загрузки (пульс ЭКГ), более мягкий индикатор\n- Поле ввода без серой полосы прокрутки\n- В Telegram «Начать приём» переводит приём в чат с ботом и закрывает мини-приложение\n- Запасные цвета темы Telegram без циклических ссылок",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/commit/88c28e3df5dda1e9d796b3e36ea033a4561ecce7",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:1",
+  "pr": 1,
+  "date": "2026-09-24T13:27:43+03:00",
+  "title": "Плашка ожидания: плавная полоса без мерцания и скачков",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/1",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:2",
+  "pr": 2,
+  "date": "2026-09-24T17:35:39+03:00",
+  "title": "Исправления по отзыву тестировщика + анкета и отзывы",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/2",
+  "type": "bug",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:3",
+  "pr": 3,
+  "date": "2026-09-25T09:53:32+03:00",
+  "title": "Без инопланетян, /grant, исправление оплаты, второй админ",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/3",
+  "type": "bug",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:4",
+  "pr": 4,
+  "date": "2026-09-25T13:12:34+03:00",
+  "title": "Админка /admin: аналитика, пользователи, переписка, подписки, рассылки, задачи",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/4",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:5",
+  "pr": 5,
+  "date": "2026-09-25T13:47:27+03:00",
+  "title": "Анкета → первый пациент, иероглифы, эндоскопия, оплата через Yandex Cloud, вход без вкладки",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/5",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:6",
+  "pr": 6,
+  "date": "2026-09-25T14:24:51+03:00",
+  "title": "Свой домен helpmedoctor.ru",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/6",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:7",
+  "pr": 7,
+  "date": "2026-09-25T14:41:56+03:00",
+  "title": "Ссылки бота снова на workers.dev (в России режут Cloudflare)",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/7",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:8",
+  "pr": 8,
+  "date": "2026-09-25T14:50:16+03:00",
+  "title": "helpmedoctor.ru через прокси на VPS (обход ограничений Cloudflare в РФ)",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/8",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:9",
+  "pr": 9,
+  "date": "2026-09-25T15:04:25+03:00",
+  "title": "Ссылки бота на helpmedoctor.ru (домен работает через VPS)",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/9",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:10",
+  "pr": 10,
+  "date": "2026-09-25T16:22:46+03:00",
+  "title": "Главная страница, блог для студентов и SEO",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/10",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:11",
+  "pr": 11,
+  "date": "2026-09-25T16:42:29+03:00",
+  "title": "Яндекс Метрика на сайте и в приложении",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/11",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:12",
+  "pr": 12,
+  "date": "2026-09-25T17:02:57+03:00",
+  "title": "ИИ: Qwen3 по умолчанию, модели по шагам, запасной ИИ (Cerebras, Groq)",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/12",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:13",
+  "pr": 13,
+  "date": "2026-09-25T18:03:04+03:00",
+  "title": "Приложение: отзыв после разбора, аватар, удаление, новый профиль, анимации диалога",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/13",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:14",
+  "pr": 14,
+  "date": "2026-09-25T18:33:51+03:00",
+  "title": "Лица пациентов (Open Peeps) и картинки в блоге",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/14",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:15",
+  "pr": 15,
+  "date": "2026-09-25T18:39:24+03:00",
+  "title": "Лица пациентов: без шапки-медведя и волос цвета кожи",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/15",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:16",
+  "pr": 16,
+  "date": "2026-09-25T18:44:23+03:00",
+  "title": "Лица пациентов: спокойные выражения вместо странных",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/16",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:17",
+  "pr": 17,
+  "date": "2026-09-25T19:14:33+03:00",
+  "title": "Монетизация: пробный премиум за 1 ₽ с автопродлением, премиум-функции, новые тарифы",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/17",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:18",
+  "pr": 18,
+  "date": "2026-09-25T19:34:18+03:00",
+  "title": "Yandex Cloud: посредник Точки разрешает подписки, выкладка функции через GitHub Actions",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/18",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:19",
+  "pr": 19,
+  "date": "2026-09-25T19:39:31+03:00",
+  "title": "Мини-приложение и оплата: правки интерфейса, оферта и политика конфиденциальности",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/19",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:20",
+  "pr": 20,
+  "date": "2026-09-25T20:05:52+03:00",
+  "title": "Оплата на месте, оценка приёма по формуле, блог под ежедневные статьи",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/20",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:21",
+  "pr": 21,
+  "date": "2026-09-25T20:19:37+03:00",
+  "title": "Блог: Расшифровка ЭКГ по шагам; Биохимический анализ крови: расшифровка; Общий анализ мочи: расшифровка",
+  "descr": "Новая статья: https://helpmedoctor.ru/blog/biohimiya-krovi-rasshifrovka/\nНовая статья: https://helpmedoctor.ru/blog/oam-rasshifrovka/\nНовая статья: https://helpmedoctor.ru/blog/rasshifrovka-ekg/",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/21",
+  "type": "content",
+  "labels": [
+   "история",
+   "блог"
+  ]
+ },
+ {
+  "key": "pr:22",
+  "pr": 22,
+  "date": "2026-09-25T22:22:23+03:00",
+  "title": "Новый сайт, вход через Google/Яндекс с привязкой Telegram, демо-приём, посадочные страницы и материалы для канала",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/22",
+  "type": "marketing",
+  "labels": [
+   "история",
+   "telegram"
+  ]
+ },
+ {
+  "key": "pr:23",
+  "pr": 23,
+  "date": "2026-09-25T23:02:36+03:00",
+  "title": "Сайт: без хлебных крошек и подписей разделов, правка карты приёма, преимущества в тарифах",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/23",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:24",
+  "pr": 24,
+  "date": "2026-09-25T23:13:31+03:00",
+  "title": "Главная: чистый первый экран, новая шапка карты приёма и печать разбора",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/24",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:25",
+  "pr": 25,
+  "date": "2026-09-26T06:05:29+03:00",
+  "title": "Блог: Как расшифровать газы крови: пошаговый алгоритм КЩС; Коагулограмма: расшифровка МНО, АЧТВ, фибриногена; Как читать рентген лёгких: система ABCDE",
+  "descr": "Новая статья: https://helpmedoctor.ru/blog/gazy-krovi-rasshifrovka/\nНовая статья: https://helpmedoctor.ru/blog/kak-chitat-rentgen-legkih/\nНовая статья: https://helpmedoctor.ru/blog/koagulogramma-rasshifrovka/",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/25",
+  "type": "content",
+  "labels": [
+   "история",
+   "блог"
+  ]
+ },
+ {
+  "key": "pr:26",
+  "pr": 26,
+  "date": "2026-09-26T09:12:36+03:00",
+  "title": "Сайт: переключатель темы, пациент-всплывашка, поддержка @oleg_ezhkov; правила блога после SEO-аудита",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/26",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "tg:tg/2026-09-26-launch",
+  "date": "2026-09-26T12:05:38+00:00",
+  "title": "Telegram-канал: публикация постов от бота через GitHub Actions, стартовые посты и закреп",
+  "descr": "текстовых постов: 4 · PDF: 1 · опросов: 1\nПервый пост: «Привет! Я Юля, 5 курс лечфака 👋»",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/tree/tg/2026-09-26-launch",
+  "type": "marketing",
+  "labels": [
+   "история",
+   "telegram"
+  ]
+ },
+ {
+  "key": "tg:tg/2026-09-26-redesign",
+  "date": "2026-09-26T12:16:11+00:00",
+  "title": "Telegram-канал: новые посты с карточками вместо стартовых",
+  "descr": "постов с картинкой: 3 · каруселей: 5 · PDF: 1 · опросов: 1 · удалено сообщений: 7 · изменений оформления канала: 1\nПервый пост: «Привет! Я Юля, 5 курс лечфака 👋»",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/tree/tg/2026-09-26-redesign",
+  "type": "marketing",
+  "labels": [
+   "история",
+   "telegram"
+  ]
+ },
+ {
+  "key": "pr:27",
+  "pr": 27,
+  "date": "2026-09-26T14:01:57+03:00",
+  "title": "Подсказки на приёме, разбор и тесты по КР Минздрава, клинические случаи на сайте, история и идеи в админке",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/27",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:28",
+  "pr": 28,
+  "date": "2026-09-26T15:29:08+03:00",
+  "title": "Telegram-канал: карточки-карусели, оформление и публикация от бота через GitHub Actions",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/28",
+  "type": "marketing",
+  "labels": [
+   "история",
+   "telegram"
+  ]
+ },
+ {
+  "key": "tg:tg/2026-09-26-nina",
+  "date": "2026-09-26T17:58:48+00:00",
+  "title": "Telegram-канал: Нина вместо Юли в постах, два кейса и PDF",
+  "descr": "текстовых постов: 2 · PDF: 1 · правок постов: 13 · изменений оформления канала: 1\nПервый пост: «Привет! Я Нина, 4 курс лечфака, Петербург 👋»",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/tree/tg/2026-09-26-nina",
+  "type": "marketing",
+  "labels": [
+   "история",
+   "telegram"
+  ]
+ },
+ {
+  "key": "tg:tg/2026-09-26-cleanup",
+  "date": "2026-09-26T18:00:03+00:00",
+  "title": "Telegram-канал: убрать служебные сообщения о смене названия и фото",
+  "descr": "удалено сообщений: 2",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/tree/tg/2026-09-26-cleanup",
+  "type": "marketing",
+  "labels": [
+   "история",
+   "telegram"
+  ]
+ },
+ {
+  "key": "pr:29",
+  "pr": 29,
+  "date": "2026-09-26T22:30:52+03:00",
+  "title": "Разбор по КР по кнопке, открытый разбор приёма, новая главная и статистика; канал от лица Нины",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/29",
+  "type": "marketing",
+  "labels": [
+   "история",
+   "telegram"
+  ]
+ },
+ {
+  "key": "pr:30",
+  "pr": 30,
+  "date": "2026-09-27T00:17:18+03:00",
+  "title": "Приложение: светлая/тёмная тема, «Врач», главная проще, плавные переходы",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/30",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:31",
+  "pr": 31,
+  "date": "2026-09-27T00:30:34+03:00",
+  "title": "Карточка уровня: отступ между уровнем и серией/оценкой",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/31",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "commit:8ef5f6dfc5",
+  "pr": null,
+  "date": "2026-09-27T06:09:33+03:00",
+  "title": "Блог: Спирометрия (новая статья) + обновление «Сбор анамнеза»",
+  "descr": "Обновлена: https://helpmedoctor.ru/blog/sbor-anamneza/\nНовая статья: https://helpmedoctor.ru/blog/spirometriya-rasshifrovka/",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/commit/8ef5f6dfc524a1cf2047ccbcd20ad4ae79fe54dd",
+  "type": "content",
+  "labels": [
+   "история",
+   "блог"
+  ]
+ },
+ {
+  "key": "pr:33",
+  "pr": 33,
+  "date": "2026-09-27T12:05:42+03:00",
+  "title": "Звания по уровням, новая шкала, пуши в браузере, установка на телефон, cookie",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/33",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:34",
+  "pr": 34,
+  "date": "2026-09-27T12:28:45+03:00",
+  "title": "Тест по ошибкам — отдельной задачей с повторами; подарок первому пациенту; календарь приёмов",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/34",
+  "type": "bug",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:35",
+  "pr": 35,
+  "date": "2026-09-27T14:34:57+03:00",
+  "title": "Партнёрская программа, задачи по партнёрствам, рассылка о перезапуске",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/35",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ },
+ {
+  "key": "pr:36",
+  "pr": 36,
+  "date": "2026-09-27T15:13:28+03:00",
+  "title": "Сайт: новая страница «Партнёрам», меню, тарифы, футер; главная приложения без бейджа подписки",
+  "descr": "",
+  "url": "https://github.com/oxionezhkov-hub/helpmedoctor/pull/36",
+  "type": "feature",
+  "labels": [
+   "история"
+  ]
+ }
+]
