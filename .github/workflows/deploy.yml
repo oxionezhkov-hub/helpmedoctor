@@ -24,13 +24,25 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # полная история — для «Истории» в админке
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      # История проекта для админки: все PR в main (с описаниями) и публикации в Telegram-канал (ветки tg/*)
+      - name: История проекта
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --no-tags origin '+refs/heads/tg/*:refs/remotes/origin/tg/*' || true
+          node scripts/build-history.mjs || echo "История не собрана — используем src/data/history.json из репозитория"
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

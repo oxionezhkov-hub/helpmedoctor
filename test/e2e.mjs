@@ -527,6 +527,18 @@ const imported = tasksAll.rows.filter((x) => x.labels.includes("созвон 24.
 assert.equal(imported.length, 19, "задачи созвона 24.09 импортированы");
 assert.ok(imported.some((x) => x.assignee === "1062804986" && x.title.includes("паспортные данные")));
 assert.equal((await aq("tasks", {})).rows.filter((x) => x.labels.includes("созвон 24.09")).length, 19, "импорт не дублируется");
+{
+  const hist = JSON.parse(fs.readFileSync(new URL("../src/data/history.json", import.meta.url), "utf8"));
+  const rows = (await aq("tasks", {})).rows;
+  const lastPr = hist.filter((x) => x.pr).at(-1);
+  assert.ok(rows.some((t) => t.status === "done" && (t.links || []).some((l) => l.url === lastPr.url)), `история: последний PR #${lastPr.pr} есть в задачах`);
+  const tgItem = hist.find((x) => x.key.startsWith("tg:"));
+  if (tgItem) assert.ok(rows.some((t) => t.title === tgItem.title && t.status === "done"), "история: публикации в Telegram");
+  const blog = hist.filter((x) => x.type === "content");
+  assert.ok(blog.every((b) => rows.some((t) => t.title === b.title)), "история: каждая статья блога отдельной записью");
+  const again = (await aq("tasks", {})).rows.length;
+  assert.equal(again, rows.length, "история не дублируется");
+}
 assert.ok(tasksAll.rows.some((x) => x.title.includes("тёмную тему") && x.status === "idea"));
 await aq("task_delete", { id: t.id });
 const upd = tasksAll.rows.filter((x) => x.labels.includes("обновление 25.09"));
