@@ -8,6 +8,7 @@ import { viewSubs, viewMessages, viewBroadcast, viewFeedback, viewTasks, viewSet
 
 const app = $("#app");
 const TOKEN_KEY = "hmd_admin_token";
+const SIDE_KEY = "hmd_admin_side";
 let tg = null;
 
 // ---------- Вход ----------
@@ -159,7 +160,14 @@ function renderLayout() {
   </div>`);
   const side = $("#side"), bd = $("#backdrop");
   const toggle = (open) => { side.classList.toggle("open", open); bd.classList.toggle("open", open); };
-  $("#menu").onclick = () => toggle(true);
+  const mobile = () => matchMedia("(max-width: 900px)").matches;
+  const layout = $(".layout");
+  if (store(SIDE_KEY) === "hidden") layout.classList.add("side-hidden");
+  $("#menu").onclick = () => {
+    if (mobile()) return toggle(true);
+    const hidden = layout.classList.toggle("side-hidden");
+    store(SIDE_KEY, hidden ? "hidden" : null);
+  };
   bd.onclick = () => toggle(false);
   $$(".nav-link").forEach((a) => a.addEventListener("click", () => toggle(false)));
   $("#idea-btn").onclick = () => { toggle(false); quickIdea(); };
