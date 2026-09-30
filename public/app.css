@@ -548,8 +548,8 @@ img.avatar { object-fit: cover; background: var(--surface-2); padding: 0; }
 .event.reveal { animation: event-in .45s cubic-bezier(.2, .7, .3, 1) both; }
 @keyframes event-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 .event .line { display: block; }
-.event.reveal .line { animation: line-in .35s ease both; animation-delay: calc(.25s + var(--i, 0) * .12s); }
-@keyframes line-in { from { opacity: 0; transform: translateX(-6px); } }
+.event.reveal .line { animation: line-in .7s cubic-bezier(.22, .8, .3, 1) both; animation-delay: calc(.2s + var(--i, 0) * .18s); }
+@keyframes line-in { from { opacity: 0; transform: translateY(5px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
 
 /* ---------- Премиум ---------- */
 .plans { grid-template-columns: 1fr 1fr; align-items: stretch; }

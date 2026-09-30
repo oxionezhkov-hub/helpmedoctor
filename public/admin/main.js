@@ -167,6 +167,7 @@ function renderLayout() {
     if (mobile()) return toggle(true);
     const hidden = layout.classList.toggle("side-hidden");
     store(SIDE_KEY, hidden ? "hidden" : null);
+    window.dispatchEvent(new Event("resize")); // графики перерисуются на новую ширину
   };
   bd.onclick = () => toggle(false);
   $$(".nav-link").forEach((a) => a.addEventListener("click", () => toggle(false)));

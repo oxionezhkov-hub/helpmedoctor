@@ -415,6 +415,12 @@ async function boot() {
     applyTgViewport();
     tg.onEvent?.("viewportChanged", applyTgViewport);
     tg.BackButton?.onClick(() => goBack());
+  } else {
+    // В браузере высоту экрана берём по реально видимой области: у части мобильных браузеров 100dvh
+    // включает зону под панелью браузера — тогда нижнее меню и строка ввода уходят за край
+    applyWebViewport();
+    window.visualViewport?.addEventListener("resize", applyWebViewport);
+    window.addEventListener("resize", applyWebViewport);
   }
 
   if (IN_TG) {
@@ -710,6 +716,11 @@ function connectWs() {
   };
 }
 
+function applyWebViewport() {
+  const h = Math.round(window.visualViewport?.height || window.innerHeight);
+  if (h > 200) document.documentElement.style.setProperty("--app-h", `${h}px`);
+}
+
 function onSync(msg) {
   // Этот веб-аккаунт объединён с Telegram: тот же токен теперь ведёт в общий профиль
   if (msg.scope === "merged") {
@@ -723,17 +734,13 @@ function onSync(msg) {
     else S.typing.delete(msg.patient_id);
     // Ответ пациента приходит по словам — показываем, пока он «печатает»
     if (typeof msg.partial === "string") {
-      S.partial = { id: msg.patient_id, text: msg.partial };
-      const el = document.querySelector(".msg.streaming .txt");
-      if (el && S.route.name === "consult" && S.route.params.id === msg.patient_id) {
-        el.textContent = msg.partial;
-        const box = $("#messages");
-        if (box && box.scrollHeight - box.scrollTop - box.clientHeight < 160) box.scrollTop = box.scrollHeight;
-      } else renderTypingOnly();
+      if (S.partial?.id !== msg.patient_id) S.partial = { id: msg.patient_id, target: "", n: 0, text: "" };
+      S.partial.target = msg.partial;
+      if (!S.streamTimer) { S.streamTimer = setInterval(streamTick, REVEAL_MS); streamTick(); }
       return;
     }
     // Ответ готов: если его ждал не наш запрос (бот, другое устройство) — черновик больше не нужен
-    if (!msg.typing && S.partial?.id === msg.patient_id && !S.inflight.has(msg.patient_id)) S.partial = null;
+    if (!msg.typing && S.partial?.id === msg.patient_id && !S.inflight.has(msg.patient_id)) stopStream();
   }
   if (msg.scope === "profile" && msg.error) toast(msg.error, "error");
   if (msg.scope === "profile" && msg.paid) paidNotice(msg.paid === "gift" ? "Подписка активирована!" : undefined);
@@ -1568,17 +1575,17 @@ async function consultOp(id, kind, label, fn) {
     S.op = null;
     S.inflight.delete(id);
     S.typing.delete(id);
-    // Ответ уже показан по мере генерации — повторно «печатать» его не нужно
-    const streamed = S.partial?.id === id && !!S.partial.text;
+    // Часть ответа уже показана по мере генерации — дальше «печатаем» с того же места
+    const shownLen = S.partial?.id === id ? (S.partial.text || "").length : 0;
     try {
       const { patient } = await loadPatient(id);
-      if (S.partial?.id === id) S.partial = null; // черновик убираем, когда в ленте уже настоящая реплика
-      if ((kind === "reply" || kind === "voice") && !streamed) startReveal(patient, since);
+      if (S.partial?.id === id) stopStream(); // черновик убираем, когда в ленте уже настоящая реплика
+      if (kind === "reply" || kind === "voice") startReveal(patient, since, shownLen);
       if (kind === "test") S.revealTs = patient.test_results?.at(-1)?.ordered_at || 0;
       if (kind === "exam") S.revealTs = patient.exam_results?.at(-1)?.ts || 0;
       if (S.revealTs) setTimeout(() => { S.revealTs = 0; }, 6000);
     } catch {
-      if (S.partial?.id === id) S.partial = null;
+      if (S.partial?.id === id) stopStream();
     }
     if (S.route.name === "consult" && S.route.params.id === id) viewConsult();
     scrollChatDown();
@@ -1628,19 +1635,44 @@ function timeline(p) {
 
 /** Строки результата по одной (у свежего результата — с задержкой, см. .event.reveal .line) */
 function revealLines(text, fresh) {
-  if (!fresh) return text;
+  // Строки всегда отдельными элементами: когда анимация заканчивается, разметка не меняется и текст не мигает
   return String(text || "").split("\n").map((line, i) => html`<span class="line" style="--i:${i}">${line || " "}</span>`);
 }
 
 // ---------- Реплика пациента «печатается» по словам ----------
 // ИИ отвечает быстро и целиком — показываем постепенно, как в живом разговоре
-const REVEAL_MS = 55;
-function startReveal(p, since) {
+const REVEAL_MS = 110; // одно слово за 110 мс — спокойный темп живой речи
+/** Ответ идёт с сервера кусками — показываем его по словам в своём темпе (последнее, возможно недописанное, слово ждём) */
+function streamTick() {
+  const s = S.partial;
+  if (!s) { clearInterval(S.streamTimer); S.streamTimer = null; return; }
+  const parts = s.target.split(/(\s+)/).filter(Boolean);
+  const ready = Math.max(0, parts.length - 1);
+  if (s.n >= ready) return;
+  s.n = Math.min(ready, s.n + 2); // слово + пробел
+  s.text = parts.slice(0, s.n).join("");
+  const el = document.querySelector(".msg.streaming .txt");
+  if (el && S.route.name === "consult" && S.route.params.id === s.id) {
+    el.textContent = s.text;
+    const box = $("#messages");
+    if (box && box.scrollHeight - box.scrollTop - box.clientHeight < 160) box.scrollTop = box.scrollHeight;
+  } else renderTypingOnly();
+}
+function stopStream() {
+  clearInterval(S.streamTimer);
+  S.streamTimer = null;
+  S.partial = null;
+}
+/** Реплика пациента «печатается» по словам; fromLen — сколько символов уже показано по ходу генерации */
+function startReveal(p, since, fromLen = 0) {
   const m = [...(p.conversation_history || [])].reverse().find((x) => x.role === "patient" && x.ts >= since);
   if (!m || !m.text) return;
   const parts = m.text.split(/(\s+)/).filter(Boolean);
   if (parts.length < 3) return;
-  S.reveal = { ts: m.ts, parts, n: 0 };
+  let n = 0;
+  for (let len = 0; n < parts.length && len + parts[n].length <= fromLen; n++) len += parts[n].length;
+  if (n >= parts.length) return;
+  S.reveal = { ts: m.ts, parts, n };
   clearInterval(S.revealTimer);
   S.revealTimer = setInterval(() => {
     const r = S.reveal;
@@ -1931,7 +1963,7 @@ function typeWords(el, text) {
     if (!document.body.contains(el)) return clearInterval(t);
     el.textContent = parts.slice(0, n).join("");
     if (n >= parts.length) clearInterval(t);
-  }, REVEAL_MS);
+  }, 55);
 }
 
 // Если WebSocket не донёс разбор — проверяем сами

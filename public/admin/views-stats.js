@@ -61,7 +61,7 @@ export async function viewDashboard(el, ctx) {
   const t = d.tiles, pv = d.prev;
   const delta = (a, b, invert = false) => {
     if (a == null || b == null) return "";
-    if (!b) return a ? html`<span class="delta up">новое</span>` : "";
+    if (!b) return ""; // в прошлом периоде нуль — процент не считается
     const pct = Math.round(((a - b) / b) * 100);
     const good = invert ? pct < 0 : pct > 0;
     return html`<span class="delta ${pct === 0 ? "flat" : good ? "up" : "down"}">${pct > 0 ? "↑" : pct < 0 ? "↓" : "→"} ${Math.abs(pct)}%</span>`;
