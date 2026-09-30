@@ -1,4 +1,4 @@
-// Картинки сайта: превью для соцсетей (og.png 1200×630), иконка iOS (apple-touch-icon.png 180×180)
+// Картинки сайта: превью для соцсетей (og.png 1200×630); иконки — scripts/build-icons.mjs
 // и обложки статей блога (public/blog/<slug>/cover.jpg — сцена, og.jpg — сцена с заголовком для соцсетей).
 // Запуск: node scripts/build-images.mjs  (нужен Playwright с Chromium; результат коммитится в public/)
 // Только обложки выбранных статей: node scripts/build-images.mjs <slug> [<slug> …]
@@ -6,7 +6,6 @@ import { chromium } from "playwright";
 import { ARTICLES } from "./site/articles.mjs";
 import { faceSvg } from "../src/lib/face.js";
 
-const HEART = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M2.5 12h5l2-3.5 3 7 2-3.5h7"/></svg>`;
 const FONT = `system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif`;
 
 // Превью для соцсетей — в стиле сайта: бумага, Literata, карта приёма со штампом разбора
@@ -43,8 +42,6 @@ dd{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </div>
 </body></html>`;
 
-const icon = `<html><body style="margin:0;width:180px;height:180px;background:#0f766e;display:grid;place-items:center"><div style="width:112px;height:112px">${HEART}</div></body></html>`;
-
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
 const page = await browser.newPage();
 // --og — только превью и иконка, без обложек статей
@@ -54,9 +51,6 @@ if (!only.length) {
   await page.setViewportSize({ width: 1200, height: 630 });
   await page.setContent(og);
   await page.screenshot({ path: "public/og.png" });
-  await page.setViewportSize({ width: 180, height: 180 });
-  await page.setContent(icon);
-  await page.screenshot({ path: "public/apple-touch-icon.png" });
 }
 
 // ---------- Обложки статей: врач и пациент (Open Peeps, CC0) с репликами ----------
@@ -105,4 +99,4 @@ for (const a of ogOnly ? [] : ARTICLES) {
 }
 
 await browser.close();
-if (!only.length) console.log("✓ public/og.png, public/apple-touch-icon.png");
+if (!only.length) console.log("✓ public/og.png (иконки — scripts/build-icons.mjs)");
