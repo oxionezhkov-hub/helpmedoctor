@@ -22,6 +22,69 @@ export async function aiText(env, { system, prompt, maxTokens = 300, temperature
 }
 
 /**
+ * Текстовый ответ по мере генерации: onDelta(текст на данный момент) вызывается по ходу, результат — полный текст.
+ * Только Workers AI; если поток недоступен или оборвался — обычный aiText (с повторами и запасными провайдерами).
+ */
+export async function aiTextStream(env, { system, prompt, maxTokens = 300, temperature = 0.8, kind = "other", uid = "" }, onDelta) {
+  const opts = { system, prompt, maxTokens, temperature, kind, uid };
+  const r = await route(env);
+  if (r.cf_blocked || typeof onDelta !== "function") return aiText(env, opts);
+  const model = modelFor(kind, r.routing);
+  const messages = [];
+  if (system) messages.push({ role: "system", content: system });
+  messages.push({ role: "user", content: prompt });
+  const payload = { messages: model.noThink ? noThink(messages) : messages, max_tokens: maxTokens, temperature, stream: true };
+  const t0 = Date.now();
+  let raw = "";
+  let usage = null;
+  try {
+    const stream = await ai(env).run(model.id, payload);
+    if (!stream || typeof stream.getReader !== "function") throw new Error("Workers AI: нет потока");
+    const reader = stream.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = "";
+    let shown = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      const lines = buf.split("\n");
+      buf = lines.pop();
+      for (const line of lines) {
+        const d = line.startsWith("data:") ? line.slice(5).trim() : "";
+        if (!d || d === "[DONE]") continue;
+        let j;
+        try { j = JSON.parse(d); } catch { continue; }
+        raw += j.response ?? j.choices?.[0]?.delta?.content ?? "";
+        if (j.usage) usage = j.usage;
+      }
+      const visible = partialText(raw);
+      if (visible && visible !== shown) {
+        shown = visible;
+        try { onDelta(visible); } catch {}
+      }
+    }
+    const text = stripQuotes(cleanText(stripThink(raw).trim()));
+    if (!text) throw new Error("Workers AI: пустой ответ");
+    const exact = Number(usage?.prompt_tokens) > 0;
+    await logUsage(env, {
+      uid, kind, model: model.id, ms: Date.now() - t0, ok: 1,
+      tin: exact ? Number(usage.prompt_tokens) : estimateTokens(messages.map((m) => m.content).join("\n")),
+      tout: exact ? Number(usage.completion_tokens || 0) : estimateTokens(raw), estimated: exact ? 0 : 1,
+    });
+    return text;
+  } catch (e) {
+    await logUsage(env, { uid, kind, model: model.id, ms: Date.now() - t0, ok: 0, err: `stream: ${String(e.message || e).slice(0, 290)}` });
+    console.warn(`Workers AI stream failed (${e.message}) — обычный запрос`);
+    return aiText(env, opts);
+  }
+}
+
+/** Недописанный ответ для показа: без блока рассуждений, «Пациент:» и открывающей кавычки */
+function partialText(raw) {
+  return cleanText(stripThink(raw)).replace(/^(пациент|ответ|реплика)\s*:\s*/i, "").replace(/^["«“]/, "").trim();
+}
+
+/**
  * JSON-ответ модели: парсит, а при битом JSON делает одну повторную попытку.
  */
 export async function aiJson(env, { system, prompt, maxTokens = 800, temperature = 0.7, kind = "other", uid = "" }) {

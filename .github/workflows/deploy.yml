@@ -17,6 +17,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Сжатие кода приложения: проверяем, что сборка проходит и результат — корректный JS
+      - name: Сборка приложения
+        run: node scripts/build-app.mjs && node --check public/app.js
       - name: Сборка воркера (dry-run)
         run: npx wrangler deploy --dry-run --outdir .wrangler/check
 
@@ -43,6 +46,9 @@ jobs:
         run: |
           git fetch --no-tags origin '+refs/heads/tg/*:refs/remotes/origin/tg/*' || true
           node scripts/build-history.mjs || echo "История не собрана — используем src/data/history.json из репозитория"
+      # Сжатый код приложения и версии файлов в app.html (только для выкладки, в репозиторий не коммитится)
+      - name: Сборка приложения
+        run: node scripts/build-app.mjs
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

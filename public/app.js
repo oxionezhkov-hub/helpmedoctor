@@ -595,9 +595,25 @@ async function renderLogin() {
 // ---------------------------------------------------
 // Данные и синхронизация
 // ---------------------------------------------------
-async function loadMe() {
-  S.me = await api("GET", "/me");
-  return S.me;
+// Не больше одного запроса профиля одновременно: пока идёт один, следующие вызовы ждут ОДИН общий
+// повторный запрос, отправленный после него, — так данные всегда не старше момента вызова, а запросов меньше.
+// Справочники (config) не меняются между загрузками — после первой просим профиль без них.
+let meInflight = null;
+let meQueued = null;
+function fetchMe() {
+  const cfg = S.me?.config;
+  meInflight = api("GET", cfg ? "/me?lite=1" : "/me")
+    .then((me) => {
+      S.me = cfg && !me.config ? { ...me, config: cfg } : me;
+      return S.me;
+    })
+    .finally(() => { meInflight = null; });
+  return meInflight;
+}
+function loadMe() {
+  if (!meInflight) return fetchMe();
+  if (!meQueued) meQueued = meInflight.catch(() => {}).then(() => { meQueued = null; return fetchMe(); });
+  return meQueued;
 }
 
 // ---------------------------------------------------
@@ -651,6 +667,8 @@ async function loadPatient(id) {
 let refreshTimer = null;
 function scheduleRefresh(delay = 250) {
   clearTimeout(refreshTimer);
+  // Вкладка в фоне — не обновляем зря: при возвращении обновится сразу (visibilitychange)
+  if (document.hidden) return;
   refreshTimer = setTimeout(async () => {
     try {
       await loadMe();
@@ -703,6 +721,19 @@ function onSync(msg) {
   if (msg.scope === "consultation" && msg.patient_id) {
     if (msg.typing) S.typing.add(msg.patient_id);
     else S.typing.delete(msg.patient_id);
+    // Ответ пациента приходит по словам — показываем, пока он «печатает»
+    if (typeof msg.partial === "string") {
+      S.partial = { id: msg.patient_id, text: msg.partial };
+      const el = document.querySelector(".msg.streaming .txt");
+      if (el && S.route.name === "consult" && S.route.params.id === msg.patient_id) {
+        el.textContent = msg.partial;
+        const box = $("#messages");
+        if (box && box.scrollHeight - box.scrollTop - box.clientHeight < 160) box.scrollTop = box.scrollHeight;
+      } else renderTypingOnly();
+      return;
+    }
+    // Ответ готов: если его ждал не наш запрос (бот, другое устройство) — черновик больше не нужен
+    if (!msg.typing && S.partial?.id === msg.patient_id && !S.inflight.has(msg.patient_id)) S.partial = null;
   }
   if (msg.scope === "profile" && msg.error) toast(msg.error, "error");
   if (msg.scope === "profile" && msg.paid) paidNotice(msg.paid === "gift" ? "Подписка активирована!" : undefined);
@@ -1505,6 +1536,9 @@ function renderTypingOnly() {
 
 /** Что показываем, пока ждём ответа: пациент печатает / лаборатория работает — с оценкой времени */
 function pendingBlock(p) {
+  if (S.partial?.id === p.id && S.partial.text) {
+    return html`<div class="msg from-patient revealing streaming"><span class="txt">${S.partial.text}</span></div>`;
+  }
   const op = S.op?.id === p.id ? S.op : null;
   if (op && (op.kind === "test" || op.kind === "exam")) {
     return html`<div class="event pending-event"><div class="event-title">${ic(op.kind === "test" ? "flask" : "steth", "c-accent")}${op.kind === "exam" ? "Осмотр: " : ""}${op.label}</div>${etaBox(op.kind, op.start)}</div>`;
@@ -1534,13 +1568,18 @@ async function consultOp(id, kind, label, fn) {
     S.op = null;
     S.inflight.delete(id);
     S.typing.delete(id);
+    // Ответ уже показан по мере генерации — повторно «печатать» его не нужно
+    const streamed = S.partial?.id === id && !!S.partial.text;
     try {
       const { patient } = await loadPatient(id);
-      if (kind === "reply" || kind === "voice") startReveal(patient, since);
+      if (S.partial?.id === id) S.partial = null; // черновик убираем, когда в ленте уже настоящая реплика
+      if ((kind === "reply" || kind === "voice") && !streamed) startReveal(patient, since);
       if (kind === "test") S.revealTs = patient.test_results?.at(-1)?.ordered_at || 0;
       if (kind === "exam") S.revealTs = patient.exam_results?.at(-1)?.ts || 0;
       if (S.revealTs) setTimeout(() => { S.revealTs = 0; }, 6000);
-    } catch {}
+    } catch {
+      if (S.partial?.id === id) S.partial = null;
+    }
     if (S.route.name === "consult" && S.route.params.id === id) viewConsult();
     scrollChatDown();
   }

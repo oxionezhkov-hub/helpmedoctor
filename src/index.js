@@ -49,7 +49,13 @@ export default {
       }
       const canonicalHost = isCanonicalHost(request);
       if (path === "/robots.txt") return robotsTxt(canonicalHost);
-      const res = await env.ASSETS.fetch(request);
+      let res = await env.ASSETS.fetch(request);
+      // Код приложения с версией в адресе (?v=хеш, ставит scripts/build-app.mjs) не меняется — браузер хранит его год
+      // и при повторном открытии не скачивает; после деплоя app.html ссылается на новую версию
+      if ((path === "/app.js" || path === "/app.css") && url.searchParams.has("v") && res.ok) {
+        res = new Response(res.body, res);
+        res.headers.set("Cache-Control", "public, max-age=31536000, immutable");
+      }
       // Запасной адрес *.workers.dev не должен попадать в поиск — только helpmedoctor.ru
       if (canonicalHost) return res;
       const out = new Response(res.body, res);
@@ -202,7 +208,10 @@ async function api(request, env, url) {
   try {
     if (path === "/me" && method === "GET") {
       await user.init(uid);
-      return json({ ...(await user.snapshot()), bot_username: env.BOT_USERNAME });
+      const snap = await user.snapshot();
+      // ?lite=1 — приложение уже получило справочники (config) при первой загрузке: не шлём их повторно
+      if (url.searchParams.get("lite") === "1") delete snap.config;
+      return json({ ...snap, bot_username: env.BOT_USERNAME });
     }
     if (path === "/profile" && method === "PATCH") {
       return json({ profile: await user.updateProfile(await readJson(request)) });

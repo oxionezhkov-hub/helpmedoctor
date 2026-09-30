@@ -11,7 +11,7 @@ import {
   EARLY_UNTIL, HINTS_PER_PATIENT, LEVEL_RANKS, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel,
 } from "../config.js";
 import { SYSTEM_TEXTS } from "../lib/analytics.js";
-import { aiJson, aiText, transcribe } from "../lib/ai.js";
+import { aiJson, aiText, aiTextStream, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
 import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
@@ -720,7 +720,19 @@ export class UserDO extends DurableObject {
       let reply;
       const t0 = Date.now();
       try {
-        reply = await aiText(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, kind: "reply", uid: pat.doctor_uid });
+        // Ответ приходит по словам: приложение показывает его по мере генерации (не чаще раза в 120 мс)
+        let sentAt = 0;
+        let last = "";
+        let timer = null;
+        const push = () => { timer = null; sentAt = Date.now(); this.broadcast("consultation", { patient_id: patId, typing: true, partial: last }); };
+        reply = await aiTextStream(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, kind: "reply", uid: pat.doctor_uid }, (text) => {
+          last = text;
+          if (timer) return;
+          const wait = 120 - (Date.now() - sentAt);
+          if (wait <= 0) push();
+          else timer = setTimeout(push, wait);
+        });
+        if (timer) clearTimeout(timer);
       } catch (e) {
         console.error("patient reply", e);
         this.broadcast("consultation", { patient_id: patId });

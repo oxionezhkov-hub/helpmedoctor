@@ -11,6 +11,21 @@ export const mockAi = {
     if (model.includes("whisper")) return { ...res, transcription_info: { duration: 3.2 } };
     const prompt = (input?.messages || []).map((m) => m.content).join(" ");
     const out = typeof res.response === "string" ? res.response : JSON.stringify(res.response);
+    // Потоковый ответ, как у Workers AI: SSE-строки «data: {"response":"…"}» по словам, в конце usage и [DONE]
+    if (input?.stream) {
+      const words = out.split(/(?<=\s)/);
+      const enc = new TextEncoder();
+      return new ReadableStream({
+        async start(c) {
+          for (const w of words) {
+            c.enqueue(enc.encode(`data: ${JSON.stringify({ response: w })}\n\n`));
+            await new Promise((r) => setTimeout(r, 60));
+          }
+          c.enqueue(enc.encode(`data: ${JSON.stringify({ response: "", usage: { prompt_tokens: Math.ceil(prompt.length / 2.5), completion_tokens: Math.ceil(out.length / 2.5) } })}\n\ndata: [DONE]\n\n`));
+          c.close();
+        },
+      });
+    }
     return { ...res, usage: { prompt_tokens: Math.ceil(prompt.length / 2.5), completion_tokens: Math.ceil(out.length / 2.5) } };
   },
 };
