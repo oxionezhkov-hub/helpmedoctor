@@ -132,7 +132,10 @@ assert.deepEqual(afterExam.current.physicals, ["Пальпация живота"
 assert.equal(afterExam.findings, undefined, "находки по методам не утекают на клиент");
 r = await api(webToken, "POST", `/patients/${patId}/test`, { name: "КТ" });
 assert.equal(r.data.cached, true);
-step("бот: обследование и осмотр; повторное КТ отдаётся из кэша без ИИ");
+r = await api(webToken, "POST", `/patients/${patId}/exam`, { action: "Пальцевое ректальное исследование" });
+assert.equal(r.status, 200, JSON.stringify(r.data));
+assert.ok(r.data.sensation.includes("сфинктер"), "отказ модели → находки запасным запросом, а не ошибка");
+step("бот: обследование и осмотр; повторное КТ отдаётся из кэша без ИИ; ректальный осмотр работает при отказе модели");
 
 // Подсказки: с сайта и из бота, не больше трёх на пациента
 r = await api(webToken, "POST", `/patients/${patId}/hint`);

@@ -25,6 +25,13 @@ const mockImpl = {
       // Как настоящая модель: иногда текст вокруг JSON
       return { response: 'Вот пациент:\n```json\n{"name":"Мирон Лесков","age":47,"sex":"male","chief_complaint":"Жжёт под ложечкой после еды","true_diagnosis":"Язвенная болезнь 12-перстной кишки, обострение","full_history":"Боли натощак 3 недели, курит, НПВС от спины.","personality":"ворчливый, но честный","condition_trajectory":"stable","opening_phrase":"Доктор, у меня опять живот крутит, сил нет.","findings":{"exam":"Болезненность в эпигастрии при пальпации","lab":"Hb 118 г/л","imaging":"ФГДС: язва 8 мм луковицы ДПК","ecg":"норма","pathology":"H. pylori +"}}\n```' };
     }
+    // Как Llama на Workers AI: в роли пациента отказывается описывать ректальный осмотр
+    if (prompt.includes("Верни JSON: {\"sensation\"") && /осмотр: «[^»]*ректальн/i.test(prompt)) {
+      return { response: { sensation: "Извините, я не могу описать это исследование.", reaction: "" } };
+    }
+    if (prompt.includes("заполняет историю болезни") || String(input?.messages?.[0]?.content || "").includes("заполняет историю болезни")) {
+      return { response: "Тонус сфинктера сохранён, ампула прямой кишки свободна, слизистая подвижна, безболезненна. На перчатке кал обычного цвета." };
+    }
     if (prompt.includes("Верни JSON: {\"sensation\"")) {
       return { response: { sensation: "Болезненность в эпигастрии при пальпации, живот мягкий.", reaction: "Ай, вот тут больно!" } };
     }

@@ -33,6 +33,13 @@ const als = new AsyncLocalStorage();
 // Что нельзя делать заблокированному админом пользователю
 const BLOCKED_METHODS = new Set(["requestNewPatient", "startConsultation", "doctorMessage", "voiceMessage", "orderTest", "physicalExam", "requestHint", "finishConsultation", "answerQuiz", "reopenPatient"]);
 
+// Отказ модели вместо находок: «Я не могу…», «I can't…», «Извините, но…»
+const REFUSAL_RE = /^\s*(извините|к сожалению|я не могу|не могу|я не буду|i can(no|')t|i'm sorry|sorry|as an ai)/i;
+function isRefusal(text) {
+  const t = String(text || "").trim();
+  return !t || REFUSAL_RE.test(t) || /не могу (описать|выполнить|предоставить|помочь)|cannot (provide|assist|help)/i.test(t.slice(0, 200));
+}
+
 export class UserDO extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -788,11 +795,22 @@ export class UserDO extends DurableObject {
       const t0 = Date.now();
       try {
         res = await aiJson(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "exam", uid: pat.doctor_uid });
+        if (isRefusal(res?.sensation || res?.ОЩУЩЕНИЯ)) throw new Error(`отказ модели: ${String(res.sensation || res.ОЩУЩЕНИЯ).slice(0, 200)}`);
       } catch (e) {
+        // Модель отказалась (часто на ректальном, гинекологическом осмотре) или вернула не JSON — пишем находки без роли пациента
         console.error("physical", e);
-        this.broadcast("consultation", { patient_id: patId });
-        await this.track("ai_error", { what: "exam", name: action, error: String(e.message || e).slice(0, 300) });
-        throw new UserError("Результат осмотра временно недоступен. Попробуйте ещё раз.", "ai_error");
+        await this.track("ai_fallback", { what: "exam", name: action, error: String(e.message || e).slice(0, 300) });
+        try {
+          const f = P.physicalExamFallbackPrompt(pat, action);
+          const text = await aiText(this.env, { system: f.system, prompt: f.prompt, maxTokens: f.maxTokens, temperature: f.temperature, kind: "exam", uid: pat.doctor_uid });
+          if (isRefusal(text)) throw new Error(`отказ модели: ${text.slice(0, 200)}`);
+          res = { sensation: text, reaction: "" };
+        } catch (e2) {
+          console.error("physical fallback", e2);
+          this.broadcast("consultation", { patient_id: patId });
+          await this.track("ai_error", { what: "exam", name: action, error: String(e2.message || e2).slice(0, 300) });
+          throw new UserError("Результат осмотра временно недоступен. Попробуйте ещё раз.", "ai_error");
+        }
       }
       const exam = {
         action,

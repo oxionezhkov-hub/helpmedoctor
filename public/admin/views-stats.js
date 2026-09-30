@@ -18,7 +18,7 @@ const EV = {
   plans_open: ["gem", "Открыл тарифы"], pay_click: ["gem", "Нажал «Оплатить»"], pay_link: ["gem", "Ссылка на оплату"], pay_error: ["alert", "Ошибка оплаты"],
   paid: ["gem", "Оплатил"], gift: ["gift", "Подарок подписки"], sub_cancel: ["x", "Подписка отменена"], sub_change: ["gem", "Подписка изменена"],
   sub_expired: ["clock", "Подписка закончилась"], extra_patients: ["gift", "Доп. пациенты"], reminder: ["send", "Напоминание"], bot_blocked: ["lock", "Заблокировал бота"],
-  feedback: ["star", "Отзыв"], ai_error: ["alert", "Сбой ИИ"], stt_error: ["mic", "Не распознан голос"], app_open: ["eye", "Открыл приложение"],
+  feedback: ["star", "Отзыв"], ai_error: ["alert", "Сбой ИИ"], ai_fallback: ["alert", "ИИ отказал, запасной ответ"], stt_error: ["mic", "Не распознан голос"], app_open: ["eye", "Открыл приложение"],
   blocked: ["lock", "Заблокирован админом"], unblocked: ["unlock", "Разблокирован"],
 };
 const FINISH = { diagnosis: "диагноз", referral: "направление", discharge: "отказ" };
@@ -322,7 +322,7 @@ const RENDER = {
 };
 
 const AI_KIND = { patient: "Новый пациент", reply: "Ответ пациента", test: "Обследование", exam: "Осмотр", farewell: "Прощание", evaluation: "Разбор эксперта", quiz: "Тест", voice: "Голос (Whisper)", sections: "Разделы специальности", summarize: "Сжатие диалога", admin_summary: "Сводка отзывов", other: "Прочее" };
-const ERR = { ai_error: "Сбой ИИ у пользователя", patient_failed: "Пациент не создан", pay_error: "Ошибка оплаты", stt_error: "Голос не распознан", bot_blocked: "Бот заблокирован", telegram: "Telegram не доставил" };
+const ERR = { ai_error: "Сбой ИИ у пользователя", ai_fallback: "ИИ отказал — ответ запасным запросом", patient_failed: "Пациент не создан", pay_error: "Ошибка оплаты", stt_error: "Голос не распознан", bot_blocked: "Бот заблокирован", telegram: "Telegram не доставил" };
 
 const MODEL_NAMES = {
   "@cf/qwen/qwen3-30b-a3b-fp8": "Qwen3 30B (Cloudflare)", "@cf/meta/llama-3.3-70b-instruct-fp8-fast": "Llama 3.3 70B (Cloudflare)",
