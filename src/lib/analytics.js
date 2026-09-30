@@ -6,7 +6,7 @@ import GENERATED_HISTORY from "../data/history.json" with { type: "json" };
 
 const DAY = 86400000;
 const MSK = 3 * 3600000;
-const ERROR_TYPES = ["ai_error", "patient_failed", "pay_error", "stt_error", "bot_blocked"];
+const ERROR_TYPES = ["ai_error", "ai_fallback", "patient_failed", "pay_error", "stt_error", "bot_blocked"];
 
 // ---------------------------------------------------
 // Фильтры
