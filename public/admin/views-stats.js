@@ -67,7 +67,7 @@ export async function viewDashboard(el, ctx) {
     return html`<span class="delta ${pct === 0 ? "flat" : good ? "up" : "down"}">${pct > 0 ? "↑" : pct < 0 ? "↓" : "→"} ${Math.abs(pct)}%</span>`;
   };
   const tile = (label, value, sub, dl, icon, href) => html`<${raw(href ? `a href="${href}" style="color:inherit;text-decoration:none"` : "div")} class="tile">
-    <div class="label">${ic(icon, "sm")}${label}</div><div class="value">${value}</div><div class="sub row" style="gap:6px">${dl || ""}<span>${sub || ""}</span></div></${raw(href ? "a" : "div")}>`;
+    <div class="label">${ic(icon, "sm")}${label}</div><div class="value">${value}</div><div class="sub row" style="gap:6px">${dl || ""}<span>${typeof sub !== "string" ? sub : sub.split(" · ").map((x, i) => html`${i ? " · " : ""}<span class="nobr">${x}</span>`)}</span></div></${raw(href ? "a" : "div")}>`;
   const s = d.series;
   const finishSeries = [["diagnosis", "Диагноз"], ["referral", "Направление"], ["discharge", "Отказ"]].map(([k, name]) => ({ name, values: s.finish.map((x) => x[k] || 0) }));
   const revSeries = ["day", "week", "month", "forever"].map((k) => ({ name: PLAN_LABELS[k], values: s.revenue.map((x) => x[k] || 0) }));

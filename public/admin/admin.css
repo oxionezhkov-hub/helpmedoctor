@@ -156,7 +156,11 @@ button { cursor: pointer; }
 .tiles.compact .tile .value { font-size: 20px; }
 #u-tabs { scroll-margin-top: 64px; }
 .tile .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+/* Изменение к прошлому периоду и подпись: в одну строку, а если не влезает — подпись целиком переносится под них */
+.tile .sub.row { flex-wrap: wrap; align-items: baseline; row-gap: 2px; }
+.tile .sub.row > span:not(.delta) { min-width: 0; }
+.nobr { white-space: nowrap; }
 .delta.up { color: var(--ok); }
 .delta.down { color: var(--danger); }
 .delta.flat { color: var(--muted); }
