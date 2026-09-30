@@ -529,7 +529,7 @@ export async function viewBroadcast(el, ctx) {
           <div class="tile"><div class="label">Оплатили за 7 дней</div><div class="value">${s.paid7}</div><div class="sub">${pctOf(s.paid7)}</div></div>
         </div>
       </div>
-      <div class="card"><div class="card-head"><h2>Сообщение</h2></div><div class="tg-preview">${b.photo ? html`<img src="${b.photo}" alt="" style="display:block;width:100%;border-radius:12px 12px 0 0">` : ""}<div class="msg">${raw(b.text.replace(/\n/g, "<br>"))}</div>${b.buttons?.length ? html`<div class="kb">${b.buttons.map((x) => html`<span>${x.text}</span>`)}</div>` : ""}</div></div>
+      <div class="card"><div class="card-head"><h2>Сообщение</h2></div><div class="tg-preview">${b.photo ? html`<img class="photo" src="${b.photo}" alt="">` : ""}<div class="msg${b.photo ? " with-photo" : ""}">${raw(b.text.replace(/\n/g, "<br>"))}</div>${b.buttons?.length ? html`<div class="kb">${b.buttons.map((x) => html`<span>${x.text}</span>`)}</div>` : ""}</div></div>
     </div>
     <div class="card pad-0 mt"><div class="card-head" style="padding:14px 16px 0"><h2>Получатели</h2>
       <div class="row wrap" style="gap:6px"><div class="seg">${[["all", `Все · ${b.targets.length}`], ["silent", `Не отреагировали · ${silent.length}`]].map(([k, l]) => html`<button class="${who === k ? "on" : ""}" data-who="${k}">${l}</button>`)}</div>
