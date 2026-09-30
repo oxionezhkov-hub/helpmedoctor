@@ -18,9 +18,11 @@ if (!file) throw new Error("укажите файл с постами");
 if (!token && !dry) throw new Error("нет TELEGRAM_TOKEN");
 const posts = JSON.parse(readFileSync(file, "utf8"));
 
-const ALLOWED = /^\/?(b|i|u|s|a|code|pre|blockquote|tg-spoiler)$/;
+// Без скрытого текста (<tg-spoiler>) и без опросов: посты репостятся в Дзен, где их не видно
+const ALLOWED = /^\/?(b|i|u|s|a|code|pre|blockquote)$/;
 function check(p, i) {
   const text = p.text ?? p.caption ?? "";
+  if (p.quiz || p.poll) throw new Error(`пост ${i + 1}: опросы и викторины не публикуем`);
   if (p.edit && !p.photo && !p.caption) throw new Error(`пост ${i + 1}: в правке нужна картинка или подпись`);
   for (const [, tag] of text.matchAll(/<\s*(\/?[a-z-]+)[^>]*>/gi)) if (!ALLOWED.test(tag)) throw new Error(`пост ${i + 1}: тег <${tag}> Telegram не поддерживает`);
   const plain = text.replace(/<[^>]+>/g, "");
