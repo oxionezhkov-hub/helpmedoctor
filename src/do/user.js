@@ -8,10 +8,10 @@ import { DurableObject } from "cloudflare:workers";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   DIFFICULTIES, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
-  EARLY_UNTIL, HINTS_PER_PATIENT, LEVEL_RANKS, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel,
+  EARLY_UNTIL, HINTS_PER_PATIENT, LEVEL_RANKS, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel, specialtyOf,
 } from "../config.js";
 import { SYSTEM_TEXTS } from "../lib/analytics.js";
-import { aiJson, aiText, transcribe } from "../lib/ai.js";
+import { aiJson, aiText, aiTextStream, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
 import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
@@ -455,6 +455,7 @@ export class UserDO extends DurableObject {
       doctor_uid: prof0.uid,
       is_alien: false,
       specialization: spec,
+      specialty: clampStr(data.specialty, 40).toLowerCase(),
       name: clampStr(data.name, 60),
       age: data.age,
       sex: data.sex,
@@ -720,7 +721,19 @@ export class UserDO extends DurableObject {
       let reply;
       const t0 = Date.now();
       try {
-        reply = await aiText(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, kind: "reply", uid: pat.doctor_uid });
+        // Ответ приходит по словам: приложение показывает его по мере генерации (не чаще раза в 120 мс)
+        let sentAt = 0;
+        let last = "";
+        let timer = null;
+        const push = () => { timer = null; sentAt = Date.now(); this.broadcast("consultation", { patient_id: patId, typing: true, partial: last }); };
+        reply = await aiTextStream(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, kind: "reply", uid: pat.doctor_uid }, (text) => {
+          last = text;
+          if (timer) return;
+          const wait = 120 - (Date.now() - sentAt);
+          if (wait <= 0) push();
+          else timer = setTimeout(push, wait);
+        });
+        if (timer) clearTimeout(timer);
       } catch (e) {
         console.error("patient reply", e);
         this.broadcast("consultation", { patient_id: patId });
@@ -2101,7 +2114,7 @@ export function patientSummary(p) {
   const last = p.consultations?.[p.consultations.length - 1];
   const msgs = p.conversation_history || [];
   return {
-    id: p.id, name: p.name, age: p.age, sex: p.sex, is_alien: !!p.is_alien, specialization: p.specialization,
+    id: p.id, name: p.name, age: p.age, sex: p.sex, is_alien: !!p.is_alien, specialization: specialtyOf(p),
     chief_complaint: p.chief_complaint, status: p.status, created_at: p.created_at, closed_at: p.closed_at,
     in_consultation: !!p.current,
     consultations: (p.consultations || []).length,
@@ -2114,7 +2127,8 @@ export function patientSummary(p) {
 
 export function publicPatient(p, premium = true) {
   const closed = p.status === "closed";
-  const { full_history, key_findings, findings, personality, last_facts, summary, mkb10, kr, ...rest } = p;
+  const { full_history, key_findings, findings, personality, last_facts, summary, mkb10, kr, specialty, ...rest } = p;
+  rest.specialization = specialtyOf(p); // профиль приёма, а не раздел — раздел часто подсказывает диагноз
   // Без премиума: оценка, оси и вывод эксперта; цитаты, совет и «что было дальше» — закрыты.
   // В разборе по КР бесплатно — как надо было распознать и чек-лист; диагностика и лечение с дозами — в премиуме.
   const lock = (c) => (premium || p.gift_kr || !c.guide ? c : { ...c, guide: lockGuide(c.guide) });

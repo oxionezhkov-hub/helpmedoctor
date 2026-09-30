@@ -610,9 +610,15 @@ function broadcast(h, { id }) {
   if (!b) return null;
   const targets = h.all("SELECT t.*, u.name, u.username FROM bc_targets t LEFT JOIN users u ON u.uid = t.uid WHERE t.bid = ? ORDER BY t.ts DESC", b.id);
   const sent = targets.filter((t) => t.status === "sent");
-  const returned48 = sent.filter((t) => h.one("SELECT 1 AS x FROM events WHERE uid = ? AND ts > ? AND ts < ? AND type NOT IN ('reminder', 'bot_blocked') LIMIT 1", t.uid, t.ts, t.ts + 2 * DAY)).length;
-  const consult48 = sent.filter((t) => h.one("SELECT 1 AS x FROM events WHERE uid = ? AND type = 'finish' AND ts > ? AND ts < ? LIMIT 1", t.uid, t.ts, t.ts + 2 * DAY)).length;
-  const paid7 = sent.filter((t) => h.one("SELECT 1 AS x FROM payments WHERE uid = ? AND status = 'paid' AND updated_at > ? AND updated_at < ? LIMIT 1", t.uid, t.ts, t.ts + 7 * DAY)).length;
+  // Реакция каждого получателя: вернулся за 48 ч, провёл приём за 48 ч, оплатил за 7 дней
+  for (const t of sent) {
+    t.returned = h.one("SELECT 1 AS x FROM events WHERE uid = ? AND ts > ? AND ts < ? AND type NOT IN ('reminder', 'bot_blocked') LIMIT 1", t.uid, t.ts, t.ts + 2 * DAY) ? 1 : 0;
+    t.consulted = t.returned && h.one("SELECT 1 AS x FROM events WHERE uid = ? AND type = 'finish' AND ts > ? AND ts < ? LIMIT 1", t.uid, t.ts, t.ts + 2 * DAY) ? 1 : 0;
+    t.paid = h.one("SELECT 1 AS x FROM payments WHERE uid = ? AND status = 'paid' AND updated_at > ? AND updated_at < ? LIMIT 1", t.uid, t.ts, t.ts + 7 * DAY) ? 1 : 0;
+  }
+  const returned48 = sent.filter((t) => t.returned).length;
+  const consult48 = sent.filter((t) => t.consulted).length;
+  const paid7 = sent.filter((t) => t.paid).length;
   return {
     ...b, buttons: JSON.parse(b.buttons || "[]"), filter: JSON.parse(b.filter || "{}"),
     stats: {

@@ -400,3 +400,13 @@ test("календарь приёмов: дни МСК за 60 дней", () => 
   G.recordConsultDay(prof, now);
   assert.deepEqual(prof.consult_days, { "2026-09-28": 2 });
 });
+
+test("карточка пациента: профиль приёма вместо раздела, который подсказывает диагноз", async () => {
+  const { specialtyOf } = await import("../src/config.js");
+  assert.equal(specialtyOf({ specialization: "гипертензия" }), "кардиология");
+  assert.equal(specialtyOf({ specialization: "инсульт" }), "неврология");
+  assert.equal(specialtyOf({ specialization: "детская инфекция" }), "педиатрия");
+  assert.equal(specialtyOf({ specialization: "гастроэнтерология", specialty: "что угодно" }), "гастроэнтерология");
+  assert.equal(specialtyOf({ specialization: "урогинекология", specialty: "урология" }), "урология", "свой раздел — профиль от ИИ");
+  assert.equal(specialtyOf({ specialization: "урогинекология" }), "урогинекология", "старый пациент без профиля — как было");
+});

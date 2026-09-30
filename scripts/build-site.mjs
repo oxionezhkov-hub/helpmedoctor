@@ -71,8 +71,8 @@ function head({ title, description, canonical, type = "website", extra = "", ima
 ${noindex ? "" : `<link rel="canonical" href="${canonical}">\n`}<meta name="robots" content="${noindex ? "noindex" : "index, follow, max-image-preview:large"}">
 <meta name="theme-color" content="#f6f4ee" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121514" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta property="og:type" content="${type}">
 <meta property="og:site_name" content="${NAME}">

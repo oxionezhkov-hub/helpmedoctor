@@ -118,7 +118,9 @@ button { cursor: pointer; }
 }
 .topbar.scrolled { border-bottom-color: var(--border); }
 .topbar h1 { font-size: 18px; }
-.menu-btn { display: none; }
+/* Кнопка меню: на телефоне открывает выезжающее меню, на компьютере сворачивает боковую панель */
+.layout.side-hidden { grid-template-columns: minmax(0, 1fr); }
+.layout.side-hidden .side { display: none; }
 .content { padding: 8px 24px 40px; max-width: 1400px; width: 100%; }
 .page-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 16px; }
 .page-head h1 { margin-right: auto; }
@@ -132,7 +134,7 @@ button { cursor: pointer; }
   }
   .side.open { transform: none; }
   .backdrop.open { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .35); }
-  .menu-btn { display: inline-grid; }
+  .layout.side-hidden .side { display: flex; }
   .topbar { padding: 10px 16px; }
   .content { padding: 4px 16px 32px; }
   h1 { font-size: 20px; }
@@ -156,7 +158,11 @@ button { cursor: pointer; }
 .tiles.compact .tile .value { font-size: 20px; }
 #u-tabs { scroll-margin-top: 64px; }
 .tile .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+/* Изменение к прошлому периоду и подпись: в одну строку, а если не влезает — подпись целиком переносится под них */
+.tile .sub.row { flex-wrap: wrap; align-items: baseline; row-gap: 2px; }
+.tile .sub.row > span:not(.delta) { min-width: 0; }
+.nobr { white-space: nowrap; }
 .delta.up { color: var(--ok); }
 .delta.down { color: var(--danger); }
 .delta.flat { color: var(--muted); }
