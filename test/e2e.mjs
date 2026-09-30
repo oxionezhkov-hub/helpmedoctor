@@ -434,6 +434,26 @@ await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({
 assert.equal((await api(t2, "GET", "/me")).data.profile.streak_freezes, 1);
 step("разовые покупки: +3 пациента сверх лимита (39 ₽), заморозка стрика");
 
+// Оплата подтверждается без вебхука: приложение спрашивает /pay/check, HubDO сам опрашивает банк
+const MOCK = "http://127.0.0.1:8790";
+await fetch(`${MOCK}/tochka-hold?on=1`);
+r = await api(t2, "POST", "/pay", { plan: "freeze", consent: true });
+const holdOp = r.data.link.split("/").pop();
+r = await api(t2, "POST", "/pay/check");
+assert.deepEqual(r.data, { activated: null, pending: 1 }, "пока банк не подтвердил — ждём");
+await fetch(`${MOCK}/tochka-pay?op=${holdOp}`);
+r = await api(t2, "POST", "/pay/check");
+assert.equal(r.data.activated, "freeze", "после оплаты проверка сразу включает покупку");
+assert.equal((await api(t2, "GET", "/me")).data.profile.streak_freezes, 2);
+assert.equal((await api(t2, "POST", "/pay/check")).data.pending, 0, "повторно не активируется");
+await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: holdOp }) });
+assert.equal((await api(t2, "GET", "/me")).data.profile.streak_freezes, 2, "поздний вебхук не дублирует покупку");
+r = await api(t2, "POST", "/pay", { plan: "freeze", consent: true });
+await fetch(`${MOCK}/tochka-hold?on=0`);
+await fetch(`${MOCK}/tochka-pay?op=${r.data.link.split("/").pop()}`);
+await waitFor(async () => (await api(t2, "GET", "/me")).data.profile.streak_freezes === 3, "HubDO сам проверил оплату", 40000);
+step("оплата подтверждается сразу: проверка из приложения и опрос банка сервером, без дублей");
+
 const nowTs = Date.now(), per = { from: nowTs - 30 * 86400000, to: nowTs + 60000 };
 const dash = await aq("dashboard", per);
 assert.ok(dash.tiles && dash.funnel?.steps?.length >= 3, JSON.stringify(dash).slice(0, 300));

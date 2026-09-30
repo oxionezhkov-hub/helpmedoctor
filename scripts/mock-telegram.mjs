@@ -10,6 +10,8 @@ fs.writeFileSync(LOG, "");
 // Мок API Точки (через «посредника»: /tochka?path=/uapi/...). Неделю не продаём — проверка ошибки банка.
 const tochkaOps = new Map();
 let opN = 0;
+// Режим «ждём оплату»: новые платежи не оплачены, пока тест не вызовет /tochka-pay?op=…
+let holdNew = false;
 function tochka(req, res, body) {
   const u = new URL(req.url, "http://x");
   const path = u.searchParams.get("path") || "";
@@ -21,19 +23,19 @@ function tochka(req, res, body) {
   if (req.method === "POST" && (path === `${base}/payments` || path === `${base}/subscriptions`)) {
     if (String(data.purpose).includes("неделя")) return send(500, { message: "Bank says no" });
     const op = `${path.endsWith("subscriptions") ? "sub" : "pay"}_${++opN}`;
-    tochkaOps.set(op, { amount: data.amount, purpose: data.purpose, consumerId: data.consumerId, sub: path.endsWith("subscriptions"), recurring: data.recurring, saveCard: data.saveCard });
+    tochkaOps.set(op, { hold: holdNew, amount: data.amount, purpose: data.purpose, consumerId: data.consumerId, sub: path.endsWith("subscriptions"), recurring: data.recurring, saveCard: data.saveCard });
     return send(200, { Data: { operationId: op, paymentLink: `https://pay.example/${op}` } });
   }
   let m = path.match(/\/payments\/([^/]+)$/);
   if (req.method === "GET" && m) {
     const o = tochkaOps.get(m[1]);
     if (!o || o.sub) return send(404, { message: "not found" });
-    return send(200, { Data: { Operation: [{ status: "APPROVED", amount: o.amount, purpose: o.purpose, consumerId: o.consumerId }] } });
+    return send(200, { Data: { Operation: [{ status: o.hold ? "CREATED" : "APPROVED", amount: o.amount, purpose: o.purpose, consumerId: o.consumerId }] } });
   }
   m = path.match(/\/subscriptions\/([^/]+)\/status$/);
   if (m && req.method === "GET") {
     const o = tochkaOps.get(m[1]);
-    return o ? send(200, { Data: { status: o.cancelled ? "Cancelled" : "Active", amount: o.amount, purpose: o.purpose, consumerId: o.consumerId } }) : send(404, {});
+    return o ? send(200, { Data: { status: o.cancelled ? "Cancelled" : o.hold ? "Created" : "Active", amount: o.amount, purpose: o.purpose, consumerId: o.consumerId } }) : send(404, {});
   }
   if (m && req.method === "POST") {
     const o = tochkaOps.get(m[1]);
@@ -49,6 +51,12 @@ http.createServer((req, res) => {
   let body = "";
   req.on("data", (c) => (body += c));
   req.on("end", () => {
+    if (req.url.startsWith("/tochka-hold")) { holdNew = req.url.includes("on=1"); return res.end("ok"); }
+    if (req.url.startsWith("/tochka-pay")) {
+      const o = tochkaOps.get(new URL(req.url, "http://x").searchParams.get("op"));
+      if (o) o.hold = false;
+      return res.end(o ? "ok" : "none");
+    }
     if (req.url.startsWith("/tochka")) return tochka(req, res, body);
     if (req.url.includes("/file/")) {
       res.writeHead(200, { "Content-Type": "audio/ogg" });
