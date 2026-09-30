@@ -509,6 +509,10 @@ export async function viewBroadcast(el, ctx) {
   const s = b.stats;
   const doneN = s.sent + s.failed;
   const pctOf = (n) => (s.sent ? `${Math.round((n / s.sent) * 100)}%` : "—");
+  const who = S.bcWho || "all";
+  // Не отреагировали: доставлено, но не нажали кнопку и не заходили 48 часов
+  const silent = b.targets.filter((t) => t.status === "sent" && !t.clicked && !t.returned && Date.now() - t.ts > 2 * 3600000);
+  const silentNames = silent.filter((t) => t.username).map((t) => `@${t.username}`);
   el.innerHTML = str(html`
     <div class="page-head"><a class="btn ghost sm" href="#/messages?tab=broadcasts">${ic("back", "sm")}<span>Все рассылки</span></a><span class="grow"></span>
       ${["sending", "scheduled"].includes(b.status) ? html`<button class="btn danger sm" id="bc-stop">Остановить</button>` : ""}<button class="btn ghost sm" id="bc-refresh">${ic("refresh", "sm")}</button></div>
@@ -527,16 +531,23 @@ export async function viewBroadcast(el, ctx) {
       </div>
       <div class="card"><div class="card-head"><h2>Сообщение</h2></div><div class="tg-preview">${b.photo ? html`<img src="${b.photo}" alt="" style="display:block;width:100%;border-radius:12px 12px 0 0">` : ""}<div class="msg">${raw(b.text.replace(/\n/g, "<br>"))}</div>${b.buttons?.length ? html`<div class="kb">${b.buttons.map((x) => html`<span>${x.text}</span>`)}</div>` : ""}</div></div>
     </div>
-    <div class="card pad-0 mt"><div class="card-head" style="padding:14px 16px 0"><h2>Получатели</h2></div>${table({
+    <div class="card pad-0 mt"><div class="card-head" style="padding:14px 16px 0"><h2>Получатели</h2>
+      <div class="row wrap" style="gap:6px"><div class="seg">${[["all", `Все · ${b.targets.length}`], ["silent", `Не отреагировали · ${silent.length}`]].map(([k, l]) => html`<button class="${who === k ? "on" : ""}" data-who="${k}">${l}</button>`)}</div>
+      ${who === "silent" && silentNames.length ? html`<button class="btn soft sm" id="bc-copy">${ic("copy", "sm")}<span>Скопировать @username (${silentNames.length})</span></button>` : ""}</div></div>
+      ${who === "silent" ? html`<p class="small muted" style="padding:6px 16px 0">Доставлено, но после рассылки не нажали кнопку и не заходили в тренажёр (смотрим первые 48 часов).${silent.length > silentNames.length ? ` Без @username: ${silent.length - silentNames.length} — им можно написать из карточки пользователя.` : ""}</p>` : ""}${table({
       columns: [
         { key: "name", label: "Пользователь", render: (t) => html`<a href="#/users/${t.uid}">${t.name || t.uid}</a>` },
         { key: "status", label: "Статус", render: (t) => html`<span class="badge ${t.status === "sent" ? "ok" : t.status === "failed" ? "danger" : ""}">${{ sent: "доставлено", failed: "не доставлено", pending: "в очереди" }[t.status]}</span>` },
-        { key: "clicked", label: "Кнопка", render: (t) => (t.clicked ? "нажал" : "") },
+        { key: "username", label: "Username", render: (t) => (t.username ? `@${t.username}` : "") },
+        { key: "clicked", label: "Реакция", render: (t) => [t.clicked && "нажал кнопку", t.returned && "зашёл", t.consulted && "провёл приём", t.paid && "оплатил"].filter(Boolean).join(" · ") || (t.status === "sent" ? html`<span class="muted">нет</span>` : "") },
         { key: "ts", label: "Когда", render: (t) => (t.ts ? fDT(t.ts) : "—") },
         { key: "err", label: "Ошибка", render: (t) => html`<span class="small muted">${t.err || ""}</span>` },
       ],
-      rows: b.targets,
+      rows: who === "silent" ? silent : b.targets,
     })}</div>`);
+  el.querySelectorAll("[data-who]").forEach((x) => (x.onclick = () => { S.bcWho = x.dataset.who; viewBroadcast(el, ctx); }));
+  const copy = $("#bc-copy");
+  if (copy) copy.onclick = () => navigator.clipboard.writeText(silentNames.join("\n")).then(() => toast("Скопировано"), () => toast("Не удалось скопировать", "error"));
   const stop = $("#bc-stop");
   if (stop) stop.onclick = async () => {
     if (!(await confirmDialog("Остановить рассылку?", "Уже отправленные сообщения останутся у пользователей.", "Остановить", true))) return;
