@@ -467,6 +467,7 @@ async function boot() {
   if (S.authNotice) toast(S.authNotice, S.authNoticeKind), (S.authNotice = null);
   api("POST", "/event", { type: "app_open" }).catch(() => {});
   followIntent();
+  resumePaymentWatch();
 }
 
 /** Цели Яндекс Метрики (счётчик сайта) */
@@ -599,6 +600,48 @@ async function loadMe() {
   return S.me;
 }
 
+// ---------------------------------------------------
+// Проверка оплаты: не ждём уведомления банка — приложение само спрашивает статус,
+// пока человек на странице оплаты и сразу после возврата
+// ---------------------------------------------------
+const PAY_KEY = "hmd_pay_at";
+let payWatch = null;
+
+function paidNotice(text = "Оплата прошла — подписка активирована!") {
+  store(PAY_KEY, null);
+  payWatch = null;
+  if (Date.now() - (S.paidToastAt || 0) < 15000) return;
+  S.paidToastAt = Date.now();
+  toast(text, "ok");
+  haptic("success");
+  loadMe().then(() => rerender()).catch(() => {});
+}
+
+/** Спрашивает сервер о свежих неоплаченных ссылках каждые 3 с в течение ms */
+function watchPayment(ms = 180000) {
+  const until = Date.now() + ms;
+  if (payWatch) { payWatch.until = Math.max(payWatch.until, until); return; }
+  const w = (payWatch = { until });
+  const tick = async () => {
+    if (payWatch !== w || !S.token) return;
+    let r = null;
+    try { r = await api("POST", "/pay/check"); } catch {}
+    if (payWatch !== w) return;
+    if (r?.activated) return paidNotice();
+    // Неоплаченных ссылок нет (или время вышло) — перестаём спрашивать
+    if ((r && !r.pending) || Date.now() > w.until) { payWatch = null; return; }
+    setTimeout(tick, document.hidden ? 6000 : 3000);
+  };
+  tick();
+}
+
+/** После ухода на страницу банка: вернулся во вкладку в течение получаса — сразу проверяем */
+function resumePaymentWatch() {
+  const at = Number(store(PAY_KEY)) || 0;
+  if (at && Date.now() - at < 1800000) watchPayment(120000);
+  else if (at) store(PAY_KEY, null);
+}
+
 async function loadPatient(id) {
   const data = await api("GET", `/patients/${encodeURIComponent(id)}`);
   S.patients.set(id, data);
@@ -662,7 +705,7 @@ function onSync(msg) {
     else S.typing.delete(msg.patient_id);
   }
   if (msg.scope === "profile" && msg.error) toast(msg.error, "error");
-  if (msg.scope === "profile" && msg.paid) { toast("Подписка активирована!", "ok"); haptic("success"); }
+  if (msg.scope === "profile" && msg.paid) paidNotice(msg.paid === "gift" ? "Подписка активирована!" : undefined);
   if (msg.scope === "patients" && msg.new_patient_id && Date.now() - S.expectNewPatient < 120000) {
     etaRecord("patient", Date.now() - S.expectNewPatient);
     S.expectNewPatient = 0;
@@ -703,6 +746,7 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden && S.token) {
     if (!S.wsOk) connectWs();
     scheduleRefresh(0);
+    resumePaymentWatch();
   }
 });
 
@@ -2944,7 +2988,7 @@ function viewPlans(fresh) {
   const order = ["month", "quarter", "year", "week"].filter((k) => o.plans[k]);
   const earlyDate = o.early_until ? new Date(o.early_until - 1).toLocaleDateString("ru", { day: "numeric", month: "long" }) : "";
   const ap = p.autopay;
-  if (fresh && S.route.q.paid) toast("Спасибо! Доступ включится в течение минуты.");
+  if (fresh && S.route.q.paid && !S.paidToastAt) { toast("Проверяем оплату…"); watchPayment(); }
   if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
   const planCard = (k) => {
     const x = o.plans[k];
@@ -3036,6 +3080,8 @@ async function payFor(key, b, scope) {
   try {
     const { link } = await api("POST", "/pay", { plan: key, consent: true });
     goal("pay_click", { plan: key });
+    store(PAY_KEY, String(Date.now()));
+    watchPayment(600000);
     if (IN_TG && tg.openLink) tg.openLink(link);
     else location.href = link;
   } catch (e) {

@@ -6,6 +6,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { adminIds, REFERRAL, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel } from "../config.js";
 import { cancelSubscription, chargeSubscription } from "../lib/tochka.js";
+import { confirmPayment, PAY_POLL } from "../lib/payments.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
 import { tg, btn } from "../lib/telegram.js";
 import * as A from "../lib/analytics.js";
@@ -87,6 +88,7 @@ export class HubDO extends DurableObject {
     this.addColumn("payments", "updated_at", "INTEGER");
     this.addColumn("payments", "admin", "TEXT");
     this.addColumn("payments", "note", "TEXT");
+    this.addColumn("payments", "polls", "INTEGER DEFAULT 0");
     this.addColumn("feedback", "status", "TEXT DEFAULT 'new'");
     // Код входа для привязки Telegram к веб-аккаунту: purpose = 'link', owner — uid веб-аккаунта
     this.addColumn("logins", "purpose", "TEXT");
@@ -351,6 +353,38 @@ export class HubDO extends DurableObject {
       op, String(uid), plan, now, Number(amount || 0), now,
     );
     this.bump("payment_links");
+    // Не ждём вебхука: сами спросим банк через несколько секунд (paymentPollStep)
+    await this.wake(now + PAY_POLL[0]);
+  }
+
+  /** Неоплаченные ссылки пользователя за сутки — их проверяет приложение после возврата с оплаты */
+  async pendingPayments(uid) {
+    return this.all("SELECT op FROM payments WHERE uid = ? AND status = 'link' AND done = 0 AND created_at > ? ORDER BY created_at DESC LIMIT 5",
+      String(uid), Date.now() - 86400000).map((r) => r.op);
+  }
+
+  /** Опрос банка по свежим ссылкам на оплату: доступ включается, даже если вебхук задержался или не пришёл */
+  async paymentPollStep() {
+    const now = Date.now();
+    const rows = this.all("SELECT op, created_at, polls FROM payments WHERE status = 'link' AND done = 0 AND created_at > ? AND polls < ?",
+      now - PAY_POLL.at(-1) - 3600000, PAY_POLL.length);
+    let next = null;
+    for (const r of rows) {
+      const polls = Number(r.polls) || 0;
+      if (now >= r.created_at + PAY_POLL[polls]) {
+        // Пропускаем уже прошедшие отметки, если alarm опоздал
+        let n = polls + 1;
+        while (n < PAY_POLL.length && now >= r.created_at + PAY_POLL[n]) n++;
+        this.sql.exec("UPDATE payments SET polls = ? WHERE op = ?", n, r.op);
+        try {
+          await confirmPayment(this.env, this, r.op);
+        } catch (e) {
+          console.error("paymentPoll", r.op, e);
+        }
+        if (n < PAY_POLL.length) next = Math.min(next ?? Infinity, r.created_at + PAY_POLL[n]);
+      } else next = Math.min(next ?? Infinity, r.created_at + PAY_POLL[polls]);
+    }
+    return next;
   }
 
   async paymentError(uid, plan, error) {
@@ -591,6 +625,30 @@ export class HubDO extends DurableObject {
     this.bump("payments");
     this.bump("revenue", Math.round(Number(amount) || 0));
     return true;
+  }
+
+  /** Активация не удалась — платёж снова ждёт подтверждения (повтор вебхука, опрос банка) */
+  async unmarkPaymentDone(op) {
+    const row = this.one("SELECT amount FROM payments WHERE op = ? AND done = 1", op);
+    if (!row) return;
+    this.sql.exec("UPDATE payments SET done = 0, status = 'link', updated_at = ? WHERE op = ?", Date.now(), op);
+    this.bump("payments", -1);
+    this.bump("revenue", -Math.round(Number(row.amount) || 0));
+  }
+
+  /** Уведомление админам об оплате: кто, что, сколько; при сбое активации — с текстом ошибки */
+  async paymentNotice(uid, plan, amount, op, error = null) {
+    if (error) {
+      // О сбое по одному платежу пишем один раз, а не на каждой повторной проверке
+      if (this.one("SELECT error FROM payments WHERE op = ?", op)?.error) return;
+      this.sql.exec("UPDATE payments SET error = ? WHERE op = ?", String(error).slice(0, 800), op);
+    }
+    const u = this.one("SELECT name, username FROM users WHERE uid = ?", String(uid)) || {};
+    const who = `${esc(u.name || "—")}${u.username ? ` @${esc(u.username)}` : ""} (uid ${esc(uid)})`;
+    const text = error
+      ? `⚠️ <b>Оплата получена, но доступ не включился</b>\n${who}\nТариф: ${esc(productLabel(plan))} · ${fmtRub(amount)} ₽\nОшибка: ${esc(error).slice(0, 400)}\nПовторим автоматически; если не пройдёт — выдайте доступ вручную.`
+      : `💰 <b>Новая оплата: ${fmtRub(amount)} ₽</b>\n${who}\nТариф: ${esc(productLabel(plan))}`;
+    await this.notifyAdmin(text, error ? "payment_error" : "payment", { kb: [[{ text: "Карточка", url: this.adminUrl(`/users/${uid}`) }]] });
   }
 
   /** Подарок/компенсация от админа — строка в истории платежей с суммой 0 */
@@ -846,6 +904,12 @@ export class HubDO extends DurableObject {
     } catch (e) {
       console.error("backfillStep", e);
     }
+    let payAt = null;
+    try {
+      payAt = await this.paymentPollStep();
+    } catch (e) {
+      console.error("paymentPollStep", e);
+    }
     try {
       await this.flushNewUsers();
     } catch (e) {
@@ -859,6 +923,7 @@ export class HubDO extends DurableObject {
       const t = w.start + HOUR;
       if (!next || t < next) next = Math.max(t, Date.now() + 1000);
     }
+    if (payAt && (!next || payAt < next)) next = Math.max(payAt, Date.now() + 1000);
     if (next) await this.ctx.storage.setAlarm(next);
   }
 

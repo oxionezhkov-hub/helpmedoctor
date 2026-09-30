@@ -7,7 +7,8 @@ import { PACKS, PLANS, TRIAL, productLabel } from "./config.js";
 import { bearer, createSession, loginLinks, newLoginCode, randomToken, readSignedData, signData, verifyInitData, verifySession } from "./lib/auth.js";
 import { authorizeUrl, enabledProviders, fetchIdentity, isTelegramUid, newWebUid, PROVIDERS, redirectUri } from "./lib/oauth.js";
 import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
-import { createPayment, createSubscription, fetchPayment, isPaidStatus, planFromPurpose, webhookOperationId } from "./lib/tochka.js";
+import { createPayment, createSubscription, webhookOperationId } from "./lib/tochka.js";
+import { confirmPayment } from "./lib/payments.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 import { adminApi } from "./admin-api.js";
 import { faceSvg } from "./lib/face.js";
@@ -95,33 +96,11 @@ async function paymentCallback(request, env) {
   const raw = await request.text();
   const op = webhookOperationId(raw);
   if (!op) return new Response("bad payload", { status: 400 });
-  const hub = hubStub(env);
-  const known = await hub.getPayment(op);
-  // Статус и сумму берём из API Точки, а не из тела вебхука
-  const pay = await fetchPayment(env, op).catch((e) => {
+  try {
+    await confirmPayment(env, hubStub(env), op);
+  } catch (e) {
     console.error("tochka status", e);
-    return null;
-  });
-  if (!pay) return new Response("retry", { status: 503 });
-  if (!isPaidStatus(pay.status)) return new Response("OK");
-  let uid = known?.uid || pay.consumerId || (/uid(w?\d+)/.exec(pay.purpose) || [])[1];
-  // Оплата веб-аккаунта, который потом склеили с Telegram
-  if (uid && !isTelegramUid(uid)) uid = (await hub.aliasGet(uid)) || uid;
-  const plan = known?.plan || planFromPurpose(pay.purpose);
-  if (!uid || !(PLANS[plan] || PACKS[plan] || plan === TRIAL.key)) {
-    console.error("payment without uid/plan", op, pay);
-    return new Response("OK");
-  }
-  if (!known) {
-    // Уведомление о нашем же автосписании (charge) — продление уже учтено в HubDO.chargeDueSubs
-    const ap = await hub.autopayGet(uid);
-    if (ap?.last_charge_at && Date.now() - ap.last_charge_at < 2 * 86400000 && ap.plan === plan) return new Response("OK");
-    await hub.savePayment(op, uid, plan);
-  }
-  const amount = pay.amount || known?.amount;
-  if (await hub.markPaymentDone(op, amount)) {
-    await userStub(env, uid, "system").activateSubscription(plan, op, amount);
-    await hub.notifyAdmin(`💰 Новая оплата\nuid: ${uid}\nТариф: ${productLabel(plan)}\nСумма: ${amount} ₽`, "payment");
+    return new Response("retry", { status: 503 });
   }
   return new Response("OK");
 }
@@ -341,6 +320,18 @@ async function api(request, env, url) {
       if (payment.operationId) await hubStub(env).savePayment(payment.operationId, uid, plan, price);
       await user.trackEvent("pay_link", { plan, op: payment.operationId });
       return json({ link: payment.link });
+    }
+    if (path === "/pay/check" && method === "POST") {
+      // Приложение спрашивает сразу после возврата с оплаты, не дожидаясь вебхука банка
+      const hub = hubStub(env);
+      let activated = null;
+      let pending = 0;
+      for (const op of await hub.pendingPayments(uid)) {
+        const r = await confirmPayment(env, hub, op).catch((e) => (console.error("pay check", op, e), { status: "pending" }));
+        if (r.activated) activated = r.plan;
+        else if (r.status === "pending") pending++;
+      }
+      return json({ activated, pending });
     }
 
     let m = path.match(/^\/patients\/([\w-]+)(?:\/(\w+))?$/);
