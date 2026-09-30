@@ -445,6 +445,7 @@ await fetch(`${MOCK}/tochka-pay?op=${holdOp}`);
 r = await api(t2, "POST", "/pay/check");
 assert.equal(r.data.activated, "freeze", "после оплаты проверка сразу включает покупку");
 assert.equal((await api(t2, "GET", "/me")).data.profile.streak_freezes, 2);
+await waitFor(() => ["1326867567", "1062804986"].every((id) => sent(id).some((m) => m.text.includes("Новая оплата") && m.text.includes(`uid ${P2}`))), "уведомление об оплате обоим админам");
 assert.equal((await api(t2, "POST", "/pay/check")).data.pending, 0, "повторно не активируется");
 await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: holdOp }) });
 assert.equal((await api(t2, "GET", "/me")).data.profile.streak_freezes, 2, "поздний вебхук не дублирует покупку");

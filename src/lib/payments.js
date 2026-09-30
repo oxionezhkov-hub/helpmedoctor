@@ -1,6 +1,6 @@
 // Подтверждение оплаты Точки: общий путь для вебхука банка, проверки из приложения и опроса HubDO.
 // Статус и сумму всегда берём из API Точки; активация идемпотентна (HubDO.markPaymentDone).
-import { PACKS, PLANS, TRIAL, productLabel } from "../config.js";
+import { PACKS, PLANS, TRIAL } from "../config.js";
 import { fetchPayment, isPaidStatus, planFromPurpose } from "./tochka.js";
 import { isTelegramUid } from "./oauth.js";
 
@@ -33,9 +33,18 @@ export async function confirmPayment(env, hub, op) {
     await hub.savePayment(op, uid, plan);
   }
   const amount = pay.amount || known?.amount;
+  // Сначала «захватываем» платёж (защита от двойной активации при одновременных вебхуке и опросе),
+  // при сбое активации — отпускаем, чтобы следующая проверка или повтор вебхука включили доступ
   if (!(await hub.markPaymentDone(op, amount))) return { status: "paid", activated: false };
-  const res = await env.USER.get(env.USER.idFromName(String(uid))).rpc("activateSubscription", [plan, op, amount], "system");
-  if (res?.userError) console.error("activateSubscription", op, res.userError);
-  await hub.notifyAdmin(`💰 Новая оплата\nuid: ${uid}\nТариф: ${productLabel(plan)}\nСумма: ${amount} ₽`, "payment");
+  try {
+    const res = await env.USER.get(env.USER.idFromName(String(uid))).rpc("activateSubscription", [plan, op, amount], "system");
+    if (res?.userError) throw new Error(res.userError.message || "userError");
+  } catch (e) {
+    console.error("activateSubscription", op, e);
+    await hub.unmarkPaymentDone(op);
+    await hub.paymentNotice(uid, plan, amount, op, String(e?.message || e)).catch(() => {});
+    throw e;
+  }
+  await hub.paymentNotice(uid, plan, amount, op);
   return { status: "paid", activated: true, plan };
 }

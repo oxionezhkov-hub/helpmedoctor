@@ -627,6 +627,30 @@ export class HubDO extends DurableObject {
     return true;
   }
 
+  /** Активация не удалась — платёж снова ждёт подтверждения (повтор вебхука, опрос банка) */
+  async unmarkPaymentDone(op) {
+    const row = this.one("SELECT amount FROM payments WHERE op = ? AND done = 1", op);
+    if (!row) return;
+    this.sql.exec("UPDATE payments SET done = 0, status = 'link', updated_at = ? WHERE op = ?", Date.now(), op);
+    this.bump("payments", -1);
+    this.bump("revenue", -Math.round(Number(row.amount) || 0));
+  }
+
+  /** Уведомление админам об оплате: кто, что, сколько; при сбое активации — с текстом ошибки */
+  async paymentNotice(uid, plan, amount, op, error = null) {
+    if (error) {
+      // О сбое по одному платежу пишем один раз, а не на каждой повторной проверке
+      if (this.one("SELECT error FROM payments WHERE op = ?", op)?.error) return;
+      this.sql.exec("UPDATE payments SET error = ? WHERE op = ?", String(error).slice(0, 800), op);
+    }
+    const u = this.one("SELECT name, username FROM users WHERE uid = ?", String(uid)) || {};
+    const who = `${esc(u.name || "—")}${u.username ? ` @${esc(u.username)}` : ""} (uid ${esc(uid)})`;
+    const text = error
+      ? `⚠️ <b>Оплата получена, но доступ не включился</b>\n${who}\nТариф: ${esc(productLabel(plan))} · ${fmtRub(amount)} ₽\nОшибка: ${esc(error).slice(0, 400)}\nПовторим автоматически; если не пройдёт — выдайте доступ вручную.`
+      : `💰 <b>Новая оплата: ${fmtRub(amount)} ₽</b>\n${who}\nТариф: ${esc(productLabel(plan))}`;
+    await this.notifyAdmin(text, error ? "payment_error" : "payment", { kb: [[{ text: "Карточка", url: this.adminUrl(`/users/${uid}`) }]] });
+  }
+
   /** Подарок/компенсация от админа — строка в истории платежей с суммой 0 */
   recordGift(uid, days, admin, reason) {
     const now = Date.now();
