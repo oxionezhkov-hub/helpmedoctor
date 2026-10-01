@@ -273,9 +273,12 @@ await press(U, `qa_${patId}_0_0`);
 await waitFor(() => tgCalls().some((c) => c.method === "editMessageText" && c.text?.includes("Верно")), "quiz feedback");
 r = await api(webToken, "POST", `/quiz/${patId}/answer`, { index: 1, chosen: 2 });
 assert.equal(r.data.is_correct, false);
+assert.ok(r.data.why_chosen.includes("МРТ"), "объяснение, почему выбранный неверный вариант не подходит");
+assert.ok((await api(webToken, "GET", `/quiz/${patId}`)).data.quiz.questions[1].why_chosen, "и в состоянии теста");
+assert.equal((await api(webToken, "GET", `/quiz/${patId}`)).data.quiz.questions[0].why_chosen, "", "для верного ответа — пусто");
 r = await api(webToken, "POST", `/quiz/${patId}/answer`, { index: 1, chosen: 0 });
 assert.equal(r.data.stale, true, "повторный ответ на тот же вопрос игнорируется");
-step("тест: вопросы в боте и на сайте — общий прогресс, без двойных ответов");
+step("тест: вопросы в боте и на сайте — общий прогресс, без двойных ответов, разбор неверного варианта");
 
 // ---------------------------------------------------------------- отзыв
 await press(U, "fb");

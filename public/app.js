@@ -2146,7 +2146,7 @@ async function viewQuiz(fresh) {
         return html`<button class="quiz-opt ${cls}" data-opt="${k}" ${ans ? "disabled" : ""}>${["А", "Б", "В", "Г"][k]}. ${o}</button>`;
       })}</div>
       ${ans ? html`<div class="card flat" style="background:${ans.is_correct ? "var(--ok-soft)" : "var(--danger-soft)"}">
-        <b class="row-c">${ic(ans.is_correct ? "checkCircle" : "xCircle", ans.is_correct ? "c-ok" : "c-danger")}${ans.is_correct ? "Верно!" : `Неверно. Правильно: ${q.options[ans.correct]}`}</b><div class="quiz-expl" style="margin-top:6px">${ans.explanation || ""}</div></div>
+        <b class="row-c">${ic(ans.is_correct ? "checkCircle" : "xCircle", ans.is_correct ? "c-ok" : "c-danger")}${ans.is_correct ? "Верно!" : `Неверно. Правильно: ${q.options[ans.correct]}`}</b>${whyNot(q, ans.chosen, ans.why_chosen)}<div class="quiz-expl" style="margin-top:6px">${ans.explanation || ""}</div></div>
         <button class="btn lg block" id="quiz-next">${ans.done ? "Результат" : "Следующий вопрос"}</button>` : ""}
     </div>
   </div>`);
@@ -2162,7 +2162,7 @@ async function viewQuiz(fresh) {
         quizState.answer = null;
       } else {
         haptic(res.is_correct ? "success" : "error");
-        quizState.answer = { chosen: Number(b.dataset.opt), correct: res.correct, is_correct: res.is_correct, explanation: res.explanation, done: res.done, res };
+        quizState.answer = { chosen: Number(b.dataset.opt), correct: res.correct, is_correct: res.is_correct, explanation: res.explanation, why_chosen: res.why_chosen, done: res.done, res };
       }
     } catch (e) {
       toast(e.message, "error");
@@ -2214,7 +2214,7 @@ function renderQuizResult() {
     </div>
     ${quiz.questions.map((q, k) => html`<div class="card stack-sm">
       <div class="small fact">${ic(q.chosen === q.correct ? "checkCircle" : "xCircle", q.chosen === q.correct ? "c-ok" : "c-danger")}<b>${k + 1}. ${q.text}</b></div>
-      ${q.chosen !== q.correct ? html`<div class="small">Правильно: <b>${q.options[q.correct]}</b></div>` : ""}
+      ${q.chosen !== q.correct ? html`<div class="small">Правильно: <b>${q.options[q.correct]}</b></div>${whyNot(q, q.chosen, q.why_chosen)}` : ""}
       <div class="small fact">${ic("bulb", "c-warn")}<span>${q.explanation || ""}</span></div>
     </div>`)}
     ${quiz.kr ? html`<a class="guide-kr small" href="${quiz.kr.url}" target="_blank" rel="noopener">${ic("book")}<span>Перечитать КР «${quiz.kr.name}»</span>${ic("external")}</a>` : ""}
@@ -3118,6 +3118,12 @@ const PREMIUM_PERKS = [
 // Документы: публичная оферта и политика обработки персональных данных (статичные страницы сайта)
 const DOCS = { offer: "/oferta/", privacy: "/privacy/" };
 const docLink = (key, text) => html`<a href="${DOCS[key]}" target="_blank" rel="noopener">${text}</a>`;
+
+/** Почему выбранный неверный вариант не подходит (в новых тестах) */
+function whyNot(q, chosen, why) {
+  if (!why || chosen == null || !q.options[chosen]) return "";
+  return html`<div class="quiz-why small" style="margin-top:6px"><b>Почему не «${q.options[chosen]}»:</b> ${why}</div>`;
+}
 
 function viewPlans(fresh) {
   const p = S.me.profile;

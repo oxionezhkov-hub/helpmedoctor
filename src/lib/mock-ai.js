@@ -69,7 +69,7 @@ const mockImpl = {
       } };
     }
     if (prompt.includes("работа над ошибками")) {
-      return { response: { questions: Array.from({ length: 5 }, (_, i) => ({ text: `Вопрос ${i + 1}: что первым при подозрении на язву?`, options: ["ФГДС", "КТ", "МРТ", "ЭКГ"], correct: 0, topic: i < 2 ? "treatment" : "diagnostics", explanation: "По КР «Язвенная болезнь» ФГДС — метод выбора." })) } };
+      return { response: { questions: Array.from({ length: 5 }, (_, i) => ({ text: `Вопрос ${i + 1}: что первым при подозрении на язву?`, options: ["ФГДС", "КТ", "МРТ", "ЭКГ"], correct: 0, topic: i < 2 ? "treatment" : "diagnostics", explanation: "По КР «Язвенная болезнь» ФГДС — метод выбора.", why_wrong: ["", "КТ не показывает слизистую и не даёт биопсию.", "МРТ не нужна для диагностики язвы.", "ЭКГ — для исключения ИМ, язву не подтверждает."] })) } };
     }
     if (prompt.includes("клинических разделов")) return { response: { sections: ["Желтуха новорождённых", "недоношенность", "родовая травма"] } };
     if (prompt.includes("Сожми диалог")) return { response: "Пациент жалуется на боли в эпигастрии." };

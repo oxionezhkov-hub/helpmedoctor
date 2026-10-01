@@ -279,7 +279,8 @@ export function quizQuestion(quiz, index) {
 export function quizFeedback(quiz, index, res) {
   const q = quiz.questions[index];
   const mark = res.is_correct ? "✅ Верно!" : `❌ Неверно. Правильно: <b>${esc(q.options[res.correct])}</b>`;
-  return `📝 <b>Вопрос ${index + 1}.</b> ${esc(q.text)}\n\n${mark}\n💡 ${esc(res.explanation || "")}`;
+  const why = !res.is_correct && res.why_chosen ? `\n\n🚫 <b>Почему не «${esc(q.options[q.chosen] ?? "")}»:</b> ${esc(res.why_chosen)}` : "";
+  return `📝 <b>Вопрос ${index + 1}.</b> ${esc(q.text)}\n\n${mark}${why}\n\n💡 ${esc(res.explanation || "")}`;
 }
 
 export function quizDone(res) {

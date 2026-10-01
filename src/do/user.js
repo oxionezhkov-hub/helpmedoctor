@@ -1261,6 +1261,7 @@ export class UserDO extends DurableObject {
     if (taskDone) await this.track("task_done", { id: entries[PROFILE].daily_task.id, desc: entries[PROFILE].daily_task.desc, xp: entries[PROFILE].daily_task.xp });
     return {
       is_correct: isCorrect, correct: question.correct, explanation: question.explanation,
+      why_chosen: isCorrect ? "" : question.why_wrong?.[c] || "",
       done, score: q.score, xp: q.xp || 0, task_done: taskDone, quiz: publicQuiz(q),
     };
   }
@@ -2070,7 +2071,9 @@ function normalizeQuestion(q) {
   const correct = Number(q.correct);
   if (!(correct >= 0 && correct < options.length)) return null;
   const topic = ["treatment", "diagnostics", "error"].includes(q.topic) ? q.topic : null;
-  return { text: clampStr(q.text, 500), options, correct, explanation: clampStr(q.explanation, 1000), ...(topic ? { topic } : {}) };
+  // Почему каждый неверный вариант не подходит — показываем после ответа, если выбран именно он
+  const why = Array.isArray(q.why_wrong) ? options.map((_, i) => (i === correct ? "" : clampStr(String(q.why_wrong[i] || ""), 400))) : null;
+  return { text: clampStr(q.text, 500), options, correct, explanation: clampStr(q.explanation, 1000), ...(why?.some(Boolean) ? { why_wrong: why } : {}), ...(topic ? { topic } : {}) };
 }
 
 /** Приводим старых пациентов из KV к новому формату */
@@ -2230,7 +2233,10 @@ export function publicQuiz(q) {
       options: qq.options,
       topic: qq.topic || null,
       // Правильный ответ и объяснение — только для уже отвеченных вопросов
-      ...(i < answered || q.status === "done" ? { correct: qq.correct, explanation: qq.explanation, chosen: q.answers[i]?.chosen } : {}),
+      ...(i < answered || q.status === "done" ? {
+        correct: qq.correct, explanation: qq.explanation, chosen: q.answers[i]?.chosen,
+        why_chosen: q.answers[i] && !q.answers[i].is_correct ? qq.why_wrong?.[q.answers[i].chosen] || "" : "",
+      } : {}),
     })),
     xp: q.xp || 0,
   };
