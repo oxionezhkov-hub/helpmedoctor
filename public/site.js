@@ -119,7 +119,13 @@
     const demoEl = $("[data-demo]");
     let heroOut = false, finalIn = false, demoIn = false;
     // Пока на экране демо — своя кнопка у демо, липкая не нужна (и не закрывает варианты ответа)
-    const upd = () => sticky.classList.toggle("show", heroOut && !finalIn && !demoIn);
+    // Класс на body (а не :has() в CSS — старые браузеры его не знают): плавающий пациент и cookie поднимаются над полосой
+    const upd = () => {
+      const on = heroOut && !finalIn && !demoIn;
+      sticky.classList.toggle("show", on);
+      document.body.classList.toggle("sticky-on", on);
+      if (on) document.body.style.setProperty("--sticky-h", `${sticky.offsetHeight}px`);
+    };
     const io = new IntersectionObserver((es) => es.forEach((e) => {
       if (e.target === hero) heroOut = !e.isIntersecting && e.boundingClientRect.top < 0;
       if (e.target === final) finalIn = e.isIntersecting;
@@ -254,7 +260,7 @@
       if (bub) bub.textContent = `Ждёт ещё ${mmss(left)}`;
       if (left <= 0) refuse("timeout");
     };
-    const startTimer = () => { if (!tick) tick = setInterval(render, 1000); render(); };
+    const startTimer = () => { el?.classList.remove("mini"); if (!tick) tick = setInterval(render, 1000); render(); };
     const open = () => {
       if (done) return;
       if (pst.st !== "open") { pst = { st: "open", i: pst.i, until: Date.now() + WAIT_MS }; saveP(pst); }
@@ -293,6 +299,8 @@
     const show = () => {
       el = mountPatient(P0, "wait");
       el.addEventListener("click", open);
+      // Через 8 с от пациента остаётся только аватар — плашка не закрывает текст страницы; по наведению — снова видна
+      setTimeout(() => { if (pst.st !== "open") el?.classList.add("mini"); }, 8000);
       if (pst.st === "open") startTimer();
       else goal("patient_show", { page });
     };

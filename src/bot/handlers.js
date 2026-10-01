@@ -288,7 +288,8 @@ async function sendConsultationStart(ctx, start) {
   if (start.paused_other) await bot.send(uid, "⏸ Предыдущий приём поставлен на паузу — к нему можно вернуться в любой момент.");
   await bot.send(uid, R.consultationHeader(start));
   const opening = start.last_patient_message || start.patient.opening_phrase;
-  if (opening) await bot.send(uid, R.patientMsg(start.patient.name, opening), R.kbActions());
+  const firstVisit = start.is_new_consultation && start.consultation_number === 1;
+  if (opening) await bot.send(uid, `${R.patientMsg(start.patient.name, opening)}${firstVisit ? `\n\n${R.ASK_HINT}` : ""}`, R.kbActions());
 }
 
 // ---------------------------------------------------
@@ -448,7 +449,14 @@ async function onCallback(ctx, cb) {
   }
   const patId = active.id;
 
-  if (data === "act") return bot.editKeyboard(uid, mid, R.kbActionsMenu());
+  if (data === "act") {
+    await bot.editKeyboard(uid, mid, R.kbActionsMenu());
+    // Ещё ни одного вопроса в этом приёме — напоминаем, что расспрашивать можно просто сообщением
+    const since = active.current?.started_at || 0;
+    const asked = (active.conversation_history || []).some((m) => m.role === "doctor" && m.ts >= since);
+    if (!asked && !(active.current?.tests || []).length && !(active.current?.physicals || []).length) await bot.send(uid, R.ACT_HINT);
+    return;
+  }
   if (data === "act_close") return bot.editKeyboard(uid, mid, R.kbActions());
   if (data === "act_test") return bot.editKeyboard(uid, mid, R.kbTests());
   if (data === "act_phys") return bot.editKeyboard(uid, mid, R.kbPhysical());

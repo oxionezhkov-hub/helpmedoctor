@@ -43,10 +43,11 @@ export async function adminApi(request, env, url, ctx) {
     return json({ code, ...loginLinks(env, code) });
   }
   if (path === "/auth/poll" && method === "GET") {
-    const res = await hub.pollLogin(url.searchParams.get("code") || "");
+    // cn — nonce вкладки, начавшей вход через Google (без него код такого входа не забрать)
+    const res = await hub.pollLogin(url.searchParams.get("code") || "", { owner: url.searchParams.get("cn") || null });
     if (res.status !== "ok") return json({ status: res.status });
-    if (!adminIds(env).includes(String(res.uid))) return json({ status: "forbidden", error: "Этот Telegram-аккаунт не админ" }, 403);
-    await hub.admin("audit", { action: "login", details: { via: "link" } }, res.uid);
+    if (!adminIds(env).includes(String(res.uid))) return json({ status: "forbidden", error: "Этот аккаунт не админ" }, 403);
+    await hub.admin("audit", { action: "login", details: { via: url.searchParams.get("cn") ? "google" : "link" } }, res.uid);
     return json({ status: "ok", token: await createSession(env, res.uid, { scope: "admin", ttl: ADMIN_SESSION_TTL_MS }), me: adminMe(env, res.uid) });
   }
 

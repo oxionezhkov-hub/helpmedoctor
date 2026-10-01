@@ -3,7 +3,7 @@
 // Telegram-бот + веб-приложение (/app) на общих данных (Durable Objects)
 // =====================================================
 import { vapidKeys } from "./lib/webpush.js";
-import { PACKS, PLANS, TRIAL, productLabel } from "./config.js";
+import { PACKS, PLANS, TRIAL, adminIds, productLabel } from "./config.js";
 import { bearer, createSession, loginLinks, newLoginCode, randomToken, readSignedData, signData, verifyInitData, verifySession } from "./lib/auth.js";
 import { authorizeUrl, enabledProviders, fetchIdentity, isTelegramUid, newWebUid, PROVIDERS, redirectUri } from "./lib/oauth.js";
 import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
@@ -185,7 +185,8 @@ async function api(request, env, url) {
       if (!owner) return json({ error: "Нужно войти", code: "auth" }, 401);
     }
     const nonce = randomToken(16);
-    const state = await signData(env, { p: provider, m: mode === "link" ? "link" : "login", u: owner, n: nonce, c: String(cn).replace(/[^\w-]/g, "").slice(0, 40), r: String(from).replace(/[^\w-]/g, "").slice(0, 40), exp: Date.now() + 10 * 60000 });
+    // mode "admin" — вход в админку: только существующий аккаунт, привязанный к Telegram админа (см. oauthCallback)
+    const state = await signData(env, { p: provider, m: mode === "link" ? "link" : mode === "admin" ? "admin" : "login", u: owner, n: nonce, c: String(cn).replace(/[^\w-]/g, "").slice(0, 40), r: String(from).replace(/[^\w-]/g, "").slice(0, 40), exp: Date.now() + 10 * 60000 });
     const secure = siteOrigin(request, env).startsWith("https:") ? "; Secure" : "";
     return json({ url: authorizeUrl(env, provider, state, redirectUri(provider, siteOrigin(request, env))) }, 200, {
       "Set-Cookie": `${OAUTH_COOKIE}=${nonce}; Path=/api/auth/oauth/; Max-Age=600; HttpOnly; SameSite=Lax${secure}`,
@@ -458,6 +459,20 @@ async function oauthCallback(request, env, url, provider) {
   }
   const hub = hubStub(env);
   const meta = { email: id.email, name: id.name };
+
+  if (st.m === "admin") {
+    // Вход в админку: новый аккаунт не заводим; Google должен быть привязан к Telegram-аккаунту админа
+    const toAdmin = (query) => new Response(null, { status: 302, headers: { Location: `/admin/?${query}`, "Cache-Control": "no-store", "Set-Cookie": `${OAUTH_COOKIE}=; Path=/api/auth/oauth/; Max-Age=0; HttpOnly; SameSite=Lax` } });
+    const found = (await hub.identityGet(provider, id.sub))?.uid;
+    if (!found) return toAdmin("auth_error=noaccount");
+    const tgUid = isTelegramUid(found) ? found : (await hub.aliasGet(found)) || found;
+    if (!adminIds(env).includes(String(tgUid))) return toAdmin("auth_error=forbidden");
+    if (!st.c) return toAdmin("auth_error=state");
+    const lc = newLoginCode();
+    await hub.createLogin(lc, { purpose: "oauth", owner: st.c });
+    await hub.confirmLogin(lc, tgUid, "oauth");
+    return toAdmin(`login=${encodeURIComponent(lc)}`);
+  }
 
   if (st.m === "link") {
     if (!st.u) return back("auth_error=state");

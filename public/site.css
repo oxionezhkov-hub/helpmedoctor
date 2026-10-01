@@ -637,7 +637,9 @@ body[data-page="home"] .hero .wrap { width: 100%; }
 .patient.sad img { width: 56px; height: 56px; filter: grayscale(.6); opacity: .9; border-color: var(--rule-2); }
 .patient.sad .bubble { margin-bottom: 30px; font-size: 13px; color: var(--ink-2); max-width: 190px; transition: opacity .6s; }
 .patient.sad.quiet .bubble { opacity: 0; }
-body:has(.sticky-cta.show) .patient { bottom: calc(80px + env(safe-area-inset-bottom)); }
+.patient .bubble { transition: opacity .4s, transform .4s; transform-origin: left bottom; }
+.patient.mini:not(:hover):not(:focus-visible) .bubble { opacity: 0; transform: scale(.85); pointer-events: none; }
+body.sticky-on .patient { bottom: calc(var(--sticky-h, 64px) + 12px); }
 @media (max-width: 600px) { .patient img { width: 62px; height: 62px; } .patient .bubble { max-width: 150px; font-size: 13px; margin-bottom: 36px; } }
 @media (prefers-reduced-motion: reduce) { .patient { transition: none; } .patient.in:not(.sad) img { animation: none; } }
 .pt-in { padding: 28px 26px 22px; position: relative; }
@@ -675,7 +677,7 @@ body:has(.sticky-cta.show) .patient { bottom: calc(80px + env(safe-area-inset-bo
 .cookie p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
 .cookie a { color: var(--accent); }
 .cookie .btn { min-height: 40px; padding: 0 16px; flex: none; }
-body:has(.sticky-cta.show) .cookie { bottom: calc(80px + env(safe-area-inset-bottom)); }
+body.sticky-on .cookie { bottom: calc(var(--sticky-h, 64px) + 12px); }
 @media (max-width: 600px) { .cookie { left: 12px; right: 12px; max-width: none; } }
 @keyframes cookie-in { from { opacity: 0; transform: translateY(12px); } }
 @media (prefers-reduced-motion: reduce) { .cookie { animation: none; } }
