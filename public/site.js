@@ -21,6 +21,19 @@
     if (a) goal("cta_app", { from: new URL(a.href, location.href).searchParams.get("from") || page });
   });
 
+  // ---------- Откуда пришёл посетитель (первое касание) и последняя страница перед переходом в приложение ----------
+  // Сохраняем один раз: внешний сайт-источник (поисковик, соцсеть, другой сайт), страница входа и UTM / yclid.
+  // Приложение (тот же домен) отправит это при регистрации — в админке видно канал и статью, с которой пришёл человек.
+  if (!ls.get("hmd_src")) {
+    let host = "";
+    try { host = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : ""; } catch {}
+    if (/(^|\.)helpmedoctor\.ru$|workers\.dev$/.test(host)) host = "";
+    const qp = new URLSearchParams(location.search);
+    const utm = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "yclid"].filter((k) => qp.get(k)).map((k) => `${k.replace("utm_", "")}=${qp.get(k).slice(0, 60)}`).join("&");
+    ls.set("hmd_src", JSON.stringify({ r: host, l: location.pathname, u: utm, at: Date.now() }));
+  }
+  ls.set("hmd_last_page", location.pathname);
+
   // ---------- Личная ссылка партнёра: ?ref=r_<код> запоминаем на 30 дней — приложение передаст её при регистрации ----------
   const refParam = new URLSearchParams(location.search).get("ref") || "";
   if (/^r_[a-z0-9]{4,12}$/i.test(refParam)) {

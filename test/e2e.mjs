@@ -461,9 +461,10 @@ step("оплата подтверждается сразу: проверка и�
 const nowTs = Date.now(), per = { from: nowTs - 30 * 86400000, to: nowTs + 60000 };
 const dash = await aq("dashboard", per);
 assert.ok(dash.tiles && dash.funnel?.steps?.length >= 3, JSON.stringify(dash).slice(0, 300));
-for (const name of ["retention", "consultations", "quality", "procedures", "specialties", "quizzes", "gamification", "money", "ai", "channels", "heatmap", "errors"]) {
+for (const name of ["retention", "consultations", "quality", "procedures", "specialties", "quizzes", "gamification", "money", "ai", "sources", "channels", "heatmap", "errors"]) {
   await aq("report", { name, ...per });
 }
+assert.equal((await aq("report", { name: "metrika", ...per })).configured, false, "без токена Метрика честно не подключена");
 const aiRep = await aq("report", { name: "ai", ...per });
 assert.ok(JSON.stringify(aiRep).includes("neurons"), "расход ИИ в нейронах");
 const list = await aq("users", { filter: { q: "777" }, sort: "last_active", limit: 10 });
@@ -657,6 +658,19 @@ assert.deepEqual((await api(null, "GET", "/config")).data.providers, ["google", 
 assert.equal((await oauth("google", { cookie: false })).searchParams.get("auth_error"), "state", "без cookie — отказ (CSRF)");
 const g1 = await oauthLogin("google", "test:g-anna:anna@example.com:Анна");
 let gme = (await api(g1, "GET", "/me")).data;
+// Откуда пришёл: первое касание на сайте записывается один раз, канал определяется по сайту-источнику
+assert.equal((await api(g1, "POST", "/attribution", { r: "yandex.ru", l: "/blog/troponin/", p: "/blog/oak/", u: "", cid: "1759312345678901234" })).data.ok, true);
+await api(g1, "POST", "/attribution", { r: "vk.com", l: "/", p: "/", u: "" });
+{
+  const card = (await adm(admTok, "GET", `/user/${gme.profile.uid}`)).data;
+  const src = card.view.profile.src;
+  assert.equal(src.channel, "Поиск: Яндекс", JSON.stringify(src));
+  assert.equal(src.land, "/blog/troponin/");
+  assert.equal(src.last, "/blog/oak/");
+  assert.equal(src.cid, "1759312345678901234");
+  const srcRep = await aq("report", { name: "sources", from: Date.now() - 86400000, to: Date.now() + 60000 });
+  assert.ok(srcRep.channels.some((c) => c.key === "Поиск: Яндекс") && srcRep.pages.some((p) => p.key === "/blog/troponin/"), JSON.stringify(srcRep));
+}
 assert.match(gme.profile.uid, /^w\d{12}$/);
 assert.equal(gme.profile.name, "Анна");
 const W1 = gme.profile.uid;

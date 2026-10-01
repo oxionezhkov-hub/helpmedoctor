@@ -151,7 +151,8 @@ export async function viewUsers(el, ctx) {
       { key: "lvl", label: "Уровень" }, { key: "xp", label: "XP" }, { key: "streak", label: "Стрик" }, { key: "cons", label: "Приёмов" },
       { key: "avg_rating", label: "Средняя оценка" }, { key: "quizzes", label: "Тестов" }, { label: "Подписка до", value: (u) => (u.sub_until === -1 ? "навсегда" : u.sub_until ? fDT(u.sub_until) : "") },
       { key: "sub_plan", label: "Тариф" }, { key: "paid_total", label: "Оплачено, ₽" }, { key: "about", label: "Анкета: кто" }, { key: "expectations", label: "Анкета: ожидания" },
-      { key: "ref", label: "Откуда пришёл" }, { key: "last_source", label: "Где работает" }, { key: "bot_blocked", label: "Бот заблокирован" },
+      { key: "src_channel", label: "Канал" }, { key: "src_land", label: "Страница входа" }, { key: "src_last", label: "Страница перед регистрацией" }, { key: "src_utm", label: "UTM" },
+      { key: "ref", label: "Кнопка перехода" }, { key: "last_source", label: "Где работает" }, { key: "bot_blocked", label: "Бот заблокирован" },
     ], all.rows);
   });
 }
@@ -232,7 +233,7 @@ const TAB_RENDER = {
             <dt>Анкета</dt><dd>${p.onboarding_done === false ? html`<span class="badge warn">не пройдена</span>` : p.about || p.expectations ? "заполнена" : "пропущена"}</dd>
             <dt>Специальность</dt><dd>${p.profession || "—"}</dd>
             <dt>Разделы</dt><dd>${(p.specializations || u.specs || []).join(", ") || "—"}</dd>
-            <dt>Откуда пришёл</dt><dd>${p.ref || u.ref ? html`<span class="kbd">${p.ref || u.ref}</span>` : html`<span class="muted">прямой заход</span>`}</dd>
+            <dt>Откуда пришёл</dt><dd>${srcBlock(p.src, p.ref || u.ref)}</dd>
             <dt>Где работает</dt><dd>${SOURCES[u.last_source] || "—"}</dd>
             <dt>Напоминания</dt><dd>${p.notifications === false ? "выключены" : "включены"}</dd>
             <dt>Задание дня</dt><dd>${p.daily_task ? html`${p.daily_task.desc} · ${p.daily_task.done ? "выполнено" : `${p.daily_task.progress || 0}/${p.daily_task.target}`}` : "—"}</dd>
@@ -568,5 +569,20 @@ function consultBlock(c, n) {
       ${f.recommendation ? html`<div class="small"><b>Совет:</b> ${f.recommendation}</div>` : ""}
       ${c.post_story ? html`<div class="small"><b>Что было дальше:</b> ${c.post_story}</div>` : ""}
     </div>` : ""}
+  </div>`;
+}
+
+/** Откуда пришёл: канал (поиск, соцсеть, реклама, сайт), страница входа и последняя перед регистрацией, UTM, метка кнопки */
+const SITE = "https://helpmedoctor.ru";
+function srcBlock(src, ref) {
+  if (!src && !ref) return html`<span class="muted">нет данных (пришёл через бота или до 01.10)</span>`;
+  const page = (path) => (path ? html`<a href="${SITE}${path}" target="_blank" rel="noopener">${path}</a>` : "—");
+  return html`<div class="stack-sm" style="gap:2px">
+    ${src ? html`<div><b>${src.channel}</b>${src.host ? html` <span class="muted small">· ${src.host}</span>` : ""}</div>
+      <div class="small">Первая страница: ${page(src.land)}</div>
+      ${src.last && src.last !== src.land ? html`<div class="small">Перед регистрацией: ${page(src.last)}</div>` : ""}
+      ${src.utm ? html`<div class="small">UTM: <span class="kbd">${src.utm}</span></div>` : ""}
+      ${src.cid ? html`<div class="small muted">ClientID Метрики: <span class="kbd">${src.cid}</span></div>` : ""}` : ""}
+    ${ref ? html`<div class="small">Кнопка: <span class="kbd">${ref}</span></div>` : ""}
   </div>`;
 }

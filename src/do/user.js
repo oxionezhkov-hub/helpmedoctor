@@ -15,6 +15,7 @@ import { aiJson, aiText, aiTextStream, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
 import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
+import { cleanAttribution } from "../lib/attribution.js";
 import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
@@ -1519,7 +1520,7 @@ export class UserDO extends DurableObject {
     const quizzes = prof.test_ids.length ? await this.ctx.storage.get(prof.test_ids.map(quizKey)) : new Map();
     const st = await this.state();
     return {
-      profile: { ...publicProfile(prof), payments: prof.payments || [], daily_patients: prof.daily_patients || [] },
+      profile: { ...publicProfile(prof), payments: prof.payments || [], daily_patients: prof.daily_patients || [], src: prof.src || null },
       state: { active_patient_id: st.active_patient_id, bot_pending: st.bot?.pending || null },
       patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => ({
         ...patientSummary(p), true_diagnosis: p.true_diagnosis,
@@ -1587,6 +1588,17 @@ export class UserDO extends DurableObject {
   }
 
   /** Событие из бота/сайта/воркера (пауза, открыл тарифы, нажал «Оплатить»…) */
+  /** Откуда пришёл (первое касание на сайте): пишем один раз и только для свежей регистрации — иначе это уже не источник */
+  async setAttribution(raw = {}) {
+    const prof = await this.profile();
+    if (prof.src) return { ok: true, kept: true };
+    if (!prof.registered_at || Date.now() - prof.registered_at > 3 * 86400000) return { ok: true, skipped: "old" };
+    prof.src = cleanAttribution(raw);
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.track("attribution", { channel: prof.src.channel, host: prof.src.host, land: prof.src.land, last: prof.src.last, utm: prof.src.utm });
+    return { ok: true };
+  }
+
   async trackEvent(type, meta = {}, opts = {}) {
     await this.track(String(type).slice(0, 40), meta, opts);
     return { ok: true };
@@ -1708,6 +1720,8 @@ export class UserDO extends DurableObject {
       onboarding_done: prof.onboarding_done === false ? 0 : 1, about: prof.about || "", expectations: prof.expectations || "",
       notifications: prof.notifications === false ? 0 : 1, feedback_count: (prof.feedback || []).length,
       blocked: prof.blocked ? 1 : 0, bot_blocked: prof.bot_blocked ? 1 : 0, ref: prof.ref || null,
+      src_channel: prof.src?.channel || (prof.ref?.startsWith("r_") ? "Партнёрская ссылка" : null), src_host: prof.src?.host || null,
+      src_land: prof.src?.land || null, src_last: prof.src?.last || null, src_utm: prof.src?.utm || null, src_cid: prof.src?.cid || null,
       extra_today: prof.extra_patients?.date === today ? prof.extra_patients.n : 0,
     };
   }

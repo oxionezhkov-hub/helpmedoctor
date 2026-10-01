@@ -474,6 +474,7 @@ async function boot() {
   api("POST", "/event", { type: "app_open" }).catch(() => {});
   followIntent();
   resumePaymentWatch();
+  sendAttribution();
 }
 
 /** Цели Яндекс Метрики (счётчик сайта) */
@@ -591,6 +592,7 @@ async function renderLogin() {
         route();
         toast("Вы вошли");
         followIntent();
+        sendAttribution();
       } else if (r.status === "expired") {
         renderLogin();
       }
@@ -620,6 +622,42 @@ function loadMe() {
   if (!meInflight) return fetchMe();
   if (!meQueued) meQueued = meInflight.catch(() => {}).then(() => { meQueued = null; return fetchMe(); });
   return meQueued;
+}
+
+// ---------------------------------------------------
+// Откуда пришёл человек: сайт сохраняет первое касание (hmd_src: внешний источник, страница входа, UTM) и последнюю
+// страницу перед переходом. Отправляем один раз на аккаунт — сервер запишет, только если регистрация свежая.
+// ---------------------------------------------------
+(() => {
+  try {
+    if (localStorage.getItem("hmd_src")) return;
+    let host = "";
+    try { host = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : ""; } catch {}
+    if (/(^|\.)helpmedoctor\.ru$|workers\.dev$/.test(host)) host = "";
+    localStorage.setItem("hmd_src", JSON.stringify({ r: host, l: location.pathname, u: "", at: Date.now() }));
+  } catch {}
+})();
+
+function metrikaClientId() {
+  return new Promise((resolve) => {
+    try {
+      if (!window.ym) return resolve("");
+      const t = setTimeout(() => resolve(""), 1500);
+      window.ym(113057442, "getClientID", (id) => { clearTimeout(t); resolve(String(id || "")); });
+    } catch { resolve(""); }
+  });
+}
+
+async function sendAttribution() {
+  try {
+    const uid = S.me?.profile?.uid;
+    // Мини-приложение в Telegram — человек пришёл через бота, сайт тут ни при чём
+    if (IN_TG || !uid || localStorage.getItem("hmd_src_sent") === String(uid)) return;
+    const src = JSON.parse(localStorage.getItem("hmd_src") || "null") || {};
+    const cid = await metrikaClientId();
+    await api("POST", "/attribution", { r: src.r || "", l: src.l || "", u: src.u || "", p: localStorage.getItem("hmd_last_page") || "", at: src.at || 0, cid });
+    localStorage.setItem("hmd_src_sent", String(uid));
+  } catch {}
 }
 
 // ---------------------------------------------------

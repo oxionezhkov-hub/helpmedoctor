@@ -410,3 +410,16 @@ test("карточка пациента: профиль приёма вмест�
   assert.equal(specialtyOf({ specialization: "урогинекология", specialty: "урология" }), "урология", "свой раздел — профиль от ИИ");
   assert.equal(specialtyOf({ specialization: "урогинекология" }), "урогинекология", "старый пациент без профиля — как было");
 });
+
+test("откуда пришёл: канал по сайту-источнику и UTM", async () => {
+  const { channelOf, cleanAttribution } = await import("../src/lib/attribution.js");
+  assert.equal(channelOf("yandex.ru"), "Поиск: Яндекс");
+  assert.equal(channelOf("www.google.com".replace(/^www\./, "")), "Поиск: Google");
+  assert.equal(channelOf("t.me"), "Telegram");
+  assert.equal(channelOf("dzen.ru"), "Дзен");
+  assert.equal(channelOf("", ""), "Прямой заход");
+  assert.equal(channelOf("example.org"), "Сайт: example.org");
+  assert.equal(channelOf("yandex.ru", "source=vk&medium=cpc"), "UTM: vk / cpc", "UTM важнее сайта-источника");
+  assert.equal(channelOf("", "yclid=123"), "Реклама: Яндекс Директ");
+  assert.equal(cleanAttribution({ r: "YANDEX.RU<script>", l: "/blog/a/\"><b>", cid: "12ab34" }).land, "/blog/a/b");
+});

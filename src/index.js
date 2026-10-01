@@ -300,6 +300,9 @@ async function api(request, env, url) {
     if (path === "/patients/new" && method === "POST") {
       return json(await user.requestNewPatient("web"));
     }
+    if (path === "/attribution" && method === "POST") {
+      return json(await user.setAttribution(await readJson(request)));
+    }
     if (path === "/event" && method === "POST") {
       // Клиентские события: открыл приложение, открыл тарифы
       const { type, meta } = await readJson(request);
