@@ -712,6 +712,21 @@ assert.equal((await api(r.token, "POST", "/auth/link-telegram")).status, 409);
 assert.equal((await api(r.token, "DELETE", "/accounts/google")).status, 200, "с Telegram можно отвязать Google");
 step("привязка Telegram: подтверждение в боте, перенос пациентов, старые сессии и Яндекс ведут в объединённый аккаунт");
 
+// Вход в админку через Google: только аккаунт, привязанный к Telegram админа
+const admUserTok = (await api(null, "POST", "/auth/telegram", { initData: initData("1326867567") })).data.token;
+assert.equal((await oauth("google", { mode: "link", token: admUserTok, code: "test:g-oleg:oleg@example.com:Олег" })).searchParams.get("linked"), "google");
+let aloc = await oauth("google", { mode: "admin", code: "test:g-oleg:oleg@example.com:Олег" });
+assert.equal(aloc.pathname, "/admin/");
+const alc = aloc.searchParams.get("login");
+assert.ok(alc, aloc.toString());
+assert.equal((await adm(null, "GET", `/auth/poll?code=${alc}`)).data.status, "expired", "без nonce вкладки код не отдаётся");
+const ag = await adm(null, "GET", `/auth/poll?code=${alc}&cn=${CN}`);
+assert.equal(ag.data.status, "ok", JSON.stringify(ag.data));
+assert.equal((await adm(ag.data.token, "GET", "/me")).status, 200, "сессия админки через Google работает");
+assert.equal((await oauth("google", { mode: "admin", code: "test:g-nobody:nobody@example.com:Нет" })).searchParams.get("auth_error"), "noaccount", "непривязанный Google не входит и аккаунт не создаётся");
+assert.equal((await oauth("yandex", { mode: "admin", code: "test:y-anna:anna@yandex.ru:Анна" })).searchParams.get("auth_error"), "forbidden", "не-админ не входит");
+step("админка: вход через Google — только привязанный к Telegram админа");
+
 // Веб-аккаунт привязывает Telegram, где уже есть прогресс — прогресс складывается
 const before777 = (await api(webToken, "GET", "/me")).data;
 await api(g2, "PATCH", "/profile", { onboarding_done: true });

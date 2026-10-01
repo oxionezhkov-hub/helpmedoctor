@@ -66,6 +66,7 @@ const ICONS = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   logout: '<path d="M9 21H5V3h4M16 17l5-5-5-5M21 12H9"/>',
   telegram: '<path d="M21 4 3 11l6 2 2 6 3-4 5 4Z"/><path d="m9 13 12-9"/>',
+  google: '<path d="M20.5 12.2a8.5 8.5 0 1 1-2.6-6.1"/><path d="M20.5 12h-8"/>',
   heart: '<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/>',
   card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/>',
   cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',

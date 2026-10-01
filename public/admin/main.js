@@ -35,6 +35,23 @@ async function boot() {
   } else {
     S.token = store(TOKEN_KEY);
   }
+  // Возврат из Google: ?login=<код> (только в этой вкладке — nonce в sessionStorage) или ?auth_error=…
+  const qs = new URLSearchParams(location.search);
+  if (qs.has("login") || qs.has("auth_error")) {
+    history.replaceState(null, "", `${location.pathname}${location.hash || "#/"}`);
+    const err = qs.get("auth_error");
+    if (err) return renderLogin(GOOGLE_ERRORS[err] || "Не удалось войти через Google");
+    let cn = "";
+    try { cn = sessionStorage.getItem("hmd_admin_cn") || ""; sessionStorage.removeItem("hmd_admin_cn"); } catch {}
+    try {
+      const r = await api("GET", `/auth/poll?code=${encodeURIComponent(qs.get("login"))}&cn=${encodeURIComponent(cn)}`);
+      if (r.status !== "ok") return renderLogin("Ссылка входа устарела — попробуйте ещё раз");
+      S.token = r.token;
+      store(TOKEN_KEY, r.token);
+    } catch (e) {
+      return renderLogin(e.status === 403 ? GOOGLE_ERRORS.forbidden : e.message);
+    }
+  }
   if (!S.token) return renderLogin();
   try {
     await loadMe();
@@ -79,16 +96,45 @@ window.addEventListener("admin-logout", () => {
 });
 
 let poll = null;
+const GOOGLE_ERRORS = {
+  noaccount: "Этот Google-аккаунт не привязан к профилю. Войдите в приложение через Telegram и привяжите Google в Профиле → «Аккаунты».",
+  forbidden: "У этого аккаунта нет доступа к админке.",
+  state: "Вход прервался — попробуйте ещё раз.",
+  cancel: "Вход через Google отменён.",
+  provider: "Google не ответил — попробуйте ещё раз.",
+};
+
+/** Вход через Google: тот же OAuth, что на сайте, режим admin; nonce вкладки — в sessionStorage */
+async function googleLogin(b) {
+  b.disabled = true;
+  try {
+    const cn = [...crypto.getRandomValues(new Uint8Array(16))].map((x) => x.toString(16).padStart(2, "0")).join("");
+    try { sessionStorage.setItem("hmd_admin_cn", cn); } catch {}
+    const r = await fetch("/api/auth/oauth/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider: "google", mode: "admin", cn }) });
+    const j = await r.json();
+    if (!r.ok || !j.url) throw new Error(j.error || "Вход через Google недоступен");
+    location.href = j.url;
+  } catch (e) {
+    b.disabled = false;
+    toast(e.message, "error");
+  }
+}
+
 async function renderLogin(err = "") {
   clearInterval(poll);
   app.innerHTML = str(html`<div class="login"><div class="card stack">
     <div class="logo">${ic("heart")}</div>
     <h1>Админка Help me, Doctor</h1>
-    <p class="muted">Доступ только для администраторов. Вход через Telegram.</p>
+    <p class="muted">Доступ только для администраторов.</p>
     ${err ? html`<div class="callout warn">${err}</div>` : ""}
     <a class="btn" id="login-btn">${ic("telegram")}<span>Войти через Telegram</span></a>
     <p class="tiny muted" id="login-hint">Откроется бот — нажмите «Запустить», и админка откроется сама.</p>
+    <button class="btn ghost" id="google-btn" hidden>${ic("google")}<span>Войти через Google</span></button>
   </div></div>`);
+  fetch("/api/config").then((r) => r.json()).then((c) => {
+    const g = $("#google-btn");
+    if (g && (c.providers || []).includes("google")) { g.hidden = false; g.onclick = () => googleLogin(g); }
+  }).catch(() => {});
   let code;
   try {
     const r = await api("POST", "/auth/login");
