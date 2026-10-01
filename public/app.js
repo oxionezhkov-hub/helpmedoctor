@@ -474,6 +474,7 @@ async function boot() {
   api("POST", "/event", { type: "app_open" }).catch(() => {});
   followIntent();
   resumePaymentWatch();
+  sendAttribution();
 }
 
 /** Цели Яндекс Метрики (счётчик сайта) */
@@ -591,6 +592,7 @@ async function renderLogin() {
         route();
         toast("Вы вошли");
         followIntent();
+        sendAttribution();
       } else if (r.status === "expired") {
         renderLogin();
       }
@@ -620,6 +622,42 @@ function loadMe() {
   if (!meInflight) return fetchMe();
   if (!meQueued) meQueued = meInflight.catch(() => {}).then(() => { meQueued = null; return fetchMe(); });
   return meQueued;
+}
+
+// ---------------------------------------------------
+// Откуда пришёл человек: сайт сохраняет первое касание (hmd_src: внешний источник, страница входа, UTM) и последнюю
+// страницу перед переходом. Отправляем один раз на аккаунт — сервер запишет, только если регистрация свежая.
+// ---------------------------------------------------
+(() => {
+  try {
+    if (localStorage.getItem("hmd_src")) return;
+    let host = "";
+    try { host = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : ""; } catch {}
+    if (/(^|\.)helpmedoctor\.ru$|workers\.dev$/.test(host)) host = "";
+    localStorage.setItem("hmd_src", JSON.stringify({ r: host, l: location.pathname, u: "", at: Date.now() }));
+  } catch {}
+})();
+
+function metrikaClientId() {
+  return new Promise((resolve) => {
+    try {
+      if (!window.ym) return resolve("");
+      const t = setTimeout(() => resolve(""), 1500);
+      window.ym(113057442, "getClientID", (id) => { clearTimeout(t); resolve(String(id || "")); });
+    } catch { resolve(""); }
+  });
+}
+
+async function sendAttribution() {
+  try {
+    const uid = S.me?.profile?.uid;
+    // Мини-приложение в Telegram — человек пришёл через бота, сайт тут ни при чём
+    if (IN_TG || !uid || localStorage.getItem("hmd_src_sent") === String(uid)) return;
+    const src = JSON.parse(localStorage.getItem("hmd_src") || "null") || {};
+    const cid = await metrikaClientId();
+    await api("POST", "/attribution", { r: src.r || "", l: src.l || "", u: src.u || "", p: localStorage.getItem("hmd_last_page") || "", at: src.at || 0, cid });
+    localStorage.setItem("hmd_src_sent", String(uid));
+  } catch {}
 }
 
 // ---------------------------------------------------
@@ -761,6 +799,10 @@ function onSync(msg) {
     if (S.route.name === "partner") viewPartner(true);
     return;
   }
+  if (msg.scope === "expert" && msg.patient_id) {
+    onExpertSync(msg);
+    return;
+  }
   if (msg.scope === "guide" && msg.patient_id) {
     if (!msg.pending) refreshGuide(msg.patient_id, msg.error);
     return;
@@ -804,6 +846,7 @@ function parseRoute() {
   if (parts[0] === "consult" && parts[1]) return { name: "consult", params: { id: parts[1] }, q };
   if (parts[0] === "quizzes") return { name: "quizzes", params: {}, q };
   if (parts[0] === "quiz" && parts[1]) return { name: "quiz", params: { id: parts[1] }, q };
+  if (parts[0] === "expert" && parts[1]) return { name: "expert", params: { id: parts[1] }, q };
   if (parts[0] === "profile" && parts[1] === "stats") return { name: "stats", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "settings") return { name: "settings", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "accounts") return { name: "accounts", params: {}, q };
@@ -839,7 +882,7 @@ async function route() {
     if (ROOT_TABS.includes(r.name)) tg.BackButton?.hide();
     else tg.BackButton?.show();
   }
-  if (["patient", "consult"].includes(r.name) && !S.patients.has(r.params.id)) {
+  if (["patient", "consult", "expert"].includes(r.name) && !S.patients.has(r.params.id)) {
     renderShell(html`<div class="page"><div class="skeleton" style="height:140px"></div><div class="skeleton"></div></div>`, r.name !== "consult");
     try {
       await loadPatient(r.params.id);
@@ -857,7 +900,7 @@ async function route() {
 function rerender(fresh = false) {
   const r = S.route;
   if (!S.me) return;
-  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner };
+  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, expert: viewExpert, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner };
   (views[r.name] || viewHome)(fresh);
 }
 
@@ -865,7 +908,7 @@ function renderShell(content, withNav = true) {
   const r = S.route.name;
   const pendingQuizzes = (S.me?.quizzes || []).filter((q) => q.status !== "done").length;
   const queue = (S.me?.patients || []).filter((p) => p.status !== "closed").length;
-  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install", "partner"].includes(r)) ? "active" : ""}">
+  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && ["patient", "expert"].includes(r)) || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install", "partner"].includes(r)) ? "active" : ""}">
     ${ic(ico, "nav-i")}<span>${label}</span>${badge ? html`<span class="dot">${badge}</span>` : ""}</a>`;
   const scrollY = window.scrollY;
   patchRoot(html`${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
@@ -1162,14 +1205,24 @@ function newPatientBlock() {
   }
   if (!p.can_accept) {
     const pack = S.me.offer?.packs?.patients3;
+    const more = (p.bonus_today || 0) < (p.bonus_max || 0);
     return html`<div class="card stack center">
-      <b>Бесплатный пациент на сегодня принят</b>
-      <p class="small muted">Новый — завтра после полуночи (МСК).${p.trial_available ? " Или 7 дней безлимита за 1 ₽." : ""}</p>
+      <b>Бесплатные пациенты на сегодня закончились</b>
+      <p class="small muted">Новые — завтра после полуночи (МСК).${more ? ` Если на одном из ваших приёмов разбор ещё не готов — оценка от ${dec(p.bonus_rating)} даст ещё одного пациента сегодня.` : ""}${p.trial_available ? " Или 7 дней безлимита за 1 ₽." : ""}</p>
       <a class="btn block" href="#/plans" ${p.trial_available ? html`data-checkout="trial"` : ""}>${ic("gem")}<span>${p.trial_available ? "Премиум 7 дней за 1 ₽" : "Безлимитный доступ"}</span></a>
       ${pack ? html`<a class="btn block ghost" href="#/plans" data-checkout="patients3">${ic("plus")}<span>${pack.label.replace(/^\+/, "")} — ${rub(pack.price)} ₽</span></a>` : ""}
     </div>`;
   }
-  return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>`;
+  return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>${freeNote(p)}`;
+}
+
+/** Сколько бесплатных пациентов осталось сегодня и как получить ещё (без премиума) */
+function freeNote(p) {
+  if (p.has_sub || p.free_limit == null) return "";
+  const left = p.free_left || 0;
+  const credits = left <= 0 && p.patient_credits ? ` · купленных: ${p.patient_credits}` : "";
+  const more = (p.bonus_today || 0) < (p.bonus_max || 0) ? ` · оценка от ${dec(p.bonus_rating)} — +1 пациент` : "";
+  return html`<div class="tiny muted center" style="margin-top:6px">Сегодня бесплатно: ${left} из ${p.free_limit}${p.bonus_today ? ` (бонус за оценки: +${p.bonus_today})` : ""}${credits}${more}</div>`;
 }
 
 function bindNewPatient() {
@@ -1272,7 +1325,7 @@ function viewPatient() {
         <div class="row between"><b>Приём №${consults.length - i}</b><span class="tiny muted">${dateText(c.date)}</span></div>
         ${c.evaluating ? etaBox("evaluation", c.date) : evaluationBlock(c)}
         ${actionsSummary(c)}
-        ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id, p.gift_kr)}</div>` : ""}
+        ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id, p.gift_kr)}</div>${c.rating != null ? expertCta(p) : ""}` : ""}
       </div>`)}` : ""}
 
     ${p.test_results?.length ? html`<div class="section-title">Результаты обследований</div>
@@ -1998,12 +2051,126 @@ function onEvaluation(r) {
     ${evaluationBlock(c)}
     ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b>${r.rank_up ? html`<div class="small">Новое звание — «${r.rank_up}»</div>` : ""}</div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
+    ${r.bonus_patient ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("party", "c-ok")}Оценка от ${dec(S.me?.profile?.bonus_rating || 4.5)} — ещё один бесплатный пациент сегодня!</span></div>` : ""}
     <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id, r.gift_kr)}</div>
+    ${expertCta({ id: r.patient_id })}
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
     <p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>
   </div>`[RAW];
   const nb = $("#eval-new");
   if (nb) nb.onclick = () => { closeSheet(); go("/"); };
+}
+
+// ---------- Обсуждение разбора с экспертом (премиум) ----------
+const EXPERT_STARTERS = ["Почему такая оценка?", "Какие вопросы я упустил?", "Как лечить по клиническим рекомендациям?", "С чем дифференцировать этот диагноз?"];
+
+/** Кнопка «Обсудить с экспертом» под разбором; без премиума — ведёт в тарифы */
+function expertCta(p) {
+  const prem = S.me?.profile?.premium;
+  const n = (p.expert_chat || []).length;
+  return html`<a class="card tap row expert-cta" href="#/expert/${p.id}" ${!prem && S.me?.profile?.trial_available ? html`data-checkout="trial"` : ""} style="text-decoration:none;color:inherit">
+    <div class="tile accent">${ic("chat")}</div>
+    <div class="grow"><b>Обсудить с экспертом</b><div class="small muted">${n ? `${n} ${plural(n, "сообщение", "сообщения", "сообщений")} · продолжить разговор` : "ИИ-профессор знает диагноз, ваши действия и КР"}</div></div>
+    ${prem ? ic("chevron", "c-muted") : html`<span class="badge accent">${ic("gem")} премиум</span>`}</a>`;
+}
+
+function viewExpert() {
+  const id = S.route.params.id;
+  const data = S.patients.get(id);
+  if (!data) return;
+  const p = data.patient;
+  const prem = S.me.profile.premium;
+  const chat = p.expert_chat || [];
+  const busy = S.expertBusy === id || (p.expert_busy && Date.now() - p.expert_busy < 90000);
+  const partial = S.expertPartial?.id === id ? S.expertPartial.text : "";
+  const evaluated = (p.consultations || []).some((c) => c.rating != null && !c.evaluating);
+  const ta = $("#expert-input");
+  const draft = ta ? ta.value : "";
+  const hadFocus = document.activeElement === ta;
+  renderShell(html`<div class="consult">
+    <div class="consult-head">
+      <button class="back" data-go="/patient/${p.id}" aria-label="Назад">${ic("back")}</button>
+      <div class="tile accent">${ic("chat")}</div>
+      <div class="grow">
+        <div class="title ellipsis">Обсуждение с экспертом · ИИ</div>
+        <div class="tiny muted ellipsis">${p.name}${p.true_diagnosis ? ` · ${p.true_diagnosis}` : ""}</div>
+      </div>
+    </div>
+    <div class="messages" id="messages">
+      <div class="msg from-patient"><span class="txt">${evaluated ? `Я разобрал ваш приём с пациентом ${p.name}. Спрашивайте: почему такая оценка, что стоило сделать иначе, как лечить по клиническим рекомендациям, с чем дифференцировать.` : "Обсудить приём можно после разбора — завершите приём, и я отвечу на вопросы по нему."}</span></div>
+      ${chat.map((m) => html`<div class="msg from-${m.role === "expert" ? "patient" : "doctor"}"><span class="txt">${m.text}</span><div class="meta">${timeText(m.ts)}</div></div>`)}
+      ${partial ? html`<div class="msg from-patient revealing"><span class="txt" id="expert-partial">${partial}</span></div>`
+        : busy ? html`<div class="typing-wrap"><div class="typing"><i></i><i></i><i></i></div></div>` : ""}
+      ${prem && evaluated && !chat.length && !busy ? html`<div class="stack-sm" style="align-self:flex-end;align-items:flex-end">${EXPERT_STARTERS.map((t) => html`<button class="chip" data-expert-q="${t}">${t}</button>`)}</div>` : ""}
+    </div>
+    ${!evaluated ? html`<div class="composer"><a class="btn block" href="#/patient/${p.id}">К карточке пациента</a></div>`
+      : prem ? html`<div class="composer" id="composer">
+        <textarea id="expert-input" rows="1" placeholder="Спросите эксперта…" maxlength="1500"></textarea>
+        <button class="icon-btn send" id="expert-send" aria-label="Отправить" ${busy ? "disabled" : ""}>${ic("send")}</button>
+      </div>`
+      : html`<div class="composer"><div class="stack-sm" style="width:100%">
+        <p class="small muted center">Обсуждение разбора с экспертом — в премиуме, без ограничения по числу вопросов.</p>
+        <a class="btn block" href="#/plans" ${S.me.profile.trial_available ? html`data-checkout="trial"` : ""}>${ic("gem")}<span>${S.me.profile.trial_available ? "Премиум 7 дней за 1 ₽" : "Открыть в премиуме"}</span></a></div></div>`}
+  </div>`, false);
+  const box = $("#messages");
+  if (box) box.scrollTop = box.scrollHeight;
+  const input = $("#expert-input");
+  if (!input) return;
+  input.value = draft;
+  if (hadFocus) input.focus();
+  const send = () => sendExpert(id, input.value);
+  $("#expert-send").onclick = send;
+  input.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey && !matchMedia("(pointer: coarse)").matches) { e.preventDefault(); send(); } };
+  root.querySelectorAll("[data-expert-q]").forEach((b) => (b.onclick = () => sendExpert(id, b.dataset.expertQ)));
+}
+
+async function sendExpert(id, text) {
+  text = String(text || "").trim();
+  const data = S.patients.get(id);
+  if (!text || !data || S.expertBusy) return;
+  const before = data.patient.expert_chat || [];
+  data.patient.expert_chat = [...before, { role: "doctor", text, ts: Date.now() }];
+  S.expertBusy = id;
+  S.expertPartial = null;
+  const input = $("#expert-input");
+  if (input) input.value = "";
+  haptic();
+  viewExpert();
+  try {
+    const r = await api("POST", `/patients/${encodeURIComponent(id)}/expert`, { text });
+    data.patient.expert_chat = r.chat;
+  } catch (e) {
+    data.patient.expert_chat = before;
+    toast(e.message, "error");
+    S.expertBusy = null;
+    if (S.route.name === "expert" && S.route.params.id === id) {
+      viewExpert();
+      const ta = $("#expert-input");
+      if (ta && !ta.value) ta.value = text;
+    }
+    return;
+  }
+  S.expertBusy = null;
+  S.expertPartial = null;
+  if (S.route.name === "expert" && S.route.params.id === id) viewExpert();
+}
+
+/** Ответ эксперта приходит по кусочкам; с другого устройства — просто обновляем чат */
+function onExpertSync(msg) {
+  const here = S.route.name === "expert" && S.route.params.id === msg.patient_id;
+  if (typeof msg.partial === "string") {
+    S.expertPartial = { id: msg.patient_id, text: msg.partial };
+    const el = $("#expert-partial");
+    if (here && el) {
+      el.textContent = msg.partial;
+      const box = $("#messages");
+      if (box) box.scrollTop = box.scrollHeight;
+    } else if (here) viewExpert();
+    return;
+  }
+  if (S.expertBusy === msg.patient_id) return; // наш запрос — обновим по ответу
+  S.expertPartial = null;
+  if (here || S.patients.has(msg.patient_id)) loadPatient(msg.patient_id).then(() => here && S.route.name === "expert" && viewExpert()).catch(() => {});
 }
 
 /** Разбор по КР: запрос по кнопке, ожидание, готовый разбор — во всех местах, где он показан (лист завершения, карточка) */
@@ -2097,7 +2264,7 @@ async function viewQuiz(fresh) {
         return html`<button class="quiz-opt ${cls}" data-opt="${k}" ${ans ? "disabled" : ""}>${["А", "Б", "В", "Г"][k]}. ${o}</button>`;
       })}</div>
       ${ans ? html`<div class="card flat" style="background:${ans.is_correct ? "var(--ok-soft)" : "var(--danger-soft)"}">
-        <b class="row-c">${ic(ans.is_correct ? "checkCircle" : "xCircle", ans.is_correct ? "c-ok" : "c-danger")}${ans.is_correct ? "Верно!" : `Неверно. Правильно: ${q.options[ans.correct]}`}</b><div class="quiz-expl" style="margin-top:6px">${ans.explanation || ""}</div></div>
+        <b class="row-c">${ic(ans.is_correct ? "checkCircle" : "xCircle", ans.is_correct ? "c-ok" : "c-danger")}${ans.is_correct ? "Верно!" : `Неверно. Правильно: ${q.options[ans.correct]}`}</b>${whyNot(q, ans.chosen, ans.why_chosen)}<div class="quiz-expl" style="margin-top:6px">${ans.explanation || ""}</div></div>
         <button class="btn lg block" id="quiz-next">${ans.done ? "Результат" : "Следующий вопрос"}</button>` : ""}
     </div>
   </div>`);
@@ -2113,7 +2280,7 @@ async function viewQuiz(fresh) {
         quizState.answer = null;
       } else {
         haptic(res.is_correct ? "success" : "error");
-        quizState.answer = { chosen: Number(b.dataset.opt), correct: res.correct, is_correct: res.is_correct, explanation: res.explanation, done: res.done, res };
+        quizState.answer = { chosen: Number(b.dataset.opt), correct: res.correct, is_correct: res.is_correct, explanation: res.explanation, why_chosen: res.why_chosen, done: res.done, res };
       }
     } catch (e) {
       toast(e.message, "error");
@@ -2165,7 +2332,7 @@ function renderQuizResult() {
     </div>
     ${quiz.questions.map((q, k) => html`<div class="card stack-sm">
       <div class="small fact">${ic(q.chosen === q.correct ? "checkCircle" : "xCircle", q.chosen === q.correct ? "c-ok" : "c-danger")}<b>${k + 1}. ${q.text}</b></div>
-      ${q.chosen !== q.correct ? html`<div class="small">Правильно: <b>${q.options[q.correct]}</b></div>` : ""}
+      ${q.chosen !== q.correct ? html`<div class="small">Правильно: <b>${q.options[q.correct]}</b></div>${whyNot(q, q.chosen, q.why_chosen)}` : ""}
       <div class="small fact">${ic("bulb", "c-warn")}<span>${q.explanation || ""}</span></div>
     </div>`)}
     ${quiz.kr ? html`<a class="guide-kr small" href="${quiz.kr.url}" target="_blank" rel="noopener">${ic("book")}<span>Перечитать КР «${quiz.kr.name}»</span>${ic("external")}</a>` : ""}
@@ -2412,6 +2579,22 @@ async function squareImage(file, size) {
   }
 }
 
+/** Фото документа: уменьшаем до max px по длинной стороне, JPEG — чтобы быстро загрузилось и читалось */
+async function fitImage(file, max) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("Не удалось открыть картинку")); i.src = url; });
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * k);
+    c.height = Math.round(img.naturalHeight * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise((res) => c.toBlob(res, "image/jpeg", 0.85));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 // ---------- Профиль: меню ----------
 function viewProfile() {
   const p = S.me.profile;
@@ -2589,7 +2772,7 @@ const pct = (r) => `${Math.round(Number(r) * 100)}%`;
 const REF_STATUS = { joined: ["Зарегистрировался", ""], active: ["Принимает пациентов", "accent"], paid: ["Оплатил", "ok"] };
 function inviteTexts(link) {
   return [
-    ["В чат группы", `Ребят, нашла тренажёр, где можно принимать ИИ-пациентов: расспрашиваешь, назначаешь анализы, ставишь диагноз — и сразу разбор по клиническим рекомендациям Минздрава. Один пациент в день бесплатно. Попробуйте: ${link}`],
+    ["В чат группы", `Ребят, нашла тренажёр, где можно принимать ИИ-пациентов: расспрашиваешь, назначаешь анализы, ставишь диагноз — и сразу разбор по клиническим рекомендациям Минздрава. Два пациента в день бесплатно. Попробуйте: ${link}`],
     ["Перед аккредитацией", `Кто готовится к станциям по сбору анамнеза и клиническому мышлению — тут можно тренироваться на пациентах с характером, и сразу видно, что упустил: ${link}`],
     ["Коротко в сторис", `Поставила диагноз ИИ-пациенту и получила разбор по КР 🩺 А вы бы справились? ${link}`],
   ];
@@ -3040,11 +3223,13 @@ function mountFeedbackPrompt() {
 // Тарифы
 // ---------------------------------------------------
 const rub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
+const dec = (v) => String(v ?? "").replace(".", ",");
 const PREMIUM_PERKS = [
   ["users", "Безлимит пациентов"],
   ["pill", "Разбор по клиническим рекомендациям Минздрава: препараты, дозы, схемы"],
   ["flask", "Лучшая диагностика и обязательный минимум по КР для каждого случая"],
   ["quiz", "Тест по лечению и диагностике после каждого приёма"],
+  ["chat", "Обсуждение разбора с экспертом — без ограничений"],
   ["flame", "«Очень сложные» случаи"],
   ["chart", "Слабые места и советы эксперта"],
 ];
@@ -3053,11 +3238,16 @@ const PREMIUM_PERKS = [
 const DOCS = { offer: "/oferta/", privacy: "/privacy/" };
 const docLink = (key, text) => html`<a href="${DOCS[key]}" target="_blank" rel="noopener">${text}</a>`;
 
+/** Почему выбранный неверный вариант не подходит (в новых тестах) */
+function whyNot(q, chosen, why) {
+  if (!why || chosen == null || !q.options[chosen]) return "";
+  return html`<div class="quiz-why small" style="margin-top:6px"><b>Почему не «${q.options[chosen]}»:</b> ${why}</div>`;
+}
+
 function viewPlans(fresh) {
   const p = S.me.profile;
   const o = S.me.offer || { plans: S.me.plans, packs: {}, trial: null };
-  const order = ["month", "quarter", "year", "week"].filter((k) => o.plans[k]);
-  const earlyDate = o.early_until ? new Date(o.early_until - 1).toLocaleDateString("ru", { day: "numeric", month: "long" }) : "";
+  const order = ["month", "year"].filter((k) => o.plans[k]);
   const ap = p.autopay;
   if (fresh && S.route.q.paid && !S.paidToastAt) { toast("Проверяем оплату…"); watchPayment(); }
   if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
@@ -3069,7 +3259,7 @@ function viewPlans(fresh) {
       <b class="plan-name">${x.label}</b>
       <span class="tiny muted">${x.recurring ? "автопродление" : "разовый платёж"}</span>
       <div class="price">${rub(x.price)} ₽</div>
-      <div class="tiny muted plan-sub">${o.early && x.regular !== x.price ? html`<s>${rub(x.regular)} ₽</s> · ` : ""}${monthly ? `≈ ${monthly} ₽/мес` : x.recurring ? "каждые 30 дней" : `${x.days} дней`}</div>
+      <div class="tiny muted plan-sub">${monthly ? `≈ ${monthly} ₽/мес` : x.recurring ? "каждые 30 дней" : `${x.days} дней`}</div>
       <button class="btn block sm" data-plan="${k}" ${disabled ? "disabled" : ""}>${disabled ? "Оформлено" : "Оплатить"}</button></div>`;
   };
   renderShell(html`<div class="page">
@@ -3086,13 +3276,13 @@ function viewPlans(fresh) {
       <h2>Премиум 7 дней за ${rub(o.trial.price)} ₽</h2>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div>
       <button class="btn lg block" data-plan="trial">Попробовать за ${rub(o.trial.price)} ₽</button>
-      <p class="tiny muted">Через 7 дней — ${rub(o.trial.then_price)} ₽ в месяц автоматически${o.early ? " (цена ранних пользователей сохранится, пока подписка активна)" : ""}. Отключить можно в любой момент здесь же, до конца пробного периода — бесплатно.</p>
+      <p class="tiny muted">Через 7 дней — ${rub(o.trial.then_price)} ₽ в месяц автоматически. Отключить можно в любой момент здесь же, до конца пробного периода — бесплатно.</p>
     </div>` : !p.has_sub ? html`<div class="card stack-sm">
-      <b>Бесплатно — 1 пациент в день</b><span class="small muted">с оценкой и выводом эксперта. В премиуме:</span>
+      <b>Бесплатно — 2 пациента в день</b><span class="small muted">и ещё один за каждую оценку от ${dec(p.bonus_rating || 4.5)} (до ${p.bonus_max || 3} в день)</span><span class="small muted">с оценкой и выводом эксперта. В премиуме:</span>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div></div>` : ""}
 
-    ${o.early ? html`<div class="early-note">${ic("zap")}<span>Цены для ранних пользователей — до ${earlyDate}</span></div>` : ""}
     <div class="plans">${order.map(planCard)}</div>
+    ${studentCard(p, o.student, ap)}
 
     ${consentBox()}
 
@@ -3106,6 +3296,7 @@ function viewPlans(fresh) {
   </div>`);
   bindConsent(root);
   root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = () => payFor(b.dataset.plan, b, root)));
+  bindStudent();
   // Переход из другого раздела с конкретной покупкой (?buy=freeze) — сразу открываем её, а не всю страницу тарифов
   if (fresh && S.route.q.buy) checkout(S.route.q.buy);
   const off = $("#autopay-off");
@@ -3121,6 +3312,50 @@ function viewPlans(fresh) {
     } catch (e) {
       toast(e.message, "error");
       btnBusy(off, false);
+    }
+  };
+}
+
+/** Студенческий тариф: загрузить фото студенческого → проверка админом → оплата по студенческой цене */
+function studentCard(p, st, ap) {
+  if (!st || p.sub_until === -1) return "";
+  const status = p.student?.status;
+  const upload = (text) => html`<label class="btn block sm ghost file-btn">${ic("camera")}<span>${text}</span><input type="file" accept="image/*" id="stu-file" hidden></label>`;
+  const body = status === "approved"
+    ? html`<span class="small muted">Статус студента подтверждён.</span>
+      <button class="btn block sm" data-plan="student" ${ap?.status === "active" ? "disabled" : ""}>${ap?.status === "active" ? "Подписка уже оформлена" : `Оплатить ${rub(st.price)} ₽`}</button>`
+    : status === "pending"
+      ? html`<span class="small muted">Студенческий на проверке — обычно отвечаем в течение дня. Напишем в Telegram и здесь.</span>`
+      : html`<span class="small muted">${status === "declined" ? "Не получилось подтвердить по прошлому фото — загрузите другое. " : ""}Загрузите фото студенческого билета: должны быть видны ФИО, вуз и срок действия. Фото видят только админы и нигде не хранят.</span>
+        ${upload(status === "declined" ? "Загрузить другое фото" : "Загрузить студенческий")}`;
+  return html`<div class="card stack-sm">
+    <b class="row-c">${ic("book", "c-accent")}Студентам — ${rub(st.price)} ₽ в месяц</b>
+    ${body}
+    <span class="tiny muted">Тот же премиум, с автопродлением каждые 30 дней.</span>
+  </div>`;
+}
+
+function bindStudent() {
+  const file = $("#stu-file");
+  if (!file) return;
+  file.onchange = async () => {
+    const f = file.files?.[0];
+    file.value = "";
+    if (!f) return;
+    const label = file.closest("label");
+    btnBusy(label);
+    try {
+      const blob = await fitImage(f, 1600);
+      const r = await fetch("/api/student", { method: "POST", headers: { Authorization: `Bearer ${S.token}`, "Content-Type": blob.type, "X-Client": IN_TG ? "miniapp" : "web" }, body: blob });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || "Не удалось отправить фото");
+      S.me.profile = data.profile;
+      haptic("success");
+      toast("Отправили на проверку", "ok");
+      viewPlans();
+    } catch (e) {
+      toast(e.message, "error");
+      btnBusy(label, false);
     }
   };
 }

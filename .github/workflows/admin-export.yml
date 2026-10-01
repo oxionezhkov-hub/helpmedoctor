@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       what:
-        description: "ideas — идеи, open — открытые задачи, tasks — все, task — одна задача"
+        description: "ideas — идеи, open — открытые задачи, tasks — все, task — одна задача, replies — ответы на рассылки (цитаты)"
         required: true
         default: ideas
       id:
-        description: "Номер задачи (для task)"
+        description: "Номер задачи (для task) или за сколько дней (для replies, по умолчанию 30)"
         required: false
 
 permissions:

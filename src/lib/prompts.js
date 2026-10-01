@@ -192,12 +192,38 @@ dialog_moments — не больше 2, strengths и weaknesses — не бол�
   };
 }
 
+/** Чат с экспертом после разбора (премиум): тот же профессор знает диагноз, действия врача, оценку и КР */
+export function expertChatPrompt(pat, facts, rec, history, question, { profession = "", krName = "" } = {}) {
+  const f = rec?.feedback || {};
+  const g = rec?.guide || {};
+  const questions = facts.doctorMessages.length ? facts.doctorMessages.slice(-20).map((t, i) => `${i + 1}. ${t}`).join("\n") : "не задал ни одного вопроса";
+  const tx = (g.treatment || []).map((t) => `${t.drug}: ${t.dose}${t.duration ? `, ${t.duration}` : ""}`).join("; ");
+  const dx = (g.tests || []).map((t) => t.name).join(", ");
+  const talk = history.slice(-12).map((m) => `${m.role === "expert" ? "Профессор" : "Врач"}: ${m.text}`).join("\n");
+  return {
+    maxTokens: 700,
+    temperature: 0.3,
+    system: `Ты — профессор (${specialtyOf(pat)}), 25 лет клинического стажа. После учебного приёма ты обсуждаешь случай с ${profession ? `врачом (${profession})` : "врачом"}, как наставник с коллегой: прямо, конкретно и доброжелательно.
+Опора — ${krName ? `клинические рекомендации Минздрава России «${krName}»` : "действующие клинические рекомендации Минздрава России"}; препараты — по МНН. Отвечай по-русски, обычно 3-6 предложений; если просят подробнее или схему — можно длиннее, списком.
+Не выдумывай жалоб, анамнеза и результатов, которых нет в данных случая; если данных нет — так и скажи и объясни, что надо было спросить или назначить. ${DONE_RULE}
+Пациент вымышленный, это учебный разбор. Если вопрос не о медицине и не об этом случае — коротко верни разговор к разбору.`,
+    prompt: `Случай: ${patientCard(pat)}. ИСТИННЫЙ ДИАГНОЗ: ${pat.true_diagnosis}.
+Вопросы врача на приёме:
+${questions}
+Действия: ${doneActions(pat, facts)}; диагноз врача — ${facts.diagnosis || "не поставлен"}; лечение и рекомендации — ${facts.treatment || "не назначено"}${facts.referrals?.length ? `; направление — ${facts.referrals.join(", ")}` : ""}.
+Оценка приёма: ${rec?.rating ?? "—"} из 5${f.axes ? ` (диагностика ${f.axes.diagnosis}, общение ${f.axes.communication}, лечение ${f.axes.treatment})` : ""}.
+Твой разбор: ${f.expert_text || "—"}
+${f.weaknesses?.length ? `Пробелы: ${f.weaknesses.join("; ")}.\n` : ""}${dx ? `Диагностика по КР: ${dx}.\n` : ""}${tx ? `Лечение по КР: ${tx}.\n` : ""}${talk ? `\nРазговор до этого:\n${talk}\n` : ""}
+Вопрос врача: ${question}`,
+  };
+}
+
 export function quizPrompt(pat, topics, guide = null, krName = "") {
   const g = guide || {};
   const tx = (g.treatment || []).map((t) => `${t.drug}: ${t.dose}${t.duration ? `, ${t.duration}` : ""}`).join("; ");
   const dx = (g.tests || []).map((t) => t.name).join(", ");
   return {
-    maxTokens: 2000,
+    maxTokens: 2800,
     temperature: 0.4,
     prompt: `Составь клинический тест «работа над ошибками» из 5 вопросов, чтобы врач запомнил, как по российским клиническим рекомендациям диагностируют и лечат этот случай.
 Случай: ${pat.true_diagnosis} (${specialtyOf(pat)}), пациент ${patientCard(pat)}.
@@ -209,7 +235,8 @@ explanation — 2-4 предложения, которые учат, а не п�
 1) механизм или ключевой признак, почему именно этот вариант (что он показывает, как действует, какой критерий решает);
 2) чем плох самый соблазнительный неверный вариант в этой ситуации (опасность, задержка, не тот механизм);
 3) короткое правило для запоминания или практический нюанс (порог, время, доза, противопоказание) со ссылкой на КР, если он есть.
-JSON: {"questions":[{"text":"вопрос","options":["A","B","C","D"],"correct":индекс 0-3,"topic":"treatment|diagnostics|error","explanation":"…"}]}`,
+why_wrong — по одному предложению на КАЖДЫЙ вариант, в том же порядке, что options: для неверного — почему именно он не подходит в этом случае (опасность, не тот механизм, не тот этап, не по КР); для верного — пустая строка "". Не повторяй explanation.
+JSON: {"questions":[{"text":"вопрос","options":["A","B","C","D"],"correct":индекс 0-3,"topic":"treatment|diagnostics|error","explanation":"…","why_wrong":["…","","…","…"]}]}`,
   };
 }
 

@@ -7,14 +7,15 @@
 import { DurableObject } from "cloudflare:workers";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
-  DIFFICULTIES, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
-  EARLY_UNTIL, HINTS_PER_PATIENT, LEVEL_RANKS, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel, specialtyOf,
+  BONUS_MAX_DAY, BONUS_RATING, DIFFICULTIES, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
+  HINTS_PER_PATIENT, LEVEL_RANKS, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel, renewPrice, specialtyOf,
 } from "../config.js";
 import { SYSTEM_TEXTS } from "../lib/analytics.js";
 import { aiJson, aiText, aiTextStream, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
 import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
+import { cleanAttribution } from "../lib/attribution.js";
 import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
@@ -422,8 +423,8 @@ export class UserDO extends DurableObject {
     if (!G.canAcceptPatient(prof)) {
       await this.track("limit_hit");
       throw new UserError(prof.trial_used
-        ? `Бесплатный пациент на сегодня уже принят. Новый — после полуночи по Москве. Или безлимит в «Тарифах», или +3 пациента за ${Number(PACKS.patients3.price)} ₽.`
-        : "Бесплатный пациент на сегодня уже принят. Попробуйте премиум: 7 дней безлимита за 1 ₽ — в «Тарифах».", "limit");
+        ? `Бесплатные пациенты на сегодня закончились. Новые — после полуночи по Москве, а за оценку от ${String(BONUS_RATING).replace(".", ",")} — ещё один сегодня. Или безлимит в «Тарифах», или +3 пациента за ${Number(PACKS.patients3.price)} ₽.`
+        : `Бесплатные пациенты на сегодня закончились. Новые — после полуночи по Москве, а за оценку от ${String(BONUS_RATING).replace(".", ",")} — ещё один сегодня. Или премиум: 7 дней безлимита за 1 ₽ — в «Тарифах».`, "limit");
     }
     prof.generating_patient = Date.now();
     await this.ctx.storage.put(PROFILE, prof);
@@ -992,6 +993,7 @@ export class UserDO extends DurableObject {
     const earned = G.consultationXp(prof, facts, ev.rating);
     prof.xp = prevXp + earned;
     const taskDone = G.applyDailyTask(prof, facts, ev.rating);
+    const bonusPatient = G.grantRatingBonus(prof, ev.rating);
     const rc = prof.stats.ratings_count || 0;
     prof.stats.avg_rating = Math.round((((prof.stats.avg_rating || 0) * rc + ev.rating) / (rc + 1)) * 10) / 10;
     prof.stats.ratings_count = rc + 1;
@@ -1030,6 +1032,7 @@ export class UserDO extends DurableObject {
       rank_up: G.rankInfo(lvlAfter).index > G.rankInfo(lvlBefore).index ? G.rankInfo(lvlAfter).title : null,
       task_done: taskDone ? prof.daily_task : null, consultation_number: fresh.consultations.length,
       hints: facts.hints?.length || 0,
+      bonus_patient: bonusPatient,
     };
     // Весь разбор приёма открыт всем; в премиуме — разбор по клиническим рекомендациям (по кнопке) и тест
     Object.assign(result, { recommendation: ev.recommendation, premium: G.isPremium(prof), trial_available: !prof.trial_used });
@@ -1040,6 +1043,7 @@ export class UserDO extends DurableObject {
       tests: facts.tests, exams: facts.physicals, weaknesses: ev.weaknesses, level: prof.level,
     }, { val: ev.rating, ...evSource });
     if (lvlAfter > lvlBefore) await this.track("level_up", { from: lvlBefore, to: lvlAfter }, evSource);
+    if (bonusPatient) await this.track("bonus_patient", { rating: ev.rating }, evSource);
     if (taskDone) await this.track("task_done", { id: prof.daily_task.id, desc: prof.daily_task.desc, xp: prof.daily_task.xp }, evSource);
     if (prof.streak !== prevStreak) await this.track(prof.streak > prevStreak ? "streak_up" : "streak_reset", { streak: prof.streak, before: prevStreak }, evSource);
 
@@ -1205,9 +1209,62 @@ export class UserDO extends DurableObject {
     const prof = await this.profile();
     if (G.isPremium(prof)) return prof;
     await this.track("paywall", { what });
+    const name = what === "expert" ? "Обсуждение разбора с экспертом" : "Тест по вашим ошибкам";
     throw new UserError(prof.trial_used
-      ? "Тест по вашим ошибкам — в премиуме. Оформите подписку в «Тарифах»."
-      : "Тест по вашим ошибкам — в премиуме. Попробуйте 7 дней за 1 ₽ в «Тарифах».", "premium");
+      ? `${name} — в премиуме. Оформите подписку в «Тарифах».`
+      : `${name} — в премиуме. Попробуйте 7 дней за 1 ₽ в «Тарифах».`, "premium");
+  }
+
+  /**
+   * Чат с экспертом по разбору приёма (премиум, без ограничения числа сообщений).
+   * В ИИ уходят данные случая, оценка и только последние реплики — длинный разговор не дорожает.
+   */
+  async expertChat(patId, text) {
+    const prof = await this.requirePremium("expert");
+    const question = clampStr(String(text || "").trim(), 1500);
+    if (!question) throw new UserError("Напишите вопрос эксперту");
+    const pat = await this.patient(patId);
+    const rec = [...(pat.consultations || [])].reverse().find((c) => c.rating != null && !c.evaluating);
+    if (!rec) throw new UserError("Обсудить приём с экспертом можно после разбора");
+    if (pat.expert_busy && Date.now() - pat.expert_busy < 90000) throw new UserError("Эксперт ещё отвечает на прошлый вопрос", "busy");
+    const history = pat.expert_chat || [];
+    pat.expert_chat = [...history, { role: "doctor", text: question, ts: Date.now() }].slice(-200);
+    pat.expert_busy = Date.now();
+    await this.ctx.storage.put(patKey(patId), pat);
+    this.broadcast("expert", { patient_id: patId, typing: true });
+    const p = P.expertChatPrompt(pat, G.consultationFacts(pat), rec, history, question, { profession: prof.profession, krName: rec.guide?.kr?.name || pat.kr?.name || "" });
+    let reply;
+    const t0 = Date.now();
+    try {
+      let sentAt = 0;
+      let last = "";
+      let timer = null;
+      const push = () => { timer = null; sentAt = Date.now(); this.broadcast("expert", { patient_id: patId, typing: true, partial: last }); };
+      reply = await aiTextStream(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "expert", uid: prof.uid }, (t) => {
+        last = t;
+        if (timer) return;
+        const wait = 150 - (Date.now() - sentAt);
+        if (wait <= 0) push();
+        else timer = setTimeout(push, wait);
+      });
+      if (timer) clearTimeout(timer);
+    } catch (e) {
+      console.error("expert chat", e);
+      const back = await this.patient(patId);
+      back.expert_chat = (back.expert_chat || []).slice(0, -1);
+      delete back.expert_busy;
+      await this.ctx.storage.put(patKey(patId), back);
+      this.broadcast("expert", { patient_id: patId });
+      await this.track("ai_error", { what: "expert", error: String(e.message || e).slice(0, 300) });
+      throw new UserError("Эксперт не ответил — попробуйте спросить ещё раз", "ai_error");
+    }
+    const fresh = await this.patient(patId);
+    fresh.expert_chat = [...(fresh.expert_chat || []), { role: "expert", text: clampStr(reply, 4000), ts: Date.now() }].slice(-200);
+    delete fresh.expert_busy;
+    await this.ctx.storage.put(patKey(patId), fresh);
+    this.broadcast("expert", { patient_id: patId });
+    await this.track("expert_msg", { patient: patId, n: fresh.expert_chat.length, q: clampStr(question, 200) }, { dur: Date.now() - t0 });
+    return { reply, chat: fresh.expert_chat };
   }
 
   async quiz(patId) {
@@ -1257,6 +1314,7 @@ export class UserDO extends DurableObject {
     if (taskDone) await this.track("task_done", { id: entries[PROFILE].daily_task.id, desc: entries[PROFILE].daily_task.desc, xp: entries[PROFILE].daily_task.xp });
     return {
       is_correct: isCorrect, correct: question.correct, explanation: question.explanation,
+      why_chosen: isCorrect ? "" : question.why_wrong?.[c] || "",
       done, score: q.score, xp: q.xp || 0, task_done: taskDone, quiz: publicQuiz(q),
     };
   }
@@ -1374,7 +1432,47 @@ export class UserDO extends DurableObject {
       throw new UserError("Подписка с автопродлением уже оформлена — она продлится сама", "autopay_active");
     }
     if (prof.sub_until === -1 && !PACKS[key]) throw new UserError("У вас бессрочный доступ — докупать ничего не нужно", "forever");
+    if (PLANS[key]?.student && prof.student?.status !== "approved") {
+      throw new UserError("Студенческий тариф — после проверки студенческого билета. Загрузите фото в «Тарифах».", "student");
+    }
     return { price: planPrice(key) };
+  }
+
+  /** Студенческий билет на проверку: фото уходит админам в Telegram с кнопками «Да / Нет», у нас не хранится */
+  async submitStudentCard(buf, type) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(type)) throw new UserError("Нужна картинка JPG, PNG или WebP");
+    if (!buf?.byteLength || buf.byteLength > 1536 * 1024) throw new UserError("Файл слишком большой — до 1,5 МБ");
+    const prof = await this.profile();
+    if (prof.student?.status === "approved") throw new UserError("Статус студента уже подтверждён");
+    if (prof.student?.status === "pending" && Date.now() - prof.student.at < 6 * 3600000) {
+      throw new UserError("Студенческий уже на проверке — обычно отвечаем в течение дня");
+    }
+    const sent = await this.hub().studentRequest(prof.uid, { name: prof.name, username: prof.username, profession: prof.profession }, buf, type);
+    if (!sent) throw new UserError("Не удалось отправить на проверку — попробуйте чуть позже");
+    prof.student = { status: "pending", at: Date.now() };
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track("student_request");
+    return { profile: publicProfile(prof) };
+  }
+
+  /** Решение админа по студенческому билету (кнопка в Telegram). Повторное нажатие ничего не меняет */
+  async studentDecision(ok, admin) {
+    const prof = await this.profile();
+    if (prof.student?.status !== "pending") return { status: prof.student?.status || "none", changed: false };
+    prof.student = { status: ok ? "approved" : "declined", at: Date.now(), by: String(admin) };
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile");
+    await this.track(ok ? "student_ok" : "student_no", { admin }, { source: "admin" });
+    const price = fmtRub(PLANS.student.price);
+    const text = ok
+      ? `🎓 <b>Статус студента подтверждён!</b>\n\nВам доступен студенческий премиум — ${price} ₽ в месяц. Оформить можно в «Тарифах».`
+      : "🎓 Не получилось подтвердить студенческий по фото. Попробуйте загрузить другое фото — чтобы были видны ФИО, вуз и срок действия.";
+    if (/^\d+$/.test(String(prof.uid))) {
+      await tg(this.env, { kind: "system" }).send(prof.uid, text, [[{ text: "💎 Тарифы", web_app: { url: `${(this.env.PUBLIC_URL || "").replace(/\/$/, "")}/app?go=/plans` } }]]).catch(() => {});
+    }
+    await this.pushNotify({ title: ok ? "🎓 Студенческий подтверждён" : "🎓 Студенческий не подтверждён", body: ok ? `Премиум за ${price} ₽ в месяц — в «Тарифах»` : "Загрузите другое фото в «Тарифах»", url: "/app#/plans", tag: "student" }).catch(() => {});
+    return { status: prof.student.status, changed: true };
   }
 
   /** Автопродление прошло (списание из HubDO): доступ до until */
@@ -1519,7 +1617,7 @@ export class UserDO extends DurableObject {
     const quizzes = prof.test_ids.length ? await this.ctx.storage.get(prof.test_ids.map(quizKey)) : new Map();
     const st = await this.state();
     return {
-      profile: { ...publicProfile(prof), payments: prof.payments || [], daily_patients: prof.daily_patients || [] },
+      profile: { ...publicProfile(prof), payments: prof.payments || [], daily_patients: prof.daily_patients || [], src: prof.src || null },
       state: { active_patient_id: st.active_patient_id, bot_pending: st.bot?.pending || null },
       patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => ({
         ...patientSummary(p), true_diagnosis: p.true_diagnosis,
@@ -1587,6 +1685,17 @@ export class UserDO extends DurableObject {
   }
 
   /** Событие из бота/сайта/воркера (пауза, открыл тарифы, нажал «Оплатить»…) */
+  /** Откуда пришёл (первое касание на сайте): пишем один раз и только для свежей регистрации — иначе это уже не источник */
+  async setAttribution(raw = {}) {
+    const prof = await this.profile();
+    if (prof.src) return { ok: true, kept: true };
+    if (!prof.registered_at || Date.now() - prof.registered_at > 3 * 86400000) return { ok: true, skipped: "old" };
+    prof.src = cleanAttribution(raw);
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.track("attribution", { channel: prof.src.channel, host: prof.src.host, land: prof.src.land, last: prof.src.last, utm: prof.src.utm });
+    return { ok: true };
+  }
+
   async trackEvent(type, meta = {}, opts = {}) {
     await this.track(String(type).slice(0, 40), meta, opts);
     return { ok: true };
@@ -1708,6 +1817,8 @@ export class UserDO extends DurableObject {
       onboarding_done: prof.onboarding_done === false ? 0 : 1, about: prof.about || "", expectations: prof.expectations || "",
       notifications: prof.notifications === false ? 0 : 1, feedback_count: (prof.feedback || []).length,
       blocked: prof.blocked ? 1 : 0, bot_blocked: prof.bot_blocked ? 1 : 0, ref: prof.ref || null,
+      src_channel: prof.src?.channel || (prof.ref?.startsWith("r_") ? "Партнёрская ссылка" : null), src_host: prof.src?.host || null,
+      src_land: prof.src?.land || null, src_last: prof.src?.last || null, src_utm: prof.src?.utm || null, src_cid: prof.src?.cid || null,
       extra_today: prof.extra_patients?.date === today ? prof.extra_patients.n : 0,
     };
   }
@@ -2013,7 +2124,9 @@ function normalizeQuestion(q) {
   const correct = Number(q.correct);
   if (!(correct >= 0 && correct < options.length)) return null;
   const topic = ["treatment", "diagnostics", "error"].includes(q.topic) ? q.topic : null;
-  return { text: clampStr(q.text, 500), options, correct, explanation: clampStr(q.explanation, 1000), ...(topic ? { topic } : {}) };
+  // Почему каждый неверный вариант не подходит — показываем после ответа, если выбран именно он
+  const why = Array.isArray(q.why_wrong) ? options.map((_, i) => (i === correct ? "" : clampStr(String(q.why_wrong[i] || ""), 400))) : null;
+  return { text: clampStr(q.text, 500), options, correct, explanation: clampStr(q.explanation, 1000), ...(why?.some(Boolean) ? { why_wrong: why } : {}), ...(topic ? { topic } : {}) };
 }
 
 /** Приводим старых пациентов из KV к новому формату */
@@ -2070,13 +2183,13 @@ function onboardingNote(prof, title) {
     (prof.expectations ? `\nОжидания: ${e(prof.expectations)}` : "");
 }
 
-/** Что продаём сейчас: тарифы с ранними ценами, пробный период и разовые покупки */
-export function offerPlans(now = Date.now()) {
-  const early = now < EARLY_UNTIL;
-  const plans = Object.fromEntries(Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([k, p]) => [k, {
-    label: p.label, days: p.days, price: planPrice(k, now), regular: p.price, recurring: !!p.recurring, best: !!p.best,
+/** Что продаём сейчас: тарифы, студенческий (после проверки билета), пробный период и разовые покупки */
+export function offerPlans() {
+  const plans = Object.fromEntries(Object.entries(PLANS).filter(([, p]) => !p.hidden && !p.student).map(([k, p]) => [k, {
+    label: p.label, days: p.days, price: planPrice(k), recurring: !!p.recurring, best: !!p.best,
   }]));
-  return { plans, early, early_until: EARLY_UNTIL, trial: { ...TRIAL, then_price: planPrice(TRIAL.then, now) }, packs: PACKS };
+  const st = PLANS.student;
+  return { plans, student: { label: st.label, days: st.days, price: st.price, recurring: true }, trial: { ...TRIAL, then_price: planPrice(TRIAL.then) }, packs: PACKS };
 }
 
 const fmtDay = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
@@ -2096,7 +2209,7 @@ export function publicProfile(prof) {
     premium: G.isPremium(prof),
     // Пробный премиум — один раз и только тем, у кого сейчас нет подписки
     trial_available: !prof.trial_used && !G.hasActiveSub(prof),
-    autopay: prof.autopay ? { plan: prof.autopay.plan, price: prof.autopay.price, next_at: prof.autopay.next_at, status: prof.autopay.status, trial: !!prof.autopay.trial } : null,
+    autopay: prof.autopay ? { plan: prof.autopay.plan, price: renewPrice(prof.autopay.plan, prof.autopay.price), next_at: prof.autopay.next_at, status: prof.autopay.status, trial: !!prof.autopay.trial } : null,
     patient_credits: prof.patient_credits || 0,
     streak_freezes: prof.streak_freezes || 0,
     // Слабые места и советы эксперта — в премиуме; бесплатным показываем, сколько их накопилось
@@ -2104,6 +2217,11 @@ export function publicProfile(prof) {
     recommendations: prof.recommendations || [],
     locked_insights: 0,
     today_patients: G.todayPatientsCount(prof),
+    free_limit: G.freeLimitToday(prof),
+    free_left: Math.max(0, G.freeLeftToday(prof)),
+    bonus_today: G.bonusToday(prof),
+    bonus_rating: BONUS_RATING,
+    bonus_max: BONUS_MAX_DAY,
     can_accept: G.canAcceptPatient(prof),
     generating_patient: !!(prof.generating_patient && Date.now() - prof.generating_patient < 120000),
     generating_since: prof.generating_patient && Date.now() - prof.generating_patient < 120000 ? prof.generating_patient : null,
@@ -2168,7 +2286,10 @@ export function publicQuiz(q) {
       options: qq.options,
       topic: qq.topic || null,
       // Правильный ответ и объяснение — только для уже отвеченных вопросов
-      ...(i < answered || q.status === "done" ? { correct: qq.correct, explanation: qq.explanation, chosen: q.answers[i]?.chosen } : {}),
+      ...(i < answered || q.status === "done" ? {
+        correct: qq.correct, explanation: qq.explanation, chosen: q.answers[i]?.chosen,
+        why_chosen: q.answers[i] && !q.answers[i].is_correct ? qq.why_wrong?.[q.answers[i].chosen] || "" : "",
+      } : {}),
     })),
     xp: q.xp || 0,
   };

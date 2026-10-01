@@ -169,7 +169,7 @@ async function loadLive() {
 const REPORTS = [
   ["retention", "Удержание"], ["consultations", "Приёмы"], ["quality", "Качество"], ["procedures", "Обследования и осмотры"],
   ["specialties", "Специальности"], ["quizzes", "Тесты"], ["gamification", "Геймификация"], ["money", "Деньги"], ["ai", "Расход ИИ"],
-  ["channels", "Каналы"], ["heatmap", "Активность по часам"], ["errors", "Ошибки"],
+  ["sources", "Источники"], ["metrika", "Яндекс Метрика"], ["channels", "Каналы"], ["heatmap", "Активность по часам"], ["errors", "Ошибки"],
 ];
 const AF = { source: "", level: "", profession: "", tariff: "" };
 
@@ -306,6 +306,32 @@ const RENDER = {
       <div class="card mt"><div class="card-head"><h2>Кто больше всех расходует</h2></div>${table({ columns: [
         { key: "name", label: "Пользователь", render: (r) => html`<a href="#/users/${r.uid}">${r.name || r.uid}</a>` }, { key: "requests", label: "Запросов", cls: "r" }, { key: "neurons", label: "Нейроны", cls: "r", render: (r) => fNum(r.neurons, 1) },
       ], rows: d.users })}</div>`;
+  },
+  metrika: (d) => {
+    if (!d.configured) return html`<div class="callout">Метрика не подключена. Нужен OAuth-токен Яндекса с правом «Получение статистики» (metrika:read) в секрете репозитория <span class="kbd">YANDEX_METRIKA_TOKEN</span> — после деплоя отчёт заполнится.</div>`;
+    if (d.error) return html`<div class="callout warn">Метрика не ответила: ${d.error}</div>`;
+    const n = (k, label) => ({ key: k, label, cls: "r", render: (r) => fNum(r[k]) });
+    const bounce = { key: "bounce", label: "Отказы", cls: "r", render: (r) => (r.bounce != null ? `${r.bounce}%` : "—") };
+    const total = d.sources.reduce((a, x) => a + (x.visits || 0), 0);
+    return html`<div class="callout mb small">Данные Яндекс Метрики (счётчик 113057442) за ${d.date1} — ${d.date2}, обновляются раз в 30 минут. Источник — последний значимый. Часть поисковых фраз поисковики скрывают («не определено»).</div>
+      <div class="split">
+        <div class="card"><div class="card-head"><h2>Источники трафика · ${fNum(total)} визитов</h2></div>${table({ columns: [{ key: "name", label: "Источник" }, n("visits", "Визиты"), n("users", "Посетители"), bounce, { key: "duration", label: "Время", cls: "r", render: (r) => `${Math.floor(r.duration / 60)}:${String(r.duration % 60).padStart(2, "0")}` }], rows: d.sources })}</div>
+        <div class="card"><div class="card-head"><h2>Поисковые системы</h2></div>${table({ columns: [{ key: "name", label: "Поисковик" }, n("visits", "Визиты"), n("users", "Посетители")], rows: d.engines })}</div>
+      </div>
+      <div class="card mt"><div class="card-head"><h2>Поисковые фразы</h2></div>${table({ columns: [{ key: "name", label: "Фраза" }, n("visits", "Визиты"), n("users", "Посетители"), bounce], rows: d.phrases })}</div>
+      <div class="card mt"><div class="card-head"><h2>Страницы входа</h2></div>${table({ columns: [{ key: "name", label: "Страница", render: (r) => html`<a href="https://helpmedoctor.ru${r.name}" target="_blank" rel="noopener">${r.name}</a>` }, n("visits", "Визиты"), n("users", "Посетители"), bounce], rows: d.pages })}</div>`;
+  },
+  sources: (d) => {
+    const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : "—");
+    const cols = (first) => [
+      first,
+      { key: "users", label: "Регистраций", cls: "r" },
+      { key: "active", label: "Провели приём", cls: "r", render: (r) => html`${r.active} <span class="muted small">${pct(r.active, r.users)}</span>` },
+      { key: "paid", label: "Оплатили", cls: "r", render: (r) => html`${r.paid} <span class="muted small">${pct(r.paid, r.users)}</span>` },
+    ];
+    return html`<div class="callout mb small">Канал — по сайту, с которого человек впервые пришёл на helpmedoctor.ru (поисковик, соцсеть, другой сайт) и UTM-меткам. Поисковые фразы поисковики не передают — они в отчёте «Яндекс Метрика». Данные собираются с 01.10.2026; кто пришёл через бота, без сайта — «Бот / нет данных».</div>
+      <div class="card mb"><div class="card-head"><h2>Каналы · ${d.total} ${plural(d.total, "регистрация", "регистрации", "регистраций")}</h2></div>${table({ columns: cols({ key: "key", label: "Канал" }), rows: d.channels })}</div>
+      <div class="card"><div class="card-head"><h2>Первая страница на сайте</h2></div>${table({ columns: cols({ key: "key", label: "Страница", render: (r) => html`<a href="https://helpmedoctor.ru${r.key}" target="_blank" rel="noopener">${r.key}</a>` }), rows: d.pages })}</div>`;
   },
   channels: (d) => html`<div class="card"><div class="card-head"><h2>Бот, мини-приложение, сайт</h2></div>${table({ columns: [
     { key: "source", label: "Канал", render: (r) => SOURCES[r.source] || (r.source === "—" ? "До запуска аналитики" : r.source) }, { key: "users", label: "Пользователей", cls: "r" },

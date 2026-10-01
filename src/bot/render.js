@@ -1,5 +1,5 @@
 // Тексты и клавиатуры бота
-import { DIFFICULTIES, HINTS_PER_PATIENT, HINT_RATING_PENALTY, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
+import { BONUS_RATING, DIFFICULTIES, HINTS_PER_PATIENT, HINT_RATING_PENALTY, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
 import { declDays, esc, firstName } from "../lib/util.js";
 import { appBtn, btn } from "../lib/telegram.js";
 
@@ -236,10 +236,12 @@ export function evaluation(env, r) {
   if (r.rank_up) t += `\n🏅 <b>Новое звание: «${esc(r.rank_up)}»</b>`;
   t += `\n📊 Уровень ${r.level}${r.rank ? ` · ${esc(r.rank)}` : ""} · 🔥 ${r.streak} ${declDays(r.streak)} подряд`;
   if (r.task_done) t += `\n🎯 <b>Задание дня выполнено!</b> +${r.task_done.xp} XP`;
+  if (r.bonus_patient) t += `\n🎁 <b>Оценка от ${String(BONUS_RATING).replace(".", ",")} — ещё один бесплатный пациент сегодня!</b>`;
   return {
     text: t,
     kb: [
       [btn(r.gift_kr && !r.premium ? "🎁 Разбор по КР Минздрава — в подарок" : "📚 Разбор по КР Минздрава", `kr_${r.patient_id}`)],
+      ...(r.premium ? [[appBtn("💬 Обсудить с экспертом", appUrl(env, `/expert/${r.patient_id}`))]] : []),
       r.premium || r.gift_kr
         ? [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)]
         : [appBtn(r.trial_available ? "💎 Премиум 7 дней за 1 ₽" : "💎 Премиум", appUrl(env, r.trial_available ? "/plans?buy=trial" : "/plans"))],
@@ -278,7 +280,8 @@ export function quizQuestion(quiz, index) {
 export function quizFeedback(quiz, index, res) {
   const q = quiz.questions[index];
   const mark = res.is_correct ? "✅ Верно!" : `❌ Неверно. Правильно: <b>${esc(q.options[res.correct])}</b>`;
-  return `📝 <b>Вопрос ${index + 1}.</b> ${esc(q.text)}\n\n${mark}\n💡 ${esc(res.explanation || "")}`;
+  const why = !res.is_correct && res.why_chosen ? `\n\n🚫 <b>Почему не «${esc(q.options[q.chosen] ?? "")}»:</b> ${esc(res.why_chosen)}` : "";
+  return `📝 <b>Вопрос ${index + 1}.</b> ${esc(q.text)}\n\n${mark}${why}\n\n💡 ${esc(res.explanation || "")}`;
 }
 
 export function quizDone(res) {

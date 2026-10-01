@@ -111,6 +111,14 @@ jobs:
             v="${!k}"
             if [ -n "$v" ]; then printf '%s' "$v" | npx wrangler secret put "$k"; else echo "$k не задан — пропускаю"; fi
           done
+      # Яндекс Метрика в админке (отчёт «Яндекс Метрика»): OAuth-токен с правом metrika:read — по желанию
+      - name: Токен Яндекс Метрики
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
+        run: |
+          if [ -n "$YANDEX_METRIKA_TOKEN" ]; then printf '%s' "$YANDEX_METRIKA_TOKEN" | npx wrangler secret put YANDEX_METRIKA_TOKEN; else echo "YANDEX_METRIKA_TOKEN не задан — пропускаю"; fi
       # Ключ выгрузки задач и идей из админки (workflow «Выгрузка из админки», только чтение) — по желанию
       - name: Ключ выгрузки из админки
         env:

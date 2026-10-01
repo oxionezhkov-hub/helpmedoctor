@@ -191,11 +191,11 @@ const giftGuide = await waitFor(async () => (await api(webToken, "GET", `/patien
 assert.ok(!giftGuide.locked && giftGuide.treatment.length && giftGuide.treatment[0].dose, "подарочный разбор — полный, с дозами");
 step("разбор по КР: по кнопке; у первого пациента нового пользователя — в подарок без премиума");
 
-// Лимит бесплатного тарифа
-r = await api(webToken, "POST", "/patients/new");
-assert.equal(r.status, 409);
-assert.equal(r.data.code, "limit");
-step("лимит: второй бесплатный пациент за день запрещён");
+// Лимит бесплатного тарифа: 2 в день (+1 за оценку от 4,5) — сам запрет проверяем ниже на пользователе 902
+me = (await api(webToken, "GET", "/me")).data;
+assert.equal(me.profile.free_limit, 2 + me.profile.bonus_today, "2 бесплатных пациента в день + бонус за оценки");
+assert.equal(me.profile.free_left, me.profile.free_limit - 1);
+step("лимит: 2 бесплатных пациента в день, бонус за высокую оценку виден в профиле");
 
 // ---------------------------------------------------------------- премиум: закрытые функции, пробный период за 1 ₽
 assert.ok(JSON.stringify(evalMsg.reply_markup).includes(`qz_${patId}`), "первый пациент: тест в подарок — кнопка теста в боте");
@@ -211,10 +211,27 @@ assert.equal((await api(webToken, "GET", "/me")).data.quizzes.find((q) => q.pat_
 me = (await api(webToken, "GET", "/me")).data;
 assert.equal(me.profile.trial_available, true);
 assert.ok(me.profile.weaknesses.length > 0, "слабые места видны без премиума");
-assert.ok(me.offer.early, "ранние цены до 31 октября");
-assert.equal(me.offer.plans.month.price, "249.00");
-assert.equal(me.offer.plans.month.regular, "390.00");
-assert.ok(!me.offer.plans.forever && !me.offer.plans.day, "старые тарифы не продаются");
+assert.equal(me.offer.plans.month.price, "200.00");
+assert.equal(me.offer.plans.year.price, "1000.00");
+assert.equal(me.offer.student.price, "100.00");
+assert.ok(!me.offer.plans.forever && !me.offer.plans.day && !me.offer.plans.week && !me.offer.plans.quarter && !me.offer.plans.student, "старые тарифы не продаются, студенческий — отдельно");
+// Студенческий: без проверки билета не купить; фото → админам с «Да / Нет» → подтверждение
+assert.equal((await api(webToken, "POST", "/pay", { plan: "student", consent: true })).data.code, "student");
+const stuJpeg = Buffer.from("/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=", "base64");
+r = await fetch(`${BASE}/api/student`, { method: "POST", headers: { Authorization: `Bearer ${webToken}`, "Content-Type": "image/jpeg" }, body: stuJpeg });
+assert.equal(r.status, 200, await r.clone().text());
+assert.equal((await r.json()).profile.student.status, "pending");
+const stuPhoto = await waitFor(() => tgCalls().find((c) => c.method === "sendPhoto" && String(c.chat_id) === "1326867567" && String(c.caption || "").includes("Студенческий на проверку")), "student photo to admin");
+assert.equal(stuPhoto.reply_markup.inline_keyboard[0][0].callback_data, `stu_ok_${U}`);
+await press(U, `stu_ok_${U}`); // не админ — ничего не меняется
+assert.equal((await api(webToken, "GET", "/me")).data.profile.student.status, "pending", "решает только админ");
+await press("1326867567", `stu_ok_${U}`);
+await waitFor(async () => (await api(webToken, "GET", "/me")).data.profile.student?.status === "approved", "student approved");
+await waitFor(() => sent(U).some((m) => m.text.includes("Статус студента подтверждён")), "student ok message");
+await waitFor(() => tgCalls().some((c) => c.method === "editMessageReplyMarkup" && String(c.chat_id) === "1326867567" && JSON.stringify(c.reply_markup).includes("Подтверждён")), "admin keyboard resolved");
+await press("1326867567", `stu_no_${U}`);
+await waitFor(() => sent("1326867567").some((m) => m.text.includes("Уже решено раньше: подтверждён")), "student already decided");
+assert.equal((await api(webToken, "GET", "/me")).data.profile.student.status, "approved");
 assert.equal((await api(webToken, "POST", "/pay", { plan: "trial" })).data.code, "consent", "без согласия на автосписания оплата не создаётся");
 r = await api(webToken, "POST", "/pay", { plan: "trial", consent: true });
 assert.equal(r.status, 200, JSON.stringify(r.data));
@@ -229,7 +246,7 @@ me = (await api(webToken, "GET", "/me")).data;
 assert.equal(me.profile.premium, true);
 assert.equal(me.profile.trial_available, false);
 assert.equal(me.profile.autopay.status, "active");
-assert.equal(me.profile.autopay.price, 249, "после пробного — месяц по ранней цене");
+assert.equal(me.profile.autopay.price, 200, "после пробного — месяц по текущей цене");
 assert.ok(Math.abs(me.profile.autopay.next_at - (Date.now() + 7 * 86400000)) < 120000, "первое списание через 7 дней");
 await waitFor(() => sent(U).some((m) => m.text.includes("Премиум на 7 дней включён")), "trial message");
 assert.equal((await api(webToken, "POST", "/pay", { plan: "trial", consent: true })).data.code, "trial_used");
@@ -256,9 +273,28 @@ await press(U, `qa_${patId}_0_0`);
 await waitFor(() => tgCalls().some((c) => c.method === "editMessageText" && c.text?.includes("Верно")), "quiz feedback");
 r = await api(webToken, "POST", `/quiz/${patId}/answer`, { index: 1, chosen: 2 });
 assert.equal(r.data.is_correct, false);
+assert.ok(r.data.why_chosen.includes("МРТ"), "объяснение, почему выбранный неверный вариант не подходит");
+assert.ok((await api(webToken, "GET", `/quiz/${patId}`)).data.quiz.questions[1].why_chosen, "и в состоянии теста");
+assert.equal((await api(webToken, "GET", `/quiz/${patId}`)).data.quiz.questions[0].why_chosen, "", "для верного ответа — пусто");
 r = await api(webToken, "POST", `/quiz/${patId}/answer`, { index: 1, chosen: 0 });
 assert.equal(r.data.stale, true, "повторный ответ на тот же вопрос игнорируется");
-step("тест: вопросы в боте и на сайте — общий прогресс, без двойных ответов");
+step("тест: вопросы в боте и на сайте — общий прогресс, без двойных ответов, разбор неверного варианта");
+
+// Обсуждение разбора с экспертом: премиум, без ограничения числа сообщений, история хранится у пациента
+r = await api(webToken, "POST", `/patients/${patId}/expert`, { text: "Почему мне снизили оценку за диагностику?" });
+assert.equal(r.status, 200, JSON.stringify(r.data));
+assert.ok(r.data.reply.includes("ФГДС"), "эксперт отвечает по случаю");
+for (let i = 0; i < 11; i++) {
+  r = await api(webToken, "POST", `/patients/${patId}/expert`, { text: `Вопрос ${i + 2}` });
+  assert.equal(r.status, 200, `сообщение ${i + 2}: ${JSON.stringify(r.data)}`);
+}
+assert.equal(r.data.chat.length, 24, "12 вопросов и 12 ответов — лимита нет");
+const pe = (await api(webToken, "GET", `/patients/${patId}`)).data.patient;
+assert.equal(pe.expert_chat.length, 24);
+assert.ok(!pe.expert_busy, "после ответа эксперт свободен");
+assert.equal((await api(webToken, "POST", `/patients/${patId}/expert`, { text: "  " })).status >= 400, true, "пустой вопрос не отправляется");
+assert.ok(JSON.stringify(evalMsg.reply_markup).includes("expert") === false, "в боте до премиума кнопки эксперта нет");
+step("эксперт: обсуждение разбора в премиуме, без ограничения по сообщениям");
 
 // ---------------------------------------------------------------- отзыв
 await press(U, "fb");
@@ -358,7 +394,7 @@ await sleep(500);
 assert.ok(!sent(U).some((m) => m.text.includes("Подписка выдана")), "не-админ не может выдавать подписку");
 step("админ: /grant @username 7 — подписка выдана, пользователь уведомлён");
 
-r = await api(webToken, "POST", "/pay", { plan: "week", consent: true });
+r = await api(webToken, "POST", "/pay", { plan: "year", consent: true });
 assert.equal(r.status, 502);
 assert.equal(r.data.code, "payment");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("Оплата не создана")), "admin payment error");
@@ -403,7 +439,7 @@ const run = await aq("autopay_run", { now: beforeRenew.autopay.next_at + 1000 })
 assert.ok(run.charged >= 1, JSON.stringify(run));
 const charge = tgCalls().filter((c) => c.method === `tochka POST /uapi/acquiring/v1.0/subscriptions/${trialOp}/charge`);
 assert.equal(charge.length, 1);
-assert.equal(charge[0].amount, 249);
+assert.equal(charge[0].amount, 200);
 let afterRenew = (await api(webToken, "GET", "/me")).data.profile;
 assert.ok(afterRenew.sub_until >= beforeRenew.autopay.next_at + 29 * 86400000, "продлено на месяц");
 assert.equal(afterRenew.autopay.trial, false);
@@ -420,7 +456,14 @@ const t2 = await login(P2);
 await api(t2, "PATCH", "/profile", { level: "student", profession: "Терапевт", specializations: ["гастроэнтерология"], onboarding_done: true });
 await api(t2, "POST", "/patients/new");
 await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 1, "p2 first patient");
+assert.equal((await api(t2, "GET", "/me")).data.profile.can_accept, true, "второй бесплатный пациент за день");
+await api(t2, "POST", "/patients/new");
+await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 2, "p2 second free patient");
 assert.equal((await api(t2, "GET", "/me")).data.profile.can_accept, false);
+r = await api(t2, "POST", "/patients/new");
+assert.equal(r.status, 409);
+assert.equal(r.data.code, "limit");
+assert.equal((await api(t2, "POST", `/patients/x/expert`, { text: "Почему?" })).data.code, "premium", "чат с экспертом — только в премиуме");
 r = await api(t2, "POST", "/pay", { plan: "patients3", consent: true });
 const packOp = r.data.link.split("/").pop();
 assert.equal(tgCalls().find((c) => c.method === "tochka POST /uapi/acquiring/v1.0/payments" && c.consumerId === P2).amount, "39.00");
@@ -430,7 +473,7 @@ assert.equal(p2.patient_credits, 3);
 assert.equal(p2.can_accept, true);
 assert.equal(p2.premium, false, "покупка пациентов не даёт премиум");
 await api(t2, "POST", "/patients/new");
-await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 2, "p2 second patient");
+await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 3, "p2 third patient (credit)");
 assert.equal((await api(t2, "GET", "/me")).data.profile.patient_credits, 2);
 r = await api(t2, "POST", "/pay", { plan: "freeze", consent: true });
 await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: r.data.link.split("/").pop() }) });
@@ -461,9 +504,10 @@ step("оплата подтверждается сразу: проверка и�
 const nowTs = Date.now(), per = { from: nowTs - 30 * 86400000, to: nowTs + 60000 };
 const dash = await aq("dashboard", per);
 assert.ok(dash.tiles && dash.funnel?.steps?.length >= 3, JSON.stringify(dash).slice(0, 300));
-for (const name of ["retention", "consultations", "quality", "procedures", "specialties", "quizzes", "gamification", "money", "ai", "channels", "heatmap", "errors"]) {
+for (const name of ["retention", "consultations", "quality", "procedures", "specialties", "quizzes", "gamification", "money", "ai", "sources", "channels", "heatmap", "errors"]) {
   await aq("report", { name, ...per });
 }
+assert.equal((await aq("report", { name: "metrika", ...per })).configured, false, "без токена Метрика честно не подключена");
 const aiRep = await aq("report", { name: "ai", ...per });
 assert.ok(JSON.stringify(aiRep).includes("neurons"), "расход ИИ в нейронах");
 const list = await aq("users", { filter: { q: "777" }, sort: "last_active", limit: 10 });
@@ -657,6 +701,19 @@ assert.deepEqual((await api(null, "GET", "/config")).data.providers, ["google", 
 assert.equal((await oauth("google", { cookie: false })).searchParams.get("auth_error"), "state", "без cookie — отказ (CSRF)");
 const g1 = await oauthLogin("google", "test:g-anna:anna@example.com:Анна");
 let gme = (await api(g1, "GET", "/me")).data;
+// Откуда пришёл: первое касание на сайте записывается один раз, канал определяется по сайту-источнику
+assert.equal((await api(g1, "POST", "/attribution", { r: "yandex.ru", l: "/blog/troponin/", p: "/blog/oak/", u: "", cid: "1759312345678901234" })).data.ok, true);
+await api(g1, "POST", "/attribution", { r: "vk.com", l: "/", p: "/", u: "" });
+{
+  const card = (await adm(admTok, "GET", `/user/${gme.profile.uid}`)).data;
+  const src = card.view.profile.src;
+  assert.equal(src.channel, "Поиск: Яндекс", JSON.stringify(src));
+  assert.equal(src.land, "/blog/troponin/");
+  assert.equal(src.last, "/blog/oak/");
+  assert.equal(src.cid, "1759312345678901234");
+  const srcRep = await aq("report", { name: "sources", from: Date.now() - 86400000, to: Date.now() + 60000 });
+  assert.ok(srcRep.channels.some((c) => c.key === "Поиск: Яндекс") && srcRep.pages.some((p) => p.key === "/blog/troponin/"), JSON.stringify(srcRep));
+}
 assert.match(gme.profile.uid, /^w\d{12}$/);
 assert.equal(gme.profile.name, "Анна");
 const W1 = gme.profile.uid;
@@ -735,7 +792,11 @@ assert.ok(Array.isArray((await ex.json()).rows), "список задач");
 assert.equal((await fetch(`${BASE}/api/admin/export`, { headers: { "X-Export-Key": "wrong-key-0123456789abcdefgh" } })).status, 403, "чужой ключ — отказ");
 assert.equal((await fetch(`${BASE}/api/admin/export`)).status, 403, "без ключа — отказ");
 assert.equal((await fetch(`${BASE}/api/admin/users`, { headers: { "X-Export-Key": EXP } })).status, 401, "ключ выгрузки не открывает остальную админку");
-step("выгрузка задач и идей: только по ключу и только чтение");
+ex = await (await fetch(`${BASE}/api/admin/export?what=replies&days=30`, { headers: { "X-Export-Key": EXP } })).json();
+const rep = ex.rows.find((x) => x.text.includes("всё супер"));
+assert.ok(rep && rep.question, "ответы на рассылки — с вопросом, на который ответили");
+assert.ok(!("uid" in rep) && !("username" in rep), "в выгрузке ответов нет uid и username");
+step("выгрузка задач, идей и ответов на рассылки: только по ключу и только чтение");
 
 // Веб-аккаунт привязывает Telegram, где уже есть прогресс — прогресс складывается
 const before777 = (await api(webToken, "GET", "/me")).data;

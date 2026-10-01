@@ -7,6 +7,7 @@ import { daysBetween, mskDate, UserError, userError } from "../src/lib/util.js";
 import { webhookOperationId, planFromPurpose } from "../src/lib/tochka.js";
 import { b64u, encryptPayload, validSubscription } from "../src/lib/webpush.js";
 import nodeCrypto from "node:crypto";
+import { STOP_PHRASES, styleIssues } from "../scripts/site/style.mjs";
 
 test("parseJsonLoose достаёт JSON из болтовни модели", () => {
   assert.deepEqual(parseJsonLoose('Вот:\n```json\n{"a":1}\n```'), { a: 1 });
@@ -40,8 +41,20 @@ test("лимит бесплатных пациентов и подписка", (
   const p = G.newProfile("1");
   assert.equal(G.canAcceptPatient(p), true);
   p.daily_patients = [Date.now()];
+  assert.equal(G.canAcceptPatient(p), true, "бесплатно 2 пациента в день");
+  p.daily_patients = [Date.now(), Date.now()];
   assert.equal(G.canAcceptPatient(p), false);
+  // Оценка от 4,5 — ещё один пациент сегодня, не больше трёх бонусов в день
+  assert.equal(G.grantRatingBonus(p, 4.4), false);
+  assert.equal(G.grantRatingBonus(p, 4.5), true);
+  assert.equal(G.canAcceptPatient(p), true);
+  assert.equal(G.freeLimitToday(p), 3);
+  G.grantRatingBonus(p, 5); G.grantRatingBonus(p, 5);
+  assert.equal(G.grantRatingBonus(p, 5), false);
+  assert.equal(G.bonusToday(p), 3);
+  p.bonus_patients = null;
   p.sub_until = -1;
+  assert.equal(G.grantRatingBonus(p, 5), false, "с премиумом бонус не нужен");
   assert.equal(G.canAcceptPatient(p), true);
   p.sub_until = Date.now() - 1;
   assert.equal(G.canAcceptPatient(p), false);
@@ -226,10 +239,14 @@ test("лица пациентов: детерминированы, учитыв�
   assert.ok(faceOptions({ m: "good" }).expressionVariant.smile > 0);
 });
 
-test("тарифы: ранние цены до 31 октября, потом обычные", async () => {
-  const { planPrice, EARLY_UNTIL, TRIAL } = await import("../src/config.js");
-  assert.equal(planPrice("month", EARLY_UNTIL - 1), "249.00");
-  assert.equal(planPrice("month", EARLY_UNTIL), "390.00");
+test("тарифы: цены и продление не дороже текущей цены", async () => {
+  const { planPrice, renewPrice, TRIAL } = await import("../src/config.js");
+  assert.equal(planPrice("month"), "200.00");
+  assert.equal(planPrice("year"), "1000.00");
+  assert.equal(planPrice("student"), "100.00");
+  assert.equal(renewPrice("month", 249), 200, "старые подписчики по ранней цене продлеваются по новой, меньшей");
+  assert.equal(renewPrice("month", 150), 150);
+  assert.equal(renewPrice("student", 100), 100);
   assert.equal(planPrice(TRIAL.key), "1.00");
   assert.equal(planPrice("patients3"), "39.00");
   assert.equal(planPrice("нет такого"), null);
@@ -247,7 +264,7 @@ test("стрик: заморозка закрывает пропущенный �
 
 test("лимит: купленные пациенты сверх бесплатного", () => {
   const now = Date.now();
-  const p = { daily_patients: [now - 1000], patient_credits: 0 };
+  const p = { daily_patients: [now - 2000, now - 1000], patient_credits: 0 };
   assert.equal(G.canAcceptPatient(p, now), false);
   p.patient_credits = 2;
   assert.equal(G.canAcceptPatient(p, now), true);
@@ -316,6 +333,8 @@ test("статьи блога из scripts/site/posts отвечают реда�
       assert.ok(dashes / words.length <= 0.02, `${at}: тире не больше 2 на 100 слов (сейчас ${(100 * dashes / words.length).toFixed(1)})`);
       const low = text.toLowerCase().replace(/\s+/g, " ");
       for (const ph of STOP_PHRASES) assert.ok(!low.includes(ph), `${at}: стоп-фраза «${ph}»`);
+      // С 02.10.2026 — ещё и кальки с английского и канцелярит (scripts/site/style.mjs)
+      if ((a.updated || a.date) >= "2026-10-02") assert.deepEqual(styleIssues(body, { calques: true }).filter((x) => !x.startsWith("стоп-фраза")), [], `${at}: живой язык`);
       assert.ok(!/эксперт[а-я]* (после|отдельно|показ|разбира|оценива)/.test(low), `${at}: разбор в тренажёре делает ИИ — пишите «ИИ-разбор», не «эксперт»`);
       const own = grams(words);
       for (const o of ARTICLES) {
@@ -329,8 +348,6 @@ test("статьи блога из scripts/site/posts отвечают реда�
   }
 });
 
-// Шаблонные обороты, по которым видно конвейер (аудит блога 26.09.2026)
-const STOP_PHRASES = ["в этой статье", "разберём", "поддаётся алгоритму", "поддаётся системе", "шанс пропустить находку", "ниже — рабочий алгоритм", "удобно разбирать", "от находки к синдрому", "в отрыве от остальной картины", "какие находки вы", "а какие пропустили", "как тренировать навык", "важно отметить", "стоит отметить", "играет ключевую роль", "в современном мире"];
 const grams = (w) => { const s = new Set(); for (let i = 0; i + 5 <= w.length; i++) s.add(w.slice(i, i + 5).join(" ")); return s; };
 
 test("клинические рекомендации: поиск КР по диагнозу и МКБ, выжимка тезисов и доз", async () => {
@@ -409,4 +426,17 @@ test("карточка пациента: профиль приёма вмест�
   assert.equal(specialtyOf({ specialization: "гастроэнтерология", specialty: "что угодно" }), "гастроэнтерология");
   assert.equal(specialtyOf({ specialization: "урогинекология", specialty: "урология" }), "урология", "свой раздел — профиль от ИИ");
   assert.equal(specialtyOf({ specialization: "урогинекология" }), "урогинекология", "старый пациент без профиля — как было");
+});
+
+test("откуда пришёл: канал по сайту-источнику и UTM", async () => {
+  const { channelOf, cleanAttribution } = await import("../src/lib/attribution.js");
+  assert.equal(channelOf("yandex.ru"), "Поиск: Яндекс");
+  assert.equal(channelOf("www.google.com".replace(/^www\./, "")), "Поиск: Google");
+  assert.equal(channelOf("t.me"), "Telegram");
+  assert.equal(channelOf("dzen.ru"), "Дзен");
+  assert.equal(channelOf("", ""), "Прямой заход");
+  assert.equal(channelOf("example.org"), "Сайт: example.org");
+  assert.equal(channelOf("yandex.ru", "source=vk&medium=cpc"), "UTM: vk / cpc", "UTM важнее сайта-источника");
+  assert.equal(channelOf("", "yclid=123"), "Реклама: Яндекс Директ");
+  assert.equal(cleanAttribution({ r: "YANDEX.RU<script>", l: "/blog/a/\"><b>", cid: "12ab34" }).land, "/blog/a/b");
 });

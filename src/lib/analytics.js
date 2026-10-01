@@ -221,6 +221,8 @@ export function live(h, { limit = 50 } = {}) {
 // ---------------------------------------------------
 // Отчёты
 // ---------------------------------------------------
+const METRIKA_COUNTER = 113057442; // счётчик сайта и приложения
+
 const REPORTS = {
   retention(h, f) {
     const weekStart = (ts) => {
@@ -444,6 +446,64 @@ const REPORTS = {
       free_per_day: AI_FREE_NEURONS_PER_DAY,
       cloudflare: h.getSetting("cf_ai_cache", null),
     };
+  },
+
+  // Яндекс Метрика (Reporting API): источники трафика, поисковые фразы, поисковики и страницы входа за период.
+  // Токен OAuth с правом metrika:read — секрет YANDEX_METRIKA_TOKEN; ответ кэшируется на 30 минут.
+  async metrika(h, f) {
+    const token = String(h.env.YANDEX_METRIKA_TOKEN || "").trim();
+    if (!token) return { configured: false };
+    const d1 = mskDate(Number(f.from)), d2 = mskDate(Math.min(Number(f.to), Date.now()) - 1);
+    const key = `metrika:${d1}:${d2}`;
+    const cached = h.getMeta(key);
+    if (cached && Date.now() - cached.at < 30 * 60000) return cached.data;
+    const get = async (dimensions, metrics, limit = 30) => {
+      const q = new URLSearchParams({ ids: String(METRIKA_COUNTER), date1: d1, date2: d2, dimensions, metrics, limit: String(limit), sort: `-${metrics.split(",")[0]}`, accuracy: "full", lang: "ru" });
+      const r = await fetch(`https://api-metrika.yandex.net/stat/v1/data?${q}`, { headers: { Authorization: `OAuth ${token}` } });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(`Метрика ${r.status}: ${j.message || j.errors?.[0]?.message || ""}`.trim());
+      return (j.data || []).map((x) => ({ name: x.dimensions?.[0]?.name ?? "—", m: x.metrics || [] }));
+    };
+    try {
+      const [sources, engines, phrases, pages, totals] = await Promise.all([
+        get("ym:s:lastTrafficSource", "ym:s:visits,ym:s:users,ym:s:bounceRate,ym:s:avgVisitDurationSeconds", 20),
+        get("ym:s:lastSearchEngine", "ym:s:visits,ym:s:users", 15),
+        get("ym:s:lastSearchPhrase", "ym:s:visits,ym:s:users,ym:s:bounceRate", 100),
+        get("ym:s:startURL", "ym:s:visits,ym:s:users,ym:s:bounceRate", 50),
+        get("ym:s:date", "ym:s:visits,ym:s:users", 400),
+      ]);
+      const data = {
+        configured: true, date1: d1, date2: d2,
+        sources: sources.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1), duration: Math.round(x.m[3] || 0) })),
+        engines: engines.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1] })),
+        phrases: phrases.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1) })),
+        pages: pages.map((x) => ({ name: String(x.name).replace(/^https?:\/\/[^/]+/, "") || "/", visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1) })),
+        days: totals.map((x) => ({ day: x.name, visits: x.m[0], users: x.m[1] })).sort((a, b) => a.day.localeCompare(b.day)),
+      };
+      h.setMeta(key, { at: Date.now(), data });
+      return data;
+    } catch (e) {
+      return { configured: true, error: String(e.message || e).slice(0, 300) };
+    }
+  },
+
+  // Откуда пришли зарегистрировавшиеся за период: канал и первая страница сайта, сколько дошли до приёма и до оплаты
+  sources(h, f) {
+    const from = Number(f.from), to = Number(f.to);
+    const rows = h.all(`SELECT u.uid, COALESCE(u.src_channel, CASE WHEN u.ref LIKE 'r_%' THEN 'Партнёрская ссылка' ELSE 'Бот / нет данных' END) AS channel,
+      u.src_land AS land, u.cons, EXISTS(SELECT 1 FROM payments p WHERE p.uid = u.uid AND p.status = 'paid') AS paid
+      FROM users u WHERE u.registered_at >= ? AND u.registered_at < ?`, from, to);
+    const group = (key) => {
+      const m = new Map();
+      for (const r of rows) {
+        const k = r[key] || "—";
+        const x = m.get(k) || { key: k, users: 0, active: 0, paid: 0 };
+        x.users++; if (r.cons > 0) x.active++; if (r.paid) x.paid++;
+        m.set(k, x);
+      }
+      return [...m.values()].sort((a, b) => b.users - a.users);
+    };
+    return { total: rows.length, channels: group("channel"), pages: group("land").filter((x) => x.key !== "—").slice(0, 40) };
   },
 
   channels(h, f) {
@@ -893,7 +953,7 @@ Help me, Doctor — тренажёр врача: принимаешь ИИ-па�
 «Спасибо за заявку! Пока не можем дать статус партнёра, но твоя личная ссылка уже работает: 30% с первой оплаты друга и 15% со всех следующих. Если появится своя аудитория (чат потока, канал) — подай заявку снова.»
 
 — Скрипт 4 (админу студенческого паблика или чата):
-«Здравствуйте! Мы делаем тренажёр для студентов-медиков — приём ИИ-пациентов с разбором по КР Минздрава, первый пациент в день бесплатно. Можно разместить у вас пост? Или, если хотите, станьте нашим партнёром: 50% с каждой оплаты подписчиков, пришедших по вашей ссылке, навсегда. Условия: https://helpmedoctor.ru/partneram/»
+«Здравствуйте! Мы делаем тренажёр для студентов-медиков — приём ИИ-пациентов с разбором по КР Минздрава, два пациента в день бесплатно. Можно разместить у вас пост? Или, если хотите, станьте нашим партнёром: 50% с каждой оплаты подписчиков, пришедших по вашей ссылке, навсегда. Условия: https://helpmedoctor.ru/partneram/»
 
 — Частые вопросы:
 • «Это пирамида?» — Нет: платим только с реальных оплат приглашённых, без взносов и «уровней».
@@ -1117,6 +1177,18 @@ function runTaskImports(h) {
   runB2bTasks(h);
 }
 
+/**
+ * Ответы пользователей на рассылки и сообщения команды (через «Ответить» в Telegram) — для цитат в блоге и канале.
+ * Только имя (без фамилии, username и uid), роль и специальность: в выгрузку попадает минимум данных.
+ */
+function repliesExport(h, { days = 30 } = {}) {
+  const since = Date.now() - Math.min(Math.max(Number(days) || 30, 1), 365) * 86400000;
+  const rows = h.all(`SELECT c.ts, c.text, u.name, u.level, u.profession, m.text AS question
+    FROM chat c LEFT JOIN users u ON u.uid = c.uid LEFT JOIN chat m ON m.id = CAST(c.ref AS INTEGER)
+    WHERE c.dir = 'in' AND c.kind = 'reply' AND c.ts >= ? ORDER BY c.ts DESC LIMIT 500`, since);
+  return { rows: rows.map((r) => ({ ...r, name: String(r.name || "").trim().split(/\s+/)[0] || "", question: String(r.question || "").slice(0, 300) })) };
+}
+
 function tasks(h, { status = "", assignee = "", type = "", q = "" } = {}) {
   if (!h.getMeta("tasks_seeded")) {
     h.setMeta("tasks_seeded", 1);
@@ -1276,6 +1348,7 @@ export const ADMIN_OPS = {
   notes_delete: (h, a, admin) => { h.sql.exec("DELETE FROM notes WHERE id = ?", Number(a.id)); h.audit(admin, "note_delete", a.id); return { ok: true }; },
   tasks: (h, a) => tasks(h, a),
   task: (h, a) => task(h, a),
+  replies_export: (h, a) => repliesExport(h, a),
   task_create: (h, a, admin) => taskCreate(h, a, admin),
   task_update: (h, a, admin) => taskUpdate(h, a, admin),
   task_delete: (h, a, admin) => {

@@ -4,7 +4,7 @@
 // платежи, коды входа, задачи, рассылки и настройки админки. Хранилище — SQLite Durable Object.
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
-import { adminIds, REFERRAL, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel } from "../config.js";
+import { adminIds, REFERRAL, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel, renewPrice } from "../config.js";
 import { cancelSubscription, chargeSubscription } from "../lib/tochka.js";
 import { confirmPayment, PAY_POLL } from "../lib/payments.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
@@ -27,6 +27,7 @@ const USER_COLS = {
   sub_until: "INTEGER DEFAULT 0", sub_plan: "TEXT", onboarding_done: "INTEGER DEFAULT 1", about: "TEXT", expectations: "TEXT",
   notifications: "INTEGER DEFAULT 1", feedback_count: "INTEGER DEFAULT 0", blocked: "INTEGER DEFAULT 0", bot_blocked: "INTEGER DEFAULT 0",
   ref: "TEXT", last_source: "TEXT", extra_today: "INTEGER DEFAULT 0",
+  src_channel: "TEXT", src_host: "TEXT", src_land: "TEXT", src_last: "TEXT", src_utm: "TEXT", src_cid: "TEXT",
 };
 const SUMMARY_KEYS = Object.keys(USER_COLS).filter((k) => k !== "registered_at");
 
@@ -518,6 +519,29 @@ export class HubDO extends DurableObject {
     return res;
   }
 
+  /** Студенческий билет — фото всем админам с кнопками «Да / Нет»; запоминаем сообщения, чтобы после решения убрать кнопки у всех */
+  async studentRequest(uid, u, buf, type) {
+    const bot = tg(this.env, { log: false });
+    const caption = `🎓 <b>Студенческий на проверку</b>\n${esc(u.name || "")} ${u.username ? "@" + esc(u.username) : ""} (uid ${esc(uid)})${u.profession ? `\nРоль в анкете: ${esc(u.profession)}` : ""}\n\nПодтвердить студенческий тариф (${fmtRub(PLANS.student.price)} ₽/мес)?`;
+    const kb = [[{ text: "✅ Да", callback_data: `stu_ok_${uid}` }, { text: "❌ Нет", callback_data: `stu_no_${uid}` }]];
+    const msgs = [];
+    for (const id of adminIds(this.env)) {
+      const mid = await bot.sendPhoto(id, new Blob([buf], { type }), caption, kb).catch(() => 0);
+      if (mid) msgs.push([id, mid]);
+    }
+    this.setMeta(`stu:${uid}`, msgs);
+    return msgs.length > 0;
+  }
+
+  /** Решение принято: у всех админов вместо кнопок — кто и что решил */
+  async studentResolved(uid, ok, who) {
+    const bot = tg(this.env, { log: false });
+    for (const [id, mid] of this.getMeta(`stu:${uid}`, []) || []) {
+      await bot.editKeyboard(id, mid, [[{ text: `${ok ? "✅ Подтверждён" : "❌ Отклонён"} · ${who}`, callback_data: "noop" }]]).catch(() => {});
+    }
+    this.sql.exec("DELETE FROM meta WHERE k = ?", `stu:${uid}`);
+  }
+
   async payoutRequest(uid, req) {
     const res = PT.payoutRequest(this, uid, req);
     if (res.ok) {
@@ -574,11 +598,13 @@ export class HubDO extends DurableObject {
     for (const r of this.all("SELECT * FROM autopay WHERE status = 'active' AND trial = 1 AND notified = 0 AND next_at > ? AND next_at <= ?", now, now + 36 * HOUR)) {
       this.sql.exec("UPDATE autopay SET notified = 1 WHERE uid = ?", r.uid);
       const when = new Date(r.next_at).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
-      await bot.send(r.uid, `⏳ <b>Пробный премиум заканчивается ${when}</b>\n\nДальше подписка продлится автоматически: <b>${fmtRub(r.price)} ₽ в месяц</b>. Отключить автопродление можно в любой момент в профиле → «Подписка».`,
+      await bot.send(r.uid, `⏳ <b>Пробный премиум заканчивается ${when}</b>\n\nДальше подписка продлится автоматически: <b>${fmtRub(renewPrice(r.plan, r.price))} ₽ в месяц</b>. Отключить автопродление можно в любой момент в профиле → «Подписка».`,
         [[{ text: "💎 Управлять подпиской", web_app: { url: this.appUrl("/plans") } }]]).catch(() => {});
     }
     let charged = 0;
-    for (const r of this.all("SELECT * FROM autopay WHERE status = 'active' AND next_at <= ? LIMIT 200", now)) {
+    for (const r0 of this.all("SELECT * FROM autopay WHERE status = 'active' AND next_at <= ? LIMIT 200", now)) {
+      // Цены снизились — продлеваем по новой, если она меньше сохранённой
+      const r = { ...r0, price: renewPrice(r0.plan, r0.price) };
       let res;
       try {
         res = await chargeSubscription(this.env, r.op, r.price);

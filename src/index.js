@@ -289,6 +289,10 @@ async function api(request, env, url) {
       return json(await user.setAvatar(buf, (request.headers.get("Content-Type") || "").split(";")[0]));
     }
     if (path === "/avatar/telegram" && method === "POST") return json(await user.avatarFromTelegram());
+    if (path === "/student" && method === "POST") {
+      const buf = await request.arrayBuffer();
+      return json(await user.submitStudentCard(buf, (request.headers.get("Content-Type") || "").split(";")[0]));
+    }
     if (path === "/avatar" && method === "DELETE") return json(await user.removeAvatar());
     if (path === "/autopay/cancel" && method === "POST") return json({ profile: await user.cancelAutopay() });
     if (path === "/feedback" && method === "POST") {
@@ -299,6 +303,9 @@ async function api(request, env, url) {
     }
     if (path === "/patients/new" && method === "POST") {
       return json(await user.requestNewPatient("web"));
+    }
+    if (path === "/attribution" && method === "POST") {
+      return json(await user.setAttribution(await readJson(request)));
     }
     if (path === "/event" && method === "POST") {
       // Клиентские события: открыл приложение, открыл тарифы
@@ -362,6 +369,7 @@ async function api(request, env, url) {
       if (action === "exam") return json(await user.physicalExam(id, (await readJson(request)).action));
       if (action === "hint") return json(await user.requestHint(id));
       if (action === "guide") return json(await user.requestGuide(id));
+      if (action === "expert") return json(await user.expertChat(id, (await readJson(request)).text));
       if (action === "finish") return json(await user.finishConsultation(id, await readJson(request), "web"));
       if (action === "voice") {
         const buf = await request.arrayBuffer();

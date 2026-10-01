@@ -21,6 +21,19 @@
     if (a) goal("cta_app", { from: new URL(a.href, location.href).searchParams.get("from") || page });
   });
 
+  // ---------- Откуда пришёл посетитель (первое касание) и последняя страница перед переходом в приложение ----------
+  // Сохраняем один раз: внешний сайт-источник (поисковик, соцсеть, другой сайт), страница входа и UTM / yclid.
+  // Приложение (тот же домен) отправит это при регистрации — в админке видно канал и статью, с которой пришёл человек.
+  if (!ls.get("hmd_src")) {
+    let host = "";
+    try { host = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : ""; } catch {}
+    if (/(^|\.)helpmedoctor\.ru$|workers\.dev$/.test(host)) host = "";
+    const qp = new URLSearchParams(location.search);
+    const utm = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "yclid"].filter((k) => qp.get(k)).map((k) => `${k.replace("utm_", "")}=${qp.get(k).slice(0, 60)}`).join("&");
+    ls.set("hmd_src", JSON.stringify({ r: host, l: location.pathname, u: utm, at: Date.now() }));
+  }
+  ls.set("hmd_last_page", location.pathname);
+
   // ---------- Личная ссылка партнёра: ?ref=r_<код> запоминаем на 30 дней — приложение передаст её при регистрации ----------
   const refParam = new URLSearchParams(location.search).get("ref") || "";
   if (/^r_[a-z0-9]{4,12}$/i.test(refParam)) {
@@ -71,24 +84,12 @@
   // Выпадающие меню закрываются кликом мимо
   document.addEventListener("click", (e) => { $$(".nav details[open]").forEach((d) => { if (!d.contains(e.target)) d.open = false; }); });
 
-  // ---------- Полоса с ранними ценами и обратный отсчёт ----------
+  // ---------- Полоса с ценами (скрыта для вошедших и после закрытия) ----------
   const promo = $(".promo");
-  const until = Number(document.body.dataset.earlyUntil || 0);
-  const left = until - Date.now();
   if (promo) {
-    if (left <= 0 || ls.get("hmd_promo_x") === String(until)) promo.hidden = true;
-    else promo.hidden = false;
-    if (loggedIn) promo.hidden = true;
-    $(".promo-x", promo)?.addEventListener("click", () => { promo.hidden = true; ls.set("hmd_promo_x", String(until)); goal("promo_close"); });
+    promo.hidden = loggedIn || ls.get("hmd_promo_x") === "prices-2026-10";
+    $(".promo-x", promo)?.addEventListener("click", () => { promo.hidden = true; ls.set("hmd_promo_x", "prices-2026-10"); goal("promo_close"); });
   }
-  $$("[data-countdown]").forEach((el) => {
-    if (left <= 0) return;
-    const d = Math.floor(left / 86400000);
-    const h = Math.floor((left % 86400000) / 3600000);
-    el.textContent = d > 0 ? `До конца ранних цен: ${d} ${plural(d, "день", "дня", "дней")} ${h} ч` : `Ранние цены заканчиваются через ${h} ${plural(h, "час", "часа", "часов")}`;
-    el.hidden = false;
-  });
-  if (left <= 0) $$("[data-early]").forEach((el) => el.remove());
 
   // ---------- Живые цифры (только агрегаты) ----------
   const live = $$("[data-live]");
