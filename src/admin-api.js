@@ -3,7 +3,7 @@
 // Доступ — только Telegram ID из ADMIN_ID. Сессия 12 часов, проверяется на каждом запросе.
 // =====================================================
 import { adminIds, AI_FREE_NEURONS_PER_DAY, PLANS } from "./config.js";
-import { ADMIN_SESSION_TTL_MS, bearer, createSession, loginLinks, newLoginCode, verifyInitData, verifySession } from "./lib/auth.js";
+import { ADMIN_SESSION_TTL_MS, bearer, createSession, loginLinks, newLoginCode, safeEqual, verifyInitData, verifySession } from "./lib/auth.js";
 import { aiText } from "./lib/ai.js";
 import { declDays, esc, json, toTelegramHtml, userError } from "./lib/util.js";
 import { fetchPayment, isPaidStatus } from "./lib/tochka.js";
@@ -49,6 +49,15 @@ export async function adminApi(request, env, url, ctx) {
     if (!adminIds(env).includes(String(res.uid))) return json({ status: "forbidden", error: "Этот аккаунт не админ" }, 403);
     await hub.admin("audit", { action: "login", details: { via: url.searchParams.get("cn") ? "google" : "link" } }, res.uid);
     return json({ status: "ok", token: await createSession(env, res.uid, { scope: "admin", ttl: ADMIN_SESSION_TTL_MS }), me: adminMe(env, res.uid) });
+  }
+
+  // --- Выгрузка задач и идей (workflow «Выгрузка из админки»): отдельный ключ ADMIN_EXPORT_KEY, только чтение ---
+  if (path === "/export" && method === "GET") {
+    const key = String(env.ADMIN_EXPORT_KEY || "");
+    if (key.length < 24) return json({ error: "Выгрузка не настроена" }, 404);
+    if (!safeEqual(request.headers.get("X-Export-Key") || "", key)) return json({ error: "Нет доступа" }, 403);
+    const id = url.searchParams.get("id");
+    return json(id ? await hub.admin("task", { id }, "export") : await hub.admin("tasks", {}, "export"));
   }
 
   // --- Всё остальное — только с сессией админа ---

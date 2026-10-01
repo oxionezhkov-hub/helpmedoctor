@@ -111,6 +111,14 @@ jobs:
             v="${!k}"
             if [ -n "$v" ]; then printf '%s' "$v" | npx wrangler secret put "$k"; else echo "$k не задан — пропускаю"; fi
           done
+      # Ключ выгрузки задач и идей из админки (workflow «Выгрузка из админки», только чтение) — по желанию
+      - name: Ключ выгрузки из админки
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADMIN_EXPORT_KEY: ${{ secrets.ADMIN_EXPORT_KEY }}
+        run: |
+          if [ -n "$ADMIN_EXPORT_KEY" ]; then printf '%s' "$ADMIN_EXPORT_KEY" | npx wrangler secret put ADMIN_EXPORT_KEY; else echo "ADMIN_EXPORT_KEY не задан — пропускаю"; fi
       # Кнопка «Приложение» и меню команд бота — на актуальный адрес сайта (вебхук не трогаем)
       - name: Кнопка меню и команды бота
         env:

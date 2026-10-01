@@ -727,6 +727,16 @@ assert.equal((await oauth("google", { mode: "admin", code: "test:g-nobody:nobody
 assert.equal((await oauth("yandex", { mode: "admin", code: "test:y-anna:anna@yandex.ru:Анна" })).searchParams.get("auth_error"), "forbidden", "не-админ не входит");
 step("админка: вход через Google — только привязанный к Telegram админа");
 
+// Выгрузка задач и идей по отдельному ключу — только чтение
+const EXP = "e2e-export-key-0123456789abcdef";
+let ex = await fetch(`${BASE}/api/admin/export`, { headers: { "X-Export-Key": EXP } });
+assert.equal(ex.status, 200);
+assert.ok(Array.isArray((await ex.json()).rows), "список задач");
+assert.equal((await fetch(`${BASE}/api/admin/export`, { headers: { "X-Export-Key": "wrong-key-0123456789abcdefgh" } })).status, 403, "чужой ключ — отказ");
+assert.equal((await fetch(`${BASE}/api/admin/export`)).status, 403, "без ключа — отказ");
+assert.equal((await fetch(`${BASE}/api/admin/users`, { headers: { "X-Export-Key": EXP } })).status, 401, "ключ выгрузки не открывает остальную админку");
+step("выгрузка задач и идей: только по ключу и только чтение");
+
 // Веб-аккаунт привязывает Telegram, где уже есть прогресс — прогресс складывается
 const before777 = (await api(webToken, "GET", "/me")).data;
 await api(g2, "PATCH", "/profile", { onboarding_done: true });
