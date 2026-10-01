@@ -280,6 +280,22 @@ r = await api(webToken, "POST", `/quiz/${patId}/answer`, { index: 1, chosen: 0 }
 assert.equal(r.data.stale, true, "повторный ответ на тот же вопрос игнорируется");
 step("тест: вопросы в боте и на сайте — общий прогресс, без двойных ответов, разбор неверного варианта");
 
+// Обсуждение разбора с экспертом: премиум, без ограничения числа сообщений, история хранится у пациента
+r = await api(webToken, "POST", `/patients/${patId}/expert`, { text: "Почему мне снизили оценку за диагностику?" });
+assert.equal(r.status, 200, JSON.stringify(r.data));
+assert.ok(r.data.reply.includes("ФГДС"), "эксперт отвечает по случаю");
+for (let i = 0; i < 11; i++) {
+  r = await api(webToken, "POST", `/patients/${patId}/expert`, { text: `Вопрос ${i + 2}` });
+  assert.equal(r.status, 200, `сообщение ${i + 2}: ${JSON.stringify(r.data)}`);
+}
+assert.equal(r.data.chat.length, 24, "12 вопросов и 12 ответов — лимита нет");
+const pe = (await api(webToken, "GET", `/patients/${patId}`)).data.patient;
+assert.equal(pe.expert_chat.length, 24);
+assert.ok(!pe.expert_busy, "после ответа эксперт свободен");
+assert.equal((await api(webToken, "POST", `/patients/${patId}/expert`, { text: "  " })).status >= 400, true, "пустой вопрос не отправляется");
+assert.ok(JSON.stringify(evalMsg.reply_markup).includes("expert") === false, "в боте до премиума кнопки эксперта нет");
+step("эксперт: обсуждение разбора в премиуме, без ограничения по сообщениям");
+
 // ---------------------------------------------------------------- отзыв
 await press(U, "fb");
 await waitFor(() => sent(U).some((m) => m.text.includes("Отзыв о тренажёре")), "feedback ask");
@@ -447,6 +463,7 @@ assert.equal((await api(t2, "GET", "/me")).data.profile.can_accept, false);
 r = await api(t2, "POST", "/patients/new");
 assert.equal(r.status, 409);
 assert.equal(r.data.code, "limit");
+assert.equal((await api(t2, "POST", `/patients/x/expert`, { text: "Почему?" })).data.code, "premium", "чат с экспертом — только в премиуме");
 r = await api(t2, "POST", "/pay", { plan: "patients3", consent: true });
 const packOp = r.data.link.split("/").pop();
 assert.equal(tgCalls().find((c) => c.method === "tochka POST /uapi/acquiring/v1.0/payments" && c.consumerId === P2).amount, "39.00");

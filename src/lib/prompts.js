@@ -192,6 +192,32 @@ dialog_moments — не больше 2, strengths и weaknesses — не бол�
   };
 }
 
+/** Чат с экспертом после разбора (премиум): тот же профессор знает диагноз, действия врача, оценку и КР */
+export function expertChatPrompt(pat, facts, rec, history, question, { profession = "", krName = "" } = {}) {
+  const f = rec?.feedback || {};
+  const g = rec?.guide || {};
+  const questions = facts.doctorMessages.length ? facts.doctorMessages.slice(-20).map((t, i) => `${i + 1}. ${t}`).join("\n") : "не задал ни одного вопроса";
+  const tx = (g.treatment || []).map((t) => `${t.drug}: ${t.dose}${t.duration ? `, ${t.duration}` : ""}`).join("; ");
+  const dx = (g.tests || []).map((t) => t.name).join(", ");
+  const talk = history.slice(-12).map((m) => `${m.role === "expert" ? "Профессор" : "Врач"}: ${m.text}`).join("\n");
+  return {
+    maxTokens: 700,
+    temperature: 0.3,
+    system: `Ты — профессор (${specialtyOf(pat)}), 25 лет клинического стажа. После учебного приёма ты обсуждаешь случай с ${profession ? `врачом (${profession})` : "врачом"}, как наставник с коллегой: прямо, конкретно и доброжелательно.
+Опора — ${krName ? `клинические рекомендации Минздрава России «${krName}»` : "действующие клинические рекомендации Минздрава России"}; препараты — по МНН. Отвечай по-русски, обычно 3-6 предложений; если просят подробнее или схему — можно длиннее, списком.
+Не выдумывай жалоб, анамнеза и результатов, которых нет в данных случая; если данных нет — так и скажи и объясни, что надо было спросить или назначить. ${DONE_RULE}
+Пациент вымышленный, это учебный разбор. Если вопрос не о медицине и не об этом случае — коротко верни разговор к разбору.`,
+    prompt: `Случай: ${patientCard(pat)}. ИСТИННЫЙ ДИАГНОЗ: ${pat.true_diagnosis}.
+Вопросы врача на приёме:
+${questions}
+Действия: ${doneActions(pat, facts)}; диагноз врача — ${facts.diagnosis || "не поставлен"}; лечение и рекомендации — ${facts.treatment || "не назначено"}${facts.referrals?.length ? `; направление — ${facts.referrals.join(", ")}` : ""}.
+Оценка приёма: ${rec?.rating ?? "—"} из 5${f.axes ? ` (диагностика ${f.axes.diagnosis}, общение ${f.axes.communication}, лечение ${f.axes.treatment})` : ""}.
+Твой разбор: ${f.expert_text || "—"}
+${f.weaknesses?.length ? `Пробелы: ${f.weaknesses.join("; ")}.\n` : ""}${dx ? `Диагностика по КР: ${dx}.\n` : ""}${tx ? `Лечение по КР: ${tx}.\n` : ""}${talk ? `\nРазговор до этого:\n${talk}\n` : ""}
+Вопрос врача: ${question}`,
+  };
+}
+
 export function quizPrompt(pat, topics, guide = null, krName = "") {
   const g = guide || {};
   const tx = (g.treatment || []).map((t) => `${t.drug}: ${t.dose}${t.duration ? `, ${t.duration}` : ""}`).join("; ");

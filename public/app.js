@@ -799,6 +799,10 @@ function onSync(msg) {
     if (S.route.name === "partner") viewPartner(true);
     return;
   }
+  if (msg.scope === "expert" && msg.patient_id) {
+    onExpertSync(msg);
+    return;
+  }
   if (msg.scope === "guide" && msg.patient_id) {
     if (!msg.pending) refreshGuide(msg.patient_id, msg.error);
     return;
@@ -842,6 +846,7 @@ function parseRoute() {
   if (parts[0] === "consult" && parts[1]) return { name: "consult", params: { id: parts[1] }, q };
   if (parts[0] === "quizzes") return { name: "quizzes", params: {}, q };
   if (parts[0] === "quiz" && parts[1]) return { name: "quiz", params: { id: parts[1] }, q };
+  if (parts[0] === "expert" && parts[1]) return { name: "expert", params: { id: parts[1] }, q };
   if (parts[0] === "profile" && parts[1] === "stats") return { name: "stats", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "settings") return { name: "settings", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "accounts") return { name: "accounts", params: {}, q };
@@ -877,7 +882,7 @@ async function route() {
     if (ROOT_TABS.includes(r.name)) tg.BackButton?.hide();
     else tg.BackButton?.show();
   }
-  if (["patient", "consult"].includes(r.name) && !S.patients.has(r.params.id)) {
+  if (["patient", "consult", "expert"].includes(r.name) && !S.patients.has(r.params.id)) {
     renderShell(html`<div class="page"><div class="skeleton" style="height:140px"></div><div class="skeleton"></div></div>`, r.name !== "consult");
     try {
       await loadPatient(r.params.id);
@@ -895,7 +900,7 @@ async function route() {
 function rerender(fresh = false) {
   const r = S.route;
   if (!S.me) return;
-  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner };
+  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, expert: viewExpert, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner };
   (views[r.name] || viewHome)(fresh);
 }
 
@@ -903,7 +908,7 @@ function renderShell(content, withNav = true) {
   const r = S.route.name;
   const pendingQuizzes = (S.me?.quizzes || []).filter((q) => q.status !== "done").length;
   const queue = (S.me?.patients || []).filter((p) => p.status !== "closed").length;
-  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && r === "patient") || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install", "partner"].includes(r)) ? "active" : ""}">
+  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && ["patient", "expert"].includes(r)) || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install", "partner"].includes(r)) ? "active" : ""}">
     ${ic(ico, "nav-i")}<span>${label}</span>${badge ? html`<span class="dot">${badge}</span>` : ""}</a>`;
   const scrollY = window.scrollY;
   patchRoot(html`${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
@@ -1320,7 +1325,7 @@ function viewPatient() {
         <div class="row between"><b>Приём №${consults.length - i}</b><span class="tiny muted">${dateText(c.date)}</span></div>
         ${c.evaluating ? etaBox("evaluation", c.date) : evaluationBlock(c)}
         ${actionsSummary(c)}
-        ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id, p.gift_kr)}</div>` : ""}
+        ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id, p.gift_kr)}</div>${c.rating != null ? expertCta(p) : ""}` : ""}
       </div>`)}` : ""}
 
     ${p.test_results?.length ? html`<div class="section-title">Результаты обследований</div>
@@ -2048,11 +2053,124 @@ function onEvaluation(r) {
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
     ${r.bonus_patient ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("party", "c-ok")}Оценка от ${dec(S.me?.profile?.bonus_rating || 4.5)} — ещё один бесплатный пациент сегодня!</span></div>` : ""}
     <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id, r.gift_kr)}</div>
+    ${expertCta({ id: r.patient_id })}
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
     <p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>
   </div>`[RAW];
   const nb = $("#eval-new");
   if (nb) nb.onclick = () => { closeSheet(); go("/"); };
+}
+
+// ---------- Обсуждение разбора с экспертом (премиум) ----------
+const EXPERT_STARTERS = ["Почему такая оценка?", "Какие вопросы я упустил?", "Как лечить по клиническим рекомендациям?", "С чем дифференцировать этот диагноз?"];
+
+/** Кнопка «Обсудить с экспертом» под разбором; без премиума — ведёт в тарифы */
+function expertCta(p) {
+  const prem = S.me?.profile?.premium;
+  const n = (p.expert_chat || []).length;
+  return html`<a class="card tap row expert-cta" href="#/expert/${p.id}" ${!prem && S.me?.profile?.trial_available ? html`data-checkout="trial"` : ""} style="text-decoration:none;color:inherit">
+    <div class="tile accent">${ic("chat")}</div>
+    <div class="grow"><b>Обсудить с экспертом</b><div class="small muted">${n ? `${n} ${plural(n, "сообщение", "сообщения", "сообщений")} · продолжить разговор` : "Профессор знает диагноз, ваши действия и КР"}</div></div>
+    ${prem ? ic("chevron", "c-muted") : html`<span class="badge accent">${ic("gem")} премиум</span>`}</a>`;
+}
+
+function viewExpert() {
+  const id = S.route.params.id;
+  const data = S.patients.get(id);
+  if (!data) return;
+  const p = data.patient;
+  const prem = S.me.profile.premium;
+  const chat = p.expert_chat || [];
+  const busy = S.expertBusy === id || (p.expert_busy && Date.now() - p.expert_busy < 90000);
+  const partial = S.expertPartial?.id === id ? S.expertPartial.text : "";
+  const evaluated = (p.consultations || []).some((c) => c.rating != null && !c.evaluating);
+  const ta = $("#expert-input");
+  const draft = ta ? ta.value : "";
+  const hadFocus = document.activeElement === ta;
+  renderShell(html`<div class="consult">
+    <div class="consult-head">
+      <button class="back" data-go="/patient/${p.id}" aria-label="Назад">${ic("back")}</button>
+      <div class="tile accent">${ic("chat")}</div>
+      <div class="grow">
+        <div class="title ellipsis">Обсуждение с экспертом</div>
+        <div class="tiny muted ellipsis">${p.name}${p.true_diagnosis ? ` · ${p.true_diagnosis}` : ""}</div>
+      </div>
+    </div>
+    <div class="messages" id="messages">
+      <div class="msg from-patient"><span class="txt">${evaluated ? `Я разобрал ваш приём с пациентом ${p.name}. Спрашивайте: почему такая оценка, что стоило сделать иначе, как лечить по клиническим рекомендациям, с чем дифференцировать.` : "Обсудить приём можно после разбора — завершите приём, и я отвечу на вопросы по нему."}</span></div>
+      ${chat.map((m) => html`<div class="msg from-${m.role === "expert" ? "patient" : "doctor"}"><span class="txt">${m.text}</span><div class="meta">${timeText(m.ts)}</div></div>`)}
+      ${partial ? html`<div class="msg from-patient revealing"><span class="txt" id="expert-partial">${partial}</span></div>`
+        : busy ? html`<div class="typing-wrap"><div class="typing"><i></i><i></i><i></i></div></div>` : ""}
+      ${prem && evaluated && !chat.length && !busy ? html`<div class="stack-sm" style="align-self:flex-end;align-items:flex-end">${EXPERT_STARTERS.map((t) => html`<button class="chip" data-expert-q="${t}">${t}</button>`)}</div>` : ""}
+    </div>
+    ${!evaluated ? html`<div class="composer"><a class="btn block" href="#/patient/${p.id}">К карточке пациента</a></div>`
+      : prem ? html`<div class="composer" id="composer">
+        <textarea id="expert-input" rows="1" placeholder="Спросите эксперта…" maxlength="1500"></textarea>
+        <button class="icon-btn send" id="expert-send" aria-label="Отправить" ${busy ? "disabled" : ""}>${ic("send")}</button>
+      </div>`
+      : html`<div class="composer"><div class="stack-sm" style="width:100%">
+        <p class="small muted center">Обсуждение разбора с экспертом — в премиуме, без ограничения по числу вопросов.</p>
+        <a class="btn block" href="#/plans" ${S.me.profile.trial_available ? html`data-checkout="trial"` : ""}>${ic("gem")}<span>${S.me.profile.trial_available ? "Премиум 7 дней за 1 ₽" : "Открыть в премиуме"}</span></a></div></div>`}
+  </div>`, false);
+  const box = $("#messages");
+  if (box) box.scrollTop = box.scrollHeight;
+  const input = $("#expert-input");
+  if (!input) return;
+  input.value = draft;
+  if (hadFocus) input.focus();
+  const send = () => sendExpert(id, input.value);
+  $("#expert-send").onclick = send;
+  input.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey && !matchMedia("(pointer: coarse)").matches) { e.preventDefault(); send(); } };
+  root.querySelectorAll("[data-expert-q]").forEach((b) => (b.onclick = () => sendExpert(id, b.dataset.expertQ)));
+}
+
+async function sendExpert(id, text) {
+  text = String(text || "").trim();
+  const data = S.patients.get(id);
+  if (!text || !data || S.expertBusy) return;
+  const before = data.patient.expert_chat || [];
+  data.patient.expert_chat = [...before, { role: "doctor", text, ts: Date.now() }];
+  S.expertBusy = id;
+  S.expertPartial = null;
+  const input = $("#expert-input");
+  if (input) input.value = "";
+  haptic();
+  viewExpert();
+  try {
+    const r = await api("POST", `/patients/${encodeURIComponent(id)}/expert`, { text });
+    data.patient.expert_chat = r.chat;
+  } catch (e) {
+    data.patient.expert_chat = before;
+    toast(e.message, "error");
+    S.expertBusy = null;
+    if (S.route.name === "expert" && S.route.params.id === id) {
+      viewExpert();
+      const ta = $("#expert-input");
+      if (ta && !ta.value) ta.value = text;
+    }
+    return;
+  }
+  S.expertBusy = null;
+  S.expertPartial = null;
+  if (S.route.name === "expert" && S.route.params.id === id) viewExpert();
+}
+
+/** Ответ эксперта приходит по кусочкам; с другого устройства — просто обновляем чат */
+function onExpertSync(msg) {
+  const here = S.route.name === "expert" && S.route.params.id === msg.patient_id;
+  if (typeof msg.partial === "string") {
+    S.expertPartial = { id: msg.patient_id, text: msg.partial };
+    const el = $("#expert-partial");
+    if (here && el) {
+      el.textContent = msg.partial;
+      const box = $("#messages");
+      if (box) box.scrollTop = box.scrollHeight;
+    } else if (here) viewExpert();
+    return;
+  }
+  if (S.expertBusy === msg.patient_id) return; // наш запрос — обновим по ответу
+  S.expertPartial = null;
+  if (here || S.patients.has(msg.patient_id)) loadPatient(msg.patient_id).then(() => here && S.route.name === "expert" && viewExpert()).catch(() => {});
 }
 
 /** Разбор по КР: запрос по кнопке, ожидание, готовый разбор — во всех местах, где он показан (лист завершения, карточка) */
@@ -3111,6 +3229,7 @@ const PREMIUM_PERKS = [
   ["pill", "Разбор по клиническим рекомендациям Минздрава: препараты, дозы, схемы"],
   ["flask", "Лучшая диагностика и обязательный минимум по КР для каждого случая"],
   ["quiz", "Тест по лечению и диагностике после каждого приёма"],
+  ["chat", "Обсуждение разбора с экспертом — без ограничений"],
   ["flame", "«Очень сложные» случаи"],
   ["chart", "Слабые места и советы эксперта"],
 ];

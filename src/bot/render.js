@@ -241,6 +241,7 @@ export function evaluation(env, r) {
     text: t,
     kb: [
       [btn(r.gift_kr && !r.premium ? "🎁 Разбор по КР Минздрава — в подарок" : "📚 Разбор по КР Минздрава", `kr_${r.patient_id}`)],
+      ...(r.premium ? [[appBtn("💬 Обсудить с экспертом", appUrl(env, `/expert/${r.patient_id}`))]] : []),
       r.premium || r.gift_kr
         ? [btn("📝 Работа над ошибками", `qz_${r.patient_id}`)]
         : [appBtn(r.trial_available ? "💎 Премиум 7 дней за 1 ₽" : "💎 Премиум", appUrl(env, r.trial_available ? "/plans?buy=trial" : "/plans"))],

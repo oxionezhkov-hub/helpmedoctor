@@ -197,11 +197,11 @@ export const AI_MODELS = {
   llama70: { id: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", label: "Llama 3.3 70B", note: "самая аккуратная, ≈ 1300 нейронов на приём" },
 };
 export const AI_DEFAULT_MODEL = "qwen3";
-export const AI_ROUTING_DEFAULT = { evaluation: "llama70", guide: "llama70" };
+export const AI_ROUTING_DEFAULT = { evaluation: "llama70", guide: "llama70", expert: "llama70" };
 // Шаги, для которых в админке есть переключатель (ключи совпадают с kind в ai_usage)
 export const AI_STEPS = {
   patient: "Новый пациент", reply: "Ответ пациента", test: "Обследование", exam: "Осмотр", farewell: "Прощание",
-  evaluation: "Разбор эксперта", guide: "Разбор по КР", hint: "Подсказка", quiz: "Тест по ошибкам", summarize: "Сжатие диалога", sections: "Разделы специальности", admin_summary: "Сводка отзывов",
+  evaluation: "Разбор эксперта", guide: "Разбор по КР", hint: "Подсказка", quiz: "Тест по ошибкам", expert: "Чат с экспертом", summarize: "Сжатие диалога", sections: "Разделы специальности", admin_summary: "Сводка отзывов",
 };
 // Совместимость: модель по умолчанию для старых вызовов
 export const AI_MODEL = AI_MODELS.llama70.id;

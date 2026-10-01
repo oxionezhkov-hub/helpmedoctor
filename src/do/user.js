@@ -1209,9 +1209,62 @@ export class UserDO extends DurableObject {
     const prof = await this.profile();
     if (G.isPremium(prof)) return prof;
     await this.track("paywall", { what });
+    const name = what === "expert" ? "Обсуждение разбора с экспертом" : "Тест по вашим ошибкам";
     throw new UserError(prof.trial_used
-      ? "Тест по вашим ошибкам — в премиуме. Оформите подписку в «Тарифах»."
-      : "Тест по вашим ошибкам — в премиуме. Попробуйте 7 дней за 1 ₽ в «Тарифах».", "premium");
+      ? `${name} — в премиуме. Оформите подписку в «Тарифах».`
+      : `${name} — в премиуме. Попробуйте 7 дней за 1 ₽ в «Тарифах».`, "premium");
+  }
+
+  /**
+   * Чат с экспертом по разбору приёма (премиум, без ограничения числа сообщений).
+   * В ИИ уходят данные случая, оценка и только последние реплики — длинный разговор не дорожает.
+   */
+  async expertChat(patId, text) {
+    const prof = await this.requirePremium("expert");
+    const question = clampStr(String(text || "").trim(), 1500);
+    if (!question) throw new UserError("Напишите вопрос эксперту");
+    const pat = await this.patient(patId);
+    const rec = [...(pat.consultations || [])].reverse().find((c) => c.rating != null && !c.evaluating);
+    if (!rec) throw new UserError("Обсудить приём с экспертом можно после разбора");
+    if (pat.expert_busy && Date.now() - pat.expert_busy < 90000) throw new UserError("Эксперт ещё отвечает на прошлый вопрос", "busy");
+    const history = pat.expert_chat || [];
+    pat.expert_chat = [...history, { role: "doctor", text: question, ts: Date.now() }].slice(-200);
+    pat.expert_busy = Date.now();
+    await this.ctx.storage.put(patKey(patId), pat);
+    this.broadcast("expert", { patient_id: patId, typing: true });
+    const p = P.expertChatPrompt(pat, G.consultationFacts(pat), rec, history, question, { profession: prof.profession, krName: rec.guide?.kr?.name || pat.kr?.name || "" });
+    let reply;
+    const t0 = Date.now();
+    try {
+      let sentAt = 0;
+      let last = "";
+      let timer = null;
+      const push = () => { timer = null; sentAt = Date.now(); this.broadcast("expert", { patient_id: patId, typing: true, partial: last }); };
+      reply = await aiTextStream(this.env, { system: p.system, prompt: p.prompt, maxTokens: p.maxTokens, temperature: p.temperature, kind: "expert", uid: prof.uid }, (t) => {
+        last = t;
+        if (timer) return;
+        const wait = 150 - (Date.now() - sentAt);
+        if (wait <= 0) push();
+        else timer = setTimeout(push, wait);
+      });
+      if (timer) clearTimeout(timer);
+    } catch (e) {
+      console.error("expert chat", e);
+      const back = await this.patient(patId);
+      back.expert_chat = (back.expert_chat || []).slice(0, -1);
+      delete back.expert_busy;
+      await this.ctx.storage.put(patKey(patId), back);
+      this.broadcast("expert", { patient_id: patId });
+      await this.track("ai_error", { what: "expert", error: String(e.message || e).slice(0, 300) });
+      throw new UserError("Эксперт не ответил — попробуйте спросить ещё раз", "ai_error");
+    }
+    const fresh = await this.patient(patId);
+    fresh.expert_chat = [...(fresh.expert_chat || []), { role: "expert", text: clampStr(reply, 4000), ts: Date.now() }].slice(-200);
+    delete fresh.expert_busy;
+    await this.ctx.storage.put(patKey(patId), fresh);
+    this.broadcast("expert", { patient_id: patId });
+    await this.track("expert_msg", { patient: patId, n: fresh.expert_chat.length, q: clampStr(question, 200) }, { dur: Date.now() - t0 });
+    return { reply, chat: fresh.expert_chat };
   }
 
   async quiz(patId) {
