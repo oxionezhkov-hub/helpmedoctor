@@ -1,6 +1,6 @@
 // Игровая механика: уровни, опыт, стрики, задания дня, лимиты
 import {
-  DAILY_TASKS, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, HINT_RATING_PENALTY, HINT_XP_CUT, LEVEL_RANKS, MAX_LEVEL, SPECIALIZATIONS,
+  BONUS_MAX_DAY, BONUS_RATING, DAILY_TASKS, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, HINT_RATING_PENALTY, HINT_XP_CUT, LEVEL_RANKS, MAX_LEVEL, SPECIALIZATIONS,
 } from "../config.js";
 import { mskDate, mskMidnight, daysBetween, pick } from "./util.js";
 
@@ -122,10 +122,29 @@ export function isPremium(prof, now = Date.now()) {
   return hasActiveSub(prof, now);
 }
 
-/** Бесплатный лимит на сегодня (с учётом пациентов, которых админ добавил на сегодня) */
-export function freeLeftToday(prof, now = Date.now()) {
+/** Бонусных пациентов за высокие оценки сегодня */
+export function bonusToday(prof, now = Date.now()) {
+  return prof.bonus_patients?.date === mskDate(now) ? prof.bonus_patients.n || 0 : 0;
+}
+
+/** Бесплатных пациентов на сегодня всего: базовый лимит + от админа + бонус за оценки */
+export function freeLimitToday(prof, now = Date.now()) {
   const extra = prof.extra_patients?.date === mskDate(now) ? prof.extra_patients.n || 0 : 0;
-  return FREE_DAILY_LIMIT + extra - todayPatientsCount(prof, now);
+  return FREE_DAILY_LIMIT + extra + bonusToday(prof, now);
+}
+
+/** Бесплатный лимит на сегодня (с учётом пациентов, которых админ добавил на сегодня, и бонуса за оценки) */
+export function freeLeftToday(prof, now = Date.now()) {
+  return freeLimitToday(prof, now) - todayPatientsCount(prof, now);
+}
+
+/** Оценка от BONUS_RATING без премиума — +1 бесплатный пациент сегодня (до BONUS_MAX_DAY в день). true — если начислили */
+export function grantRatingBonus(prof, rating, now = Date.now()) {
+  if (hasActiveSub(prof, now) || !(rating >= BONUS_RATING)) return false;
+  const n = bonusToday(prof, now);
+  if (n >= BONUS_MAX_DAY) return false;
+  prof.bonus_patients = { date: mskDate(now), n: n + 1 };
+  return true;
 }
 
 export function canAcceptPatient(prof, now = Date.now()) {

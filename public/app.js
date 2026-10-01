@@ -1200,14 +1200,24 @@ function newPatientBlock() {
   }
   if (!p.can_accept) {
     const pack = S.me.offer?.packs?.patients3;
+    const more = (p.bonus_today || 0) < (p.bonus_max || 0);
     return html`<div class="card stack center">
-      <b>Бесплатный пациент на сегодня принят</b>
-      <p class="small muted">Новый — завтра после полуночи (МСК).${p.trial_available ? " Или 7 дней безлимита за 1 ₽." : ""}</p>
+      <b>Бесплатные пациенты на сегодня закончились</b>
+      <p class="small muted">Новые — завтра после полуночи (МСК).${more ? ` Если на одном из ваших приёмов разбор ещё не готов — оценка от ${dec(p.bonus_rating)} даст ещё одного пациента сегодня.` : ""}${p.trial_available ? " Или 7 дней безлимита за 1 ₽." : ""}</p>
       <a class="btn block" href="#/plans" ${p.trial_available ? html`data-checkout="trial"` : ""}>${ic("gem")}<span>${p.trial_available ? "Премиум 7 дней за 1 ₽" : "Безлимитный доступ"}</span></a>
       ${pack ? html`<a class="btn block ghost" href="#/plans" data-checkout="patients3">${ic("plus")}<span>${pack.label.replace(/^\+/, "")} — ${rub(pack.price)} ₽</span></a>` : ""}
     </div>`;
   }
-  return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>`;
+  return html`<button class="btn lg block" id="new-patient">${ic("plus")}<span>Принять нового пациента</span></button>${freeNote(p)}`;
+}
+
+/** Сколько бесплатных пациентов осталось сегодня и как получить ещё (без премиума) */
+function freeNote(p) {
+  if (p.has_sub || p.free_limit == null) return "";
+  const left = p.free_left || 0;
+  const credits = left <= 0 && p.patient_credits ? ` · купленных: ${p.patient_credits}` : "";
+  const more = (p.bonus_today || 0) < (p.bonus_max || 0) ? ` · оценка от ${dec(p.bonus_rating)} — +1 пациент` : "";
+  return html`<div class="tiny muted center" style="margin-top:6px">Сегодня бесплатно: ${left} из ${p.free_limit}${p.bonus_today ? ` (бонус за оценки: +${p.bonus_today})` : ""}${credits}${more}</div>`;
 }
 
 function bindNewPatient() {
@@ -2036,6 +2046,7 @@ function onEvaluation(r) {
     ${evaluationBlock(c)}
     ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b>${r.rank_up ? html`<div class="small">Новое звание — «${r.rank_up}»</div>` : ""}</div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
+    ${r.bonus_patient ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("party", "c-ok")}Оценка от ${dec(S.me?.profile?.bonus_rating || 4.5)} — ещё один бесплатный пациент сегодня!</span></div>` : ""}
     <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id, r.gift_kr)}</div>
     <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
     <p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>
@@ -2450,6 +2461,22 @@ async function squareImage(file, size) {
   }
 }
 
+/** Фото документа: уменьшаем до max px по длинной стороне, JPEG — чтобы быстро загрузилось и читалось */
+async function fitImage(file, max) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("Не удалось открыть картинку")); i.src = url; });
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * k);
+    c.height = Math.round(img.naturalHeight * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise((res) => c.toBlob(res, "image/jpeg", 0.85));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 // ---------- Профиль: меню ----------
 function viewProfile() {
   const p = S.me.profile;
@@ -2627,7 +2654,7 @@ const pct = (r) => `${Math.round(Number(r) * 100)}%`;
 const REF_STATUS = { joined: ["Зарегистрировался", ""], active: ["Принимает пациентов", "accent"], paid: ["Оплатил", "ok"] };
 function inviteTexts(link) {
   return [
-    ["В чат группы", `Ребят, нашла тренажёр, где можно принимать ИИ-пациентов: расспрашиваешь, назначаешь анализы, ставишь диагноз — и сразу разбор по клиническим рекомендациям Минздрава. Один пациент в день бесплатно. Попробуйте: ${link}`],
+    ["В чат группы", `Ребят, нашла тренажёр, где можно принимать ИИ-пациентов: расспрашиваешь, назначаешь анализы, ставишь диагноз — и сразу разбор по клиническим рекомендациям Минздрава. Два пациента в день бесплатно. Попробуйте: ${link}`],
     ["Перед аккредитацией", `Кто готовится к станциям по сбору анамнеза и клиническому мышлению — тут можно тренироваться на пациентах с характером, и сразу видно, что упустил: ${link}`],
     ["Коротко в сторис", `Поставила диагноз ИИ-пациенту и получила разбор по КР 🩺 А вы бы справились? ${link}`],
   ];
@@ -3078,6 +3105,7 @@ function mountFeedbackPrompt() {
 // Тарифы
 // ---------------------------------------------------
 const rub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
+const dec = (v) => String(v ?? "").replace(".", ",");
 const PREMIUM_PERKS = [
   ["users", "Безлимит пациентов"],
   ["pill", "Разбор по клиническим рекомендациям Минздрава: препараты, дозы, схемы"],
@@ -3094,8 +3122,7 @@ const docLink = (key, text) => html`<a href="${DOCS[key]}" target="_blank" rel="
 function viewPlans(fresh) {
   const p = S.me.profile;
   const o = S.me.offer || { plans: S.me.plans, packs: {}, trial: null };
-  const order = ["month", "quarter", "year", "week"].filter((k) => o.plans[k]);
-  const earlyDate = o.early_until ? new Date(o.early_until - 1).toLocaleDateString("ru", { day: "numeric", month: "long" }) : "";
+  const order = ["month", "year"].filter((k) => o.plans[k]);
   const ap = p.autopay;
   if (fresh && S.route.q.paid && !S.paidToastAt) { toast("Проверяем оплату…"); watchPayment(); }
   if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
@@ -3107,7 +3134,7 @@ function viewPlans(fresh) {
       <b class="plan-name">${x.label}</b>
       <span class="tiny muted">${x.recurring ? "автопродление" : "разовый платёж"}</span>
       <div class="price">${rub(x.price)} ₽</div>
-      <div class="tiny muted plan-sub">${o.early && x.regular !== x.price ? html`<s>${rub(x.regular)} ₽</s> · ` : ""}${monthly ? `≈ ${monthly} ₽/мес` : x.recurring ? "каждые 30 дней" : `${x.days} дней`}</div>
+      <div class="tiny muted plan-sub">${monthly ? `≈ ${monthly} ₽/мес` : x.recurring ? "каждые 30 дней" : `${x.days} дней`}</div>
       <button class="btn block sm" data-plan="${k}" ${disabled ? "disabled" : ""}>${disabled ? "Оформлено" : "Оплатить"}</button></div>`;
   };
   renderShell(html`<div class="page">
@@ -3124,13 +3151,13 @@ function viewPlans(fresh) {
       <h2>Премиум 7 дней за ${rub(o.trial.price)} ₽</h2>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div>
       <button class="btn lg block" data-plan="trial">Попробовать за ${rub(o.trial.price)} ₽</button>
-      <p class="tiny muted">Через 7 дней — ${rub(o.trial.then_price)} ₽ в месяц автоматически${o.early ? " (цена ранних пользователей сохранится, пока подписка активна)" : ""}. Отключить можно в любой момент здесь же, до конца пробного периода — бесплатно.</p>
+      <p class="tiny muted">Через 7 дней — ${rub(o.trial.then_price)} ₽ в месяц автоматически. Отключить можно в любой момент здесь же, до конца пробного периода — бесплатно.</p>
     </div>` : !p.has_sub ? html`<div class="card stack-sm">
-      <b>Бесплатно — 1 пациент в день</b><span class="small muted">с оценкой и выводом эксперта. В премиуме:</span>
+      <b>Бесплатно — 2 пациента в день</b><span class="small muted">и ещё один за каждую оценку от ${dec(p.bonus_rating || 4.5)} (до ${p.bonus_max || 3} в день)</span><span class="small muted">с оценкой и выводом эксперта. В премиуме:</span>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div></div>` : ""}
 
-    ${o.early ? html`<div class="early-note">${ic("zap")}<span>Цены для ранних пользователей — до ${earlyDate}</span></div>` : ""}
     <div class="plans">${order.map(planCard)}</div>
+    ${studentCard(p, o.student, ap)}
 
     ${consentBox()}
 
@@ -3144,6 +3171,7 @@ function viewPlans(fresh) {
   </div>`);
   bindConsent(root);
   root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = () => payFor(b.dataset.plan, b, root)));
+  bindStudent();
   // Переход из другого раздела с конкретной покупкой (?buy=freeze) — сразу открываем её, а не всю страницу тарифов
   if (fresh && S.route.q.buy) checkout(S.route.q.buy);
   const off = $("#autopay-off");
@@ -3159,6 +3187,50 @@ function viewPlans(fresh) {
     } catch (e) {
       toast(e.message, "error");
       btnBusy(off, false);
+    }
+  };
+}
+
+/** Студенческий тариф: загрузить фото студенческого → проверка админом → оплата по студенческой цене */
+function studentCard(p, st, ap) {
+  if (!st || p.sub_until === -1) return "";
+  const status = p.student?.status;
+  const upload = (text) => html`<label class="btn block sm ghost file-btn">${ic("camera")}<span>${text}</span><input type="file" accept="image/*" id="stu-file" hidden></label>`;
+  const body = status === "approved"
+    ? html`<span class="small muted">Статус студента подтверждён.</span>
+      <button class="btn block sm" data-plan="student" ${ap?.status === "active" ? "disabled" : ""}>${ap?.status === "active" ? "Подписка уже оформлена" : `Оплатить ${rub(st.price)} ₽`}</button>`
+    : status === "pending"
+      ? html`<span class="small muted">Студенческий на проверке — обычно отвечаем в течение дня. Напишем в Telegram и здесь.</span>`
+      : html`<span class="small muted">${status === "declined" ? "Не получилось подтвердить по прошлому фото — загрузите другое. " : ""}Загрузите фото студенческого билета: должны быть видны ФИО, вуз и срок действия. Фото видят только админы и нигде не хранят.</span>
+        ${upload(status === "declined" ? "Загрузить другое фото" : "Загрузить студенческий")}`;
+  return html`<div class="card stack-sm">
+    <b class="row-c">${ic("book", "c-accent")}Студентам — ${rub(st.price)} ₽ в месяц</b>
+    ${body}
+    <span class="tiny muted">Тот же премиум, с автопродлением каждые 30 дней.</span>
+  </div>`;
+}
+
+function bindStudent() {
+  const file = $("#stu-file");
+  if (!file) return;
+  file.onchange = async () => {
+    const f = file.files?.[0];
+    file.value = "";
+    if (!f) return;
+    const label = file.closest("label");
+    btnBusy(label);
+    try {
+      const blob = await fitImage(f, 1600);
+      const r = await fetch("/api/student", { method: "POST", headers: { Authorization: `Bearer ${S.token}`, "Content-Type": blob.type, "X-Client": IN_TG ? "miniapp" : "web" }, body: blob });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || "Не удалось отправить фото");
+      S.me.profile = data.profile;
+      haptic("success");
+      toast("Отправили на проверку", "ok");
+      viewPlans();
+    } catch (e) {
+      toast(e.message, "error");
+      btnBusy(label, false);
     }
   };
 }

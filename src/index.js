@@ -289,6 +289,10 @@ async function api(request, env, url) {
       return json(await user.setAvatar(buf, (request.headers.get("Content-Type") || "").split(";")[0]));
     }
     if (path === "/avatar/telegram" && method === "POST") return json(await user.avatarFromTelegram());
+    if (path === "/student" && method === "POST") {
+      const buf = await request.arrayBuffer();
+      return json(await user.submitStudentCard(buf, (request.headers.get("Content-Type") || "").split(";")[0]));
+    }
     if (path === "/avatar" && method === "DELETE") return json(await user.removeAvatar());
     if (path === "/autopay/cancel" && method === "POST") return json({ profile: await user.cancelAutopay() });
     if (path === "/feedback" && method === "POST") {

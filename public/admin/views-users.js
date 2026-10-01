@@ -234,8 +234,10 @@ const TAB_RENDER = {
             <dt>Специальность</dt><dd>${p.profession || "—"}</dd>
             <dt>Разделы</dt><dd>${(p.specializations || u.specs || []).join(", ") || "—"}</dd>
             <dt>Откуда пришёл</dt><dd>${srcBlock(p.src, p.ref || u.ref)}</dd>
+            ${p.student ? html`<dt>Студенческий</dt><dd>${{ approved: html`<span class="badge ok">подтверждён</span>`, pending: html`<span class="badge warn">на проверке</span>`, declined: html`<span class="badge">отклонён</span>` }[p.student.status] || "—"} <span class="muted">${new Date(p.student.at).toLocaleDateString("ru")}</span></dd>` : ""}
             <dt>Где работает</dt><dd>${SOURCES[u.last_source] || "—"}</dd>
             <dt>Напоминания</dt><dd>${p.notifications === false ? "выключены" : "включены"}</dd>
+            <dt>Бесплатно сегодня</dt><dd>${p.has_sub ? "безлимит (премиум)" : `${p.free_left ?? "—"} из ${p.free_limit ?? "—"}${p.bonus_today ? ` · бонус за оценки +${p.bonus_today}` : ""}`}</dd>
             <dt>Задание дня</dt><dd>${p.daily_task ? html`${p.daily_task.desc} · ${p.daily_task.done ? "выполнено" : `${p.daily_task.progress || 0}/${p.daily_task.target}`}` : "—"}</dd>
             <dt>Сильные стороны</dt><dd>${(p.strengths || []).join("; ") || "—"}</dd>
             <dt>Что подтянуть</dt><dd>${(p.weaknesses || []).join("; ") || "—"}</dd>

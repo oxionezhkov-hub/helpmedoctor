@@ -40,8 +40,20 @@ test("лимит бесплатных пациентов и подписка", (
   const p = G.newProfile("1");
   assert.equal(G.canAcceptPatient(p), true);
   p.daily_patients = [Date.now()];
+  assert.equal(G.canAcceptPatient(p), true, "бесплатно 2 пациента в день");
+  p.daily_patients = [Date.now(), Date.now()];
   assert.equal(G.canAcceptPatient(p), false);
+  // Оценка от 4,5 — ещё один пациент сегодня, не больше трёх бонусов в день
+  assert.equal(G.grantRatingBonus(p, 4.4), false);
+  assert.equal(G.grantRatingBonus(p, 4.5), true);
+  assert.equal(G.canAcceptPatient(p), true);
+  assert.equal(G.freeLimitToday(p), 3);
+  G.grantRatingBonus(p, 5); G.grantRatingBonus(p, 5);
+  assert.equal(G.grantRatingBonus(p, 5), false);
+  assert.equal(G.bonusToday(p), 3);
+  p.bonus_patients = null;
   p.sub_until = -1;
+  assert.equal(G.grantRatingBonus(p, 5), false, "с премиумом бонус не нужен");
   assert.equal(G.canAcceptPatient(p), true);
   p.sub_until = Date.now() - 1;
   assert.equal(G.canAcceptPatient(p), false);
@@ -226,10 +238,14 @@ test("лица пациентов: детерминированы, учитыв�
   assert.ok(faceOptions({ m: "good" }).expressionVariant.smile > 0);
 });
 
-test("тарифы: ранние цены до 31 октября, потом обычные", async () => {
-  const { planPrice, EARLY_UNTIL, TRIAL } = await import("../src/config.js");
-  assert.equal(planPrice("month", EARLY_UNTIL - 1), "249.00");
-  assert.equal(planPrice("month", EARLY_UNTIL), "390.00");
+test("тарифы: цены и продление не дороже текущей цены", async () => {
+  const { planPrice, renewPrice, TRIAL } = await import("../src/config.js");
+  assert.equal(planPrice("month"), "200.00");
+  assert.equal(planPrice("year"), "1000.00");
+  assert.equal(planPrice("student"), "100.00");
+  assert.equal(renewPrice("month", 249), 200, "старые подписчики по ранней цене продлеваются по новой, меньшей");
+  assert.equal(renewPrice("month", 150), 150);
+  assert.equal(renewPrice("student", 100), 100);
   assert.equal(planPrice(TRIAL.key), "1.00");
   assert.equal(planPrice("patients3"), "39.00");
   assert.equal(planPrice("нет такого"), null);
@@ -247,7 +263,7 @@ test("стрик: заморозка закрывает пропущенный �
 
 test("лимит: купленные пациенты сверх бесплатного", () => {
   const now = Date.now();
-  const p = { daily_patients: [now - 1000], patient_credits: 0 };
+  const p = { daily_patients: [now - 2000, now - 1000], patient_credits: 0 };
   assert.equal(G.canAcceptPatient(p, now), false);
   p.patient_credits = 2;
   assert.equal(G.canAcceptPatient(p, now), true);

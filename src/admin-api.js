@@ -2,7 +2,7 @@
 // API админки: /api/admin/*
 // Доступ — только Telegram ID из ADMIN_ID. Сессия 12 часов, проверяется на каждом запросе.
 // =====================================================
-import { adminIds, AI_FREE_NEURONS_PER_DAY, PLANS } from "./config.js";
+import { ADMIN_NAMES, adminIds, AI_FREE_NEURONS_PER_DAY, PLANS } from "./config.js";
 import { ADMIN_SESSION_TTL_MS, bearer, createSession, loginLinks, newLoginCode, safeEqual, verifyInitData, verifySession } from "./lib/auth.js";
 import { aiText } from "./lib/ai.js";
 import { declDays, esc, json, toTelegramHtml, userError } from "./lib/util.js";
@@ -20,7 +20,6 @@ const HUB_OPS = new Set([
   "partners", "partner_decide", "payout_decide", "earning_cancel",
 ]);
 
-const ADMIN_NAMES = { "1326867567": "Олег", "1062804986": "Саша" };
 
 export async function adminApi(request, env, url, ctx) {
   const path = url.pathname.slice("/api/admin".length);

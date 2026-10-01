@@ -2,7 +2,7 @@
 // Telegram-бот: разбор апдейтов и отрисовка ответов.
 // Вся логика и данные — в UserDO (общие с сайтом), здесь только интерфейс.
 // =====================================================
-import { adminIds, HINTS_PER_PATIENT, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
+import { ADMIN_NAMES, adminIds, HINTS_PER_PATIENT, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
 import * as G from "../lib/game.js";
 import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
 import { appBtn, btn, tg, urlBtn } from "../lib/telegram.js";
@@ -380,6 +380,18 @@ async function onCallback(ctx, cb) {
   await bot.answerCb(cb.id);
 
   if (data === "new") return newPatient(ctx);
+  if (data === "noop") return;
+  // Студенческий билет: решение админа «Да / Нет»
+  if (data.startsWith("stu_ok_") || data.startsWith("stu_no_")) {
+    if (!adminIds(env).includes(uid)) return;
+    const ok = data.startsWith("stu_ok_");
+    const target = data.slice(7);
+    const res = await userStub(env, target, "admin").studentDecision(ok, uid);
+    const who = ADMIN_NAMES[uid] || uid;
+    if (res.changed) await hubStub(env).studentResolved(target, ok, who);
+    else await bot.send(uid, `Уже решено раньше: ${res.status === "approved" ? "подтверждён" : res.status === "declined" ? "отклонён" : "заявки нет"}.`);
+    return;
+  }
   // Кнопка из рассылки: считаем клик и выполняем действие
   if (data.startsWith("bc:")) {
     const [, bid, action] = data.split(":");

@@ -9,6 +9,8 @@ export const ADMIN_ID = "1326867567";
 export function adminIds(env) {
   return String(env?.ADMIN_ID || ADMIN_ID).split(",").map((s) => s.trim()).filter(Boolean);
 }
+/** Имена админов в уведомлениях и админке */
+export const ADMIN_NAMES = { "1326867567": "Олег", "1062804986": "Саша" };
 export const BOT_USERNAME = "helpmedoctor_aibot";
 
 export const MAX_ACTIVE_PATIENTS = 6;
@@ -17,25 +19,27 @@ export const MAX_ACTIVE_PATIENTS = 6;
 export const HINTS_PER_PATIENT = 3;
 export const HINT_RATING_PENALTY = 0.2; // минус к оценке приёма
 export const HINT_XP_CUT = 0.15;        // доля опыта за приём
-export const FREE_DAILY_LIMIT = 1; // пациентов в день бесплатно
+export const FREE_DAILY_LIMIT = 2; // пациентов в день бесплатно
+// Бонус: за приём с оценкой от BONUS_RATING — ещё один бесплатный пациент сегодня (не больше BONUS_MAX_DAY в день)
+export const BONUS_RATING = 4.5;
+export const BONUS_MAX_DAY = 3;
 
 // Сколько последних реплик отдаём ИИ целиком; всё что старше — сжимается в резюме
 export const HISTORY_WINDOW = 8;
 export const HISTORY_SUMMARIZE_AT = 14;
 
-// Тарифы. early — цена для ранних пользователей до EARLY_UNTIL. month — подписка с автопродлением
-// (карта привязывается в Точке, дальше списываем сами раз в 30 дней по цене, зафиксированной при оформлении).
+// Тарифы. month и student — подписки с автопродлением (карта привязывается в Точке, дальше списываем сами раз в 30 дней).
+// student — только после проверки студенческого билета админом. При продлении берём меньшую из цен: сохранённой при оформлении и текущей.
 // hidden — старые тарифы: их больше не продаём, но старые оплаты и вебхуки должны распознаваться.
 export const PLANS = {
-  week:    { label: "1 неделя", days: 7,     price: "149.00",  early: "99.00" },
-  month:   { label: "1 месяц",  days: 30,    price: "390.00",  early: "249.00", recurring: true },
-  quarter: { label: "3 месяца", days: 91,    price: "890.00",  early: "590.00", best: true },
-  year:    { label: "1 год",    days: 365,   price: "2490.00", early: "1490.00" },
+  month:   { label: "1 месяц",  days: 30,    price: "200.00", recurring: true },
+  year:    { label: "1 год",    days: 365,   price: "1000.00", best: true },
+  student: { label: "Студенческий, 1 месяц", days: 30, price: "100.00", recurring: true, student: true },
+  week:    { label: "1 неделя", days: 7,     price: "149.00",  hidden: true },
+  quarter: { label: "3 месяца", days: 91,    price: "890.00",  hidden: true },
   day:     { label: "1 день",   days: 1,     price: "30.00",   hidden: true },
   forever: { label: "Навсегда", days: 36500, price: "1990.00", hidden: true },
 };
-// Ранние цены действуют до конца 31 октября 2026 (МСК)
-export const EARLY_UNTIL = Date.parse("2026-10-31T21:00:00Z");
 // Пробный премиум: 1 ₽ с привязкой карты, через 7 дней — автопродление на месяц
 export const TRIAL = { key: "trial", label: "Премиум на 7 дней", days: 7, price: "1.00", then: "month" };
 // Разовые покупки без подписки
@@ -46,13 +50,17 @@ export const PACKS = {
 // Сколько раз пробуем списать продление, прежде чем отключить автоплатёж
 export const AUTOPAY_MAX_FAILS = 3;
 
-/** Цена тарифа на момент покупки (ранняя — до EARLY_UNTIL) */
-export function planPrice(key, now = Date.now()) {
+/** Цена тарифа на момент покупки */
+export function planPrice(key) {
   if (key === TRIAL.key) return TRIAL.price;
   if (PACKS[key]) return PACKS[key].price;
-  const p = PLANS[key];
-  if (!p) return null;
-  return p.early && now < EARLY_UNTIL ? p.early : p.price;
+  return PLANS[key]?.price || null;
+}
+
+/** Сумма продления: цена при оформлении, но не дороже текущей (снизили цены — старые подписчики платят меньше) */
+export function renewPrice(plan, stored) {
+  const now = Number(PLANS[plan]?.price);
+  return now > 0 ? Math.min(Number(stored) || now, now) : Number(stored);
 }
 
 /** Название покупки для чеков, уведомлений и отчётов */

@@ -7,7 +7,7 @@ let mid = 1000;
 fs.mkdirSync(".wrangler", { recursive: true });
 fs.writeFileSync(LOG, "");
 
-// Мок API Точки (через «посредника»: /tochka?path=/uapi/...). Неделю не продаём — проверка ошибки банка.
+// Мок API Точки (через «посредника»: /tochka?path=/uapi/...). Год не продаём — проверка ошибки банка.
 const tochkaOps = new Map();
 let opN = 0;
 // Режим «ждём оплату»: новые платежи не оплачены, пока тест не вызовет /tochka-pay?op=…
@@ -21,7 +21,7 @@ function tochka(req, res, body) {
   const send = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(obj)); };
   const base = "/uapi/acquiring/v1.0";
   if (req.method === "POST" && (path === `${base}/payments` || path === `${base}/subscriptions`)) {
-    if (String(data.purpose).includes("неделя")) return send(500, { message: "Bank says no" });
+    if (String(data.purpose).includes("1 год")) return send(500, { message: "Bank says no" });
     const op = `${path.endsWith("subscriptions") ? "sub" : "pay"}_${++opN}`;
     tochkaOps.set(op, { hold: holdNew, amount: data.amount, purpose: data.purpose, consumerId: data.consumerId, sub: path.endsWith("subscriptions"), recurring: data.recurring, saveCard: data.saveCard });
     return send(200, { Data: { operationId: op, paymentLink: `https://pay.example/${op}` } });
@@ -65,9 +65,18 @@ http.createServer((req, res) => {
     const method = req.url.split("/").pop();
     let data = {};
     try { data = JSON.parse(body || "{}"); } catch {}
+    // Фото файлом (multipart/form-data): текстовые поля — в лог, сам файл — только размер
+    const boundary = (req.headers["content-type"] || "").match(/boundary=(.+)$/)?.[1];
+    if (boundary) {
+      for (const part of body.split(`--${boundary}`)) {
+        const m = part.match(/name="([^"]+)"(; filename="[^"]*")?\r\n(?:[^\r\n]+\r\n)*\r\n([\s\S]*)\r\n$/);
+        if (m) data[m[1]] = m[2] ? `<file ${m[3].length} b>` : m[3];
+      }
+      if (data.reply_markup) try { data.reply_markup = JSON.parse(data.reply_markup); } catch {}
+    }
     fs.appendFileSync(LOG, JSON.stringify({ method, ...data }) + "\n");
     let result = true;
-    if (method === "sendMessage") result = { message_id: ++mid };
+    if (method === "sendMessage" || method === "sendPhoto") result = { message_id: ++mid };
     if (method === "getFile") result = { file_path: "voice/file_1.oga" };
     // Фото профиля есть только у пользователя 777
     if (method === "getUserProfilePhotos") result = data.user_id === 777 ? { total_count: 1, photos: [[{ file_id: "ph_s", width: 160, height: 160 }, { file_id: "ph_b", width: 640, height: 640 }]] } : { total_count: 0, photos: [] };

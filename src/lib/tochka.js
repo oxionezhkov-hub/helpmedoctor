@@ -138,6 +138,7 @@ export function planFromPurpose(purpose) {
   if (p.includes("пациент")) return "patients3";
   if (p.includes("замороз")) return "freeze";
   if (p.includes("навсегда")) return "forever";
+  if (p.includes("студен")) return "student";
   if (p.includes("3 месяц")) return "quarter";
   if (p.includes("год")) return "year";
   if (p.includes("месяц")) return "month";

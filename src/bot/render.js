@@ -1,5 +1,5 @@
 // Тексты и клавиатуры бота
-import { DIFFICULTIES, HINTS_PER_PATIENT, HINT_RATING_PENALTY, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
+import { BONUS_RATING, DIFFICULTIES, HINTS_PER_PATIENT, HINT_RATING_PENALTY, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
 import { declDays, esc, firstName } from "../lib/util.js";
 import { appBtn, btn } from "../lib/telegram.js";
 
@@ -236,6 +236,7 @@ export function evaluation(env, r) {
   if (r.rank_up) t += `\n🏅 <b>Новое звание: «${esc(r.rank_up)}»</b>`;
   t += `\n📊 Уровень ${r.level}${r.rank ? ` · ${esc(r.rank)}` : ""} · 🔥 ${r.streak} ${declDays(r.streak)} подряд`;
   if (r.task_done) t += `\n🎯 <b>Задание дня выполнено!</b> +${r.task_done.xp} XP`;
+  if (r.bonus_patient) t += `\n🎁 <b>Оценка от ${String(BONUS_RATING).replace(".", ",")} — ещё один бесплатный пациент сегодня!</b>`;
   return {
     text: t,
     kb: [

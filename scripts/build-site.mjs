@@ -5,7 +5,7 @@
 // Все кнопки ведут в веб-версию /app с меткой from=<место> (для аналитики и Метрики).
 import fs from "node:fs";
 import path from "node:path";
-import { EARLY_UNTIL, FREE_DAILY_LIMIT, PACKS, PLANS, REFERRAL, SPECIALIZATIONS, TRIAL } from "../src/config.js";
+import { BONUS_RATING, FREE_DAILY_LIMIT, PACKS, PLANS, REFERRAL, SPECIALIZATIONS, TRIAL } from "../src/config.js";
 import { ARTICLES } from "./site/articles.mjs";
 import { withFigures } from "./site/figures.mjs";
 import { AUDIENCES, INTENTS, SPECIALTIES } from "./site/landings.mjs";
@@ -53,8 +53,9 @@ const ORG_SCHEMA = {
   contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: SELLER.email, availableLanguage: "ru" },
 };
 const SPEC_LIST = Object.entries(SPECIALTIES).map(([key, s]) => ({ key, ...s, sections: SPECIALIZATIONS[key] || [] }));
-const EARLY_DATE = new Date(EARLY_UNTIL - 1).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
 const MONTH = PLANS.month;
+const STUDENT = PLANS.student;
+const BONUS = String(BONUS_RATING).replace(".", ",");
 
 // ---------------------------------------------------------------- каркас
 const withBrand = (t) => (t.includes(NAME) || `${t} — ${NAME}`.length > 70 ? t : `${t} — ${NAME}`);
@@ -93,10 +94,10 @@ ${METRIKA_HEAD}
 </head>`;
 }
 
-const bodyOpen = (page) => `<body data-page="${page}" data-early-until="${EARLY_UNTIL}"${page.startsWith("blog_") ? ' data-popup="read"' : ""}>
+const bodyOpen = (page) => `<body data-page="${page}"${page.startsWith("blog_") ? ' data-popup="read"' : ""}>
 ${METRIKA_NOSCRIPT}`;
 
-const promo = () => `<div class="promo" data-early hidden><div class="wrap"><span class="long">Ранние цены до ${EARLY_DATE}: премиум — <b>${rub(MONTH.early)} ₽</b> в месяц вместо ${rub(MONTH.price)} ₽, первые 7 дней — ${rub(TRIAL.price)} ₽.</span><span class="short">Премиум <b>7 дней за ${rub(TRIAL.price)} ₽</b>, потом ${rub(MONTH.early)} ₽/мес</span> <a href="${app("promo")}">Попробовать</a><button class="promo-x" type="button" aria-label="Скрыть">×</button></div></div>`;
+const promo = () => `<div class="promo" hidden><div class="wrap"><span class="long">Премиум — первые 7 дней за ${rub(TRIAL.price)} ₽, дальше <b>${rub(MONTH.price)} ₽</b> в месяц, студентам — ${rub(STUDENT.price)} ₽.</span><span class="short">Премиум <b>7 дней за ${rub(TRIAL.price)} ₽</b>, потом ${rub(MONTH.price)} ₽/мес</span> <a href="${app("promo")}">Попробовать</a><button class="promo-x" type="button" aria-label="Скрыть">×</button></div></div>`;
 
 const header = (page) => `<a class="skip" href="#main">Перейти к содержанию</a>
 ${page === "home" ? "" : promo()}
@@ -265,7 +266,7 @@ function magnetBlock(from) {
 
 // ---------------------------------------------------------------- главная
 const FAQ = [
-  ["Сколько это стоит и что будет после 1 ₽?", `${FREE_DAILY_LIMIT === 1 ? "Один пациент" : `${FREE_DAILY_LIMIT} пациента`} в день — бесплатно и без карты. Премиум — безлимит пациентов, полный ИИ-разбор, тесты по ошибкам и «Очень сложные» случаи: первые 7 дней за ${rub(TRIAL.price)} ₽, затем ${rub(MONTH.early)} ₽ в месяц для ранних пользователей (до ${EARLY_DATE}, потом ${rub(MONTH.price)} ₽; ранняя цена сохраняется, пока подписка активна). За сутки до конца пробного периода напомним в приложении и в Telegram. Есть тарифы на неделю, 3 месяца и год одним платежом. Оплата картой или через СБП.`],
+  ["Сколько это стоит и что будет после 1 ₽?", `${FREE_DAILY_LIMIT} пациента в день — бесплатно и без карты, и ещё один за каждый приём с оценкой от ${BONUS}. Премиум — безлимит пациентов, полный ИИ-разбор, тесты по ошибкам и «Очень сложные» случаи: первые 7 дней за ${rub(TRIAL.price)} ₽, затем ${rub(MONTH.price)} ₽ в месяц. Студентам — ${rub(STUDENT.price)} ₽ в месяц после проверки студенческого билета (фото загружается в «Тарифах»). Есть тариф на год одним платежом — ${rub(PLANS.year.price)} ₽. За сутки до конца пробного периода напомним в приложении и в Telegram. Оплата картой или через СБП.`],
   ["Как отменить подписку и вернуть деньги?", "Автопродление отключается в профиле → «Подписка» одной кнопкой; до конца пробного периода — без оплаты, премиум остаётся до конца оплаченного срока. Если списание прошло ошибочно или вы не пользовались премиумом после него, в течение 14 дней можно запросить возврат — условия в оферте."],
   ["Кто пишет разбор приёма?", "Разбор генерирует искусственный интеллект: он сравнивает ваш диалог и назначения со скрытой историей случая и оценивает диагностику, коммуникацию и лечение. ИИ может ошибаться — используйте разбор для самопроверки, а медицинские факты сверяйте с клиническими рекомендациями и учебниками."],
   ["По каким рекомендациям идёт разбор — российским или зарубежным?", "По российским. Тренажёр находит по диагнозу действующую клиническую рекомендацию Минздрава России в официальном рубрикаторе (cr.minzdrav.gov.ru) и строит разбор на её тексте: обязательный минимум диагностики, лучшие методы обследования, препараты по МНН с дозами и длительностью курса. Ссылка на рекомендацию есть в каждом разборе. Если КР по диагнозу в рубрикаторе нет, разбор об этом предупреждает."],
@@ -281,28 +282,27 @@ const FAQ = [
 
 function pricingBlock(from) {
   const visible = Object.entries(PLANS).filter(([, p]) => !p.hidden);
-  const perMonth = (p) => Math.round((Number(p.early || p.price) / p.days) * 30);
+  const perMonth = (p) => Math.round((Number(p.price) / p.days) * 30);
   const cheapest = visible.reduce((a, b) => (perMonth(b[1]) < perMonth(a[1]) ? b : a))[0];
   const rows = visible.map(([k, p]) => {
-    const price = Number(p.early || p.price);
+    const price = Number(p.price);
     const best = k === cheapest;
-    return `<tr${best ? ' class="best"' : ""}><td>${esc(p.label)}${best ? '<span class="tag">дешевле всего</span>' : ""}<div class="per">${k === "month" ? "автопродление, отключается в любой момент" : k === "week" ? "одним платежом, без подписки" : `одним платежом · ≈ ${rub(perMonth(p))} ₽/мес`}</div></td>
-      <td class="price">${rub(price)} ₽${p.early ? `<s data-early>${rub(p.price)} ₽</s>` : ""}</td><td><a href="${app(`${from}_${k}`)}">Выбрать</a></td></tr>`;
+    return `<tr${best ? ' class="best"' : ""}><td>${esc(p.label)}${best ? '<span class="tag">дешевле всего</span>' : ""}<div class="per">${p.student ? "после проверки студенческого билета, автопродление" : p.recurring ? "автопродление, отключается в любой момент" : `одним платежом · ≈ ${rub(perMonth(p))} ₽/мес`}</div></td>
+      <td class="price">${rub(price)} ₽</td><td><a href="${app(`${from}_${k}`)}">Выбрать</a></td></tr>`;
   }).join("");
   return `<div class="pricing">
   <div class="trial">
     <span class="mono">Премиум на пробу</span>
     <h3>7 дней за ${rub(TRIAL.price)} ₽</h3>
     <ul><li>безлимит пациентов</li><li>схемы лечения с дозами по КР Минздрава</li><li>тесты по лечению и диагностике</li><li>«Очень сложные» случаи</li></ul>
-    <p>Дальше — ${rub(MONTH.early)} ₽ в месяц${MONTH.early ? ` вместо ${rub(MONTH.price)} ₽, и эта цена остаётся за вами, пока подписка активна` : ""}. Напомним за сутки до списания; отключить продление — одна кнопка в профиле.</p>
+    <p>Дальше — ${rub(MONTH.price)} ₽ в месяц (студентам — ${rub(STUDENT.price)} ₽). Напомним за сутки до списания; отключить продление — одна кнопка в профиле.</p>
     <a class="btn btn-primary btn-lg" href="${app(`${from}_trial`)}">Попробовать за ${rub(TRIAL.price)} ₽ ${ARR}</a>
-    <p class="countdown" data-countdown hidden></p>
   </div>
   <div>
     <table class="plans-t">
       <thead><tr><th>Срок</th><th>Цена</th><th></th></tr></thead>
       <tbody>
-        <tr><td>Бесплатно<div class="per">${FREE_DAILY_LIMIT} ${FREE_DAILY_LIMIT === 1 ? "пациент" : "пациента"} в день, оценка и краткий ИИ-разбор</div></td><td class="price">0 ₽</td><td><a href="${app(`${from}_free`)}">Начать</a></td></tr>
+        <tr><td>Бесплатно<div class="per">${FREE_DAILY_LIMIT} пациента в день (+1 за оценку от ${BONUS}), оценка и краткий ИИ-разбор</div></td><td class="price">0 ₽</td><td><a href="${app(`${from}_free`)}">Начать</a></td></tr>
         ${rows}
       </tbody>
     </table>
@@ -312,11 +312,10 @@ function pricingBlock(from) {
 
 function landing() {
   const title = "Тренажёр врача с виртуальными пациентами — Help me, Doctor";
-  const description = "Тренажёр для студентов-медиков, ординаторов и врачей: расспрос ИИ-пациента, обследования, диагноз и ИИ-разбор приёма. Один пациент в день бесплатно.";
-  const validUntil = new Date(EARLY_UNTIL - 1).toISOString().slice(0, 10);
+  const description = "Тренажёр для студентов-медиков, ординаторов и врачей: расспрос ИИ-пациента, обследования, диагноз и ИИ-разбор приёма. Два пациента в день бесплатно.";
   const offers = [
     { "@type": "Offer", name: `Премиум — ${TRIAL.label.toLowerCase()}`, price: Number(TRIAL.price).toFixed(2), priceCurrency: "RUB" },
-    ...Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([, p]) => ({ "@type": "Offer", name: `Премиум — ${p.label}`, price: Number(p.early || p.price).toFixed(2), priceCurrency: "RUB", ...(p.early ? { priceValidUntil: validUntil } : {}) })),
+    ...Object.entries(PLANS).filter(([, p]) => !p.hidden).map(([, p]) => ({ "@type": "Offer", name: `Премиум — ${p.label}`, price: Number(p.price).toFixed(2), priceCurrency: "RUB" })),
   ];
   const schema = [
     ORG_SCHEMA,
@@ -421,7 +420,7 @@ function landing() {
 </div></section>
 
 <section id="pricing" class="tint"><div class="wrap">
-  <div class="sec-head"><div><h2>Начните бесплатно</h2><p>Один пациент в день — без оплаты. Если хочется больше практики — безлимит на удобный срок.</p></div></div>
+  <div class="sec-head"><div><h2>Начните бесплатно</h2><p>Два пациента в день — без оплаты, за высокую оценку — ещё один. Если хочется больше практики — безлимит на удобный срок.</p></div></div>
   ${pricingBlock("pricing")}
 </div></section>
 
@@ -472,7 +471,7 @@ function landingPage({ slug, page, crumbsItems, title, description, kicker, h1, 
 <section style="padding-top:56px"><div class="wrap two">
   <div class="prose">
     ${body.trim()}
-    ${inlineCta("Проверьте себя на пациенте", "Расспрос, обследования и диагноз — а затем ИИ-разбор. Один пациент в день бесплатно.", `${page}_inline`)}
+    ${inlineCta("Проверьте себя на пациенте", "Расспрос, обследования и диагноз — а затем ИИ-разбор. Два пациента в день бесплатно.", `${page}_inline`)}
     ${faq.length ? `<h2>Частые вопросы</h2>${faqBlock(faq)}` : ""}
     ${afterBody}
   </div>
@@ -792,7 +791,7 @@ function partnersPage() {
   const list = (items) => `<ul class="pt-list">${items.map((x) => `<li>${ic(I.check)}<span>${x}</span></li>`).join("")}</ul>`;
   const earn = [[10, "одна учебная группа"], [50, "пара потоков или свой канал"], [200, "несколько потоков и чатов курса"]];
   const tpl = [
-    ["В чат группы", "Ребят, нашла тренажёр, где можно принимать ИИ-пациентов: расспрашиваешь, назначаешь анализы, ставишь диагноз — и сразу разбор по клиническим рекомендациям Минздрава. Один пациент в день бесплатно. Попробуйте: <ваша ссылка>"],
+    ["В чат группы", "Ребят, нашла тренажёр, где можно принимать ИИ-пациентов: расспрашиваешь, назначаешь анализы, ставишь диагноз — и сразу разбор по клиническим рекомендациям Минздрава. Два пациента в день бесплатно. Попробуйте: <ваша ссылка>"],
     ["Перед аккредитацией", "Кто готовится к станциям по сбору анамнеза и клиническому мышлению — тут можно тренироваться на пациентах с характером, и сразу видно, что упустил: <ваша ссылка>"],
     ["Когда жалуются на нехватку практики", "Попробуй тренажёр приёма: пациенты с характером, анализы под скрытый диагноз, разбор по КР. Мне помогает перед практикой — <ваша ссылка>"],
     ["Сторис", "Скриншот своего разбора с оценкой + «Поставила диагноз ИИ-пациенту — а вы бы справились?» + ссылка-стикер"],
@@ -939,7 +938,7 @@ ${urls.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod><pri
 function llmsTxt() {
   return `# ${NAME}
 
-> Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей: ИИ-пациенты с жалобами и характером, расспрос текстом и голосом, осмотр, анализы, диагноз и лечение, затем разбор приёма (его генерирует ИИ, сверяясь со скрытой историей случая и текстом действующих клинических рекомендаций Минздрава России из рубрикатора cr.minzdrav.gov.ru): чек-лист обязательных шагов, диагностика, препараты и дозы, тест по лечению и диагностике. Во время приёма — до трёх подсказок наставника. Работает в браузере и в Telegram, вход через Яндекс ID, Google или Telegram. Первый пациент каждый день бесплатно; премиум — 7 дней за ${rub(TRIAL.price)} ₽, затем от ${rub(MONTH.early)} ₽ в месяц.
+> Тренажёр клинического мышления для студентов-медиков, ординаторов и врачей: ИИ-пациенты с жалобами и характером, расспрос текстом и голосом, осмотр, анализы, диагноз и лечение, затем разбор приёма (его генерирует ИИ, сверяясь со скрытой историей случая и текстом действующих клинических рекомендаций Минздрава России из рубрикатора cr.minzdrav.gov.ru): чек-лист обязательных шагов, диагностика, препараты и дозы, тест по лечению и диагностике. Во время приёма — до трёх подсказок наставника. Работает в браузере и в Telegram, вход через Яндекс ID, Google или Telegram. Два пациента каждый день бесплатно (и ещё один за оценку от ${BONUS}); премиум — 7 дней за ${rub(TRIAL.price)} ₽, затем ${rub(MONTH.price)} ₽ в месяц, студентам — ${rub(STUDENT.price)} ₽.
 
 ## Продукт
 - [Главная](${SITE}/): как работает тренажёр, цены, вопросы и ответы
