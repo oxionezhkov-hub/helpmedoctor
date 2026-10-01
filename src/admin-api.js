@@ -55,6 +55,7 @@ export async function adminApi(request, env, url, ctx) {
     const key = String(env.ADMIN_EXPORT_KEY || "");
     if (key.length < 24) return json({ error: "Выгрузка не настроена" }, 404);
     if (!safeEqual(request.headers.get("X-Export-Key") || "", key)) return json({ error: "Нет доступа" }, 403);
+    if (url.searchParams.get("what") === "replies") return json(await hub.admin("replies_export", { days: url.searchParams.get("days") }, "export"));
     const id = url.searchParams.get("id");
     return json(id ? await hub.admin("task", { id }, "export") : await hub.admin("tasks", {}, "export"));
   }

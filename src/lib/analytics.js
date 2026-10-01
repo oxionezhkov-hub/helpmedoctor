@@ -1177,6 +1177,18 @@ function runTaskImports(h) {
   runB2bTasks(h);
 }
 
+/**
+ * Ответы пользователей на рассылки и сообщения команды (через «Ответить» в Telegram) — для цитат в блоге и канале.
+ * Только имя (без фамилии, username и uid), роль и специальность: в выгрузку попадает минимум данных.
+ */
+function repliesExport(h, { days = 30 } = {}) {
+  const since = Date.now() - Math.min(Math.max(Number(days) || 30, 1), 365) * 86400000;
+  const rows = h.all(`SELECT c.ts, c.text, u.name, u.level, u.profession, m.text AS question
+    FROM chat c LEFT JOIN users u ON u.uid = c.uid LEFT JOIN chat m ON m.id = CAST(c.ref AS INTEGER)
+    WHERE c.dir = 'in' AND c.kind = 'reply' AND c.ts >= ? ORDER BY c.ts DESC LIMIT 500`, since);
+  return { rows: rows.map((r) => ({ ...r, name: String(r.name || "").trim().split(/\s+/)[0] || "", question: String(r.question || "").slice(0, 300) })) };
+}
+
 function tasks(h, { status = "", assignee = "", type = "", q = "" } = {}) {
   if (!h.getMeta("tasks_seeded")) {
     h.setMeta("tasks_seeded", 1);
@@ -1336,6 +1348,7 @@ export const ADMIN_OPS = {
   notes_delete: (h, a, admin) => { h.sql.exec("DELETE FROM notes WHERE id = ?", Number(a.id)); h.audit(admin, "note_delete", a.id); return { ok: true }; },
   tasks: (h, a) => tasks(h, a),
   task: (h, a) => task(h, a),
+  replies_export: (h, a) => repliesExport(h, a),
   task_create: (h, a, admin) => taskCreate(h, a, admin),
   task_update: (h, a, admin) => taskUpdate(h, a, admin),
   task_delete: (h, a, admin) => {

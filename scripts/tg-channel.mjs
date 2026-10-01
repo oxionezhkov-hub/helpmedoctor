@@ -9,6 +9,7 @@
 // В GitHub Actions — workflow «Telegram-канал» при пуше ветки tg/** (токен из секретов репозитория).
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
+import { styleIssues } from "./site/style.mjs";
 
 const [file, flag] = process.argv.slice(2);
 const dry = flag === "--dry";
@@ -24,6 +25,9 @@ function check(p, i) {
   const text = p.text ?? p.caption ?? "";
   if (p.quiz || p.poll) throw new Error(`пост ${i + 1}: опросы и викторины не публикуем`);
   if (p.edit && !p.photo && !p.caption) throw new Error(`пост ${i + 1}: в правке нужна картинка или подпись`);
+  // Живой русский язык: канцелярит и кальки с английского не публикуем (см. ROUTINE.md, «Язык»)
+  const bad = styleIssues(text);
+  if (bad.length) throw new Error(`пост ${i + 1}: перепишите по-человечески — ${bad.join("; ")}`);
   for (const [, tag] of text.matchAll(/<\s*(\/?[a-z-]+)[^>]*>/gi)) if (!ALLOWED.test(tag)) throw new Error(`пост ${i + 1}: тег <${tag}> Telegram не поддерживает`);
   const plain = text.replace(/<[^>]+>/g, "");
   if (p.text && plain.length > 4096) throw new Error(`пост ${i + 1}: ${plain.length} символов, лимит 4096`);

@@ -1,6 +1,6 @@
 // Выгрузка задач и идей из админки в лог GitHub Actions — чтобы Claude мог их прочитать и согласовать с командой.
 // Доступ — отдельный ключ ADMIN_EXPORT_KEY (секрет репозитория и воркера), только чтение задач (/api/admin/export).
-// Запуск: ADMIN_EXPORT_KEY=… node scripts/admin-export.mjs [ideas|open|tasks|task] [id]
+// Запуск: ADMIN_EXPORT_KEY=… node scripts/admin-export.mjs [ideas|open|tasks|task|replies] [id | дней для replies]
 import { appendFileSync } from "node:fs";
 
 const [what = "ideas", id = ""] = process.argv.slice(2);
@@ -20,8 +20,16 @@ const STATUS = { idea: "Идеи", backlog: "Бэклог", doing: "В рабо�
 const date = (ts) => (ts ? new Date(ts).toLocaleDateString("ru", { timeZone: "Europe/Moscow" }) : "");
 const clip = (s, n) => { const t = String(s || "").replace(/\s+/g, " ").trim(); return t.length > n ? `${t.slice(0, n)}…` : t; };
 
+const LEVELS = { student: "студент", ordinator: "ординатор", resident: "ординатор", doctor: "врач" };
 let out = "";
-if (what === "task") {
+if (what === "replies") {
+  // Ответы пользователей на рассылки — источник настоящих цитат для блога и канала (с согласия, см. скилл blog-article)
+  const { rows } = await get(`?what=replies&days=${encodeURIComponent(id || "30")}`);
+  out += `# Ответы на рассылки за ${id || 30} дн.: ${rows.length}\n`;
+  for (const r of rows) {
+    out += `\n- ${date(r.ts)} · ${r.name || "без имени"}${r.level ? `, ${LEVELS[r.level] || r.level}` : ""}${r.profession ? `, ${r.profession}` : ""}\n  Вопрос: ${clip(r.question, 200)}\n  Ответ: ${clip(r.text, 1500)}\n`;
+  }
+} else if (what === "task") {
   const t = await get(`?id=${encodeURIComponent(id)}`);
   if (!t) throw new Error(`задача ${id} не найдена`);
   out += `# #${t.id} ${t.title}\n${STATUS[t.status] || t.status} · ${t.type} · ${t.priority || ""} · ${WHO[t.assignee] || t.assignee || "без исполнителя"} · создана ${date(t.created_at)}\n\n${t.descr || ""}\n`;

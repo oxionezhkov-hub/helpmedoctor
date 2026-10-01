@@ -792,7 +792,11 @@ assert.ok(Array.isArray((await ex.json()).rows), "список задач");
 assert.equal((await fetch(`${BASE}/api/admin/export`, { headers: { "X-Export-Key": "wrong-key-0123456789abcdefgh" } })).status, 403, "чужой ключ — отказ");
 assert.equal((await fetch(`${BASE}/api/admin/export`)).status, 403, "без ключа — отказ");
 assert.equal((await fetch(`${BASE}/api/admin/users`, { headers: { "X-Export-Key": EXP } })).status, 401, "ключ выгрузки не открывает остальную админку");
-step("выгрузка задач и идей: только по ключу и только чтение");
+ex = await (await fetch(`${BASE}/api/admin/export?what=replies&days=30`, { headers: { "X-Export-Key": EXP } })).json();
+const rep = ex.rows.find((x) => x.text.includes("всё супер"));
+assert.ok(rep && rep.question, "ответы на рассылки — с вопросом, на который ответили");
+assert.ok(!("uid" in rep) && !("username" in rep), "в выгрузке ответов нет uid и username");
+step("выгрузка задач, идей и ответов на рассылки: только по ключу и только чтение");
 
 // Веб-аккаунт привязывает Telegram, где уже есть прогресс — прогресс складывается
 const before777 = (await api(webToken, "GET", "/me")).data;

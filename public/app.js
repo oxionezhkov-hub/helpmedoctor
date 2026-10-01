@@ -2070,7 +2070,7 @@ function expertCta(p) {
   const n = (p.expert_chat || []).length;
   return html`<a class="card tap row expert-cta" href="#/expert/${p.id}" ${!prem && S.me?.profile?.trial_available ? html`data-checkout="trial"` : ""} style="text-decoration:none;color:inherit">
     <div class="tile accent">${ic("chat")}</div>
-    <div class="grow"><b>Обсудить с экспертом</b><div class="small muted">${n ? `${n} ${plural(n, "сообщение", "сообщения", "сообщений")} · продолжить разговор` : "Профессор знает диагноз, ваши действия и КР"}</div></div>
+    <div class="grow"><b>Обсудить с экспертом</b><div class="small muted">${n ? `${n} ${plural(n, "сообщение", "сообщения", "сообщений")} · продолжить разговор` : "ИИ-профессор знает диагноз, ваши действия и КР"}</div></div>
     ${prem ? ic("chevron", "c-muted") : html`<span class="badge accent">${ic("gem")} премиум</span>`}</a>`;
 }
 
@@ -2092,7 +2092,7 @@ function viewExpert() {
       <button class="back" data-go="/patient/${p.id}" aria-label="Назад">${ic("back")}</button>
       <div class="tile accent">${ic("chat")}</div>
       <div class="grow">
-        <div class="title ellipsis">Обсуждение с экспертом</div>
+        <div class="title ellipsis">Обсуждение с экспертом · ИИ</div>
         <div class="tiny muted ellipsis">${p.name}${p.true_diagnosis ? ` · ${p.true_diagnosis}` : ""}</div>
       </div>
     </div>
