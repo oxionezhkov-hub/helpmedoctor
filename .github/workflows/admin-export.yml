@@ -1,0 +1,32 @@
+name: Выгрузка из админки
+
+# Задачи и идеи из админки — в лог и сводку запуска (только чтение; см. scripts/admin-export.mjs).
+# Запускается вручную (в т.ч. Claude через API GitHub), чтобы прочитать бэклог и согласовать правки.
+on:
+  workflow_dispatch:
+    inputs:
+      what:
+        description: "ideas — идеи, open — открытые задачи, tasks — все, task — одна задача"
+        required: true
+        default: ideas
+      id:
+        description: "Номер задачи (для task)"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Выгрузка
+        env:
+          ADMIN_EXPORT_KEY: ${{ secrets.ADMIN_EXPORT_KEY }}
+          WHAT: ${{ github.event.inputs.what }}
+          TASK_ID: ${{ github.event.inputs.id }}
+        run: node scripts/admin-export.mjs "$WHAT" "$TASK_ID"
