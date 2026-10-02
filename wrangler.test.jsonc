@@ -14,6 +14,7 @@
     "TOCHKA_MERCHANT": "0", "TOCHKA_CUSTOMER": "0",
     "AI_MOCK": "1", "OAUTH_TEST_MODE": "1", "TG_API_BASE": "http://127.0.0.1:8790",
     "TELEGRAM_TOKEN": "123:TEST", "SESSION_SECRET": "test-secret", "TOCHKA_TOKEN": "x",
-    "TOCHKA_PROXY_URL": "http://127.0.0.1:8790/tochka", "TOCHKA_PROXY_SECRET": "s"
+    "TOCHKA_PROXY_URL": "http://127.0.0.1:8790/tochka", "TOCHKA_PROXY_SECRET": "s",
+    "RESEND_API_KEY": "re_test", "RESEND_URL": "http://127.0.0.1:8790/resend"
   }
 }

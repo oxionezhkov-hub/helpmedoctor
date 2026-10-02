@@ -394,7 +394,7 @@ await sleep(500);
 assert.ok(!sent(U).some((m) => m.text.includes("Подписка выдана")), "не-админ не может выдавать подписку");
 step("админ: /grant @username 7 — подписка выдана, пользователь уведомлён");
 
-r = await api(webToken, "POST", "/pay", { plan: "year", consent: true });
+r = await api(await login("999"), "POST", "/pay", { plan: "month", consent: true });
 assert.equal(r.status, 502);
 assert.equal(r.data.code, "payment");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("Оплата не создана")), "admin payment error");
@@ -450,6 +450,25 @@ assert.equal(r.data.profile.autopay.status, "cancelled");
 assert.ok(tgCalls().some((c) => c.method === `tochka POST /uapi/acquiring/v1.0/subscriptions/${trialOp}/status` && c.status === "Cancelled"), "подписка отключена в Точке");
 assert.equal((await aq("autopay_run", { now: afterRenew.sub_until + 1000 })).charged, 0, "после отмены не списываем");
 step("автопродление: списание по сохранённой карте, продление на месяц, отмена пользователем");
+
+// Апгрейд: пробный период с автопродлением → год одним платежом; автопродление месяца выключается само
+{
+  const t3 = await login("903");
+  await api(t3, "PATCH", "/profile", { onboarding_done: true });
+  let pr = await api(t3, "POST", "/pay", { plan: "trial", consent: true });
+  const op3 = pr.data.link.split("/").pop();
+  await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: op3 }) });
+  assert.equal((await api(t3, "GET", "/me")).data.profile.autopay.status, "active");
+  pr = await api(t3, "POST", "/pay", { plan: "year", consent: true });
+  assert.equal(pr.status, 200, JSON.stringify(pr.data));
+  await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: pr.data.link.split("/").pop() }) });
+  const p3 = (await api(t3, "GET", "/me")).data.profile;
+  assert.equal(p3.sub_plan, "year");
+  assert.equal(p3.autopay.status, "cancelled", "после перехода на год месяц не продлевается");
+  assert.ok(p3.sub_until > Date.now() + 370 * 86400000, "год прибавился к пробному сроку");
+  assert.ok(tgCalls().some((c) => c.method === `tochka POST /uapi/acquiring/v1.0/subscriptions/${op3}/status` && c.status === "Cancelled"), "подписка отключена в Точке");
+}
+step("апгрейд на год: срок складывается, автопродление месяца выключается");
 
 const P2 = "902";
 const t2 = await login(P2);
@@ -713,6 +732,26 @@ await api(g1, "POST", "/attribution", { r: "vk.com", l: "/", p: "/", u: "" });
   assert.equal(src.cid, "1759312345678901234");
   const srcRep = await aq("report", { name: "sources", from: Date.now() - 86400000, to: Date.now() + 60000 });
   assert.ok(srcRep.channels.some((c) => c.key === "Поиск: Яндекс") && srcRep.pages.some((p) => p.key === "/blog/troponin/"), JSON.stringify(srcRep));
+}
+// Студенческий у пользователя с Google: решение админа — окно в приложении и письмо на почту
+{
+  const pr = await fetch(`${BASE}/api/student`, { method: "POST", headers: { Authorization: `Bearer ${g1}`, "Content-Type": "image/jpeg" }, body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]) });
+  assert.equal(pr.status, 200, await pr.clone().text());
+  await press("1062804986", `stu_ok_${gme.profile.uid}`);
+  const n = await waitFor(async () => (await api(g1, "GET", "/me")).data.profile.notice, "student notice");
+  assert.ok(n.title.includes("подтверждён") && n.button.go === "/plans", JSON.stringify(n));
+  const mail = await waitFor(() => tgCalls().find((c) => c.method === "resend" && c.to?.includes("anna@example.com")), "student email");
+  assert.ok(mail.subject.includes("Студенческий подтверждён") && mail.html.includes("/app?go=") && mail.auth === "Bearer re_test", JSON.stringify(mail).slice(0, 300));
+  await api(g1, "POST", "/notice/seen", { id: n.id });
+  assert.equal((await api(g1, "GET", "/me")).data.profile.notice, null, "закрытое окно больше не показывается");
+}
+// Отписка от писем-напоминаний по подписанной ссылке из письма
+{
+  const payload = Buffer.from(JSON.stringify({ uid: gme.profile.uid, k: "unsub" })).toString("base64url");
+  const t = `${payload}.${crypto.createHmac("sha256", "test-secret").update(`data:${payload}`).digest("base64url")}`;
+  assert.ok((await (await fetch(`${BASE}/api/email/off?t=x.y`)).text()).includes("недействительна"));
+  assert.ok((await (await fetch(`${BASE}/api/email/off?t=${encodeURIComponent(t)}`)).text()).includes("больше не будем"));
+  assert.equal((await api(g1, "GET", "/me")).data.profile.email_off, true, "напоминания на почту отключены");
 }
 assert.match(gme.profile.uid, /^w\d{12}$/);
 assert.equal(gme.profile.name, "Анна");

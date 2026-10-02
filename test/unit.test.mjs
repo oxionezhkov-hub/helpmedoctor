@@ -440,3 +440,23 @@ test("откуда пришёл: канал по сайту-источнику �
   assert.equal(channelOf("", "yclid=123"), "Реклама: Яндекс Директ");
   assert.equal(cleanAttribution({ r: "YANDEX.RU<script>", l: "/blog/a/\"><b>", cid: "12ab34" }).land, "/blog/a/b");
 });
+
+test("письма «вернись»: этапы 1/3/7/14/30, без повторов, стрик на 1-й день, новая серия после возвращения", async () => {
+  const { winbackStage, winbackEmail } = await import("../src/lib/winback.js");
+  const p = { last_active: 1000, streak: 0, xp: 0, name: "Мария Иванова", active_patient_ids: ["a"] };
+  assert.equal(winbackStage(p, 0), null);
+  assert.equal(winbackStage(p, 1), null, "день 1 — только если горит стрик");
+  assert.equal(winbackStage({ ...p, streak: 3 }, 1), 1);
+  assert.equal(winbackStage(p, 4), 3);
+  p.winback = { since: 1000, stage: 3 };
+  assert.equal(winbackStage(p, 5), null, "этап 3 уже отправлен");
+  assert.equal(winbackStage(p, 9), 7);
+  assert.equal(winbackStage({ ...p, last_active: 2000 }, 3), 3, "вернулся и снова пропал — серия заново");
+  assert.equal(winbackStage(p, 90), null, "давно ушедшим не пишем");
+  for (const s of [1, 3, 7, 14, 30]) {
+    const m = winbackEmail({ ...p, streak: 5, weaknesses: ["Сбор анамнеза"] }, s);
+    assert.ok(m.subject && m.title && m.paragraphs.length && m.button.go, `этап ${s}`);
+    assert.deepEqual(styleIssues(m.paragraphs.join(" ") + m.subject), [], `этап ${s}: живой язык`);
+  }
+  assert.ok(winbackEmail(p, 3).paragraphs[0].includes("1 пациент ждёт"));
+});

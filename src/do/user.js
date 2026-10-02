@@ -19,6 +19,9 @@ import { cleanAttribution } from "../lib/attribution.js";
 import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
+import { emailHtml, sendEmail } from "../lib/email.js";
+import { signData } from "../lib/auth.js";
+import { winbackEmail, winbackStage } from "../lib/winback.js";
 import { refFromLabel } from "../lib/partners.js";
 import * as R from "../bot/render.js";
 
@@ -1361,6 +1364,11 @@ export class UserDO extends DurableObject {
     // Пробный период и месячный тариф — с автопродлением: цена фиксируется на момент оформления
     const recurring = planKey === TRIAL.key || PLANS[planKey]?.recurring;
     if (planKey === TRIAL.key) prof.trial_used = true;
+    // Апгрейд на разовый тариф (год) поверх подписки с автопродлением — автопродление выключаем, чтобы не списывать месяц сверху
+    if (!recurring && PLANS[planKey] && prof.autopay?.status === "active") {
+      await this.hub().autopayCancel(prof.uid, "upgrade").catch((e) => console.error("upgrade autopay", e));
+      prof.autopay = { ...prof.autopay, status: "cancelled" };
+    }
     if (recurring && operationId && prof.sub_until !== -1) {
       const renewPlan = planKey === TRIAL.key ? TRIAL.then : planKey;
       const renewPrice = Number(planKey === TRIAL.key ? planPrice(TRIAL.then) : price);
@@ -1374,6 +1382,14 @@ export class UserDO extends DurableObject {
     const until = prof.sub_until === -1 ? "навсегда" : fmtDay(prof.sub_until);
     const renewNote = prof.autopay?.status === "active" && recurring
       ? `\n\nДальше — автопродление: ${fmtRub(prof.autopay.price)} ₽ в месяц, первое списание ${fmtDay(prof.autopay.next_at)}. Отключить можно в профиле → «Подписка».` : "";
+    await this.emailUser(planKey === TRIAL.key ? "Премиум на 7 дней включён" : "Подписка активирована", {
+      title: planKey === TRIAL.key ? "Премиум на 7 дней включён 🎉" : "Подписка активирована",
+      paragraphs: [
+        `Тариф: ${productLabel(planKey)}. Доступ ${prof.sub_until === -1 ? "навсегда" : `до ${until}`}.`,
+        ...(prof.autopay?.status === "active" && recurring ? [`Дальше — автопродление: ${fmtRub(prof.autopay.price)} ₽ в месяц, первое списание ${fmtDay(prof.autopay.next_at)}. Отключить можно в профиле → «Подписка».`] : []),
+      ],
+      button: { text: "Принять пациента", url: this.appLink("/") },
+    });
     await bot.send(prof.uid, planKey === TRIAL.key
       ? `🎉 <b>Премиум на 7 дней включён!</b>\n\nБезлимит пациентов, полный разбор эксперта, тесты по ошибкам и «Очень сложные» случаи — до ${until}.${renewNote}`
       : `✅ <b>Подписка активирована!</b>\n\nТариф: ${productLabel(planKey)}\nДоступ: ${until}${renewNote}\n\nТеперь можно принимать сколько угодно пациентов.`,
@@ -1461,10 +1477,17 @@ export class UserDO extends DurableObject {
     const prof = await this.profile();
     if (prof.student?.status !== "pending") return { status: prof.student?.status || "none", changed: false };
     prof.student = { status: ok ? "approved" : "declined", at: Date.now(), by: String(admin) };
-    await this.ctx.storage.put(PROFILE, prof);
-    this.broadcast("profile");
-    await this.track(ok ? "student_ok" : "student_no", { admin }, { source: "admin" });
     const price = fmtRub(PLANS.student.price);
+    // Окно в приложении: покажется сразу, а если приложение закрыто — при следующем открытии
+    prof.notice = ok
+      ? { id: `student-${Date.now()}`, kind: "ok", title: "Студенческий подтверждён 🎓", text: `Вам доступен студенческий премиум — ${price} ₽ в месяц.`, button: { text: "Оформить", go: "/plans" } }
+      : { id: `student-${Date.now()}`, kind: "warn", title: "Студенческий не подтвердили", text: "По фото не получилось проверить билет. Загрузите другое фото — чтобы были видны ФИО, вуз и срок действия.", button: { text: "Загрузить снова", go: "/plans" } };
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile", { notice: prof.notice });
+    await this.track(ok ? "student_ok" : "student_no", { admin }, { source: "admin" });
+    await this.emailUser(ok ? "Студенческий подтверждён — премиум за 100 ₽ в месяц" : "Студенческий не подтвердили", {
+      title: prof.notice.title, paragraphs: [prof.notice.text], button: { text: prof.notice.button.text, url: this.appLink("/plans") },
+    });
     const text = ok
       ? `🎓 <b>Статус студента подтверждён!</b>\n\nВам доступен студенческий премиум — ${price} ₽ в месяц. Оформить можно в «Тарифах».`
       : "🎓 Не получилось подтвердить студенческий по фото. Попробуйте загрузить другое фото — чтобы были видны ФИО, вуз и срок действия.";
@@ -1473,6 +1496,36 @@ export class UserDO extends DurableObject {
     }
     await this.pushNotify({ title: ok ? "🎓 Студенческий подтверждён" : "🎓 Студенческий не подтверждён", body: ok ? `Премиум за ${price} ₽ в месяц — в «Тарифах»` : "Загрузите другое фото в «Тарифах»", url: "/app#/plans", tag: "student" }).catch(() => {});
     return { status: prof.student.status, changed: true };
+  }
+
+  /** Пользователь закрыл окно-уведомление в приложении */
+  async noticeSeen(id) {
+    const prof = await this.profile();
+    if (prof.notice && (!id || prof.notice.id === id)) {
+      prof.notice = null;
+      await this.ctx.storage.put(PROFILE, prof);
+    }
+    return { ok: true };
+  }
+
+  /** Ссылка в приложение (для писем и кнопок) */
+  appLink(path = "") {
+    return `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/app${path ? `?go=${encodeURIComponent(path)}` : ""}`;
+  }
+
+  /** Письмо на почту из Google / Яндекс ID (если пользователь входил через них). Сбой письма ничего не ломает */
+  async emailUser(subject, body, kind = "service") {
+    try {
+      const prof = await this.profile();
+      const emails = await this.hub().userEmails(prof.uid);
+      if (!emails.length) return false;
+      const ok = await sendEmail(this.env, { to: emails, subject, html: emailHtml(body) });
+      if (ok) await this.track("email", { subject: clampStr(subject, 120), kind }, { source: "system" });
+      return ok;
+    } catch (e) {
+      console.warn("email", e?.message || e);
+      return false;
+    }
   }
 
   /** Автопродление прошло (списание из HubDO): доступ до until */
@@ -1487,6 +1540,10 @@ export class UserDO extends DurableObject {
     await this.track(wasTrial ? "trial_converted" : "renewed", { plan, op }, { val: Number(amount), source: "system" });
     await this.referralAccrue(op, amount, plan);
     await tg(this.env, { kind: "system" }).send(prof.uid, `💳 <b>Подписка продлена</b>: списано ${fmtRub(amount)} ₽, доступ до ${fmtDay(until)}.\nОтключить автопродление можно в профиле → «Подписка».`);
+    await this.emailUser("Подписка продлена", {
+      title: "Подписка продлена", paragraphs: [`Списано ${fmtRub(amount)} ₽, премиум действует до ${fmtDay(until)}.`, "Отключить автопродление можно в профиле → «Подписка»."],
+      button: { text: "Управлять подпиской", url: this.appLink("/plans") },
+    });
     return publicProfile(prof);
   }
 
@@ -1500,6 +1557,10 @@ export class UserDO extends DurableObject {
     await this.track("autopay_off", { reason }, { source: reason === "failed" ? "system" : undefined });
     if (reason === "failed") {
       await tg(this.env, { kind: "system" }).send(prof.uid, "⚠️ <b>Автопродление отключено</b>: банк трижды отклонил списание. Премиум действует до конца оплаченного срока, продлить можно вручную в «Тарифах».");
+      await this.emailUser("Автопродление отключено", {
+        title: "Автопродление отключено", paragraphs: ["Банк трижды отклонил списание за подписку. Премиум действует до конца оплаченного срока, продлить можно вручную в «Тарифах»."],
+        button: { text: "Открыть тарифы", url: this.appLink("/plans") },
+      });
     }
     return publicProfile(prof);
   }
@@ -1536,7 +1597,7 @@ export class UserDO extends DurableObject {
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile", { paid: "gift" });
     await this.track("gift", { days, reason, admin }, { source: "admin" });
-    const until = prof.sub_until === -1 ? "навсегда" : new Date(prof.sub_until).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+    const until = prof.sub_until === -1 ? "навсегда" : fmtDay(prof.sub_until);
     const term = forever ? "навсегда" : `${days} ${declDays(days)}`;
     if (notify) {
       const body = text
@@ -1780,6 +1841,9 @@ export class UserDO extends DurableObject {
       return what;
     };
     if (kind === "morning") {
+      // Письма «вернись» — отдельно от напоминаний в боте, только тем, у кого есть почта (вход через Google / Яндекс)
+      await this.winbackTick(prof).catch((e) => console.warn("winback", e?.message || e));
+      prof = await this.profile();
       if (G.ensureDailyTask(prof)) await this.ctx.storage.put(PROFILE, prof);
       if (G.shouldAskReview(prof)) {
         prof.review_asked = true;
@@ -1797,6 +1861,32 @@ export class UserDO extends DurableObject {
     }
     if (kind === "evening" && gap === 1 && streak >= 3) return send("warning", "streak_warning", R.streakWarning(this.env, streak, { freezes: prof.streak_freezes || 0 }).kb);
     return "none";
+  }
+
+  /** Серия писем «вернись» по дням без активности (см. lib/winback.js). Один этап за раз, не чаще раза в день */
+  async winbackTick(prof) {
+    if (prof.email_off || prof.blocked || !prof.last_active || !this.env.RESEND_API_KEY) return null;
+    const days = Math.floor((Date.now() - prof.last_active) / 86400000);
+    const stage = winbackStage(prof, days);
+    if (!stage) return null;
+    const m = winbackEmail(prof, stage);
+    const unsub = `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/api/email/off?t=${encodeURIComponent(await signData(this.env, { uid: prof.uid, k: "unsub" }))}`;
+    const ok = await this.emailUser(m.subject, { title: m.title, paragraphs: m.paragraphs, button: { text: m.button.text, url: this.appLink(m.button.go) }, unsub }, "winback");
+    // Этап отмечаем, даже если почты нет: иначе каждое утро будем зря её искать
+    const fresh = await this.profile();
+    fresh.winback = { since: prof.last_active, stage, at: Date.now() };
+    await this.ctx.storage.put(PROFILE, fresh);
+    if (ok) await this.track("winback", { stage, days }, { source: "system" });
+    return ok ? stage : null;
+  }
+
+  /** Отписка от писем-напоминаний по ссылке из письма (служебные письма об оплате и студенческом приходят всё равно) */
+  async emailOff() {
+    const prof = await this.profile();
+    prof.email_off = true;
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.track("email_off", {}, { source: "web" });
+    return { ok: true };
   }
 
   /** Источник текущего действия (bot / miniapp / web / system / admin) */
@@ -1833,7 +1923,7 @@ export class UserDO extends DurableObject {
     try {
       const prof = await this.ctx.storage.get(PROFILE);
       if (!prof) return;
-      if (prof.last_active < Date.now() - 60000 && !["reminder", "bot_blocked", "sub_expired", "gift", "sub_cancel", "sub_change", "extra_patients", "blocked", "unblocked"].includes(type)) {
+      if (prof.last_active < Date.now() - 60000 && !["reminder", "email", "winback", "email_off", "bot_blocked", "sub_expired", "gift", "sub_cancel", "sub_change", "extra_patients", "blocked", "unblocked"].includes(type)) {
         prof.last_active = Date.now();
         await this.ctx.storage.put(PROFILE, prof);
       }
@@ -2192,7 +2282,7 @@ export function offerPlans() {
   return { plans, student: { label: st.label, days: st.days, price: st.price, recurring: true }, trial: { ...TRIAL, then_price: planPrice(TRIAL.then) }, packs: PACKS };
 }
 
-const fmtDay = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+const fmtDay = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow", ...(new Date(ts).getUTCFullYear() !== new Date().getUTCFullYear() ? { year: "numeric" } : {}) });
 const fmtRub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
 
 export function publicProfile(prof) {

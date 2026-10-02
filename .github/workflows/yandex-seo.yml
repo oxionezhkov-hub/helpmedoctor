@@ -1,0 +1,32 @@
+name: Ключи из Яндекса
+
+# Частотность запросов (Вордстат) и запросы, по которым сайт показывается в поиске (Вебмастер) — в лог и сводку запуска.
+# Запускается вручную (в т.ч. Claude через API GitHub) при подборе тем для блога. Только чтение.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "wordstat — частотность фраз, webmaster — запросы сайта в поиске"
+        required: true
+        default: wordstat
+      phrases:
+        description: "Фразы для Вордстата через точку с запятой"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Запрос к Яндексу
+        env:
+          YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
+          MODE: ${{ github.event.inputs.mode }}
+          PHRASES: ${{ github.event.inputs.phrases }}
+        run: node scripts/yandex-seo.mjs "$MODE" "$PHRASES"

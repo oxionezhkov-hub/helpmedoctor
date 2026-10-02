@@ -159,6 +159,14 @@ async function api(request, env, url) {
     if (!value) return new Response("not found", { status: 404 });
     return new Response(value, { headers: { "Content-Type": metadata?.type || "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" } });
   }
+  // Отписка от писем-напоминаний по ссылке из письма (подписанная, без входа)
+  if (path === "/email/off" && method === "GET") {
+    const d = await readSignedData(env, url.searchParams.get("t"));
+    const page = (t) => new Response(`<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Help me, Doctor</title></head><body style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f4f3ee;margin:0;padding:40px 16px"><div style="max-width:460px;margin:0 auto;background:#fff;border-radius:16px;padding:28px;text-align:center"><p style="font-size:17px;color:#1f2421">${t}</p><p><a href="/app" style="color:#0f766e">Открыть тренажёр</a></p></div></body></html>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+    if (d?.k !== "unsub" || !d.uid) return page("Ссылка недействительна.");
+    await userStub(env, d.uid, "web").emailOff();
+    return page("Готово — больше не будем присылать напоминания. Письма об оплате и подписке по-прежнему придут.");
+  }
   if (path === "/config" && method === "GET") {
     return json({ bot_username: env.BOT_USERNAME, providers: enabledProviders(env) });
   }
@@ -289,6 +297,7 @@ async function api(request, env, url) {
       return json(await user.setAvatar(buf, (request.headers.get("Content-Type") || "").split(";")[0]));
     }
     if (path === "/avatar/telegram" && method === "POST") return json(await user.avatarFromTelegram());
+    if (path === "/notice/seen" && method === "POST") return json(await user.noticeSeen((await readJson(request)).id));
     if (path === "/student" && method === "POST") {
       const buf = await request.arrayBuffer();
       return json(await user.submitStudentCard(buf, (request.headers.get("Content-Type") || "").split(";")[0]));
