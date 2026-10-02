@@ -58,7 +58,17 @@ async function webmaster() {
   }
 }
 
-if (mode === "webmaster") await webmaster();
+// Проверка токена: Метрика (metrika:read) и какие доступы у токена
+async function check() {
+  const m = await fetch("https://api-metrika.yandex.net/management/v1/counters?per_page=5", { headers: oauth });
+  const mj = await m.json().catch(() => ({}));
+  say(`Метрика: ${m.status} ${m.ok ? `счётчики: ${(mj.counters || []).map((c) => `${c.id} ${c.site}`).join(", ")}` : JSON.stringify(mj).slice(0, 200)}`);
+  const i = await fetch("https://login.yandex.ru/info?format=json", { headers: oauth });
+  say(`Яндекс ID: ${i.status} ${i.ok ? "токен действителен" : (await i.text()).slice(0, 200)}`);
+}
+
+if (mode === "check") await check();
+else if (mode === "webmaster") await webmaster();
 else for (const p of arg.split(/[;\n]/).map((s) => s.trim()).filter(Boolean)) await wordstat(p);
 console.log(out);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);
