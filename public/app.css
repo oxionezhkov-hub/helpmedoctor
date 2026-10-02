@@ -556,6 +556,15 @@ img.avatar { object-fit: cover; background: var(--surface-2); padding: 0; }
 .plan { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 16px 10px 12px; }
 .plan .plan-name { font-size: 16px; }
 .plan .price { margin: 8px 0 2px; }
+/* Один тариф (апгрейд на год) — во всю ширину, строкой: название слева, цена и кнопка справа */
+.plans.single { grid-template-columns: 1fr; }
+.plans.single .plan { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name price" "sub price" "plansub btn"; align-items: center; text-align: left; padding: 16px; column-gap: 12px; }
+.plans.single .plan-name { grid-area: name; }
+.plans.single .plan > .tiny:not(.plan-sub) { grid-area: sub; }
+.plans.single .plan .price { grid-area: price; margin: 0; font-size: 26px; }
+.plans.single .plan-sub { grid-area: plansub; }
+.plans.single .plan .btn { grid-area: btn; width: auto; padding-inline: 22px; }
+.plans.single .plan.best::before { left: 24px; transform: none; }
 .plan-sub { margin-bottom: 12px; min-height: 1.4em; }
 .plan-sub s { color: var(--muted); }
 .plan .btn { margin-top: auto; }

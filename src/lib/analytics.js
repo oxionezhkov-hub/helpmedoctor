@@ -185,8 +185,31 @@ export function dashboard(h, { from, to }) {
   };
 }
 
+/** Канал по метке из ссылки на бота (t.me/<бот>?start=<метка>), если человек не заходил через сайт */
+const REF_LABELS = { tg_ch: "Telegram-канал", channel: "Telegram-канал", site: "Сайт → бот", dzen: "Дзен" };
+export function refChannel(ref) {
+  const r = String(ref || "").trim();
+  if (!r) return "Бот напрямую (без метки)";
+  if (r.startsWith("r_")) return "Партнёрская ссылка";
+  if (REF_LABELS[r]) return REF_LABELS[r];
+  if (/^(site|web|from)[_-]/.test(r)) return `Сайт → бот (${r})`;
+  return `Метка: ${r}`;
+}
+
+/** Страницы входа из Метрики: без домена, параметров и #хвоста (Telegram дописывает огромный #tgWebAppData), одинаковые — вместе */
+function mergePages(pages) {
+  const m = new Map();
+  for (const x of pages) {
+    const name = String(x.name).replace(/^https?:\/\/[^/]+/, "").replace(/[?#].*$/, "") || "/";
+    const p = m.get(name) || { name, visits: 0, users: 0, bw: 0 };
+    p.visits += x.m[0] || 0; p.users += x.m[1] || 0; p.bw += (x.m[2] || 0) * (x.m[0] || 0);
+    m.set(name, p);
+  }
+  return [...m.values()].map((p) => ({ name: p.name, visits: p.visits, users: p.users, bounce: p.visits ? round(p.bw / p.visits, 1) : null })).sort((a, b) => b.visits - a.visits);
+}
+
 function funnel(h, from, to) {
-  const cohort = h.all("SELECT uid, registered_at, about, expectations, patients, cons, quizzes FROM users WHERE registered_at >= ? AND registered_at < ?", from, to);
+  const cohort = h.all("SELECT uid, registered_at, about, expectations, onboarding_done, patients, cons, quizzes FROM users WHERE registered_at >= ? AND registered_at < ?", from, to);
   if (!cohort.length) return { total: 0, steps: [] };
   const ids = cohort.map((u) => u.uid);
   const inList = (col) => `${col} IN (${ids.map(() => "?").join(",")})`;
@@ -198,7 +221,8 @@ function funnel(h, from, to) {
   for (const r of h.all(`SELECT uid, day FROM active WHERE ${inList("uid")}`, ...ids)) (days[r.uid] = days[r.uid] || new Set()).add(r.day);
   const steps = [
     ["signup", "Запустил бота", () => true],
-    ["onboarding", "Заполнил анкету", (u) => !!(u.about || u.expectations)],
+    // Анкета пройдена: выбрал роль, специальность и разделы (поля «о себе» и «ожидания» необязательные — по ним не считаем)
+    ["onboarding", "Прошёл анкету", (u) => u.onboarding_done === 1 || !!(u.about || u.expectations) || u.patients > 0],
     ["patient", "Получил пациента", (u) => u.patients > 0],
     ["consult", "Начал приём", (u) => started.has(u.uid) || u.cons > 0],
     ["finished", "Завершил приём", (u) => u.cons > 0],
@@ -477,7 +501,7 @@ const REPORTS = {
         sources: sources.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1), duration: Math.round(x.m[3] || 0) })),
         engines: engines.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1] })),
         phrases: phrases.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1) })),
-        pages: pages.map((x) => ({ name: String(x.name).replace(/^https?:\/\/[^/]+/, "") || "/", visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1) })),
+        pages: mergePages(pages),
         days: totals.map((x) => ({ day: x.name, visits: x.m[0], users: x.m[1] })).sort((a, b) => a.day.localeCompare(b.day)),
       };
       h.setMeta(key, { at: Date.now(), data });
@@ -490,9 +514,8 @@ const REPORTS = {
   // Откуда пришли зарегистрировавшиеся за период: канал и первая страница сайта, сколько дошли до приёма и до оплаты
   sources(h, f) {
     const from = Number(f.from), to = Number(f.to);
-    const rows = h.all(`SELECT u.uid, COALESCE(u.src_channel, CASE WHEN u.ref LIKE 'r_%' THEN 'Партнёрская ссылка' ELSE 'Бот / нет данных' END) AS channel,
-      u.src_land AS land, u.cons, EXISTS(SELECT 1 FROM payments p WHERE p.uid = u.uid AND p.status = 'paid') AS paid
-      FROM users u WHERE u.registered_at >= ? AND u.registered_at < ?`, from, to);
+    const rows = h.all(`SELECT u.uid, u.src_channel, u.ref, u.src_land AS land, u.cons, EXISTS(SELECT 1 FROM payments p WHERE p.uid = u.uid AND p.status = 'paid') AS paid
+      FROM users u WHERE u.registered_at >= ? AND u.registered_at < ?`, from, to).map((r) => ({ ...r, channel: r.src_channel || refChannel(r.ref) }));
     const group = (key) => {
       const m = new Map();
       for (const r of rows) {
@@ -1128,6 +1151,7 @@ function runHistorySync(h, items = GENERATED_HISTORY) {
   const seen = new Set(h.getMeta("history_keys", []) || []);
   const before = seen.size;
   const now = Date.now();
+  closeTasksFromHistory(h, items, now);
   const tasks = h.all("SELECT id, title, status, links, created_by FROM tasks");
   const titles = new Set(tasks.map((t) => String(t.title).trim().toLowerCase()));
   items.forEach((it, i) => {
@@ -1158,6 +1182,36 @@ function runHistorySync(h, items = GENERATED_HISTORY) {
     );
   });
   if (seen.size !== before) h.setMeta("history_keys", [...seen]);
+}
+
+/**
+ * Задачи и идеи, которые закрыл смерженный PR (в описании «Задачи: #75, #79»): переносим в «Готово» с датой мержа,
+ * добавляем ссылку на PR, запись в истории изменений и комментарий. Каждая пара «PR — задача» применяется один раз.
+ */
+function closeTasksFromHistory(h, items, now) {
+  const done = new Set(h.getMeta("history_task_links", []) || []);
+  const before = done.size;
+  for (const it of items) {
+    for (const id of it.tasks || []) {
+      const k = `${it.key}>${id}`;
+      if (done.has(k)) continue;
+      done.add(k);
+      const t = h.one("SELECT id, status, links FROM tasks WHERE id = ?", Number(id));
+      if (!t) continue;
+      const ts = Date.parse(it.date) || now;
+      const links = (() => { try { return JSON.parse(t.links || "[]"); } catch { return []; } })();
+      if (it.url && !links.some((l) => l.url === it.url)) links.push({ kind: "url", url: it.url, label: it.pr ? `PR #${it.pr}` : "Коммит" });
+      if (t.status !== "done") {
+        h.sql.exec("UPDATE tasks SET status = 'done', done_at = ?, updated_at = ?, links = ? WHERE id = ?", ts, now, JSON.stringify(links), t.id);
+        h.sql.exec("INSERT INTO task_history (task_id, ts, admin, field, old, new) VALUES (?, ?, 'system', 'status', ?, 'done')", t.id, now, t.status);
+      } else {
+        h.sql.exec("UPDATE tasks SET links = ?, updated_at = ? WHERE id = ?", JSON.stringify(links), now, t.id);
+      }
+      h.sql.exec("INSERT INTO task_comments (task_id, ts, admin, text) VALUES (?, ?, 'system', ?)", t.id, now,
+        `Сделано${it.pr ? ` в PR #${it.pr}` : ""}: ${String(it.title).slice(0, 200)}`);
+    }
+  }
+  if (done.size !== before) h.setMeta("history_task_links", [...done]);
 }
 
 function runTaskImports(h) {
