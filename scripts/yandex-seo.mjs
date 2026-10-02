@@ -8,15 +8,25 @@ import { appendFileSync } from "node:fs";
 const [mode = "wordstat", arg = ""] = process.argv.slice(2);
 const TOKEN = process.env.YANDEX_METRIKA_TOKEN;
 if (!TOKEN) throw new Error("нет YANDEX_METRIKA_TOKEN — добавьте секрет репозитория");
-const auth = { Authorization: `Bearer ${TOKEN}` };
+// Вордстат принимает «Bearer», Вебмастер — только «OAuth»
+const bearer = { Authorization: `Bearer ${TOKEN}` };
+const oauth = { Authorization: `OAuth ${TOKEN}` };
 const SITE = process.env.SITE || "helpmedoctor.ru";
 let out = "";
 const say = (s = "") => { out += `${s}\n`; };
 
 async function wordstat(phrase) {
+  try {
+    return await wordstatOnce(phrase);
+  } catch (e) {
+    say(`\n## ${phrase}\nСбой запроса: ${e.cause?.code || ""} ${String(e.message || e).slice(0, 200)}`);
+  }
+}
+
+async function wordstatOnce(phrase) {
   // Топ запросов с фразой за 30 дней по России (регион 225) и похожие запросы
   const r = await fetch("https://api.wordstat.yandex.net/v1/topRequests", {
-    method: "POST", headers: { ...auth, "Content-Type": "application/json" },
+    method: "POST", headers: { ...bearer, "Content-Type": "application/json" },
     body: JSON.stringify({ phrase, numPhrases: 50, regions: [225], devices: ["all"] }),
   });
   const j = await r.json().catch(() => ({}));
@@ -30,7 +40,7 @@ async function wordstat(phrase) {
 }
 
 async function webmaster() {
-  const api = (p) => fetch(`https://api.webmaster.yandex.net/v4${p}`, { headers: auth }).then(async (r) => ({ ok: r.ok, status: r.status, j: await r.json().catch(() => ({})) }));
+  const api = (p) => fetch(`https://api.webmaster.yandex.net/v4${p}`, { headers: oauth }).then(async (r) => ({ ok: r.ok, status: r.status, j: await r.json().catch(() => ({})) }));
   const me = await api("/user");
   if (!me.ok) return say(`Вебмастер: ошибка ${me.status} ${JSON.stringify(me.j).slice(0, 300)} — проверьте доступ токена к Вебмастеру`);
   const uid = me.j.user_id;
@@ -48,7 +58,17 @@ async function webmaster() {
   }
 }
 
-if (mode === "webmaster") await webmaster();
+// Проверка токена: Метрика (metrika:read) и какие доступы у токена
+async function check() {
+  const m = await fetch("https://api-metrika.yandex.net/management/v1/counters?per_page=5", { headers: oauth });
+  const mj = await m.json().catch(() => ({}));
+  say(`Метрика: ${m.status} ${m.ok ? `счётчики: ${(mj.counters || []).map((c) => `${c.id} ${c.site}`).join(", ")}` : JSON.stringify(mj).slice(0, 200)}`);
+  const i = await fetch("https://login.yandex.ru/info?format=json", { headers: oauth });
+  say(`Яндекс ID: ${i.status} ${i.ok ? "токен действителен" : (await i.text()).slice(0, 200)}`);
+}
+
+if (mode === "check") await check();
+else if (mode === "webmaster") await webmaster();
 else for (const p of arg.split(/[;\n]/).map((s) => s.trim()).filter(Boolean)) await wordstat(p);
 console.log(out);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, out);

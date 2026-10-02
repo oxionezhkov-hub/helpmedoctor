@@ -29,4 +29,6 @@ jobs:
           YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
           MODE: ${{ github.event.inputs.mode }}
           PHRASES: ${{ github.event.inputs.phrases }}
+          # Сертификат api.wordstat.yandex.net выпущен промежуточным GlobalSign, которого нет в наборе Node — берём системные корни
+          NODE_OPTIONS: --use-system-ca
         run: node scripts/yandex-seo.mjs "$MODE" "$PHRASES"
