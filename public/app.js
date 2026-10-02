@@ -613,6 +613,7 @@ function fetchMe() {
   meInflight = api("GET", cfg ? "/me?lite=1" : "/me")
     .then((me) => {
       S.me = cfg && !me.config ? { ...me, config: cfg } : me;
+      if (S.me.profile?.notice) setTimeout(() => showNotice(S.me.profile.notice), 300);
       return S.me;
     })
     .finally(() => { meInflight = null; });
@@ -666,6 +667,25 @@ async function sendAttribution() {
 // ---------------------------------------------------
 const PAY_KEY = "hmd_pay_at";
 let payWatch = null;
+
+/** Важное уведомление от сервиса (например, решение по студенческому): окно, пока пользователь его не закроет */
+function showNotice(n) {
+  if (!n?.id || S.noticeShown === n.id) return;
+  S.noticeShown = n.id;
+  haptic(n.kind === "ok" ? "success" : "warning");
+  const seen = () => api("POST", "/notice/seen", { id: n.id }).catch(() => {});
+  openSheet(html`<div class="stack center notice-sheet">
+    <h2>${n.title}</h2>
+    <p class="muted">${n.text}</p>
+    ${n.button ? html`<button class="btn lg block" data-notice-go>${n.button.text}</button>` : ""}
+    <button class="btn block ghost" data-notice-close>Понятно</button>
+  </div>`, (sheet) => {
+    sheet.querySelector("[data-notice-close]").onclick = () => { seen(); closeSheet(true); };
+    const g = sheet.querySelector("[data-notice-go]");
+    if (g) g.onclick = () => { seen(); closeSheet(true); go(n.button.go); };
+  });
+  seen();
+}
 
 function paidNotice(text = "Оплата прошла — подписка активирована!") {
   store(PAY_KEY, null);
@@ -781,6 +801,7 @@ function onSync(msg) {
     if (!msg.typing && S.partial?.id === msg.patient_id && !S.inflight.has(msg.patient_id)) stopStream();
   }
   if (msg.scope === "profile" && msg.error) toast(msg.error, "error");
+  if (msg.scope === "profile" && msg.notice) showNotice(msg.notice);
   if (msg.scope === "profile" && msg.paid) paidNotice(msg.paid === "gift" ? "Подписка активирована!" : undefined);
   if (msg.scope === "patients" && msg.new_patient_id && Date.now() - S.expectNewPatient < 120000) {
     etaRecord("patient", Date.now() - S.expectNewPatient);

@@ -9,6 +9,7 @@ import { cancelSubscription, chargeSubscription } from "../lib/tochka.js";
 import { confirmPayment, PAY_POLL } from "../lib/payments.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
 import { tg, btn } from "../lib/telegram.js";
+import { emailHtml, sendEmail } from "../lib/email.js";
 import * as A from "../lib/analytics.js";
 import * as PT from "../lib/partners.js";
 
@@ -404,6 +405,11 @@ export class HubDO extends DurableObject {
   }
 
   /** Привязать вход к uid. Если он уже привязан к другому аккаунту — { error: "taken" } */
+  /** Почты пользователя из входа через Google / Яндекс — для писем */
+  userEmails(uid) {
+    return [...new Set(this.all("SELECT email FROM identities WHERE uid = ? AND email != ''", String(uid)).map((r) => String(r.email).toLowerCase()))];
+  }
+
   async identityLink(provider, sub, uid, { email = "", name = "" } = {}) {
     const row = await this.identityGet(provider, sub);
     if (row && row.uid !== String(uid)) return { error: "taken" };
@@ -600,6 +606,11 @@ export class HubDO extends DurableObject {
       const when = new Date(r.next_at).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
       await bot.send(r.uid, `⏳ <b>Пробный премиум заканчивается ${when}</b>\n\nДальше подписка продлится автоматически: <b>${fmtRub(renewPrice(r.plan, r.price))} ₽ в месяц</b>. Отключить автопродление можно в любой момент в профиле → «Подписка».`,
         [[{ text: "💎 Управлять подпиской", web_app: { url: this.appUrl("/plans") } }]]).catch(() => {});
+      await sendEmail(this.env, { to: this.userEmails(r.uid), subject: `Пробный премиум заканчивается ${when}`, html: emailHtml({
+        title: `Пробный премиум заканчивается ${when}`,
+        paragraphs: [`Дальше подписка продлится автоматически: ${fmtRub(renewPrice(r.plan, r.price))} ₽ в месяц.`, "Отключить автопродление можно в любой момент в профиле → «Подписка»."],
+        button: { text: "Управлять подпиской", url: this.appUrl("/plans") },
+      }) });
     }
     let charged = 0;
     for (const r0 of this.all("SELECT * FROM autopay WHERE status = 'active' AND next_at <= ? LIMIT 200", now)) {

@@ -58,6 +58,14 @@ http.createServer((req, res) => {
       return res.end(o ? "ok" : "none");
     }
     if (req.url.startsWith("/tochka")) return tochka(req, res, body);
+    // Мок Resend: письма — в тот же лог
+    if (req.url.startsWith("/resend")) {
+      let m = {};
+      try { m = JSON.parse(body || "{}"); } catch {}
+      fs.appendFileSync(LOG, JSON.stringify({ method: "resend", to: m.to, subject: m.subject, html: m.html, auth: req.headers.authorization }) + "\n");
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ id: `em_${Date.now()}` }));
+    }
     if (req.url.includes("/file/")) {
       res.writeHead(200, { "Content-Type": "audio/ogg" });
       return res.end(Buffer.from("OggS-fake-audio"));

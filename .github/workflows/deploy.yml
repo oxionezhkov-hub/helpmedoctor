@@ -119,6 +119,16 @@ jobs:
           YANDEX_METRIKA_TOKEN: ${{ secrets.YANDEX_METRIKA_TOKEN }}
         run: |
           if [ -n "$YANDEX_METRIKA_TOKEN" ]; then printf '%s' "$YANDEX_METRIKA_TOKEN" | npx wrangler secret put YANDEX_METRIKA_TOKEN; else echo "YANDEX_METRIKA_TOKEN не задан — пропускаю"; fi
+      # Письма пользователям через Resend — по желанию: RESEND_API_KEY (секрет) и EMAIL_FROM (необязательно, «Имя <адрес@домен>»)
+      - name: Ключ Resend для писем
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: |
+          if [ -n "$RESEND_API_KEY" ]; then printf '%s' "$RESEND_API_KEY" | npx wrangler secret put RESEND_API_KEY; else echo "RESEND_API_KEY не задан — пропускаю"; fi
+          if [ -n "$EMAIL_FROM" ]; then printf '%s' "$EMAIL_FROM" | npx wrangler secret put EMAIL_FROM; fi
       # Ключ выгрузки задач и идей из админки (workflow «Выгрузка из админки», только чтение) — по желанию
       - name: Ключ выгрузки из админки
         env:

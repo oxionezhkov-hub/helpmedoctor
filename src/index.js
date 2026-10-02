@@ -289,6 +289,7 @@ async function api(request, env, url) {
       return json(await user.setAvatar(buf, (request.headers.get("Content-Type") || "").split(";")[0]));
     }
     if (path === "/avatar/telegram" && method === "POST") return json(await user.avatarFromTelegram());
+    if (path === "/notice/seen" && method === "POST") return json(await user.noticeSeen((await readJson(request)).id));
     if (path === "/student" && method === "POST") {
       const buf = await request.arrayBuffer();
       return json(await user.submitStudentCard(buf, (request.headers.get("Content-Type") || "").split(";")[0]));

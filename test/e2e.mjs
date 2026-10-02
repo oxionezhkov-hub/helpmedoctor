@@ -714,6 +714,18 @@ await api(g1, "POST", "/attribution", { r: "vk.com", l: "/", p: "/", u: "" });
   const srcRep = await aq("report", { name: "sources", from: Date.now() - 86400000, to: Date.now() + 60000 });
   assert.ok(srcRep.channels.some((c) => c.key === "Поиск: Яндекс") && srcRep.pages.some((p) => p.key === "/blog/troponin/"), JSON.stringify(srcRep));
 }
+// Студенческий у пользователя с Google: решение админа — окно в приложении и письмо на почту
+{
+  const pr = await fetch(`${BASE}/api/student`, { method: "POST", headers: { Authorization: `Bearer ${g1}`, "Content-Type": "image/jpeg" }, body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]) });
+  assert.equal(pr.status, 200, await pr.clone().text());
+  await press("1062804986", `stu_ok_${gme.profile.uid}`);
+  const n = await waitFor(async () => (await api(g1, "GET", "/me")).data.profile.notice, "student notice");
+  assert.ok(n.title.includes("подтверждён") && n.button.go === "/plans", JSON.stringify(n));
+  const mail = await waitFor(() => tgCalls().find((c) => c.method === "resend" && c.to?.includes("anna@example.com")), "student email");
+  assert.ok(mail.subject.includes("Студенческий подтверждён") && mail.html.includes("/app?go=") && mail.auth === "Bearer re_test", JSON.stringify(mail).slice(0, 300));
+  await api(g1, "POST", "/notice/seen", { id: n.id });
+  assert.equal((await api(g1, "GET", "/me")).data.profile.notice, null, "закрытое окно больше не показывается");
+}
 assert.match(gme.profile.uid, /^w\d{12}$/);
 assert.equal(gme.profile.name, "Анна");
 const W1 = gme.profile.uid;

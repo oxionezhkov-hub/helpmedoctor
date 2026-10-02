@@ -19,6 +19,7 @@ import { cleanAttribution } from "../lib/attribution.js";
 import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
+import { emailHtml, sendEmail } from "../lib/email.js";
 import { refFromLabel } from "../lib/partners.js";
 import * as R from "../bot/render.js";
 
@@ -1374,6 +1375,14 @@ export class UserDO extends DurableObject {
     const until = prof.sub_until === -1 ? "навсегда" : fmtDay(prof.sub_until);
     const renewNote = prof.autopay?.status === "active" && recurring
       ? `\n\nДальше — автопродление: ${fmtRub(prof.autopay.price)} ₽ в месяц, первое списание ${fmtDay(prof.autopay.next_at)}. Отключить можно в профиле → «Подписка».` : "";
+    await this.emailUser(planKey === TRIAL.key ? "Премиум на 7 дней включён" : "Подписка активирована", {
+      title: planKey === TRIAL.key ? "Премиум на 7 дней включён 🎉" : "Подписка активирована",
+      paragraphs: [
+        `Тариф: ${productLabel(planKey)}. Доступ ${prof.sub_until === -1 ? "навсегда" : `до ${until}`}.`,
+        ...(prof.autopay?.status === "active" && recurring ? [`Дальше — автопродление: ${fmtRub(prof.autopay.price)} ₽ в месяц, первое списание ${fmtDay(prof.autopay.next_at)}. Отключить можно в профиле → «Подписка».`] : []),
+      ],
+      button: { text: "Принять пациента", url: this.appLink("/") },
+    });
     await bot.send(prof.uid, planKey === TRIAL.key
       ? `🎉 <b>Премиум на 7 дней включён!</b>\n\nБезлимит пациентов, полный разбор эксперта, тесты по ошибкам и «Очень сложные» случаи — до ${until}.${renewNote}`
       : `✅ <b>Подписка активирована!</b>\n\nТариф: ${productLabel(planKey)}\nДоступ: ${until}${renewNote}\n\nТеперь можно принимать сколько угодно пациентов.`,
@@ -1461,10 +1470,17 @@ export class UserDO extends DurableObject {
     const prof = await this.profile();
     if (prof.student?.status !== "pending") return { status: prof.student?.status || "none", changed: false };
     prof.student = { status: ok ? "approved" : "declined", at: Date.now(), by: String(admin) };
-    await this.ctx.storage.put(PROFILE, prof);
-    this.broadcast("profile");
-    await this.track(ok ? "student_ok" : "student_no", { admin }, { source: "admin" });
     const price = fmtRub(PLANS.student.price);
+    // Окно в приложении: покажется сразу, а если приложение закрыто — при следующем открытии
+    prof.notice = ok
+      ? { id: `student-${Date.now()}`, kind: "ok", title: "Студенческий подтверждён 🎓", text: `Вам доступен студенческий премиум — ${price} ₽ в месяц.`, button: { text: "Оформить", go: "/plans" } }
+      : { id: `student-${Date.now()}`, kind: "warn", title: "Студенческий не подтвердили", text: "По фото не получилось проверить билет. Загрузите другое фото — чтобы были видны ФИО, вуз и срок действия.", button: { text: "Загрузить снова", go: "/plans" } };
+    await this.ctx.storage.put(PROFILE, prof);
+    this.broadcast("profile", { notice: prof.notice });
+    await this.track(ok ? "student_ok" : "student_no", { admin }, { source: "admin" });
+    await this.emailUser(ok ? "Студенческий подтверждён — премиум за 100 ₽ в месяц" : "Студенческий не подтвердили", {
+      title: prof.notice.title, paragraphs: [prof.notice.text], button: { text: prof.notice.button.text, url: this.appLink("/plans") },
+    });
     const text = ok
       ? `🎓 <b>Статус студента подтверждён!</b>\n\nВам доступен студенческий премиум — ${price} ₽ в месяц. Оформить можно в «Тарифах».`
       : "🎓 Не получилось подтвердить студенческий по фото. Попробуйте загрузить другое фото — чтобы были видны ФИО, вуз и срок действия.";
@@ -1473,6 +1489,36 @@ export class UserDO extends DurableObject {
     }
     await this.pushNotify({ title: ok ? "🎓 Студенческий подтверждён" : "🎓 Студенческий не подтверждён", body: ok ? `Премиум за ${price} ₽ в месяц — в «Тарифах»` : "Загрузите другое фото в «Тарифах»", url: "/app#/plans", tag: "student" }).catch(() => {});
     return { status: prof.student.status, changed: true };
+  }
+
+  /** Пользователь закрыл окно-уведомление в приложении */
+  async noticeSeen(id) {
+    const prof = await this.profile();
+    if (prof.notice && (!id || prof.notice.id === id)) {
+      prof.notice = null;
+      await this.ctx.storage.put(PROFILE, prof);
+    }
+    return { ok: true };
+  }
+
+  /** Ссылка в приложение (для писем и кнопок) */
+  appLink(path = "") {
+    return `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/app${path ? `?go=${encodeURIComponent(path)}` : ""}`;
+  }
+
+  /** Письмо на почту из Google / Яндекс ID (если пользователь входил через них). Сбой письма ничего не ломает */
+  async emailUser(subject, body) {
+    try {
+      const prof = await this.profile();
+      const emails = await this.hub().userEmails(prof.uid);
+      if (!emails.length) return false;
+      const ok = await sendEmail(this.env, { to: emails, subject, html: emailHtml(body) });
+      if (ok) await this.track("email", { subject: clampStr(subject, 120) }, { source: "system" });
+      return ok;
+    } catch (e) {
+      console.warn("email", e?.message || e);
+      return false;
+    }
   }
 
   /** Автопродление прошло (списание из HubDO): доступ до until */
@@ -1487,6 +1533,10 @@ export class UserDO extends DurableObject {
     await this.track(wasTrial ? "trial_converted" : "renewed", { plan, op }, { val: Number(amount), source: "system" });
     await this.referralAccrue(op, amount, plan);
     await tg(this.env, { kind: "system" }).send(prof.uid, `💳 <b>Подписка продлена</b>: списано ${fmtRub(amount)} ₽, доступ до ${fmtDay(until)}.\nОтключить автопродление можно в профиле → «Подписка».`);
+    await this.emailUser("Подписка продлена", {
+      title: "Подписка продлена", paragraphs: [`Списано ${fmtRub(amount)} ₽, премиум действует до ${fmtDay(until)}.`, "Отключить автопродление можно в профиле → «Подписка»."],
+      button: { text: "Управлять подпиской", url: this.appLink("/plans") },
+    });
     return publicProfile(prof);
   }
 
@@ -1500,6 +1550,10 @@ export class UserDO extends DurableObject {
     await this.track("autopay_off", { reason }, { source: reason === "failed" ? "system" : undefined });
     if (reason === "failed") {
       await tg(this.env, { kind: "system" }).send(prof.uid, "⚠️ <b>Автопродление отключено</b>: банк трижды отклонил списание. Премиум действует до конца оплаченного срока, продлить можно вручную в «Тарифах».");
+      await this.emailUser("Автопродление отключено", {
+        title: "Автопродление отключено", paragraphs: ["Банк трижды отклонил списание за подписку. Премиум действует до конца оплаченного срока, продлить можно вручную в «Тарифах»."],
+        button: { text: "Открыть тарифы", url: this.appLink("/plans") },
+      });
     }
     return publicProfile(prof);
   }
