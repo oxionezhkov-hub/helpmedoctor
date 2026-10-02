@@ -1388,7 +1388,7 @@ export class UserDO extends DurableObject {
         `Тариф: ${productLabel(planKey)}. Доступ ${prof.sub_until === -1 ? "навсегда" : `до ${until}`}.`,
         ...(prof.autopay?.status === "active" && recurring ? [`Дальше — автопродление: ${fmtRub(prof.autopay.price)} ₽ в месяц, первое списание ${fmtDay(prof.autopay.next_at)}. Отключить можно в профиле → «Подписка».`] : []),
       ],
-      button: { text: "Принять пациента", url: this.appLink("/") },
+      button: { text: "Принять пациента", url: this.appLink("/") }, hero: "ok", site: this.siteUrl(),
     });
     await bot.send(prof.uid, planKey === TRIAL.key
       ? `🎉 <b>Премиум на 7 дней включён!</b>\n\nБезлимит пациентов, полный разбор эксперта, тесты по ошибкам и «Очень сложные» случаи — до ${until}.${renewNote}`
@@ -1486,7 +1486,7 @@ export class UserDO extends DurableObject {
     this.broadcast("profile", { notice: prof.notice });
     await this.track(ok ? "student_ok" : "student_no", { admin }, { source: "admin" });
     await this.emailUser(ok ? "Студенческий подтверждён — премиум за 100 ₽ в месяц" : "Студенческий не подтвердили", {
-      title: prof.notice.title, paragraphs: [prof.notice.text], button: { text: prof.notice.button.text, url: this.appLink("/plans") },
+      title: prof.notice.title, paragraphs: [prof.notice.text], button: { text: prof.notice.button.text, url: this.appLink("/plans") }, hero: ok ? "ok" : "", site: this.siteUrl(),
     });
     const text = ok
       ? `🎓 <b>Статус студента подтверждён!</b>\n\nВам доступен студенческий премиум — ${price} ₽ в месяц. Оформить можно в «Тарифах».`
@@ -1506,6 +1506,11 @@ export class UserDO extends DurableObject {
       await this.ctx.storage.put(PROFILE, prof);
     }
     return { ok: true };
+  }
+
+  /** Адрес сайта (для картинок в письмах) */
+  siteUrl() {
+    return (this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "");
   }
 
   /** Ссылка в приложение (для писем и кнопок) */
@@ -1871,7 +1876,7 @@ export class UserDO extends DurableObject {
     if (!stage) return null;
     const m = winbackEmail(prof, stage);
     const unsub = `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/api/email/off?t=${encodeURIComponent(await signData(this.env, { uid: prof.uid, k: "unsub" }))}`;
-    const ok = await this.emailUser(m.subject, { title: m.title, paragraphs: m.paragraphs, button: { text: m.button.text, url: this.appLink(m.button.go) }, unsub }, "winback");
+    const ok = await this.emailUser(m.subject, { title: m.title, paragraphs: m.paragraphs, button: { text: m.button.text, url: this.appLink(m.button.go) }, unsub, hero: m.hero, stats: m.stats, site: this.siteUrl() }, "winback");
     // Этап отмечаем, даже если почты нет: иначе каждое утро будем зря её искать
     const fresh = await this.profile();
     fresh.winback = { since: prof.last_active, stage, at: Date.now() };

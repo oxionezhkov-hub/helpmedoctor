@@ -19,8 +19,16 @@ export function winbackStage(prof, days) {
   return due.length ? due[due.length - 1] : null;
 }
 
-/** Текст письма этапа: { subject, title, paragraphs, button: { text, go } } */
+/** Письмо этапа: { subject, title, paragraphs, button: { text, go }, hero, stats } */
 export function winbackEmail(prof, stage) {
+  const m = winbackText(prof, stage);
+  const lvl = G.levelInfo(prof.xp || 0).level;
+  const waiting = (prof.active_patient_ids || []).length;
+  const stats = [["🔥", `${prof.streak || 0} ${declDays(prof.streak || 0)}`], ["⭐", `уровень ${lvl}`], ["🩺", waiting ? `${waiting} в очереди` : "очередь пуста"]];
+  return { ...m, hero: `s${stage}`, stats };
+}
+
+function winbackText(prof, stage) {
   const name = String(prof.name || "").split(/\s+/)[0] || "доктор";
   const streak = prof.streak || 0;
   const waiting = (prof.active_patient_ids || []).length;
