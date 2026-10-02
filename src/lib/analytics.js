@@ -208,6 +208,17 @@ function mergePages(pages) {
   return [...m.values()].map((p) => ({ name: p.name, visits: p.visits, users: p.users, bounce: p.visits ? round(p.bw / p.visits, 1) : null })).sort((a, b) => b.visits - a.visits);
 }
 
+// К страницам входа добавляет, сколько визитов и посетителей дошли до приложения (null — Метрика не ответила)
+export function withApp(pages, app) {
+  const m = new Map((app || []).map((x) => [x.name, x]));
+  return pages.map((p) => {
+    if (!app || p.name === "/app") return { ...p, app: null, app_users: null, app_pct: null };
+    const a = m.get(p.name);
+    const visits = Math.min(a?.visits || 0, p.visits), users = Math.min(a?.users || 0, p.users);
+    return { ...p, app: visits, app_users: users, app_pct: p.visits ? round((visits / p.visits) * 100, 1) : null };
+  });
+}
+
 function funnel(h, from, to) {
   const cohort = h.all("SELECT uid, registered_at, about, expectations, onboarding_done, patients, cons, quizzes FROM users WHERE registered_at >= ? AND registered_at < ?", from, to);
   if (!cohort.length) return { total: 0, steps: [] };
@@ -246,6 +257,45 @@ export function live(h, { limit = 50 } = {}) {
 // Отчёты
 // ---------------------------------------------------
 const METRIKA_COUNTER = 113057442; // счётчик сайта и приложения
+
+// Запросы к Reporting API Метрики с кэшем на 30 минут
+async function metrikaFetch(h, f, token) {
+  const d1 = mskDate(Number(f.from)), d2 = mskDate(Math.min(Number(f.to), Date.now()) - 1);
+  const key = `metrika2:${d1}:${d2}`;
+  const cached = h.getMeta(key);
+  if (cached && Date.now() - cached.at < 30 * 60000) return cached.data;
+  const get = async (dimensions, metrics, limit = 30, filters = "") => {
+    const q = new URLSearchParams({ ids: String(METRIKA_COUNTER), date1: d1, date2: d2, dimensions, metrics, limit: String(limit), sort: `-${metrics.split(",")[0]}`, accuracy: "full", lang: "ru" });
+    if (filters) q.set("filters", filters);
+    const r = await fetch(`https://api-metrika.yandex.net/stat/v1/data?${q}`, { headers: { Authorization: `OAuth ${token}` } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`Метрика ${r.status}: ${j.message || j.errors?.[0]?.message || ""}`.trim());
+    return (j.data || []).map((x) => ({ name: x.dimensions?.[0]?.name ?? "—", m: x.metrics || [] }));
+  };
+  try {
+    const [sources, engines, phrases, pages, totals, toApp] = await Promise.all([
+      get("ym:s:lastTrafficSource", "ym:s:visits,ym:s:users,ym:s:bounceRate,ym:s:avgVisitDurationSeconds", 20),
+      get("ym:s:lastSearchEngine", "ym:s:visits,ym:s:users", 15),
+      get("ym:s:lastSearchPhrase", "ym:s:visits,ym:s:users,ym:s:bounceRate", 100),
+      get("ym:s:startURL", "ym:s:visits,ym:s:users,ym:s:bounceRate", 50),
+      get("ym:s:date", "ym:s:visits,ym:s:users", 400),
+      // визиты, в которых был просмотр приложения (/app) — сколько со страницы входа дошли до приложения
+      get("ym:s:startURL", "ym:s:visits,ym:s:users", 100, `EXISTS(ym:pv:URL=@'helpmedoctor.ru/app')`).catch(() => null),
+    ]);
+    const data = {
+      configured: true, date1: d1, date2: d2,
+      sources: sources.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1), duration: Math.round(x.m[3] || 0) })),
+      engines: engines.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1] })),
+      phrases: phrases.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1) })),
+      pages: withApp(mergePages(pages), toApp && mergePages(toApp)),
+      days: totals.map((x) => ({ day: x.name, visits: x.m[0], users: x.m[1] })).sort((a, b) => a.day.localeCompare(b.day)),
+    };
+    h.setMeta(key, { at: Date.now(), data });
+    return data;
+  } catch (e) {
+    return { configured: true, error: String(e.message || e).slice(0, 300) };
+  }
+}
 
 const REPORTS = {
   retention(h, f) {
@@ -477,38 +527,15 @@ const REPORTS = {
   async metrika(h, f) {
     const token = String(h.env.YANDEX_METRIKA_TOKEN || "").trim();
     if (!token) return { configured: false };
-    const d1 = mskDate(Number(f.from)), d2 = mskDate(Math.min(Number(f.to), Date.now()) - 1);
-    const key = `metrika:${d1}:${d2}`;
-    const cached = h.getMeta(key);
-    if (cached && Date.now() - cached.at < 30 * 60000) return cached.data;
-    const get = async (dimensions, metrics, limit = 30) => {
-      const q = new URLSearchParams({ ids: String(METRIKA_COUNTER), date1: d1, date2: d2, dimensions, metrics, limit: String(limit), sort: `-${metrics.split(",")[0]}`, accuracy: "full", lang: "ru" });
-      const r = await fetch(`https://api-metrika.yandex.net/stat/v1/data?${q}`, { headers: { Authorization: `OAuth ${token}` } });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(`Метрика ${r.status}: ${j.message || j.errors?.[0]?.message || ""}`.trim());
-      return (j.data || []).map((x) => ({ name: x.dimensions?.[0]?.name ?? "—", m: x.metrics || [] }));
-    };
-    try {
-      const [sources, engines, phrases, pages, totals] = await Promise.all([
-        get("ym:s:lastTrafficSource", "ym:s:visits,ym:s:users,ym:s:bounceRate,ym:s:avgVisitDurationSeconds", 20),
-        get("ym:s:lastSearchEngine", "ym:s:visits,ym:s:users", 15),
-        get("ym:s:lastSearchPhrase", "ym:s:visits,ym:s:users,ym:s:bounceRate", 100),
-        get("ym:s:startURL", "ym:s:visits,ym:s:users,ym:s:bounceRate", 50),
-        get("ym:s:date", "ym:s:visits,ym:s:users", 400),
-      ]);
-      const data = {
-        configured: true, date1: d1, date2: d2,
-        sources: sources.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1), duration: Math.round(x.m[3] || 0) })),
-        engines: engines.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1] })),
-        phrases: phrases.map((x) => ({ name: x.name, visits: x.m[0], users: x.m[1], bounce: round(x.m[2], 1) })),
-        pages: mergePages(pages),
-        days: totals.map((x) => ({ day: x.name, visits: x.m[0], users: x.m[1] })).sort((a, b) => a.day.localeCompare(b.day)),
-      };
-      h.setMeta(key, { at: Date.now(), data });
-      return data;
-    } catch (e) {
-      return { configured: true, error: String(e.message || e).slice(0, 300) };
+    const data = await metrikaFetch(h, f, token);
+    if (!data.pages) return data;
+    // регистрации берём из нашей базы: первая страница сайта, с которой человек пришёл в приложение
+    const regs = new Map();
+    for (const r of h.all("SELECT src_land AS land, COUNT(*) AS n FROM users WHERE registered_at >= ? AND registered_at < ? AND src_land IS NOT NULL GROUP BY src_land", Number(f.from), Number(f.to))) {
+      const k = String(r.land).replace(/[?#].*$/, "") || "/";
+      regs.set(k, (regs.get(k) || 0) + r.n);
     }
+    return { ...data, pages: data.pages.map((p) => ({ ...p, regs: p.name === "/app" ? null : regs.get(p.name) || 0 })) };
   },
 
   // Откуда пришли зарегистрировавшиеся за период: канал и первая страница сайта, сколько дошли до приёма и до оплаты

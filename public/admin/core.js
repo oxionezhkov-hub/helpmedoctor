@@ -289,11 +289,35 @@ export function downloadCsv(name, columns, rows) {
  * @param {{columns: {key, label, render?, sort?, cls?, value?}[], rows: any[], sort?: {key, dir}, onSort?, rowAttrs?, empty?}} o
  */
 export function table(o) {
-  const { columns, rows, sort, rowAttrs, empty = "Пусто" } = o;
+  const { columns, rows, sort, rowAttrs, empty = "Пусто", sortable = false } = o;
   if (!rows.length) return html`<div class="empty">${ic("inbox")}${empty}</div>`;
-  return html`<div class="table-wrap"><table class="t"><thead><tr>${columns.map((c) => html`<th class="${c.cls || ""} ${c.sort ? "sortable" : ""}" ${c.sort ? raw(`data-sort="${fmt(c.key)}"`) : ""}>${c.label}${sort?.key === c.key ? html` <span class="arrow">${sort.dir === "asc" ? "↑" : "↓"}</span>` : ""}</th>`)}</tr></thead>
-    <tbody>${rows.map((r) => html`<tr ${rowAttrs ? raw(rowAttrs(r)) : ""}>${columns.map((c) => html`<td class="${c.cls || ""}">${c.render ? c.render(r) : r[c.key] ?? "—"}</td>`)}</tr>`)}</tbody></table></div>`;
+  // sortable: сортировка кликом по заголовку прямо в браузере (по значению r[key], без перезагрузки отчёта)
+  const th = (c, i) => sortable
+    ? html`<th class="${c.cls || ""} sortable" data-dcol="${i}" title="Сортировать">${c.label}</th>`
+    : html`<th class="${c.cls || ""} ${c.sort ? "sortable" : ""}" ${c.sort ? raw(`data-sort="${fmt(c.key)}"`) : ""}>${c.label}${sort?.key === c.key ? html` <span class="arrow">${sort.dir === "asc" ? "↑" : "↓"}</span>` : ""}</th>`;
+  const td = (c, r) => sortable
+    ? html`<td class="${c.cls || ""}" data-v="${r[c.key] ?? ""}">${c.render ? c.render(r) : r[c.key] ?? "—"}</td>`
+    : html`<td class="${c.cls || ""}">${c.render ? c.render(r) : r[c.key] ?? "—"}</td>`;
+  return html`<div class="table-wrap"><table class="t" ${sortable ? raw("data-dsort") : ""}><thead><tr>${columns.map(th)}</tr></thead>
+    <tbody>${rows.map((r) => html`<tr ${rowAttrs ? raw(rowAttrs(r)) : ""}>${columns.map((c) => td(c, r))}</tr>`)}</tbody></table></div>`;
 }
+
+document.addEventListener("click", (e) => {
+  const th = e.target.closest?.("table[data-dsort] th[data-dcol]");
+  if (!th) return;
+  const tb = th.closest("table"), col = Number(th.dataset.dcol), body = tb.tBodies[0];
+  const dir = th.dataset.dir === "desc" ? "asc" : "desc";
+  tb.querySelectorAll("th[data-dcol]").forEach((x) => { delete x.dataset.dir; x.querySelector(".arrow")?.remove(); });
+  th.dataset.dir = dir;
+  th.insertAdjacentHTML("beforeend", ` <span class="arrow">${dir === "asc" ? "↑" : "↓"}</span>`);
+  const val = (tr) => { const v = tr.cells[col]?.dataset.v ?? ""; return v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : v; };
+  const k = dir === "asc" ? 1 : -1;
+  [...body.rows].sort((a, b) => {
+    const x = val(a), y = val(b);
+    if (x == null || y == null) return x == null && y == null ? 0 : x == null ? 1 : -1;
+    return (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "ru")) * k;
+  }).forEach((tr) => body.appendChild(tr));
+});
 
 /** Сортировка на клиенте для небольших таблиц */
 export function sortRows(rows, key, dir = "desc") {

@@ -460,3 +460,11 @@ test("письма «вернись»: этапы 1/3/7/14/30, без повто
   }
   assert.ok(winbackEmail(p, 3).paragraphs[0].includes("1 пациент ждёт"));
 });
+
+test("страницы входа: сколько дошли до приложения", async () => {
+  const { withApp } = await import("../src/lib/analytics.js");
+  const pages = [{ name: "/", visits: 100, users: 90, bounce: 50 }, { name: "/app", visits: 80, users: 60, bounce: 30 }, { name: "/blog/x/", visits: 10, users: 10, bounce: 70 }];
+  const r = withApp(pages, [{ name: "/", visits: 25, users: 20 }, { name: "/app", visits: 80, users: 60 }]);
+  assert.deepEqual(r.map((p) => [p.name, p.app, p.app_pct]), [["/", 25, 25], ["/app", null, null], ["/blog/x/", 0, 0]]);
+  assert.equal(withApp(pages, null)[0].app, null, "Метрика не ответила — прочерк, а не ноль");
+});

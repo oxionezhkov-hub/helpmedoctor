@@ -315,11 +315,20 @@ const RENDER = {
     const total = d.sources.reduce((a, x) => a + (x.visits || 0), 0);
     return html`<div class="callout mb small">Данные Яндекс Метрики (счётчик 113057442) за ${d.date1} — ${d.date2}, обновляются раз в 30 минут. Источник — последний значимый. Часть поисковых фраз поисковики скрывают («не определено»).</div>
       <div class="split">
-        <div class="card"><div class="card-head"><h2>Источники трафика · ${fNum(total)} визитов</h2></div>${table({ columns: [{ key: "name", label: "Источник" }, n("visits", "Визиты"), n("users", "Посетители"), bounce, { key: "duration", label: "Время", cls: "r", render: (r) => `${Math.floor(r.duration / 60)}:${String(r.duration % 60).padStart(2, "0")}` }], rows: d.sources })}</div>
+        <div class="card"><div class="card-head"><h2>Источники трафика · ${fNum(total)} визитов</h2></div>${table({ sortable: true, columns: [{ key: "name", label: "Источник" }, n("visits", "Визиты"), n("users", "Посетители"), bounce, { key: "duration", label: "Время", cls: "r", render: (r) => `${Math.floor(r.duration / 60)}:${String(r.duration % 60).padStart(2, "0")}` }], rows: d.sources })}</div>
         <div class="card"><div class="card-head"><h2>Поисковые системы</h2></div>${table({ columns: [{ key: "name", label: "Поисковик" }, n("visits", "Визиты"), n("users", "Посетители")], rows: d.engines })}</div>
       </div>
-      <div class="card mt"><div class="card-head"><h2>Поисковые фразы</h2></div>${table({ columns: [{ key: "name", label: "Фраза" }, n("visits", "Визиты"), n("users", "Посетители"), bounce], rows: d.phrases, empty: "Фраз нет: Яндекс и Google почти не передают поисковые фразы, а переходов из поиска пока мало. Запросы, по которым сайт показывается в поиске, — в Вебмастере (workflow «Ключи из Яндекса», mode=webmaster)." })}</div>
-      <div class="card mt"><div class="card-head"><h2>Страницы входа</h2></div>${table({ columns: [{ key: "name", label: "Страница", render: (r) => html`<a href="https://helpmedoctor.ru${r.name}" target="_blank" rel="noopener">${r.name}</a>` }, n("visits", "Визиты"), n("users", "Посетители"), bounce], rows: d.pages })}</div>`;
+      <div class="card mt"><div class="card-head"><h2>Поисковые фразы</h2></div>${table({ sortable: true, columns: [{ key: "name", label: "Фраза" }, n("visits", "Визиты"), n("users", "Посетители"), bounce], rows: d.phrases, empty: "Фраз нет: Яндекс и Google почти не передают поисковые фразы, а переходов из поиска пока мало. Запросы, по которым сайт показывается в поиске, — в Вебмастере (workflow «Ключи из Яндекса», mode=webmaster)." })}</div>
+      <div class="card mt"><div class="card-head"><h2>Страницы входа</h2></div>
+        <p class="muted small mb">Клик по заголовку — сортировка. <b>Дошли до приложения</b> — визиты (и их доля), в которых после этой страницы открыли helpmedoctor.ru/app (данные Метрики). <b>Регистраций</b> — новые пользователи за период, у которых это первая страница сайта (наша база; Telegram без сайта сюда не попадает). <b>Отказы</b> — доля визитов, где посмотрели одну страницу меньше 15 секунд и ушли.</p>
+        ${table({ sortable: true, columns: [
+          { key: "name", label: "Страница", render: (r) => html`<a href="https://helpmedoctor.ru${r.name}" target="_blank" rel="noopener">${r.name}</a>` },
+          n("visits", "Визиты"), n("users", "Посетители"),
+          { key: "app", label: "Дошли до приложения", cls: "r", render: (r) => (r.app == null ? "—" : fNum(r.app)) },
+          { key: "app_pct", label: "% дошли", cls: "r", render: (r) => (r.app_pct == null ? "—" : `${r.app_pct}%`) },
+          { key: "regs", label: "Регистраций", cls: "r", render: (r) => (r.regs == null ? "—" : fNum(r.regs)) },
+          bounce,
+        ], rows: d.pages })}</div>`;
   },
   sources: (d) => {
     const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : "—");
