@@ -318,7 +318,7 @@ const RENDER = {
         <div class="card"><div class="card-head"><h2>Источники трафика · ${fNum(total)} визитов</h2></div>${table({ columns: [{ key: "name", label: "Источник" }, n("visits", "Визиты"), n("users", "Посетители"), bounce, { key: "duration", label: "Время", cls: "r", render: (r) => `${Math.floor(r.duration / 60)}:${String(r.duration % 60).padStart(2, "0")}` }], rows: d.sources })}</div>
         <div class="card"><div class="card-head"><h2>Поисковые системы</h2></div>${table({ columns: [{ key: "name", label: "Поисковик" }, n("visits", "Визиты"), n("users", "Посетители")], rows: d.engines })}</div>
       </div>
-      <div class="card mt"><div class="card-head"><h2>Поисковые фразы</h2></div>${table({ columns: [{ key: "name", label: "Фраза" }, n("visits", "Визиты"), n("users", "Посетители"), bounce], rows: d.phrases })}</div>
+      <div class="card mt"><div class="card-head"><h2>Поисковые фразы</h2></div>${table({ columns: [{ key: "name", label: "Фраза" }, n("visits", "Визиты"), n("users", "Посетители"), bounce], rows: d.phrases, empty: "Фраз нет: Яндекс и Google почти не передают поисковые фразы, а переходов из поиска пока мало. Запросы, по которым сайт показывается в поиске, — в Вебмастере (workflow «Ключи из Яндекса», mode=webmaster)." })}</div>
       <div class="card mt"><div class="card-head"><h2>Страницы входа</h2></div>${table({ columns: [{ key: "name", label: "Страница", render: (r) => html`<a href="https://helpmedoctor.ru${r.name}" target="_blank" rel="noopener">${r.name}</a>` }, n("visits", "Визиты"), n("users", "Посетители"), bounce], rows: d.pages })}</div>`;
   },
   sources: (d) => {
@@ -329,7 +329,7 @@ const RENDER = {
       { key: "active", label: "Провели приём", cls: "r", render: (r) => html`${r.active} <span class="muted small">${pct(r.active, r.users)}</span>` },
       { key: "paid", label: "Оплатили", cls: "r", render: (r) => html`${r.paid} <span class="muted small">${pct(r.paid, r.users)}</span>` },
     ];
-    return html`<div class="callout mb small">Канал — по сайту, с которого человек впервые пришёл на helpmedoctor.ru (поисковик, соцсеть, другой сайт) и UTM-меткам. Поисковые фразы поисковики не передают — они в отчёте «Яндекс Метрика». Данные собираются с 01.10.2026; кто пришёл через бота, без сайта — «Бот / нет данных».</div>
+    return html`<div class="callout mb small">Канал — по сайту, с которого человек впервые пришёл на helpmedoctor.ru (поисковик, соцсеть, другой сайт) и UTM-меткам. Поисковые фразы поисковики не передают — они в отчёте «Яндекс Метрика». Данные собираются с 01.10.2026. Кто пришёл сразу в бота — по метке ссылки (t.me/бот?start=метка): «Telegram-канал», «Партнёрская ссылка»; без метки — «Бот напрямую».</div>
       <div class="card mb"><div class="card-head"><h2>Каналы · ${d.total} ${plural(d.total, "регистрация", "регистрации", "регистраций")}</h2></div>${table({ columns: cols({ key: "key", label: "Канал" }), rows: d.channels })}</div>
       <div class="card"><div class="card-head"><h2>Первая страница на сайте</h2></div>${table({ columns: cols({ key: "key", label: "Страница", render: (r) => html`<a href="https://helpmedoctor.ru${r.key}" target="_blank" rel="noopener">${r.key}</a>` }), rows: d.pages })}</div>`;
   },
