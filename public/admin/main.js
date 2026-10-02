@@ -74,6 +74,8 @@ function loadTelegram() {
 
 async function loadMe() {
   const r = await api("GET", "/me");
+  // Сервер продлевает сессию при каждом открытии админки
+  if (r.token) { S.token = r.token; store(TOKEN_KEY, r.token); }
   S.me = r.me;
   S.admins = r.admins;
   S.info = r;

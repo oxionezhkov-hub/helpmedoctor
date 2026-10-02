@@ -1362,6 +1362,11 @@ export class UserDO extends DurableObject {
     // Пробный период и месячный тариф — с автопродлением: цена фиксируется на момент оформления
     const recurring = planKey === TRIAL.key || PLANS[planKey]?.recurring;
     if (planKey === TRIAL.key) prof.trial_used = true;
+    // Апгрейд на разовый тариф (год) поверх подписки с автопродлением — автопродление выключаем, чтобы не списывать месяц сверху
+    if (!recurring && PLANS[planKey] && prof.autopay?.status === "active") {
+      await this.hub().autopayCancel(prof.uid, "upgrade").catch((e) => console.error("upgrade autopay", e));
+      prof.autopay = { ...prof.autopay, status: "cancelled" };
+    }
     if (recurring && operationId && prof.sub_until !== -1) {
       const renewPlan = planKey === TRIAL.key ? TRIAL.then : planKey;
       const renewPrice = Number(planKey === TRIAL.key ? planPrice(TRIAL.then) : price);
@@ -1590,7 +1595,7 @@ export class UserDO extends DurableObject {
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile", { paid: "gift" });
     await this.track("gift", { days, reason, admin }, { source: "admin" });
-    const until = prof.sub_until === -1 ? "навсегда" : new Date(prof.sub_until).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+    const until = prof.sub_until === -1 ? "навсегда" : fmtDay(prof.sub_until);
     const term = forever ? "навсегда" : `${days} ${declDays(days)}`;
     if (notify) {
       const body = text
@@ -2246,7 +2251,7 @@ export function offerPlans() {
   return { plans, student: { label: st.label, days: st.days, price: st.price, recurring: true }, trial: { ...TRIAL, then_price: planPrice(TRIAL.then) }, packs: PACKS };
 }
 
-const fmtDay = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow" });
+const fmtDay = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long", timeZone: "Europe/Moscow", ...(new Date(ts).getUTCFullYear() !== new Date().getUTCFullYear() ? { year: "numeric" } : {}) });
 const fmtRub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
 
 export function publicProfile(prof) {

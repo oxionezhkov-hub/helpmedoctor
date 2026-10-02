@@ -354,7 +354,7 @@ const ageText = (p) => (p.is_alien ? String(p.age) : `${p.age} ${plural(Number(p
 const patIcon = (p) => patAvatar(p);
 
 const timeText = (ts) => new Date(ts).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
-const dateText = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long" });
+const dateText = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long", ...(new Date(ts).getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}) });
 const initials = (name) => String(name || "Д").trim().slice(0, 1).toUpperCase();
 
 // ---------------------------------------------------
@@ -2118,7 +2118,7 @@ function viewExpert() {
       </div>
     </div>
     <div class="messages" id="messages">
-      <div class="msg from-patient"><span class="txt">${evaluated ? `Я разобрал ваш приём с пациентом ${p.name}. Спрашивайте: почему такая оценка, что стоило сделать иначе, как лечить по клиническим рекомендациям, с чем дифференцировать.` : "Обсудить приём можно после разбора — завершите приём, и я отвечу на вопросы по нему."}</span></div>
+      <div class="msg from-patient"><span class="txt">${evaluated ? `Посмотрел ваш приём (пациент — ${p.name}). Спрашивайте что угодно: почему такая оценка, что упустили, как лечить по КР, с чем спутать. Можно без церемоний.` : "Обсудить приём можно после разбора — завершите приём, и я отвечу на вопросы по нему."}</span></div>
       ${chat.map((m) => html`<div class="msg from-${m.role === "expert" ? "patient" : "doctor"}"><span class="txt">${m.text}</span><div class="meta">${timeText(m.ts)}</div></div>`)}
       ${partial ? html`<div class="msg from-patient revealing"><span class="txt" id="expert-partial">${partial}</span></div>`
         : busy ? html`<div class="typing-wrap"><div class="typing"><i></i><i></i><i></i></div></div>` : ""}
@@ -3268,8 +3268,11 @@ function whyNot(q, chosen, why) {
 function viewPlans(fresh) {
   const p = S.me.profile;
   const o = S.me.offer || { plans: S.me.plans, packs: {}, trial: null };
-  const order = ["month", "year"].filter((k) => o.plans[k]);
   const ap = p.autopay;
+  // С активной подпиской показываем только апгрейд: с месяца (и студенческого, пробного) — на год; с года и бессрочного — ничего
+  const maxed = p.sub_until === -1 || p.sub_plan === "year";
+  const order = (p.has_sub ? (maxed ? [] : ["year"]) : ["month", "year"]).filter((k) => o.plans[k]);
+  const PLAN_NAMES = { trial: "пробный период", month: "1 месяц", year: "1 год", student: "студенческий", week: "1 неделя", quarter: "3 месяца", gift: "подарок", forever: "навсегда" };
   if (fresh && S.route.q.paid && !S.paidToastAt) { toast("Проверяем оплату…"); watchPayment(); }
   if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
   const planCard = (k) => {
@@ -3286,12 +3289,16 @@ function viewPlans(fresh) {
   renderShell(html`<div class="page">
     ${!IN_TG ? html`<div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button></div>` : ""}
 
-    ${p.has_sub ? html`<div class="card stack-sm">
-      <b class="row-c">${ic("gem", "c-accent")}Премиум активен ${p.sub_until === -1 ? "навсегда" : `до ${dateText(p.sub_until)}`}</b>
-      ${ap?.status === "active" ? html`<span class="small muted">Автопродление: ${rub(ap.price)} ₽ ${dateText(ap.next_at)}${ap.trial ? " — после пробного периода" : ""}.</span>
-        <button class="btn sm ghost" id="autopay-off">Отключить автопродление</button>` : ""}
-      ${ap && ap.status !== "active" ? html`<span class="small muted">Автопродление отключено — после окончания срока останется бесплатный тариф.</span>` : ""}
-    </div>` : ""}
+    ${p.has_sub ? html`<div class="card stack-sm sub-card">
+      <h2 class="row-c">${ic("gem", "c-accent")}Ваша подписка</h2>
+      <div class="small">Премиум ${p.sub_until === -1 ? "навсегда" : html`до <b>${dateText(p.sub_until)}</b>`}${p.sub_plan && PLAN_NAMES[p.sub_plan] ? ` · тариф: ${PLAN_NAMES[p.sub_plan]}` : ""}</div>
+      ${ap?.status === "active" ? html`<div class="small">Автопродление включено: <b>${rub(ap.price)} ₽</b> спишется ${dateText(ap.next_at)}${ap.trial ? " (после пробного периода)" : ""}.</div>
+        <button class="btn block outline c-danger" id="autopay-off">${ic("x")}<span>Отключить автопродление</span></button>
+        <span class="tiny muted">Премиум останется до конца оплаченного срока, деньги больше списываться не будут.</span>`
+        : p.sub_until !== -1 ? html`<div class="small muted">Автопродление выключено — после ${dateText(p.sub_until)} вернётся бесплатный тариф.</div>` : ""}
+    </div>
+    ${order.length ? html`<div class="section-title">Перейти на год</div>
+      <p class="small muted">Выгоднее месяца почти вдвое. Год прибавится к текущему сроку${ap?.status === "active" ? ", а автопродление месяца выключим само" : ""}.</p>` : maxed ? "" : ""}` : ""}
 
     ${p.trial_available && o.trial ? html`<div class="card trial-card stack">
       <h2>Премиум 7 дней за ${rub(o.trial.price)} ₽</h2>
@@ -3303,12 +3310,12 @@ function viewPlans(fresh) {
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div></div>` : ""}
 
     <div class="plans">${order.map(planCard)}</div>
-    ${studentCard(p, o.student, ap)}
+    ${p.has_sub ? "" : studentCard(p, o.student, ap)}
 
     ${consentBox()}
 
     ${Object.keys(o.packs || {}).length ? html`<div class="section-title">Разовые покупки</div>
-      <div class="card packs">${Object.entries(o.packs).map(([k, x]) => html`<div class="pack-row">
+      <div class="card packs">${Object.entries(o.packs).filter(([k]) => !(p.has_sub && k === "patients3")).map(([k, x]) => html`<div class="pack-row">
         <div class="tile ${k === "freeze" ? "accent" : "warn"}">${ic(k === "freeze" ? "flame" : "users")}</div>
         <div class="grow"><b>${x.label}</b><div class="small muted">${k === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}`}</div></div>
         <button class="btn sm" data-plan="${k}">${rub(x.price)} ₽</button></div>`)}</div>` : ""}

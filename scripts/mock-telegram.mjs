@@ -7,7 +7,7 @@ let mid = 1000;
 fs.mkdirSync(".wrangler", { recursive: true });
 fs.writeFileSync(LOG, "");
 
-// Мок API Точки (через «посредника»: /tochka?path=/uapi/...). Год не продаём — проверка ошибки банка.
+// Мок API Точки (через «посредника»: /tochka?path=/uapi/...). Пользователю 999 банк отказывает — проверка ошибки банка.
 const tochkaOps = new Map();
 let opN = 0;
 // Режим «ждём оплату»: новые платежи не оплачены, пока тест не вызовет /tochka-pay?op=…
@@ -21,7 +21,7 @@ function tochka(req, res, body) {
   const send = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(obj)); };
   const base = "/uapi/acquiring/v1.0";
   if (req.method === "POST" && (path === `${base}/payments` || path === `${base}/subscriptions`)) {
-    if (String(data.purpose).includes("1 год")) return send(500, { message: "Bank says no" });
+    if (String(data.consumerId) === "999") return send(500, { message: "Bank says no" });
     const op = `${path.endsWith("subscriptions") ? "sub" : "pay"}_${++opN}`;
     tochkaOps.set(op, { hold: holdNew, amount: data.amount, purpose: data.purpose, consumerId: data.consumerId, sub: path.endsWith("subscriptions"), recurring: data.recurring, saveCard: data.saveCard });
     return send(200, { Data: { operationId: op, paymentLink: `https://pay.example/${op}` } });

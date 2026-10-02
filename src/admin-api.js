@@ -69,7 +69,7 @@ export async function adminApi(request, env, url, ctx) {
     if (path === "/me" && method === "GET") {
       // Первый вход после обновления — достраиваем историю из профилей пользователей
       ctx?.waitUntil?.(hub.startBackfill());
-      return json({ me: adminMe(env, admin), admins: adminIds(env).map((id) => ({ id, name: ADMIN_NAMES[id] || id })), bot_username: env.BOT_USERNAME, public_url: env.PUBLIC_URL, cf_configured: !!(env.CF_ANALYTICS_TOKEN && env.CF_ACCOUNT_ID) });
+      return json({ token: await createSession(env, admin, { scope: "admin", ttl: ADMIN_SESSION_TTL_MS }), me: adminMe(env, admin), admins: adminIds(env).map((id) => ({ id, name: ADMIN_NAMES[id] || id })), bot_username: env.BOT_USERNAME, public_url: env.PUBLIC_URL, cf_configured: !!(env.CF_ANALYTICS_TOKEN && env.CF_ACCOUNT_ID) });
     }
 
     // Универсальные операции HubDO

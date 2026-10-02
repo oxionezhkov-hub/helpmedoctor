@@ -135,4 +135,5 @@ export function bearer(request) {
   return h.startsWith("Bearer ") ? h.slice(7) : null;
 }
 
-export const ADMIN_SESSION_TTL_MS = 12 * 3600 * 1000;
+// Сессия админки: 14 дней, и каждый вход в админку (GET /me) выдаёт новый токен — пока заходите хотя бы раз в две недели, логиниться заново не нужно
+export const ADMIN_SESSION_TTL_MS = 14 * 86400 * 1000;
