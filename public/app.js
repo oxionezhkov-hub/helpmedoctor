@@ -3271,7 +3271,9 @@ function viewPlans(fresh) {
   const ap = p.autopay;
   // С активной подпиской показываем только апгрейд: с месяца (и студенческого, пробного) — на год; с года и бессрочного — ничего
   const maxed = p.sub_until === -1 || p.sub_plan === "year";
-  const order = (p.has_sub ? (maxed ? [] : ["year"]) : ["month", "year"]).filter((k) => o.plans[k]);
+  // Подписка с автопродлением (месяц, студенческий, пробный) — апгрейд только на год; подарок и разовые без продления — можно продлить любым тарифом
+  const upgradeOnly = p.has_sub && ap?.status === "active";
+  const order = (p.has_sub ? (maxed ? [] : upgradeOnly ? ["year"] : ["month", "year"]) : ["month", "year"]).filter((k) => o.plans[k]);
   const PLAN_NAMES = { trial: "пробный период", month: "1 месяц", year: "1 год", student: "студенческий", week: "1 неделя", quarter: "3 месяца", gift: "подарок", forever: "навсегда" };
   if (fresh && S.route.q.paid && !S.paidToastAt) { toast("Проверяем оплату…"); watchPayment(); }
   if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
@@ -3297,8 +3299,8 @@ function viewPlans(fresh) {
         <span class="tiny muted">Премиум останется до конца оплаченного срока, деньги больше списываться не будут.</span>`
         : p.sub_until !== -1 ? html`<div class="small muted">Автопродление выключено — после ${dateText(p.sub_until)} вернётся бесплатный тариф.</div>` : ""}
     </div>
-    ${order.length ? html`<div class="section-title">Перейти на год</div>
-      <p class="small muted">Выгоднее месяца почти вдвое. Год прибавится к текущему сроку${ap?.status === "active" ? ", а автопродление месяца выключим само" : ""}.</p>` : maxed ? "" : ""}` : ""}
+    ${order.length ? html`<div class="section-title">${upgradeOnly ? "Перейти на год" : "Продлить премиум"}</div>
+      <p class="small muted">${upgradeOnly ? `Год — около ${Math.round(Number(o.plans.year?.price || 1000) / ((o.plans.year?.days || 365) / 30))} ₽ в месяц вместо ${rub(o.plans.month?.price || 200)} ₽. Срок прибавится к текущему, а автопродление месяца выключим само.` : `Новый срок начнётся после ${dateText(p.sub_until)} — ничего не сгорит.`}</p>` : ""}` : ""}
 
     ${p.trial_available && o.trial ? html`<div class="card trial-card stack">
       <h2>Премиум 7 дней за ${rub(o.trial.price)} ₽</h2>
@@ -3309,7 +3311,7 @@ function viewPlans(fresh) {
       <b>Бесплатно — 2 пациента в день</b><span class="small muted">и ещё один за каждую оценку от ${dec(p.bonus_rating || 4.5)} (до ${p.bonus_max || 3} в день)</span><span class="small muted">с оценкой и выводом эксперта. В премиуме:</span>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div></div>` : ""}
 
-    <div class="plans">${order.map(planCard)}</div>
+    ${order.length ? html`<div class="plans ${order.length === 1 ? "single" : ""}">${order.map(planCard)}</div>` : ""}
     ${p.has_sub ? "" : studentCard(p, o.student, ap)}
 
     ${consentBox()}
