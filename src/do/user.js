@@ -20,6 +20,8 @@ import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, 
 import { tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
 import { emailHtml, sendEmail } from "../lib/email.js";
+import { signData } from "../lib/auth.js";
+import { winbackEmail, winbackStage } from "../lib/winback.js";
 import { refFromLabel } from "../lib/partners.js";
 import * as R from "../bot/render.js";
 
@@ -1512,13 +1514,13 @@ export class UserDO extends DurableObject {
   }
 
   /** Письмо на почту из Google / Яндекс ID (если пользователь входил через них). Сбой письма ничего не ломает */
-  async emailUser(subject, body) {
+  async emailUser(subject, body, kind = "service") {
     try {
       const prof = await this.profile();
       const emails = await this.hub().userEmails(prof.uid);
       if (!emails.length) return false;
       const ok = await sendEmail(this.env, { to: emails, subject, html: emailHtml(body) });
-      if (ok) await this.track("email", { subject: clampStr(subject, 120) }, { source: "system" });
+      if (ok) await this.track("email", { subject: clampStr(subject, 120), kind }, { source: "system" });
       return ok;
     } catch (e) {
       console.warn("email", e?.message || e);
@@ -1839,6 +1841,9 @@ export class UserDO extends DurableObject {
       return what;
     };
     if (kind === "morning") {
+      // Письма «вернись» — отдельно от напоминаний в боте, только тем, у кого есть почта (вход через Google / Яндекс)
+      await this.winbackTick(prof).catch((e) => console.warn("winback", e?.message || e));
+      prof = await this.profile();
       if (G.ensureDailyTask(prof)) await this.ctx.storage.put(PROFILE, prof);
       if (G.shouldAskReview(prof)) {
         prof.review_asked = true;
@@ -1856,6 +1861,32 @@ export class UserDO extends DurableObject {
     }
     if (kind === "evening" && gap === 1 && streak >= 3) return send("warning", "streak_warning", R.streakWarning(this.env, streak, { freezes: prof.streak_freezes || 0 }).kb);
     return "none";
+  }
+
+  /** Серия писем «вернись» по дням без активности (см. lib/winback.js). Один этап за раз, не чаще раза в день */
+  async winbackTick(prof) {
+    if (prof.email_off || prof.blocked || !prof.last_active || !this.env.RESEND_API_KEY) return null;
+    const days = Math.floor((Date.now() - prof.last_active) / 86400000);
+    const stage = winbackStage(prof, days);
+    if (!stage) return null;
+    const m = winbackEmail(prof, stage);
+    const unsub = `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/api/email/off?t=${encodeURIComponent(await signData(this.env, { uid: prof.uid, k: "unsub" }))}`;
+    const ok = await this.emailUser(m.subject, { title: m.title, paragraphs: m.paragraphs, button: { text: m.button.text, url: this.appLink(m.button.go) }, unsub }, "winback");
+    // Этап отмечаем, даже если почты нет: иначе каждое утро будем зря её искать
+    const fresh = await this.profile();
+    fresh.winback = { since: prof.last_active, stage, at: Date.now() };
+    await this.ctx.storage.put(PROFILE, fresh);
+    if (ok) await this.track("winback", { stage, days }, { source: "system" });
+    return ok ? stage : null;
+  }
+
+  /** Отписка от писем-напоминаний по ссылке из письма (служебные письма об оплате и студенческом приходят всё равно) */
+  async emailOff() {
+    const prof = await this.profile();
+    prof.email_off = true;
+    await this.ctx.storage.put(PROFILE, prof);
+    await this.track("email_off", {}, { source: "web" });
+    return { ok: true };
   }
 
   /** Источник текущего действия (bot / miniapp / web / system / admin) */
@@ -1892,7 +1923,7 @@ export class UserDO extends DurableObject {
     try {
       const prof = await this.ctx.storage.get(PROFILE);
       if (!prof) return;
-      if (prof.last_active < Date.now() - 60000 && !["reminder", "bot_blocked", "sub_expired", "gift", "sub_cancel", "sub_change", "extra_patients", "blocked", "unblocked"].includes(type)) {
+      if (prof.last_active < Date.now() - 60000 && !["reminder", "email", "winback", "email_off", "bot_blocked", "sub_expired", "gift", "sub_cancel", "sub_change", "extra_patients", "blocked", "unblocked"].includes(type)) {
         prof.last_active = Date.now();
         await this.ctx.storage.put(PROFILE, prof);
       }

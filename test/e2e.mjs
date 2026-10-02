@@ -745,6 +745,14 @@ await api(g1, "POST", "/attribution", { r: "vk.com", l: "/", p: "/", u: "" });
   await api(g1, "POST", "/notice/seen", { id: n.id });
   assert.equal((await api(g1, "GET", "/me")).data.profile.notice, null, "закрытое окно больше не показывается");
 }
+// Отписка от писем-напоминаний по подписанной ссылке из письма
+{
+  const payload = Buffer.from(JSON.stringify({ uid: gme.profile.uid, k: "unsub" })).toString("base64url");
+  const t = `${payload}.${crypto.createHmac("sha256", "test-secret").update(`data:${payload}`).digest("base64url")}`;
+  assert.ok((await (await fetch(`${BASE}/api/email/off?t=x.y`)).text()).includes("недействительна"));
+  assert.ok((await (await fetch(`${BASE}/api/email/off?t=${encodeURIComponent(t)}`)).text()).includes("больше не будем"));
+  assert.equal((await api(g1, "GET", "/me")).data.profile.email_off, true, "напоминания на почту отключены");
+}
 assert.match(gme.profile.uid, /^w\d{12}$/);
 assert.equal(gme.profile.name, "Анна");
 const W1 = gme.profile.uid;
