@@ -159,7 +159,7 @@ const footer = () => `<footer><div class="wrap">
   </div>
 </div></footer>`;
 
-const stickyCta = (from, text = "Первый пациент каждый день — бесплатно, без карты") =>
+const stickyCta = (from, text = `${FREE_DAILY_LIMIT} пациента в день — бесплатно, без карты`) =>
   `<div class="sticky-cta" role="complementary" aria-label="Быстрый старт"><p data-sticky-text>${esc(text)}</p><a class="btn btn-primary" href="${app(`sticky_${from}`.slice(0, 40))}" data-sticky-btn>Принять пациента ${ARR}</a></div>`;
 
 /** Окно при уходе со страницы: чек-лист в PDF и бесплатный пациент */
@@ -707,7 +707,7 @@ function articlePage(a) {
   <aside class="cta-box">
     <p class="cta-h">Потренируйтесь на виртуальном пациенте</p>
     <ul><li>расспрос текстом или голосом — пациент отвечает только на заданное</li><li>анализы, УЗИ, ЭКГ, эндоскопия — результаты под скрытый диагноз</li><li>ИИ-разбор и тест по вашим ошибкам</li></ul>
-    <p>Первый пациент каждый день — бесплатно. Вход через Яндекс, Google или Telegram.</p>
+    <p>${FREE_DAILY_LIMIT} пациента в день — бесплатно. Вход через Яндекс, Google или Telegram.</p>
     <div class="cta" style="margin:0"><a class="btn btn-primary btn-lg" href="${app(`${from}_end`)}">Принять пациента ${ARR}</a><a class="btn btn-ghost btn-lg" href="/demo/">Демо за минуту</a></div>
   </aside>
 </article>
