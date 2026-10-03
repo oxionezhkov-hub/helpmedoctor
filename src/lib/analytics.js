@@ -1487,6 +1487,8 @@ export const ADMIN_OPS = {
     feedback_new: h.one("SELECT COUNT(*) AS n FROM feedback WHERE COALESCE(status, 'new') = 'new'").n,
     my_tasks: h.one("SELECT COUNT(*) AS n FROM tasks WHERE assignee = ? AND status NOT IN ('done', 'rejected')", admin).n,
     partners: h.one("SELECT (SELECT COUNT(*) FROM partners WHERE status = 'applied') + (SELECT COUNT(*) FROM ref_payouts WHERE status = 'requested') AS n").n,
+    // Блогеры, у которых срок следующего шага уже прошёл
+    bloggers: h.one("SELECT COUNT(*) AS n FROM bloggers WHERE next_at IS NOT NULL AND next_at < ? AND stage <> 'lost'", Date.now()).n,
   }),
 };
 

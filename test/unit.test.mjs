@@ -468,3 +468,50 @@ test("страницы входа: сколько дошли до приложе
   assert.deepEqual(r.map((p) => [p.name, p.app, p.app_pct]), [["/", 25, 25], ["/app", null, null], ["/blog/x/", 0, 0]]);
   assert.equal(withApp(pages, null)[0].app, null, "Метрика не ответила — прочерк, а не ноль");
 });
+
+test("голос пациента: по полу и возрасту, один и тот же на весь приём, чистый текст для озвучки", async () => {
+  const { voiceFor, speakableText, synthesize } = await import("../src/lib/tts.js");
+  const man = voiceFor({ sex: "male", age: 40, seed: "p2" });
+  assert.match(man.name, /^ru-RU-Wavenet-[BD]$/);
+  assert.deepEqual(voiceFor({ sex: "male", age: 40, seed: "p2" }), man, "тот же пациент — тот же голос");
+  assert.match(voiceFor({ sex: "female", age: 30, seed: "x" }).name, /^ru-RU-Wavenet-[ACE]$/);
+  const kid = voiceFor({ sex: "male", age: 6, seed: "p3" });
+  assert.match(kid.name, /^ru-RU-Wavenet-[ACE]$/, "ребёнку — высокий голос");
+  assert.ok(kid.pitch > 0 && kid.rate > 1);
+  const old = voiceFor({ sex: "male", age: 80, seed: "p4" });
+  assert.ok(old.pitch < 0 && old.rate < 1);
+  const chirp = voiceFor({ sex: "female", age: 80, seed: "p1" }, "chirp");
+  assert.match(chirp.name, /Chirp3-HD/);
+  assert.equal(chirp.pitch, 0, "Chirp 3 HD высоту не меняет");
+  assert.equal(voiceFor({ sex: "male", age: 40 }, "нет такого").quality, "wavenet");
+  assert.equal(speakableText("Ну... *кашляет* болит (показывает на грудь) вот тут 😣"), "Ну... болит вот тут");
+
+  const calls = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { calls.push({ url, body: JSON.parse(init.body) }); return new Response(JSON.stringify({ audioContent: "QUJD" })); };
+  try {
+    const r = await synthesize({ GOOGLE_TTS_API_KEY: "k&1" }, "Болит *охает* тут", old);
+    assert.equal(r.audio, "QUJD");
+    assert.equal(r.chars, "Болит тут".length);
+    assert.ok(calls[0].url.endsWith("?key=k%261"));
+    assert.deepEqual(calls[0].body.voice, { languageCode: "ru-RU", name: old.name });
+    assert.equal(calls[0].body.audioConfig.audioEncoding, "MP3");
+    assert.equal(calls[0].body.audioConfig.pitch, old.pitch);
+    await assert.rejects(synthesize({}, "текст", old), /GOOGLE_TTS_API_KEY/);
+    globalThis.fetch = async () => new Response("bad key", { status: 403 });
+    await assert.rejects(synthesize({ GOOGLE_TTS_API_KEY: "k" }, "текст", old), /HTTP 403/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("причина отказа Google TTS — понятным текстом", async () => {
+  const { ttsErrorReason } = await import("../src/lib/tts.js");
+  assert.match(ttsErrorReason('Google TTS HTTP 403: {"error":{"status":"PERMISSION_DENIED","details":[{"reason":"SERVICE_DISABLED"}]}}'), /не включён Cloud Text-to-Speech/);
+  assert.match(ttsErrorReason("Google TTS HTTP 400: API key not valid. Please pass a valid API key."), /неверный/);
+  assert.match(ttsErrorReason("Google TTS HTTP 403: Requests from referer <empty> are blocked."), /по сайтам/);
+  assert.match(ttsErrorReason("Google TTS HTTP 403: Requests to this API texttospeech.googleapis.com method are blocked."), /запрещён/);
+  assert.match(ttsErrorReason("Google TTS HTTP 403: This API method requires billing to be enabled."), /платёжный/);
+  assert.match(ttsErrorReason("Google TTS HTTP 400: Voice 'ru-RU-X' does not exist."), /голос недоступен/);
+  assert.equal(ttsErrorReason("Google TTS HTTP 500: oops"), "Google ответил ошибкой 500");
+});

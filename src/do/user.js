@@ -16,7 +16,7 @@ import * as P from "../lib/prompts.js";
 import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
 import { cleanAttribution } from "../lib/attribution.js";
-import { clampStr, daysBetween, declDays, esc, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
+import { clampStr, daysBetween, declDays, esc, isRefusal, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
 import { emailHtml, sendEmail } from "../lib/email.js";
@@ -36,13 +36,6 @@ const quizKey = (patId) => `quiz:${patId}`;
 const als = new AsyncLocalStorage();
 // Что нельзя делать заблокированному админом пользователю
 const BLOCKED_METHODS = new Set(["requestNewPatient", "startConsultation", "doctorMessage", "voiceMessage", "orderTest", "physicalExam", "requestHint", "finishConsultation", "answerQuiz", "reopenPatient"]);
-
-// Отказ модели вместо находок: «Я не могу…», «I can't…», «Извините, но…»
-const REFUSAL_RE = /^\s*(извините|к сожалению|я не могу|не могу|я не буду|i can(no|')t|i'm sorry|sorry|as an ai)/i;
-function isRefusal(text) {
-  const t = String(text || "").trim();
-  return !t || REFUSAL_RE.test(t) || /не могу (описать|выполнить|предоставить|помочь)|cannot (provide|assist|help)/i.test(t.slice(0, 200));
-}
 
 export class UserDO extends DurableObject {
   constructor(ctx, env) {

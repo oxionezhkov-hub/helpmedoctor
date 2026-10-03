@@ -27,7 +27,7 @@ dd{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 <div style="position:absolute;left:72px;top:170px;width:520px">
   <div class="mono" style="color:#b3391f;margin-bottom:18px">Тренажёр клинического мышления</div>
   <div style="font:700 58px/1.04 L;letter-spacing:-.015em">Тренажёр врача с&nbsp;виртуальными пациентами</div>
-  <div style="margin-top:24px;font-size:24px;line-height:1.4;color:#353a38">Расспрос, анализы, диагноз — и разбор приёма сразу после. Первый пациент в день бесплатно.</div>
+  <div style="margin-top:24px;font-size:24px;line-height:1.4;color:#353a38">Расспрос, анализы, диагноз — и разбор приёма сразу после. 2 пациента в день бесплатно.</div>
 </div>
 <div style="position:absolute;right:72px;top:168px;width:440px;background:#fffdf8;border:1.5px solid #c7c0ae;border-radius:4px;padding:22px 24px 16px;transform:rotate(1deg);box-shadow:0 20px 40px -24px rgba(0,0,0,.35);background-image:repeating-linear-gradient(transparent 0 39px,#e6e1d4 39px 40px);background-position:0 72px">
   <div style="display:flex;justify-content:space-between;border-bottom:2px solid #191c1b;padding-bottom:10px;margin-bottom:10px" class="mono"><span style="font-size:12px">Карта приёма № 0147</span><span style="font-size:12px">гастро</span></div>
