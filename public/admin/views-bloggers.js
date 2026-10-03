@@ -46,11 +46,33 @@ export async function viewBloggers(el, ctx) {
   </div>`;
   const reload = () => viewBloggers(el, ctx);
 
-  if (tab === "board") return renderBoard(el, d, head, tiles, reload);
+  if (tab === "board") return renderBoard(el, d, head, html`${goalCard(d.goal)}${tiles}`, reload);
   if (tab === "plan") return renderPlan(el, d, head, reload);
   if (tab === "guide") return renderGuide(el, head);
   if (tab === "templates") return renderTemplates(el, d, head);
   return renderResults(el, d, head, tiles);
+}
+
+// ---------------------------------------------------------------- цель месяца
+const MONTHS = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
+
+function goalCard(g) {
+  if (!g) return "";
+  const left = Math.max(0, g.target - g.done);
+  const daysLeft = Math.max(1, Math.ceil((g.to - Date.now()) / DAY));
+  const daysTotal = Math.round((g.to - g.from) / DAY);
+  const expected = Math.round((g.target * (daysTotal - daysLeft + 1)) / daysTotal);
+  const behind = g.done < expected && left > 0;
+  const month = MONTHS[Number(g.month.slice(5, 7)) - 1];
+  return html`<div class="card mb">
+    <div class="row wrap"><b class="grow">Цель на ${month}: написать ${fNum(g.target)} ${plural(g.target, "блогеру", "блогерам", "блогерам")}</b>
+      <span class="small"><b>${fNum(g.done)}</b> из ${fNum(g.target)}</span>
+      <button class="btn ghost sm" id="bl-goal" title="Изменить цель месяца">${ic("edit", "sm")}</button></div>
+    <div class="progress mt-sm"><i style="width:${Math.min(100, Math.round((g.done / g.target) * 100))}%"></i></div>
+    <div class="tiny mt-sm ${behind ? "" : "muted"}" style="${behind ? "color:var(--warn)" : ""}">${left
+      ? html`Осталось ${fNum(left)} за ${daysLeft} ${plural(daysLeft, "день", "дня", "дней")} — по ${fNum(Math.ceil(left / daysLeft))} в день. ${behind ? `По плану к сегодня было бы ${expected}.` : "Идём по плану."}`
+      : "Цель месяца выполнена 🎉"} Считаются карточки, которым в этом месяце впервые написали (этап дальше «Найден» или отмечен пункт «первое сообщение»).</div>
+  </div>`;
 }
 
 // ---------------------------------------------------------------- воронка
@@ -93,6 +115,12 @@ function renderBoard(el, d, head, tiles, reload) {
   $("#bl-mine").onchange = (e) => { st.mine = e.target.checked; renderBoard(el, d, head, tiles, reload); };
   $("#bl-lost").onchange = (e) => { st.lost = e.target.checked; renderBoard(el, d, head, tiles, reload); };
   $("#bl-add").onclick = () => bloggerModal(null, reload);
+  const goalBtn = $("#bl-goal");
+  if (goalBtn) goalBtn.onclick = async () => {
+    const v = prompt("Сколько блогерам написать в этом месяце?", String(d.goal?.target || 100));
+    if (v === null) return;
+    try { await q("bloggers_goal", { target: Number(v) }); reload(); } catch (e) { toast(e.message, "error"); }
+  };
   $$("[data-bid]", el).forEach((c) => {
     c.onclick = () => bloggerModal(d.rows.find((b) => String(b.id) === c.dataset.bid), reload);
     c.ondragstart = (e) => { e.dataTransfer.setData("text/plain", c.dataset.bid); c.classList.add("dragging"); };

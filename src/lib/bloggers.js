@@ -3,6 +3,7 @@
 // карточка связывается с его uid — и подтягивает живую статистику личной ссылки (приглашённые, оплаты, начисления).
 // Хранится в SQLite HubDO. Инструкция, шаблоны и план запуска — на странице админки (public/admin/bloggers-guide.js).
 import { refBalance, refCode } from "./partners.js";
+import { mskDate } from "./util.js";
 
 // Этапы воронки (порядок важен: по нему строится доска и конверсия)
 export const BLOGGER_STAGES = ["found", "contacted", "talks", "agreed", "onboarded", "published", "repeat", "lost"];
@@ -18,11 +19,32 @@ export function initBloggerTables(sql) {
     CREATE TABLE IF NOT EXISTS bloggers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, handle TEXT, platform TEXT, url TEXT,
       audience INTEGER DEFAULT 0, reach INTEGER DEFAULT 0, niche TEXT, segment TEXT, contact TEXT, stage TEXT DEFAULT 'found', owner TEXT,
       offer TEXT, fee REAL DEFAULT 0, rate REAL, uid TEXT, next_action TEXT, next_at INTEGER, post_url TEXT, post_at INTEGER, erid TEXT,
-      checklist TEXT, notes TEXT, lost_reason TEXT, created_at INTEGER, updated_at INTEGER, stage_at INTEGER, created_by TEXT);
+      checklist TEXT, notes TEXT, lost_reason TEXT, created_at INTEGER, updated_at INTEGER, stage_at INTEGER, created_by TEXT, contacted_at INTEGER);
     CREATE INDEX IF NOT EXISTS bloggers_stage ON bloggers (stage);
     CREATE TABLE IF NOT EXISTS blogger_log (id INTEGER PRIMARY KEY AUTOINCREMENT, blogger_id INTEGER, ts INTEGER, admin TEXT, kind TEXT, text TEXT);
     CREATE INDEX IF NOT EXISTS blogger_log_id ON blogger_log (blogger_id, ts);
   `);
+  // Когда блогеру впервые написали — для цели месяца («написать 100 блогерам»)
+  try { sql.exec("ALTER TABLE bloggers ADD COLUMN contacted_at INTEGER"); } catch {}
+}
+
+export const GOAL_DEFAULT = 100;
+
+/** Блогеру уже написали: этап дальше «Найден» (кроме отказа) или отмечен пункт «первое сообщение» */
+function isContacted(stage, checklist) {
+  const i = BLOGGER_STAGES.indexOf(stage);
+  return (i >= 1 && stage !== "lost") || !!checklist?.first;
+}
+
+/** Цель месяца по Москве: сколько блогерам написали с 1-го числа */
+export function monthGoal(hub, now = Date.now()) {
+  const month = mskDate(now).slice(0, 7);
+  const from = Date.parse(`${month}-01T00:00:00+03:00`);
+  const [y, m] = month.split("-").map(Number);
+  const next = Date.parse(`${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, "0")}-01T00:00:00+03:00`);
+  const goals = hub.getSetting("bloggers_goal", {}) || {};
+  const done = hub.one("SELECT COUNT(*) AS n FROM bloggers WHERE contacted_at >= ? AND contacted_at < ?", from, next)?.n || 0;
+  return { month, from, to: next, target: Number(goals[month]) || GOAL_DEFAULT, done };
 }
 
 function safeJson(s, def) {
@@ -78,7 +100,7 @@ function row(hub, b, base) {
 export function adminBloggers(hub) {
   const base = String(hub.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "");
   const rows = hub.all("SELECT * FROM bloggers ORDER BY COALESCE(next_at, 9e15) ASC, updated_at DESC LIMIT 1000").map((b) => row(hub, b, base));
-  return { rows, stages: BLOGGER_STAGES, plan: hub.getSetting("bloggers_plan", {}) || {} };
+  return { rows, stages: BLOGGER_STAGES, plan: hub.getSetting("bloggers_plan", {}) || {}, goal: monthGoal(hub) };
 }
 
 export function bloggerLog(hub, id) {
@@ -109,6 +131,7 @@ export function bloggerSave(hub, a, admin) {
 
   if (!cur) {
     v.stage ||= "found";
+    if (isContacted(v.stage, safeJson(v.checklist, {}))) v.contacted_at = now;
     const cols = Object.keys(v);
     hub.sql.exec(
       `INSERT INTO bloggers (${cols.join(", ")}, created_at, updated_at, stage_at, created_by) VALUES (${cols.map(() => "?").join(", ")}, ?, ?, ?, ?)`,
@@ -121,6 +144,7 @@ export function bloggerSave(hub, a, admin) {
     return { ok: true, id: newId };
   }
 
+  if (!cur.contacted_at && isContacted(v.stage ?? cur.stage, safeJson(v.checklist ?? cur.checklist, {}))) v.contacted_at = now;
   const changed = Object.keys(v).filter((k) => String(v[k] ?? "") !== String(cur[k] ?? ""));
   if (!changed.length) return { ok: true, id };
   if (changed.includes("stage")) v.stage_at = now;
@@ -151,6 +175,17 @@ export const BLOGGER_OPS = {
     h.sql.exec("DELETE FROM blogger_log WHERE blogger_id = ?", id);
     h.audit?.(admin, "blogger_delete", String(id));
     return { ok: true };
+  },
+  // Цель месяца (сколько блогерам написать): { "2026-10": 100 }
+  bloggers_goal: (h, a, admin) => {
+    const target = Math.round(Number(a.target));
+    if (!(target > 0 && target <= 10000)) throw new Error("Цель — число от 1 до 10 000");
+    const g = monthGoal(h);
+    const goals = h.getSetting("bloggers_goal", {}) || {};
+    goals[g.month] = target;
+    h.setSetting("bloggers_goal", goals);
+    h.audit?.(admin, "bloggers_goal", g.month, { target });
+    return { ok: true, goal: monthGoal(h) };
   },
   // План запуска: отмеченные шаги { ключ: { by, at } }
   bloggers_plan: (h, a, admin) => {
