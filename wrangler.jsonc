@@ -20,6 +20,11 @@
 
   "ai": { "binding": "AI" },
 
+  // Прототип /test362861 без входа: не больше 30 запросов в минуту с одного адреса
+  "ratelimits": [
+    { "name": "PROTO_LIMIT", "namespace_id": "1001", "simple": { "limit": 30, "period": 60 } }
+  ],
+
   // Старое хранилище: из него при первом входе переносятся данные пользователей
   "kv_namespaces": [
     { "binding": "HELPMEDOCTOR", "id": "4667ee0d1a1e48e596a7a254d4799031" }

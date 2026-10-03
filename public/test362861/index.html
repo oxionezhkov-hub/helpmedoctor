@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Голос пациента · прототип</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">
+<script>try { var t = localStorage.getItem("hmd_theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+/* Прототип голосового приёма: одна колонка как в приложении; режимы — текст, голосовые, звонок */
+@font-face { font-family: "Literata"; font-weight: 700 800; font-display: swap; src: url(/fonts/literata-700.woff2) format("woff2"); }
+:root {
+  --bg: #f4f7f7; --surface: #ffffff; --surface-2: #eef3f3; --text: #11201f; --muted: #5f7270; --border: #dde6e5;
+  --accent: #0f766e; --accent-contrast: #ffffff; --accent-soft: #d8f0ed;
+  --doctor-bubble: #0f766e; --doctor-text: #ffffff; --patient-bubble: #ffffff;
+  --danger: #c2410c; --danger-soft: #fdeee6; --warn: #b45309; --warn-soft: #fdf3dd; --ok: #15803d; --ok-soft: #e3f5e8;
+  --call-bg: #0b2321; --call-text: #eafaf7; --call-muted: #9cc3bd; --call-btn: rgba(255,255,255,.12);
+  --shadow: 0 1px 2px rgba(16,40,38,.06), 0 4px 16px rgba(16,40,38,.06);
+  --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d1716; --surface: #152321; --surface-2: #1c2e2c; --text: #e6f0ef; --muted: #93a8a5; --border: #25403d;
+  --accent: #2dd4bf; --accent-contrast: #062a26; --accent-soft: #123b37;
+  --doctor-bubble: #14746b; --doctor-text: #f0fffd; --patient-bubble: #1c2e2c;
+  --danger: #fb923c; --danger-soft: #3a2116; --warn: #fbbf24; --warn-soft: #3a2f12; --ok: #4ade80; --ok-soft: #133524;
+  --call-bg: #071413; --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d1716; --surface: #152321; --surface-2: #1c2e2c; --text: #e6f0ef; --muted: #93a8a5; --border: #25403d;
+  --accent: #2dd4bf; --accent-contrast: #062a26; --accent-soft: #123b37;
+  --doctor-bubble: #14746b; --doctor-text: #f0fffd; --patient-bubble: #1c2e2c;
+  --danger: #fb923c; --danger-soft: #3a2116; --warn: #fbbf24; --warn-soft: #3a2f12; --ok: #4ade80; --ok-soft: #133524;
+  --call-bg: #071413; --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.app { max-width: 560px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* выбор пациента */
+.pick-screen { overflow-y: auto; padding: calc(var(--safe-top) + 20px) 16px calc(var(--safe-bottom) + 24px); display: grid; gap: 16px; align-content: start; }
+.pick-screen h1 { font: 700 26px/1.15 "Literata", Georgia, serif; margin: 0; letter-spacing: -.01em; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
+.pat-list { display: grid; gap: 10px; }
+.pat { display: flex; gap: 12px; align-items: center; padding: 12px; text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+.pat:hover { border-color: var(--accent); }
+.pat > div { min-width: 0; }
+.pat b { display: block; }
+.face { width: 48px; height: 48px; border-radius: 50%; background: var(--accent-soft); overflow: hidden; flex: none; display: grid; place-items: center; }
+.face img { width: 100%; height: 100%; display: block; }
+.face.sm { width: 38px; height: 38px; }
+.settings { padding: 14px; display: grid; gap: 10px; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 13px; color: var(--muted); }
+select, .input { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); }
+.note { padding: 10px 12px; border-radius: 12px; font-size: 13.5px; }
+.note.warn { background: var(--warn-soft); color: var(--warn); }
+.note.ok { background: var(--ok-soft); color: var(--ok); }
+
+/* приём */
+.consult { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.top { padding: calc(var(--safe-top) + 8px) 12px 8px; background: var(--surface); border-bottom: 1px solid var(--border); display: grid; gap: 8px; }
+.top-row { display: flex; align-items: center; gap: 10px; }
+.top-row .who { flex: 1; min-width: 0; }
+.top-row .who b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; display: grid; place-items: center; color: var(--text); flex: none; }
+.icon-btn:hover { background: var(--surface-2); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface-2); border-radius: 12px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: transparent; border-radius: 9px; padding: 7px 4px; font-size: 13.5px; font-weight: 600; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.seg button svg.i { width: 16px; height: 16px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--accent); box-shadow: var(--shadow); }
+.chat { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.msg { max-width: 84%; padding: 9px 12px; border-radius: 18px; word-wrap: break-word; white-space: pre-wrap; }
+.msg.doctor { align-self: flex-end; background: var(--doctor-bubble); color: var(--doctor-text); border-bottom-right-radius: 6px; }
+.msg.patient { align-self: flex-start; background: var(--patient-bubble); border: 1px solid var(--border); border-bottom-left-radius: 6px; }
+.msg.voice { min-width: 230px; display: grid; gap: 6px; white-space: normal; }
+.vrow { display: flex; align-items: center; gap: 10px; }
+.vplay { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-contrast); display: grid; place-items: center; flex: none; }
+.msg.doctor .vplay { background: var(--doctor-text); color: var(--doctor-bubble); }
+.vplay svg.i { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.vwave { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; height: 28px; }
+.vwave i { flex: 1; max-width: 3px; border-radius: 2px; background: currentColor; opacity: .3; }
+.vwave i.on { opacity: 1; }
+.msg.patient .vwave { color: var(--accent); }
+.vmeta { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; opacity: .8; font-variant-numeric: tabular-nums; }
+.vmeta button { border: 0; background: transparent; padding: 0; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; opacity: .9; }
+.vtext { font-size: 14px; white-space: pre-wrap; opacity: .9; }
+.event { align-self: stretch; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 14px; white-space: pre-wrap; }
+.event .ev-h { display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 4px; color: var(--accent); }
+.event.test .ev-b { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+.event .react { margin-top: 6px; color: var(--muted); font-style: italic; }
+.sys { align-self: center; font-size: 12.5px; color: var(--muted); text-align: center; padding: 2px 8px; }
+.typing { align-self: flex-start; font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; padding: 4px 6px; }
+.dots i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin: 0 1px; animation: blink 1.2s infinite; }
+.dots i:nth-child(2) { animation-delay: .2s; } .dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 60%, 100% { opacity: .25; } 30% { opacity: 1; } }
+.actions { display: flex; gap: 8px; padding: 8px 12px 0; overflow-x: auto; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13.5px; font-weight: 500; white-space: nowrap; }
+.chip:hover { border-color: var(--accent); }
+.chip svg.i { width: 16px; height: 16px; color: var(--accent); }
+.composer { display: flex; align-items: flex-end; gap: 8px; padding: 8px 12px calc(var(--safe-bottom) + 10px); }
+.composer textarea { flex: 1; min-width: 0; resize: none; max-height: 120px; padding: 10px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); line-height: 1.35; }
+.round { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-contrast); display: grid; place-items: center; flex: none; }
+.round:disabled { opacity: .5; }
+.rec-bar { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 44px; border-radius: 22px; background: var(--danger-soft); color: var(--danger); font-variant-numeric: tabular-nums; }
+.rec-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: blink 1s infinite; }
+.rec-bar .lvl { flex: 1; height: 4px; border-radius: 2px; background: currentColor; opacity: .25; transform-origin: left; }
+.round.ghost { background: var(--surface-2); color: var(--text); }
+
+/* звонок */
+.call { position: absolute; inset: 0; background: var(--call-bg); color: var(--call-text); display: flex; flex-direction: column; padding: calc(var(--safe-top) + 12px) 16px calc(var(--safe-bottom) + 16px); gap: 12px; z-index: 5; }
+.call-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--call-muted); }
+.call-top .icon-btn { color: var(--call-text); }
+.call-top .icon-btn:hover { background: var(--call-btn); }
+.call-main { flex: 1; display: grid; place-items: center; align-content: center; gap: 14px; text-align: center; min-height: 0; }
+.call-ava { position: relative; width: 148px; height: 148px; }
+.call-ava .face { width: 148px; height: 148px; position: relative; z-index: 1; background: #1d4a45; }
+.call-ava .ring { position: absolute; inset: 0; border-radius: 50%; background: #2dd4bf; opacity: 0; transform: scale(1); transition: transform .08s linear, opacity .2s; }
+.call-name { font: 700 22px/1.2 "Literata", Georgia, serif; }
+.call-status { font-size: 14px; color: var(--call-muted); min-height: 20px; display: flex; align-items: center; gap: 8px; justify-content: center; }
+.call-status .lvl { width: 46px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.15); overflow: hidden; }
+.call-status .lvl i { display: block; height: 100%; width: 0; background: #2dd4bf; }
+.subs { width: 100%; max-width: 440px; display: grid; gap: 6px; font-size: 14.5px; min-height: 64px; }
+.subs p { margin: 0; padding: 8px 12px; border-radius: 12px; background: var(--call-btn); text-align: left; }
+.subs p.me { color: var(--call-muted); }
+.call-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.call-actions .chip { background: var(--call-btn); border-color: transparent; color: var(--call-text); }
+.call-actions .chip svg.i { color: #5eead4; }
+.call-ctrls { display: flex; justify-content: center; align-items: center; gap: 22px; }
+.cbtn { display: grid; justify-items: center; gap: 6px; font-size: 12px; color: var(--call-muted); background: none; border: 0; }
+.cbtn .b { width: 60px; height: 60px; border-radius: 50%; background: var(--call-btn); color: var(--call-text); display: grid; place-items: center; }
+.cbtn .b svg.i { width: 24px; height: 24px; }
+.cbtn.main .b { width: 76px; height: 76px; background: #14b8a6; color: #04201d; }
+.cbtn.on .b { background: var(--call-text); color: var(--call-bg); }
+.cbtn.end .b { background: #dc2626; color: #fff; }
+.call-card { position: absolute; left: 12px; right: 12px; top: calc(var(--safe-top) + 60px); max-height: 46%; overflow-y: auto; background: var(--surface); color: var(--text); border-radius: 18px; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.4); z-index: 6; display: grid; gap: 8px; }
+.call-card .ev-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; color: var(--accent); }
+.call-card .ev-b { white-space: pre-wrap; font-size: 14px; }
+
+/* шторка действий */
+.sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,.4); z-index: 10; display: flex; align-items: flex-end; }
+.sheet { width: 100%; background: var(--surface); border-radius: 20px 20px 0 0; padding: 16px 16px calc(var(--safe-bottom) + 16px); display: grid; gap: 12px; max-height: 85%; overflow-y: auto; }
+.sheet h2 { margin: 0; font-size: 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.row { display: flex; gap: 8px; }
+.row > .input { flex: 1; min-width: 0; }
+.btn { padding: 11px 16px; border-radius: 12px; border: 0; background: var(--accent); color: var(--accent-contrast); font-weight: 600; }
+.btn.block { width: 100%; }
+.btn.ghost { background: var(--surface-2); color: var(--text); }
+.btn:disabled { opacity: .55; }
+
+/* итог */
+.result { align-self: stretch; display: grid; gap: 8px; padding: 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
+.pill.yes { background: var(--ok-soft); color: var(--ok); }
+.pill.partial { background: var(--warn-soft); color: var(--warn); }
+.pill.no, .pill.none, .pill.unknown { background: var(--danger-soft); color: var(--danger); }
+
+.toast { position: absolute; left: 50%; top: calc(var(--safe-top) + 14px); transform: translateX(-50%); max-width: calc(100% - 32px); background: var(--text); color: var(--bg); padding: 9px 14px; border-radius: 12px; font-size: 14px; z-index: 20; box-shadow: var(--shadow); }
+@media (prefers-reduced-motion: reduce) { .dots i, .rec-bar .dot { animation: none; } .call-ava .ring { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-micoff" viewBox="0 0 24 24"><path d="M3 3l18 18M9 9v2a3 3 0 0 0 5.1 2.1M15 9.3V6a3 3 0 0 0-5.7-1.3M5 11a7 7 0 0 0 11.5 5.4M19 11a7 7 0 0 1-.6 2.8M12 18v3"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-hang" viewBox="0 0 24 24"><path d="M10.7 13.3a16 16 0 0 0 3.4 2.6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 3.1 4.2 2 2 0 0 1 5.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L9 9.8M22 2 2 22"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7 15h10"/></symbol>
+  <symbol id="i-steth" viewBox="0 0 24 24"><path d="M6 3v6a4 4 0 0 0 8 0V3M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 21V4M4 4h13l-2 4 2 4H4"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-cc" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 10.5a2 2 0 1 0 0 3M17 10.5a2 2 0 1 0 0 3"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+</svg>
+
+<script>
+"use strict";
+// ---------- утилиты ----------
+const $ = (s, r = document) => r.querySelector(s);
+const ic = (n) => `<svg class="i"><use href="#i-${n}"/></svg>`;
+const escH = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (sec) => { sec = Math.max(0, Math.round(sec || 0)); return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`; };
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+let toastTimer;
+function toast(text) {
+  let el = $(".toast");
+  if (!el) { el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); $("#app").appendChild(el); }
+  el.textContent = text;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.remove(), 3500);
+}
+async function api(path, body) {
+  const opts = body instanceof FormData ? { method: "POST", body } : body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {};
+  const res = await fetch(`/api/proto${path}`, opts);
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) { const e = new Error(j.error || `Ошибка ${res.status}`); e.data = j; throw e; }
+  return j;
+}
+const faceUrl = (p) => `/api/face?${new URLSearchParams({ v: "3", s: p.id + p.name, g: p.sex === "female" ? "f" : "m", a: String(p.age) })}`;
+const ageText = (a) => { const n = a % 100, d = a % 10; return `${a} ${n > 10 && n < 20 ? "лет" : d === 1 ? "год" : d >= 2 && d <= 4 ? "года" : "лет"}`; };
+
+// ---------- звук: воспроизведение через Web Audio (на iPhone работает после первого касания) ----------
+const AudioKit = {
+  ctx: null, analyser: null, src: null, cur: null, raf: 0,
+  ensure() {
+    if (!this.ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      this.ctx = new C();
+      this.analyser = this.ctx.createAnalyser();
+      this.analyser.fftSize = 512;
+      this.analyser.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === "suspended") this.ctx.resume().catch(() => {});
+    return this.ctx;
+  },
+  async decode(item) {
+    if (item.buffer) return item.buffer;
+    const ctx = this.ensure();
+    if (!ctx) throw new Error("Звук не поддерживается браузером");
+    let bytes;
+    if (item.b64) { const bin = atob(item.b64); bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); }
+    else if (item.blob) bytes = new Uint8Array(await item.blob.arrayBuffer());
+    item.buffer = await new Promise((res, rej) => ctx.decodeAudioData(bytes.buffer.slice(0), res, rej));
+    item.duration = item.buffer.duration;
+    return item.buffer;
+  },
+  /** Играть с позиции item.pos; onEnd — когда доиграло само (не при паузе) */
+  async play(item, onEnd) {
+    const prev = this.cur;
+    this.stop();
+    if (prev) renderVoice(prev);
+    const ctx = this.ensure();
+    const buf = await this.decode(item);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(this.analyser);
+    const from = item.pos >= buf.duration - 0.05 ? 0 : item.pos || 0;
+    const startedAt = ctx.currentTime - from;
+    src.onended = () => {
+      if (this.src !== src) return;
+      this.src = null; this.cur = null; this.done = null; item.pos = 0; item.playing = false;
+      cancelAnimationFrame(this.raf);
+      renderVoice(item);
+      onEnd && onEnd();
+    };
+    this.src = src; this.cur = item; this.done = onEnd; item.playing = true;
+    src.start(0, from);
+    const tick = () => {
+      if (this.cur !== item) return;
+      item.pos = ctx.currentTime - startedAt;
+      renderVoice(item);
+      this.raf = requestAnimationFrame(tick);
+    };
+    tick();
+  },
+  pause() {
+    const item = this.cur;
+    this.stop();
+    if (item) renderVoice(item);
+  },
+  /** Остановить; тот, кто ждал конца реплики, продолжает (как будто она доиграла) */
+  stop() {
+    cancelAnimationFrame(this.raf);
+    if (this.src) { const s = this.src; this.src = null; try { s.stop(); } catch {} }
+    if (this.cur) { this.cur.playing = false; this.cur = null; }
+    const done = this.done;
+    this.done = null;
+    if (done) done();
+  },
+  level() {
+    if (!this.analyser || !this.src) return 0;
+    const a = new Uint8Array(this.analyser.fftSize);
+    this.analyser.getByteTimeDomainData(a);
+    let s = 0;
+    for (const v of a) s += ((v - 128) / 128) ** 2;
+    return Math.sqrt(s / a.length);
+  },
+};
+document.addEventListener("pointerdown", () => AudioKit.ensure());
+
+// ---------- микрофон: один поток на весь приём, запись и уровень громкости ----------
+const Mic = {
+  stream: null, analyser: null, rec: null, chunks: [], type: "",
+  async open() {
+    if (this.stream && this.stream.active) return;
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") throw new Error("Запись голоса не поддерживается этим браузером");
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    const ctx = AudioKit.ensure();
+    if (ctx) {
+      this.analyser = ctx.createAnalyser();
+      this.analyser.fftSize = 1024;
+      ctx.createMediaStreamSource(this.stream).connect(this.analyser);
+    }
+    this.type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"].find((t) => MediaRecorder.isTypeSupported?.(t)) || "";
+  },
+  start() {
+    this.chunks = [];
+    this.rec = new MediaRecorder(this.stream, this.type ? { mimeType: this.type } : undefined);
+    this.rec.ondataavailable = (e) => e.data.size && this.chunks.push(e.data);
+    this.rec.start(250);
+    this.startedAt = Date.now();
+  },
+  /** Остановить запись; вернуть Blob (или null, если отменили) */
+  stop(keep = true) {
+    return new Promise((resolve) => {
+      const rec = this.rec;
+      this.rec = null;
+      if (!rec || rec.state === "inactive") return resolve(null);
+      rec.onstop = () => resolve(keep ? new Blob(this.chunks, { type: rec.mimeType || this.type || "audio/webm" }) : null);
+      rec.stop();
+    });
+  },
+  get recording() { return !!this.rec; },
+  level() {
+    if (!this.analyser) return 0;
+    const a = new Float32Array(this.analyser.fftSize);
+    this.analyser.getFloatTimeDomainData(a);
+    let s = 0;
+    for (const v of a) s += v * v;
+    return Math.sqrt(s / a.length);
+  },
+  close() {
+    if (this.rec) this.stop(false);
+    this.stream?.getTracks().forEach((t) => t.stop());
+    this.stream = null; this.analyser = null;
+  },
+};
+
+// ---------- состояние ----------
+const S = {
+  cfg: null,
+  quality: store.get("proto_quality", "wavenet"),
+  pat: null,
+  mode: store.get("proto_mode", "voice"),
+  items: [],
+  actions: [],
+  busy: false,
+  finished: false,
+};
+let seq = 0;
+const history = () => S.items.filter((m) => m.role === "doctor" || m.role === "patient").map((m) => ({ role: m.role, text: m.text }));
+
+// ---------- экран выбора ----------
+async function boot() {
+  try { S.cfg = await api("/config"); }
+  catch (e) { $("#app").innerHTML = `<div class="pick-screen"><p class="note warn">Не удалось загрузить прототип: ${escH(e.message)}</p></div>`; return; }
+  renderPick();
+}
+
+function renderPick() {
+  const c = S.cfg;
+  $("#app").innerHTML = `<div class="pick-screen">
+    <div><span class="tag">Прототип · без входа</span><h1>Приём голосом</h1>
+      <p class="muted">Выберите пациента. На приёме переключайтесь между текстом, голосовыми и звонком: история общая, кнопки анализов, осмотра и завершения работают в каждом режиме.</p></div>
+    ${c.tts ? `<p class="note ok">Голос пациентов: Google Cloud Text-to-Speech подключён.</p>` : `<p class="note warn">Ключ Google TTS ещё не задан: голосовые и звонок работают, но пациент отвечает текстом.</p>`}
+    <div class="pat-list">${c.patients.map((p) => `<button class="pat" data-id="${p.id}">
+      <span class="face"><img src="${faceUrl(p)}" alt=""></span>
+      <div><b>${escH(p.name)}</b><span class="small muted">${ageText(p.age)} · ${p.sex === "female" ? "женщина" : "мужчина"} · ${escH(p.specialty)}</span><br><span class="small">${escH(p.complaint)}</span></div>
+    </button>`).join("")}</div>
+    <div class="card settings">
+      <div class="field"><label for="q">Голос Google</label>
+        <select id="q">${c.qualities.map((q) => `<option value="${q.key}" ${q.key === S.quality ? "selected" : ""}>${escH(q.label)}${q.key === "wavenet" ? " — по умолчанию" : q.key === "chirp" ? " — самый живой" : " — попроще, 4 млн симв. бесплатно"}</option>`).join("")}</select></div>
+      <p class="small muted">Голос подбирается по полу и возрасту: детям выше и быстрее, пожилым ниже и медленнее. Бесплатно в месяц: 1 млн символов WaveNet или Chirp 3 HD, 4 млн Standard.</p>
+    </div>
+  </div>`;
+  $("#q").onchange = (e) => { S.quality = e.target.value; store.set("proto_quality", S.quality); };
+  document.querySelectorAll(".pat").forEach((b) => (b.onclick = () => startConsult(b.dataset.id)));
+}
+
+// ---------- приём ----------
+function startConsult(id) {
+  S.pat = S.cfg.patients.find((p) => p.id === id);
+  S.items = []; S.actions = []; S.finished = false; S.busy = false;
+  renderConsult();
+  const opening = { id: ++seq, role: "patient", text: S.pat.opening };
+  S.items.push(opening);
+  if (S.mode !== "text" && S.cfg.tts) {
+    opening.voice = true; opening.loading = true;
+    addItem(opening);
+    sayLine(opening).then(() => { if (S.mode === "call") Call.afterPatient(); });
+  } else addItem(opening);
+  if (S.mode === "call") Call.open();
+}
+
+/** Озвучить готовую реплику пациента (первая фраза, реакция на осмотр) */
+async function sayLine(item) {
+  try {
+    const r = await api("/say", { pid: S.pat.id, text: item.text, quality: S.quality });
+    item.loading = false;
+    if (r.audio) { item.b64 = r.audio; item.voice = true; } else item.voice = false;
+  } catch { item.loading = false; item.voice = false; }
+  rerender(item);
+  if (item.voice) {
+    if (S.mode === "call") Call.status("speaking");
+    await playItem(item, true);
+  }
+}
+
+function renderConsult() {
+  const p = S.pat;
+  $("#app").innerHTML = `<div class="consult">
+    <div class="top">
+      <div class="top-row">
+        <button class="icon-btn" id="back" aria-label="К выбору пациента">${ic("back")}</button>
+        <span class="face sm"><img src="${faceUrl(p)}" alt=""></span>
+        <div class="who"><b>${escH(p.name)}</b><span class="small muted">${ageText(p.age)} · ${escH(p.specialty)}</span></div>
+      </div>
+      <div class="seg" role="group" aria-label="Режим приёма">
+        <button data-mode="text">${ic("chat")}Текст</button>
+        <button data-mode="voice">${ic("wave")}Голосовые</button>
+        <button data-mode="call">${ic("phone")}Звонок</button>
+      </div>
+    </div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div id="typing"></div>
+    <div class="actions" id="actions">
+      <button class="chip" data-sheet="tests">${ic("flask")}Анализы</button>
+      <button class="chip" data-sheet="exam">${ic("steth")}Осмотр</button>
+      <button class="chip" data-sheet="finish">${ic("flag")}Завершить</button>
+    </div>
+    <div class="composer" id="composer"></div>
+  </div>`;
+  $("#back").onclick = () => { Call.close(true); AudioKit.stop(); Mic.close(); renderPick(); };
+  document.querySelectorAll(".seg button").forEach((b) => (b.onclick = () => setMode(b.dataset.mode)));
+  document.querySelectorAll("#actions [data-sheet]").forEach((b) => (b.onclick = () => openSheet(b.dataset.sheet)));
+  updateSeg();
+  renderComposer();
+}
+
+function updateSeg() {
+  document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === S.mode)));
+}
+
+function setMode(mode) {
+  if (mode === S.mode && mode !== "call") return;
+  if (mode === "call" && S.finished) return toast("Приём завершён — выберите другого пациента");
+  if (Mic.recording && S.mode === "voice") cancelRecording();
+  S.mode = mode;
+  store.set("proto_mode", mode);
+  updateSeg();
+  renderComposer();
+  if (mode === "call") Call.open(); else Call.close();
+}
+
+// ---------- лента ----------
+function addItem(item) {
+  const chat = $("#chat");
+  if (!chat) return;
+  const el = document.createElement("div");
+  el.dataset.id = item.id;
+  chat.appendChild(el);
+  fillItem(el, item);
+  chat.scrollTop = chat.scrollHeight;
+}
+function rerender(item) {
+  const el = document.querySelector(`#chat [data-id="${item.id}"]`);
+  if (el) fillItem(el, item);
+  if (S.mode === "call") Call.subs();
+}
+function fillItem(el, m) {
+  if (m.role === "doctor" || m.role === "patient") {
+    if (m.voice || m.loading) {
+      el.className = `msg ${m.role} voice`;
+      el.innerHTML = `<div class="vrow"><button class="vplay" aria-label="Прослушать">${ic(m.playing ? "pause" : "play")}</button><div class="vwave">${waveBars(m)}</div></div>
+        <div class="vmeta"><span class="vt">${m.loading ? "записывает…" : m.duration ? fmt(m.playing ? m.pos : m.duration) : ""}</span>${m.text ? `<button class="tt">${m.showText ? "скрыть текст" : "текст"}</button>` : ""}</div>
+        ${m.showText && m.text ? `<div class="vtext">${escH(m.text)}</div>` : ""}`;
+      el.querySelector(".vplay").onclick = () => (m.playing ? AudioKit.pause() : playItem(m));
+      const tt = el.querySelector(".tt");
+      if (tt) tt.onclick = () => { m.showText = !m.showText; fillItem(el, m); };
+      if (!m.duration && (m.b64 || m.blob)) AudioKit.decode(m).then(() => renderVoice(m)).catch(() => {});
+    } else {
+      el.className = `msg ${m.role}`;
+      el.textContent = m.text;
+    }
+    return;
+  }
+  if (m.role === "test") {
+    el.className = "event test";
+    el.innerHTML = `<div class="ev-h">${ic("flask")}${escH(m.title)}</div><div class="ev-b">${escH(m.text)}</div>`;
+  } else if (m.role === "exam") {
+    el.className = "event";
+    el.innerHTML = `<div class="ev-h">${ic("steth")}${escH(m.title)}</div><div class="ev-b">${escH(m.text)}</div>`;
+  } else if (m.role === "result") {
+    el.className = "result";
+    el.innerHTML = m.html;
+  } else {
+    el.className = "sys";
+    el.textContent = m.text;
+  }
+}
+function waveBars(m) {
+  const n = 34;
+  let x = (m.id * 7919 + (m.text || "").length * 31) % 233280, out = "";
+  const done = m.duration ? (m.pos || 0) / m.duration : 0;
+  for (let i = 0; i < n; i++) {
+    x = (x * 9301 + 49297) % 233280;
+    const h = m.loading ? 4 : 5 + Math.round((x / 233280) * 20);
+    out += `<i style="height:${h}px" class="${m.playing && i / n <= done ? "on" : ""}"></i>`;
+  }
+  return out;
+}
+function renderVoice(m) {
+  const el = document.querySelector(`#chat [data-id="${m.id}"]`);
+  if (!el || !el.classList.contains("voice")) return;
+  const done = m.duration ? (m.pos || 0) / m.duration : 0;
+  el.querySelectorAll(".vwave i").forEach((b, i, all) => b.classList.toggle("on", m.playing && i / all.length <= done));
+  const vt = el.querySelector(".vt");
+  if (vt && !m.loading) vt.textContent = fmt(m.playing ? m.pos : m.duration);
+  const btn = el.querySelector(".vplay");
+  if (btn) btn.innerHTML = ic(m.playing ? "pause" : "play");
+}
+/** Проиграть голосовое; промис — когда доиграло (или сразу при ошибке) */
+function playItem(m, auto = false) {
+  return new Promise((resolve) => {
+    AudioKit.play(m, resolve).catch((e) => { if (!auto) toast(e.message || "Не удалось воспроизвести"); resolve(); });
+  });
+}
+function setTyping(text) {
+  const t = $("#typing");
+  if (!t) return;
+  t.innerHTML = text ? `<div class="typing" style="padding:0 14px 4px"><span class="dots"><i></i><i></i><i></i></span>${escH(text)}</div>` : "";
+}
+
+// ---------- ввод ----------
+function renderComposer() {
+  const c = $("#composer");
+  if (!c) return;
+  if (S.finished) { c.innerHTML = `<button class="btn block" id="again">Другой пациент</button>`; $("#again").onclick = () => { Call.close(true); renderPick(); }; $("#actions").hidden = true; return; }
+  $("#actions").hidden = false;
+  if (S.mode === "call") { c.innerHTML = ""; return; }
+  c.innerHTML = `<textarea id="input" rows="1" maxlength="1500" placeholder="${S.mode === "voice" ? "Сообщение или голосовое…" : "Спросите пациента…"}"></textarea>
+    <button class="round" id="sendBtn" aria-label="Отправить">${ic("send")}</button>`;
+  const input = $("#input"), btn = $("#sendBtn");
+  const sync = () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(120, input.scrollHeight) + "px";
+    const voiceBtn = S.mode === "voice" && !input.value.trim();
+    btn.innerHTML = ic(voiceBtn ? "mic" : "send");
+    btn.setAttribute("aria-label", voiceBtn ? "Записать голосовое" : "Отправить");
+  };
+  input.oninput = sync;
+  input.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey && !matchMedia("(pointer: coarse)").matches) { e.preventDefault(); btn.click(); } };
+  btn.onclick = () => {
+    const text = input.value.trim();
+    if (text && S.busy) toast("Пациент ещё отвечает");
+    else if (text) { input.value = ""; sync(); sendTurn({ text }); }
+    else if (S.mode === "voice") startRecording();
+  };
+  sync();
+}
+
+let recTimer = 0;
+async function startRecording() {
+  if (S.busy) return toast("Пациент ещё отвечает");
+  AudioKit.stop();
+  try { await Mic.open(); } catch (e) { return toast(e.name === "NotAllowedError" ? "Разрешите доступ к микрофону" : e.message); }
+  Mic.start();
+  const c = $("#composer");
+  c.innerHTML = `<button class="round ghost" id="recCancel" aria-label="Отменить запись">${ic("x")}</button>
+    <div class="rec-bar"><span class="dot"></span><span id="recT">0:00</span><span class="lvl" id="recL"></span></div>
+    <button class="round" id="recSend" aria-label="Отправить голосовое">${ic("send")}</button>`;
+  $("#recCancel").onclick = cancelRecording;
+  $("#recSend").onclick = finishRecording;
+  clearInterval(recTimer);
+  recTimer = setInterval(() => {
+    const sec = (Date.now() - Mic.startedAt) / 1000;
+    const t = $("#recT"), l = $("#recL");
+    if (t) t.textContent = fmt(sec);
+    if (l) l.style.transform = `scaleX(${Math.min(1, 0.15 + Mic.level() * 8)})`;
+    if (sec > 60) finishRecording();
+  }, 100);
+}
+async function cancelRecording() {
+  clearInterval(recTimer);
+  await Mic.stop(false);
+  Mic.close();
+  renderComposer();
+}
+async function finishRecording() {
+  clearInterval(recTimer);
+  const blob = await Mic.stop(true);
+  Mic.close();
+  renderComposer();
+  if (!blob || Date.now() - Mic.startedAt < 600) return toast("Слишком короткая запись");
+  sendTurn({ blob });
+}
+
+/** Ход врача: текст или запись → ответ пациента (голосом в режимах «Голосовые» и «Звонок») */
+async function sendTurn({ text, blob }) {
+  if (S.busy || S.finished) return false;
+  S.busy = true;
+  const wantVoice = S.mode !== "text";
+  const hist = history();
+  const mine = { id: ++seq, role: "doctor", text: text || "", voice: !!blob, blob, showText: true };
+  if (S.mode !== "call" || !blob) { S.items.push(mine); addItem(mine); }
+  setTyping(blob ? "распознаём речь…" : wantVoice ? "пациент записывает голосовое…" : "пациент печатает…");
+  if (S.mode === "call") Call.status("thinking");
+  const fd = new FormData();
+  fd.append("pid", S.pat.id);
+  fd.append("history", JSON.stringify(hist));
+  fd.append("voice", wantVoice ? "1" : "0");
+  fd.append("quality", S.quality);
+  if (blob) fd.append("audio", blob, "voice"); else fd.append("text", text);
+  let r;
+  try {
+    r = await api("/turn", fd);
+  } catch (e) {
+    S.busy = false;
+    setTyping("");
+    if (e.data?.empty && S.mode === "call") { Call.afterPatient(); return false; }
+    toast(e.message);
+    if (!e.data?.heard && blob && S.mode !== "call") { S.items = S.items.filter((x) => x !== mine); document.querySelector(`#chat [data-id="${mine.id}"]`)?.remove(); }
+    if (S.mode === "call") Call.afterPatient();
+    return false;
+  }
+  if (blob) {
+    mine.text = r.heard;
+    if (S.mode === "call") { mine.voice = true; S.items.push(mine); addItem(mine); } else rerender(mine);
+  }
+  const reply = { id: ++seq, role: "patient", text: r.reply, voice: wantVoice && !!r.audio, b64: wantVoice ? r.audio || null : null };
+  S.items.push(reply);
+  setTyping("");
+  addItem(reply);
+  if (r.tts_error && wantVoice && !S.ttsWarned) { S.ttsWarned = true; toast(r.tts_error); }
+  S.busy = false;
+  if (S.mode === "call") Call.subs();
+  if (reply.voice && wantVoice) {
+    if (S.mode === "call") Call.status("speaking");
+    await playItem(reply, true);
+  }
+  if (S.mode === "call") Call.afterPatient();
+  return true;
+}
+
+// ---------- действия: анализы, осмотр, завершение ----------
+function openSheet(kind) {
+  if (S.finished) return;
+  if (S.mode === "call") Call.pauseListening();
+  const bg = document.createElement("div");
+  bg.className = "sheet-bg";
+  const list = kind === "tests" ? S.cfg.tests.concat(["Общий анализ мочи", "Биохимия крови", "Рентген грудной клетки", "ФГДС", "Гормоны щитовидной железы"]) : kind === "exam" ? S.cfg.exams : [];
+  const title = { tests: "Назначить обследование", exam: "Физикальный осмотр", finish: "Завершить приём" }[kind];
+  bg.innerHTML = `<div class="sheet" role="dialog" aria-label="${title}">
+    <div class="row" style="align-items:center;justify-content:space-between"><h2>${title}</h2><button class="icon-btn" id="shClose" aria-label="Закрыть">${ic("x")}</button></div>
+    ${list.length ? `<div class="chips">${list.map((t) => `<button class="chip" data-v="${escH(t)}">${escH(t)}</button>`).join("")}</div>` : ""}
+    ${kind === "finish"
+      ? `<div class="field"><label for="shIn">Ваш диагноз</label><textarea class="input" id="shIn" rows="2" placeholder="Например: стабильная стенокардия напряжения"></textarea></div>
+         <button class="btn block" id="shGo">${ic("check")} Поставить диагноз и завершить</button>`
+      : `<div class="row"><input class="input" id="shIn" placeholder="${kind === "tests" ? "Своё обследование" : "Свой вариант осмотра"}" maxlength="120"><button class="btn" id="shGo">Ок</button></div>`}
+  </div>`;
+  $("#app").appendChild(bg);
+  const close = () => { bg.remove(); if (S.mode === "call" && !S.finished) Call.resumeListening(); };
+  bg.onclick = (e) => { if (e.target === bg) close(); };
+  $("#shClose").onclick = close;
+  const go = (v) => {
+    v = String(v || "").trim();
+    if (!v && kind !== "finish") return;
+    bg.remove();
+    if (kind === "tests") doTest(v);
+    else if (kind === "exam") doExam(v);
+    else doFinish(v);
+  };
+  bg.querySelectorAll(".chips .chip").forEach((b) => (b.onclick = () => go(b.dataset.v)));
+  $("#shGo").onclick = () => go($("#shIn").value);
+  setTimeout(() => $("#shIn")?.focus({ preventScroll: true }), 50);
+}
+
+async function doTest(name) {
+  S.actions.push(name);
+  setTyping(`готовим результат: ${name}…`);
+  if (S.mode === "call") Call.status("waiting", `Результат: ${name}…`);
+  try {
+    const r = await api("/test", { pid: S.pat.id, name });
+    const it = { id: ++seq, role: "test", title: r.test, text: r.result };
+    S.items.push(it); addItem(it);
+    if (S.mode === "call") Call.card(it);
+  } catch (e) { toast(e.message); }
+  setTyping("");
+  if (S.mode === "call") Call.resumeListening();
+}
+
+async function doExam(name) {
+  S.actions.push(name);
+  setTyping(`осмотр: ${name}…`);
+  if (S.mode === "call") Call.status("waiting", `Осмотр: ${name}…`);
+  try {
+    const r = await api("/exam", { pid: S.pat.id, name, voice: S.mode !== "text", quality: S.quality });
+    const it = { id: ++seq, role: "exam", title: r.action, text: r.sensation };
+    S.items.push(it); addItem(it);
+    if (S.mode === "call") Call.card(it);
+    if (r.reaction) {
+      const said = { id: ++seq, role: "patient", text: r.reaction, voice: !!r.audio, b64: r.audio || null };
+      S.items.push(said); addItem(said);
+      setTyping("");
+      if (said.voice && S.mode !== "text") { if (S.mode === "call") Call.status("speaking"); await playItem(said, true); }
+    }
+  } catch (e) { toast(e.message); }
+  setTyping("");
+  if (S.mode === "call") Call.resumeListening();
+}
+
+async function doFinish(diagnosis) {
+  if (S.finished) return;
+  S.finished = true;
+  Call.pauseListening();
+  setTyping("пациент прощается…");
+  if (S.mode === "call") Call.status("waiting", "Завершаем приём…");
+  let r;
+  try {
+    r = await api("/finish", { pid: S.pat.id, diagnosis, history: history(), actions: S.actions, voice: S.mode !== "text", quality: S.quality });
+  } catch (e) {
+    S.finished = false; setTyping(""); toast(e.message);
+    if (S.mode === "call") Call.resumeListening();
+    return;
+  }
+  setTyping("");
+  const bye = { id: ++seq, role: "patient", text: r.farewell, voice: !!r.audio, b64: r.audio || null };
+  S.items.push(bye); addItem(bye);
+  const label = { yes: "Диагноз верный", partial: "Частично верно", no: "Диагноз неверный", none: "Диагноз не поставлен", unknown: "Не удалось сверить" }[r.match];
+  const res = { id: ++seq, role: "result", html: `<span class="tag">Итог приёма</span>
+    <div><span class="pill ${r.match}">${label}</span></div>
+    ${diagnosis ? `<div class="small muted">Ваш диагноз</div><div>${escH(diagnosis)}</div>` : ""}
+    <div class="small muted">Диагноз пациента</div><div><b>${escH(r.true_diagnosis)}</b> <span class="muted small">${escH(r.mkb10 || "")}</span></div>
+    ${r.comment ? `<div class="small">${escH(r.comment)}</div>` : ""}
+    <div class="small muted">Назначено: ${escH(S.actions.join(", ") || "ничего")}</div>` };
+  S.items.push(res); addItem(res);
+  if (bye.voice && S.mode !== "text") { if (S.mode === "call") Call.status("speaking"); await playItem(bye, true); }
+  if (S.mode === "call") { Call.close(); S.mode = "voice"; updateSeg(); }
+  renderComposer();
+}
+
+// ---------- режим «Звонок»: слушаем сами, пока врач говорит; пациент отвечает вслух ----------
+const Call = {
+  el: null, timer: 0, loop: 0, startedAt: 0, state: "idle", muted: false, subsOn: store.get("proto_subs", "1") === "1",
+  speech: { floor: 0.01, voiced: 0, silent: 0, began: 0 },
+  async open() {
+    if (this.el) return;
+    AudioKit.stop();
+    const p = S.pat;
+    const el = document.createElement("div");
+    el.className = "call";
+    el.innerHTML = `<div class="call-top"><button class="icon-btn" id="cMin" aria-label="Свернуть звонок в чат">${ic("chat")}</button><span id="cTime">00:00</span><button class="icon-btn" id="cCc" aria-label="Субтитры">${ic("cc")}</button></div>
+      <div class="call-main">
+        <div class="call-ava"><div class="ring" id="cRing"></div><span class="face"><img src="${faceUrl(p)}" alt=""></span></div>
+        <div class="call-name">${escH(p.name)}</div>
+        <div class="call-status" id="cStatus">Соединяем…</div>
+        <div class="subs" id="cSubs"></div>
+      </div>
+      <div class="call-actions">
+        <button class="chip" data-sheet="tests">${ic("flask")}Анализы</button>
+        <button class="chip" data-sheet="exam">${ic("steth")}Осмотр</button>
+        <button class="chip" data-sheet="finish">${ic("flag")}Завершить</button>
+      </div>
+      <div class="call-ctrls">
+        <button class="cbtn" id="cMute"><span class="b">${ic("mic")}</span><span>Микрофон</span></button>
+        <button class="cbtn main" id="cMain"><span class="b">${ic("send")}</span><span id="cMainL">Готово</span></button>
+        <button class="cbtn end" id="cEnd"><span class="b">${ic("hang")}</span><span>Положить</span></button>
+      </div>`;
+    $("#app").appendChild(el);
+    this.el = el;
+    el.querySelectorAll("[data-sheet]").forEach((b) => (b.onclick = () => openSheet(b.dataset.sheet)));
+    $("#cMin").onclick = () => setMode("voice");
+    $("#cEnd").onclick = () => setMode("voice");
+    $("#cCc").onclick = () => { this.subsOn = !this.subsOn; store.set("proto_subs", this.subsOn ? "1" : "0"); this.subs(); };
+    $("#cMute").onclick = () => this.toggleMute();
+    $("#cMain").onclick = () => this.mainAction();
+    this.startedAt = Date.now();
+    this.timer = setInterval(() => { const t = $("#cTime"); if (t) t.textContent = fmt((Date.now() - this.startedAt) / 1000).padStart(5, "0"); }, 500);
+    this.subs();
+    if (!S.cfg.tts) this.status("waiting", "Ключ Google TTS не задан — ответы будут в субтитрах");
+    try { await Mic.open(); }
+    catch (e) { toast(e.name === "NotAllowedError" ? "Разрешите доступ к микрофону" : e.message); this.status("waiting", "Нет доступа к микрофону"); return; }
+    this.loop = setInterval(() => this.tick(), 50);
+    if (!S.busy && !AudioKit.cur && !S.items.some((m) => m.loading)) this.afterPatient();
+  },
+  close(silent) {
+    clearInterval(this.timer); clearInterval(this.loop);
+    this.el?.remove(); this.el = null; this.state = "idle";
+    Mic.close();
+    AudioKit.stop();
+    if (!silent && S.pat) renderComposer();
+  },
+  /** Пациент договорил (или ответа нет) — снова слушаем врача */
+  afterPatient() {
+    if (!this.el || S.finished) return;
+    if (document.querySelector(".sheet-bg")) return this.status("paused");
+    this.listen();
+  },
+  listen() {
+    if (!this.el || !Mic.stream || S.finished) return;
+    if (this.muted) return this.status("muted");
+    if (!Mic.recording) Mic.start();
+    Object.assign(this.speech, { voiced: 0, silent: 0, began: 0 });
+    this.status("listening");
+  },
+  pauseListening() {
+    if (!this.el || this.state !== "listening") return;
+    if (Mic.recording) Mic.stop(false);
+    this.status("paused");
+  },
+  resumeListening() {
+    if (!this.el || S.busy || S.finished || this.state === "speaking" || this.state === "thinking") return;
+    this.listen();
+  },
+  toggleMute() {
+    this.muted = !this.muted;
+    const b = $("#cMute");
+    b.classList.toggle("on", this.muted);
+    b.querySelector(".b").innerHTML = ic(this.muted ? "micoff" : "mic");
+    if (this.muted) { if (Mic.recording) Mic.stop(false); this.status("muted"); }
+    else if (this.state === "muted") this.listen();
+  },
+  /** Большая кнопка: «Готово» — отправить сказанное сейчас; «Перебить» — остановить пациента */
+  mainAction() {
+    if (this.state === "speaking") { AudioKit.stop(); return; }
+    if (this.state === "listening") this.send(true);
+  },
+  async send(manual) {
+    if (!Mic.recording || this.state !== "listening") return;
+    const spoke = this.speech.began || manual;
+    this.status("thinking");
+    const blob = await Mic.stop(true);
+    if (!spoke || !blob || blob.size < 2000) { this.listen(); return; }
+    await sendTurn({ blob });
+  },
+  /** Детектор речи: громкость выше шумового фона — говорим; 1,1 с тишины после речи — отправляем */
+  tick() {
+    const ring = $("#cRing");
+    if (this.state === "speaking") {
+      const lv = AudioKit.level();
+      if (ring) { ring.style.opacity = String(Math.min(.55, lv * 6)); ring.style.transform = `scale(${1 + Math.min(.35, lv * 3)})`; }
+      return;
+    }
+    if (ring) { ring.style.opacity = "0"; ring.style.transform = "scale(1)"; }
+    if (this.state !== "listening" || !Mic.recording) return;
+    const lv = Mic.level();
+    const sp = this.speech;
+    sp.floor = lv < sp.floor ? lv : sp.floor + (lv - sp.floor) * 0.002;
+    const thr = Math.max(0.012, sp.floor * 2.5 + 0.006);
+    const bar = document.querySelector("#cStatus .lvl i");
+    if (bar) bar.style.width = `${Math.min(100, (lv / (thr * 2)) * 100)}%`;
+    if (lv > thr) { sp.voiced += 50; sp.silent = 0; if (sp.voiced > 250 && !sp.began) { sp.began = Date.now(); this.status("hearing"); } }
+    else { sp.silent += 50; if (!sp.began) sp.voiced = Math.max(0, sp.voiced - 25); }
+    if (sp.began && sp.silent > 1100) this.send(false);
+    else if (sp.began && Date.now() - sp.began > 45000) this.send(false);
+    else if (!sp.began && Date.now() - Mic.startedAt > 20000) { Mic.stop(false).then(() => this.listen()); }
+  },
+  status(state, text) {
+    if (!this.el) return;
+    if (state !== "waiting") this.state = state;
+    const labels = { listening: "Слушаю вас…", hearing: "Говорите…", thinking: "Пациент думает…", speaking: "Пациент говорит", muted: "Микрофон выключен", paused: "Пауза" };
+    const st = $("#cStatus");
+    st.innerHTML = `${state === "listening" || state === "hearing" ? `<span class="lvl"><i></i></span>` : state === "thinking" || state === "waiting" ? `<span class="dots"><i></i><i></i><i></i></span>` : ""}<span>${escH(text || labels[state] || "")}</span>`;
+    const main = $("#cMain"), lbl = $("#cMainL");
+    if (state === "speaking") { main.querySelector(".b").innerHTML = ic("stop"); lbl.textContent = "Перебить"; main.disabled = false; }
+    else { main.querySelector(".b").innerHTML = ic("send"); lbl.textContent = "Готово"; main.disabled = !(state === "listening" || state === "hearing"); }
+    if (state === "hearing") this.state = "listening";
+  },
+  subs() {
+    const box = $("#cSubs");
+    if (!box) return;
+    $("#cCc")?.classList.toggle("on", this.subsOn);
+    if (!this.subsOn) { box.innerHTML = ""; return; }
+    const talk = S.items.filter((m) => m.role === "doctor" || m.role === "patient").slice(-2);
+    box.innerHTML = talk.map((m) => `<p class="${m.role === "doctor" ? "me" : ""}">${m.role === "doctor" ? "Вы: " : ""}${escH(m.loading ? "…" : m.text)}</p>`).join("");
+  },
+  card(it) {
+    if (!this.el) return;
+    this.el.querySelector(".call-card")?.remove();
+    const c = document.createElement("div");
+    c.className = "call-card";
+    c.innerHTML = `<div class="ev-h"><span>${escH(it.title)}</span><button class="icon-btn" aria-label="Закрыть">${ic("x")}</button></div><div class="ev-b">${escH(it.text)}</div>`;
+    c.querySelector("button").onclick = () => c.remove();
+    this.el.appendChild(c);
+  },
+};
+
+boot();
+</script>
+</body>
+</html>

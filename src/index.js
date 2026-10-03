@@ -12,6 +12,7 @@ import { confirmPayment } from "./lib/payments.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 import { adminApi } from "./admin-api.js";
 import { faceSvg } from "./lib/face.js";
+import { protoApi } from "./proto.js";
 
 export { UserDO } from "./do/user.js";
 export { HubDO } from "./do/hub.js";
@@ -36,6 +37,8 @@ export default {
         return paymentCallback(request, env);
       }
       if (path.startsWith("/api/admin/")) return adminApi(request, env, url, ctx);
+      // Прототип голосового приёма без входа (страница /test362861)
+      if (path.startsWith("/api/proto/")) return protoApi(request, env, url);
       if (path.startsWith("/api/")) return api(request, env, url);
       // Админка — отдельное одностраничное приложение в public/admin
       if (path === "/admin" || path === "/admin/") {
@@ -49,6 +52,13 @@ export default {
       }
       const canonicalHost = isCanonicalHost(request);
       if (path === "/robots.txt") return robotsTxt(canonicalHost);
+      // Прототип голосового приёма — не для поиска. Отдаём и без слэша: редирект за прокси увёл бы на *.workers.dev
+      if (path === "/test362861" || path === "/test362861/") {
+        const page = await env.ASSETS.fetch(new Request(`${url.origin}/test362861/`, request));
+        const out = new Response(page.body, page);
+        out.headers.set("X-Robots-Tag", "noindex, nofollow");
+        return out;
+      }
       let res = await env.ASSETS.fetch(request);
       // Код приложения с версией в адресе (?v=хеш, ставит scripts/build-app.mjs) не меняется — браузер хранит его год
       // и при повторном открытии не скачивает; после деплоя app.html ссылается на новую версию

@@ -128,3 +128,10 @@ export function stripForeignDeep(v) {
   if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, stripForeignDeep(x)]));
   return v;
 }
+
+// Отказ модели вместо находок: «Я не могу…», «I can't…», «Извините, но…»
+const REFUSAL_RE = /^\s*(извините|к сожалению|я не могу|не могу|я не буду|i can(no|')t|i'm sorry|sorry|as an ai)/i;
+export function isRefusal(text) {
+  const t = String(text || "").trim();
+  return !t || REFUSAL_RE.test(t) || /не могу (описать|выполнить|предоставить|помочь)|cannot (provide|assist|help)/i.test(t.slice(0, 200));
+}
