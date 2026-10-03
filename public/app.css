@@ -241,7 +241,7 @@ button.chip:active { transform: scale(.97); }
 /* ---------- Приём (чат) ---------- */
 .consult { height: var(--app-h); display: flex; flex-direction: column; max-width: 820px; margin: 0 auto; }
 /* В браузере экран приёма закреплён по видимой области (см. applyWebViewport): клавиатура iOS не оставляет пустоты под строкой ввода */
-html:not(.tg) .consult { position: fixed; top: var(--vv-top, 0px); left: 0; right: 0; }
+html:not(.tg) .consult { position: fixed; top: 0; left: 0; right: 0; transform: translate3d(0, var(--vv-top, 0px), 0); }
 .consult-head {
   display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin: calc(8px + var(--safe-top)) 10px 0;
   background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); flex: none;

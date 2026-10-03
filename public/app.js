@@ -424,6 +424,8 @@ async function boot() {
     window.visualViewport?.addEventListener("resize", applyWebViewport);
     window.visualViewport?.addEventListener("scroll", applyWebViewport);
     window.addEventListener("resize", applyWebViewport);
+    document.addEventListener("focusin", (e) => { if (e.target.matches?.("input, textarea")) followViewport(); });
+    document.addEventListener("focusout", (e) => { if (e.target.matches?.("input, textarea")) followViewport(); });
   }
 
   if (IN_TG) {
@@ -777,14 +779,32 @@ function connectWs() {
   };
 }
 
+let vvLast = "";
 function applyWebViewport() {
   const vv = window.visualViewport;
   const h = Math.round(vv?.height || window.innerHeight);
+  const top = Math.max(0, Math.round(vv?.offsetTop || 0));
+  const key = `${h}:${top}`;
+  if (key === vvLast) return;
+  vvLast = key;
   const st = document.documentElement.style;
   if (h > 200) st.setProperty("--app-h", `${h}px`);
   // iOS при открытой клавиатуре сдвигает видимую область вниз (offsetTop), а не сжимает страницу.
   // Экран приёма закреплён по этой области — строка ввода стоит ровно над клавиатурой, без пустоты.
-  st.setProperty("--vv-top", `${Math.max(0, Math.round(vv?.offsetTop || 0))}px`);
+  st.setProperty("--vv-top", `${top}px`);
+}
+// События visualViewport на iOS приходят в конце анимации клавиатуры — шапка сначала уезжает, потом прыгает.
+// Пока клавиатура выезжает или прячется, сверяемся с видимой областью каждый кадр: шапка стоит на месте.
+let vvFollowUntil = 0;
+function followViewport() {
+  const was = vvFollowUntil > performance.now();
+  vvFollowUntil = performance.now() + 900;
+  if (was) return;
+  const step = () => {
+    applyWebViewport();
+    if (performance.now() < vvFollowUntil) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
 function onSync(msg) {
