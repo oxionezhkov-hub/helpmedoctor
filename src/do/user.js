@@ -16,7 +16,7 @@ import * as P from "../lib/prompts.js";
 import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
 import { cleanAttribution } from "../lib/attribution.js";
-import { clampStr, daysBetween, declDays, esc, isRefusal, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
+import { clampStr, daysBetween, declDays, esc, fixMedTerms, isRefusal, meaningfulItems, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
 import { emailHtml, sendEmail } from "../lib/email.js";
@@ -786,6 +786,7 @@ export class UserDO extends DurableObject {
       }
       const fresh = await this.patient(patId);
       fresh.current.tests.push(testName);
+      result = fixMedTerms(result);
       fresh.test_results.push({ test: testName, result, ordered_at: Date.now() });
       await this.ctx.storage.put(patKey(patId), fresh);
       this.broadcast("consultation", { patient_id: patId });
@@ -824,7 +825,7 @@ export class UserDO extends DurableObject {
       }
       const exam = {
         action,
-        sensation: clampStr(res.sensation || res.ОЩУЩЕНИЯ || "", 1200),
+        sensation: clampStr(fixMedTerms(res.sensation || res.ОЩУЩЕНИЯ || ""), 1200),
         reaction: clampStr(res.reaction || res.РЕАКЦИЯ || "", 600),
         ts: Date.now(),
       };
@@ -2167,8 +2168,8 @@ function normalizeEvaluation(e) {
     expert_text: clampStr(e.expert_text, 1500),
     dialog_moments: (Array.isArray(e.dialog_moments) ? e.dialog_moments : [])
       .filter((m) => m && m.comment).slice(0, 2).map((m) => ({ quote: clampStr(m.quote, 300), comment: clampStr(m.comment, 400) })),
-    strengths: (Array.isArray(e.strengths) ? e.strengths : []).slice(0, 3),
-    weaknesses: (Array.isArray(e.weaknesses) ? e.weaknesses : []).slice(0, 3),
+    strengths: meaningfulItems(e.strengths).slice(0, 3),
+    weaknesses: meaningfulItems(e.weaknesses).slice(0, 3),
     recommendation: clampStr(e.recommendation, 300),
     outcome_update: ["improving", "stable", "worsening", "critical"].includes(e.outcome_update) ? e.outcome_update : "stable",
     post_story: clampStr(e.post_story, 800),

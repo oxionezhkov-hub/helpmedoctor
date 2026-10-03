@@ -34,6 +34,7 @@ const IS_TOUCH = matchMedia("(pointer: coarse)").matches;
 
 const S = {
   guidePending: new Set(),
+  guideStart: new Map(),
   token: null,
   me: null,            // снимок: профиль, пациенты, тесты, конфиг
   patients: new Map(), // id -> { patient, quiz } полные карточки
@@ -169,7 +170,7 @@ function starsRow(n) {
 
 // ---------- Ожидание с оценкой времени ----------
 // Средняя длительность операций (мс) — подстраивается под реальную скорость и хранится в браузере
-const ETA_DEFAULT = { patient: 16000, reply: 5000, test: 7000, exam: 6000, finish: 5000, evaluation: 22000, voice: 7000, quiz: 40000 };
+const ETA_DEFAULT = { patient: 16000, reply: 5000, test: 7000, exam: 6000, finish: 5000, evaluation: 22000, voice: 7000, quiz: 40000, guide: 45000 };
 const ETA_STEPS = {
   patient: ["Выбираем клинический случай", "Пишем анамнез", "Продумываем характер", "Готовим карточку"],
   evaluation: ["Эксперт изучает диалог", "Сверяет диагноз", "Оценивает лечение", "Пишет разбор"],
@@ -179,6 +180,7 @@ const ETA_STEPS = {
   reply: ["Пациент думает"],
   finish: ["Пациент прощается"],
   quiz: ["Эксперт составляет тест"],
+  guide: ["Находим клинические рекомендации", "Сверяем с вашим приёмом", "Подбираем препараты и дозы", "Оформляем разбор"],
 };
 function etaEstimate(kind) {
   const v = Number(store(`hmd_eta_${kind}`));
@@ -420,6 +422,7 @@ async function boot() {
     // включает зону под панелью браузера — тогда нижнее меню и строка ввода уходят за край
     applyWebViewport();
     window.visualViewport?.addEventListener("resize", applyWebViewport);
+    window.visualViewport?.addEventListener("scroll", applyWebViewport);
     window.addEventListener("resize", applyWebViewport);
   }
 
@@ -775,8 +778,13 @@ function connectWs() {
 }
 
 function applyWebViewport() {
-  const h = Math.round(window.visualViewport?.height || window.innerHeight);
-  if (h > 200) document.documentElement.style.setProperty("--app-h", `${h}px`);
+  const vv = window.visualViewport;
+  const h = Math.round(vv?.height || window.innerHeight);
+  const st = document.documentElement.style;
+  if (h > 200) st.setProperty("--app-h", `${h}px`);
+  // iOS при открытой клавиатуре сдвигает видимую область вниз (offsetTop), а не сжимает страницу.
+  // Экран приёма закреплён по этой области — строка ввода стоит ровно над клавиатурой, без пустоты.
+  st.setProperty("--vv-top", `${Math.max(0, Math.round(vv?.offsetTop || 0))}px`);
 }
 
 function onSync(msg) {
@@ -959,7 +967,8 @@ document.addEventListener("click", (e) => {
 // Нажали на уже открытую вкладку меню — плавно наверх
 document.addEventListener("click", (e) => {
   const a = e.target.closest(".nav a.active");
-  if (a) { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  // Внутри раздела (статистика, карточка пациента, тест) — назад к списку вкладки; на самой вкладке — наверх
+  if (a && (location.hash || "#/").replace(/\?.*$/, "") === a.getAttribute("href")) { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }
 });
 
 // ---------------------------------------------------
@@ -1350,7 +1359,7 @@ function viewPatient() {
       </div>`)}` : ""}
 
     ${p.test_results?.length ? html`<div class="section-title">Результаты обследований</div>
-      ${[...p.test_results].reverse().map((t) => html`<details class="card"><summary><b class="row-c">${ic("flask", "c-accent")}${t.test}</b> <span class="tiny muted">· ${dateText(t.ordered_at)}</span></summary><div class="pre small" style="margin-top:10px;font-family:ui-monospace,Menlo,monospace">${t.result}</div></details>`)}` : ""}
+      ${[...p.test_results].reverse().map((t) => html`<details class="card"><summary><b class="row-c">${ic("flask", "c-accent")}${t.test}</b> <span class="tiny muted">· ${dateText(t.ordered_at)}</span></summary><div style="margin-top:10px">${labTable(t.result)}</div></details>`)}` : ""}
 
     ${!never && !consults.some((c) => c.evaluating) ? html`<button class="btn block ghost c-danger" data-delete-patient="${p.id}">${ic("trash")}<span>Удалить пациента</span></button>` : ""}
   </div>`, true);
@@ -1404,8 +1413,11 @@ function guideBlock(c, id, gift = false) {
   if (!g) {
     const pending = S.guidePending.has(id) || (c.guide_pending && Date.now() - c.guide_pending < 3 * 60000);
     if (pending) {
-      return html`<div class="guide-cta pending" role="status"><div class="row-c"><span class="spinner"></span><b>Готовим разбор по клиническим рекомендациям Минздрава</b></div>
-        <p class="small">Как надо было распознать, обязательный минимум, препараты и дозы. Обычно 30–60 секунд — разбор появится здесь сам.</p></div>`;
+      const start = S.guideStart.get(id) || c.guide_pending || Date.now();
+      if (!S.guideStart.has(id)) S.guideStart.set(id, start);
+      return html`<div class="guide-cta pending" role="status"><b>Готовим разбор по клиническим рекомендациям Минздрава</b>
+        ${etaBox("guide", start)}
+        <p class="small muted">Как надо было распознать, обязательный минимум, препараты и дозы. Разбор появится здесь сам — пока можно обсудить приём с экспертом.</p></div>`;
     }
     // Первый пациент нового пользователя — разбор по КР в подарок
     const premium = S.me?.profile?.premium || gift;
@@ -1692,7 +1704,7 @@ function timeline(p) {
     }
     const fresh = S.revealTs && it.ts === S.revealTs ? " reveal" : "";
     if (it.kind === "test") {
-      return html`${sep}<div class="event test${fresh}"><div class="event-title">${ic("flask", "c-accent")}${it.t.test}</div><div class="event-body">${revealLines(it.t.result, fresh)}</div></div>`;
+      return html`${sep}<div class="event test${fresh}"><div class="event-title">${ic("flask", "c-accent")}${it.t.test}</div><div class="event-body">${labTable(it.t.result)}</div></div>`;
     }
     if (it.kind === "exam") {
       return html`${sep}<div class="event${fresh}"><div class="event-title">${ic("steth", "c-accent")}Осмотр: ${it.x.action}</div><div class="event-body">${revealLines(it.x.sensation, fresh)}</div>${it.x.reaction ? html`<div class="event-body line" style="margin-top:8px;--i:${String(it.x.sensation || "").split("\n").length}"><b>Пациент:</b> ${it.x.reaction}</div>` : ""}</div>`;
@@ -1708,6 +1720,46 @@ function timeline(p) {
 }
 
 /** Строки результата по одной (у свежего результата — с задержкой, см. .event.reveal .line) */
+// ---------- Протокол обследования: строки «Показатель — значение (норма …)» → таблица без рамок ----------
+const num = (x) => Number(String(x).replace(",", ".").replace(/[^\d.\-]/g, ""));
+/** Выше или ниже нормы: «3,5–5,5», «< 5», «> 80», «до 10». Не поняли норму — null */
+function outOfRange(value, norm) {
+  const v = String(value).match(/-?\d+(?:[.,]\d+)?/);
+  if (!v || !norm || norm.includes("%") !== String(value).includes("%")) return null; // «3,2 л» против «> 80% от должного» не сравниваем
+  const x = num(v[0]);
+  const range = norm.match(/(-?\d+(?:[.,]\d+)?)\s*[–—-]\s*(-?\d+(?:[.,]\d+)?)/);
+  if (range) return x < num(range[1]) ? "low" : x > num(range[2]) ? "high" : "ok";
+  const lt = norm.match(/(?:<|≤|до|менее|ниже)\s*(-?\d+(?:[.,]\d+)?)/i);
+  if (lt) return x > num(lt[1]) ? "high" : "ok";
+  const gt = norm.match(/(?:>|≥|от|более|выше)\s*(-?\d+(?:[.,]\d+)?)/i);
+  if (gt) return x < num(gt[1]) ? "low" : "ok";
+  return null;
+}
+/** Разбор строки протокола: { name, value, norm } или null для обычного текста */
+function labRow(line) {
+  // «Гемоглобин — 118 г/л (норма 130–160)», «СОЭ: 25 мм/ч», а без разделителя — «Hb 118 г/л (130-160)»
+  const m = line.match(/^\s*[•\-–]?\s*([^:]{2,70}?)(?::|\s[—–-])\s+(.+)$/) || line.match(/^\s*[•\-–]?\s*(.{2,70}?)\s+(-?\d[\d.,]*(?:\s.*)?)$/);
+  if (!m) return null;
+  let value = m[2].trim(), norm = "";
+  // Норма — в скобках в конце: «(норма 130–160)» или просто «(4–9)», «(< 5)»; «(нормальный)» и «(5%)» — часть значения
+  const nm = value.match(/\((?:норма|N|референс\S*)(?:\s*:\s*|\s+)([^)]*)\)\s*\.?$/i) || value.match(/\(([^)]*\d[^)]*(?:[–—-]|<|>|≤|≥|до|от)[^)]*|(?:<|>|≤|≥|до|от)[^)]*\d[^)]*)\)\s*\.?$/);
+  if (nm) { norm = nm[1].trim(); value = value.slice(0, nm.index).trim(); }
+  if (!value || value.length > 90 || m[1].trim().split(/\s+/).length > 8) return null;
+  return { name: m[1].trim(), value, norm };
+}
+function labTable(text) {
+  const lines = String(text || "").split("\n").filter((l) => l.trim());
+  return html`<div class="lab">${lines.map((line, i) => {
+    const r = labRow(line);
+    if (!r) return html`<div class="lab-text line" style="--i:${i}">${line}</div>`;
+    const st = outOfRange(r.value, r.norm);
+    return html`<div class="lab-row line ${st && st !== "ok" ? "off" : ""}" style="--i:${i}">
+      <div class="lab-name">${r.name}</div>
+      <div class="lab-val"><b>${r.value}</b>${st === "high" ? html`<span class="lab-arrow" title="Выше нормы">↑</span>` : st === "low" ? html`<span class="lab-arrow" title="Ниже нормы">↓</span>` : ""}${r.norm ? html`<span class="lab-norm">норма ${r.norm}</span>` : ""}</div>
+    </div>`;
+  })}</div>`;
+}
+
 function revealLines(text, fresh) {
   // Строки всегда отдельными элементами: когда анимация заканчивается, разметка не меняется и текст не мигает
   return String(text || "").split("\n").map((line, i) => html`<span class="line" style="--i:${i}">${line || " "}</span>`);
@@ -1823,7 +1875,7 @@ function sheetSummary(p) {
       <div class="small muted">${ageText(p)}${p.is_alien ? " · инопланетянин" : p.sex === "female" ? " · женщина" : p.sex === "male" ? " · мужчина" : ""} · ${p.specialization}</div></div></div>
     ${p.chief_complaint ? html`<div class="quote" style="margin-bottom:12px">${p.chief_complaint}</div>` : ""}
     ${p.current ? html`<div style="margin-bottom:12px">${actionsSummary({ tests: p.current.tests, physicals: p.current.physicals })}</div>` : ""}
-    ${tests.length ? html`<div class="section-title" style="margin:6px 0 8px">Обследования</div>${tests.map((t) => html`<details class="card flat sum-item"><summary><b>${t.test}</b></summary><div class="pre small mono">${t.result}</div></details>`)}` : ""}
+    ${tests.length ? html`<div class="section-title" style="margin:6px 0 8px">Обследования</div>${tests.map((t) => html`<details class="card flat sum-item"><summary><b>${t.test}</b></summary>${labTable(t.result)}</details>`)}` : ""}
     ${exams.length ? html`<div class="section-title" style="margin:10px 0 8px">Осмотр</div>${exams.map((x) => html`<details class="card flat sum-item"><summary><b>${x.action}</b></summary><div class="pre small">${x.sensation}</div></details>`)}` : ""}
     ${!tests.length && !exams.length ? html`<p class="small muted">Обследований и осмотров пока не было.</p>` : ""}
     <div class="grid-2" style="margin-top:14px"><button class="btn ghost" data-close-sheet>${ic("chat")}<span>К диалогу</span></button><a class="btn" href="#/patient/${p.id}?from=consult">Карточка</a></div>`, (el) => {
@@ -2105,6 +2157,11 @@ function viewExpert() {
   const busy = S.expertBusy === id || (p.expert_busy && Date.now() - p.expert_busy < 90000);
   const partial = S.expertPartial?.id === id ? S.expertPartial.text : "";
   const evaluated = (p.consultations || []).some((c) => c.rating != null && !c.evaluating);
+  // Карточка в памяти могла быть загружена до разбора — подтягиваем свежую, чтобы чат открылся сразу
+  if (!evaluated && !S.expertFresh?.has(id)) {
+    (S.expertFresh ||= new Set()).add(id);
+    loadPatient(id).then(() => S.route.name === "expert" && S.route.params.id === id && viewExpert()).catch(() => {}).finally(() => setTimeout(() => S.expertFresh.delete(id), 5000));
+  }
   const ta = $("#expert-input");
   const draft = ta ? ta.value : "";
   const hadFocus = document.activeElement === ta;
@@ -2122,7 +2179,7 @@ function viewExpert() {
       ${chat.map((m) => html`<div class="msg from-${m.role === "expert" ? "patient" : "doctor"}"><span class="txt">${m.text}</span><div class="meta">${timeText(m.ts)}</div></div>`)}
       ${partial ? html`<div class="msg from-patient revealing"><span class="txt" id="expert-partial">${partial}</span></div>`
         : busy ? html`<div class="typing-wrap"><div class="typing"><i></i><i></i><i></i></div></div>` : ""}
-      ${prem && evaluated && !chat.length && !busy ? html`<div class="stack-sm" style="align-self:flex-end;align-items:flex-end">${EXPERT_STARTERS.map((t) => html`<button class="chip" data-expert-q="${t}">${t}</button>`)}</div>` : ""}
+      ${prem && evaluated && !chat.length && !busy ? html`<div class="stack-sm" style="align-self:flex-end;align-items:flex-end">${EXPERT_STARTERS.map((t) => html`<button class="chip multi" data-expert-q="${t}">${t}</button>`)}</div>` : ""}
     </div>
     ${!evaluated ? html`<div class="composer"><a class="btn block" href="#/patient/${p.id}">К карточке пациента</a></div>`
       : prem ? html`<div class="composer" id="composer">
@@ -2200,7 +2257,7 @@ async function requestGuide(id, btn) {
   goal("guide_request");
   try {
     const res = await api("POST", `/patients/${id}/guide`);
-    if (res.pending) S.guidePending.add(id);
+    if (res.pending) { S.guidePending.add(id); if (!S.guideStart.has(id)) S.guideStart.set(id, res.since || Date.now()); }
     await refreshGuide(id);
   } catch (e) {
     toast(e.message, "error");
@@ -2212,7 +2269,11 @@ async function refreshGuide(id, error) {
   try {
     const { patient } = await loadPatient(id);
     const c = patient.consultations[patient.consultations.length - 1];
-    if (c?.guide) S.guidePending.delete(id);
+    if (c?.guide && S.guidePending.has(id)) {
+      S.guidePending.delete(id);
+      if (S.guideStart.has(id)) etaRecord("guide", Date.now() - S.guideStart.get(id));
+    }
+    if (c?.guide) S.guideStart.delete(id);
     document.querySelectorAll(`[data-guide-slot="${id}"]`).forEach((slot) => { slot.innerHTML = c ? guideBlock(c, id, patient.gift_kr)[RAW] : ""; });
     if (c?.guide) haptic("success");
   } catch {}
@@ -2227,6 +2288,17 @@ setInterval(() => { if (!S.wsOk) S.guidePending.forEach((id) => refreshGuide(id)
 // ---------------------------------------------------
 // Тесты
 // ---------------------------------------------------
+/** После ответа — плавно к пояснению и кнопке «Далее»: кнопка над нижним меню, начало пояснения не уезжает за верх */
+function revealQuizNext() {
+  const btn = $("#quiz-next"), card = btn?.previousElementSibling;
+  if (!btn) return;
+  const nav = document.querySelector(".nav")?.getBoundingClientRect().height || 0;
+  const want = btn.getBoundingClientRect().bottom - (window.innerHeight - nav - 16);
+  const limit = (card || btn).getBoundingClientRect().top - 80;
+  const dy = Math.min(want, limit);
+  if (dy > 0) window.scrollBy({ top: dy, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+
 function viewQuizzes() {
   const list = S.me.quizzes;
   const pending = list.filter((q) => q.status !== "done");
@@ -2308,6 +2380,7 @@ async function viewQuiz(fresh) {
     }
     quizState.busy = false;
     viewQuiz();
+    if (quizState.answer) revealQuizNext();
   }));
   const next = $("#quiz-next");
   if (next) next.onclick = () => {
@@ -2626,16 +2699,16 @@ function viewProfile() {
     <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">Врач ${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
       <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
-      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}${p.autopay?.status === "active" ? ` · автопродление ${dateText(p.autopay.next_at)}` : ""}` : p.trial_available ? "7 дней за 1 ₽ · безлимит, разбор по КР, тесты" : "Безлимит, разбор по КР, тесты")}
-      ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")} · средняя оценка ${p.stats.ratings_count ? p.stats.avg_rating.toFixed(1) : "—"}`)}
-      ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, специальность, сложность, уведомления")}
-      ${item({ a: 'href="#/partner"' }, "ok", "handshake", "Партнёрская программа", p.partner ? "Вы партнёр · 50% с каждой оплаты приглашённых" : "Приглашайте друзей — 30% с их первой оплаты и 15% со всех следующих")}
-      ${item({ a: 'href="#/profile/app"' }, "accent", "phone", "Приложение на телефон", IN_TG ? "Как установить на iPhone и Android" : pushLabel())}
-      ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привяжите Telegram — приёмы в чате и напоминания")}
-      ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что нравится, что мешает, чего не хватает")}
-      ${item({ a: `href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener"` }, "accent", "telegram", "Бот в Telegram", "Приёмы в чате и напоминания", ic("external", "c-muted"))}
-      ${item({ a: 'href="https://t.me/oleg_ezhkov" target="_blank" rel="noopener"' }, "", "telegram", "Поддержка", "@oleg_ezhkov в Telegram — вопросы, оплата, сотрудничество", ic("external", "c-muted"))}
-      ${item({ a: `href="${DOCS.offer}" target="_blank" rel="noopener"` }, "", "book", "Документы", "Оферта и политика конфиденциальности", ic("external", "c-muted"))}
+      ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}` : p.trial_available ? "7 дней за 1 ₽" : "Безлимит и разбор по КР")}
+      ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")}${p.stats.ratings_count ? ` · ★ ${dec(p.stats.avg_rating.toFixed(1))}` : ""}`)}
+      ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Профиль и сложность")}
+      ${item({ a: 'href="#/partner"' }, "ok", "handshake", "Партнёрская программа", p.partner ? "50% с оплат приглашённых" : "До 30% с оплат друзей")}
+      ${item({ a: 'href="#/profile/app"' }, "accent", "phone", "Приложение на телефон", IN_TG ? "iPhone и Android" : pushLabel(true))}
+      ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привязать Telegram")}
+      ${item({ tag: "button", a: 'id="feedback-open" type="button"' }, "warn", "star", "Оставить отзыв", "Что улучшить")}
+      ${item({ a: `href="https://t.me/${S.me.bot_username || "helpmedoctor_aibot"}" target="_blank" rel="noopener"` }, "accent", "telegram", "Бот в Telegram", "Приёмы в чате", ic("external", "c-muted"))}
+      ${item({ a: 'href="https://t.me/oleg_ezhkov" target="_blank" rel="noopener"' }, "", "telegram", "Поддержка", "@oleg_ezhkov", ic("external", "c-muted"))}
+      ${item({ a: `href="${DOCS.offer}" target="_blank" rel="noopener"` }, "", "book", "Документы", "Оферта и политика", ic("external", "c-muted"))}
       ${!IN_TG ? item({ tag: "button", a: 'id="logout" type="button"', cls: "danger" }, "", "logout", "Выйти", "") : ""}
     </div>
   </div>`);
@@ -2672,8 +2745,9 @@ function registerSw() {
     if (S.route?.name === "install" || S.route?.name === "profile") rerender();
   }).catch((e) => console.warn("sw", e));
 }
-function pushLabel() {
-  if (pushSub && Notification.permission === "granted") return "Уведомления включены на этом устройстве";
+function pushLabel(short = false) {
+  if (pushSub && Notification.permission === "granted") return short ? "Уведомления включены" : "Уведомления включены на этом устройстве";
+  if (short) return PLATFORM === "ios" && !STANDALONE ? "На экран «Домой»" : "Установка и уведомления";
   return PLATFORM === "ios" && !STANDALONE ? "Установите на экран «Домой» и включите уведомления" : "Установка и уведомления о пациентах";
 }
 function b64uToBytes(s) {
@@ -3115,7 +3189,7 @@ function viewStats() {
   // Что сделать дальше: одна понятная подсказка из того, что уже известно
   const next = !rated ? ["steth", "Примите первого пациента", "После разбора здесь появятся ваши оценки, сильные стороны и пробелы."]
     : !p.streak ? ["flame", "Начните серию заново", "Один приём в день — и серия дней растёт, а вместе с ней бонус к опыту."]
-    : p.weaknesses?.length ? ["target", `Подтяните: ${p.weaknesses[0]}`, "Это чаще всего встречается в ваших разборах. Обратите внимание на следующем приёме."]
+    : meaningful(p.weaknesses).length ? ["target", `Подтяните: ${meaningful(p.weaknesses)[0]}`, "Это чаще всего встречается в ваших разборах. Обратите внимание на следующем приёме."]
     : ["trophy", "Попробуйте сложнее", "Оценки высокие — поднимите сложность в настройках, чтобы расти дальше."];
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Статистика</h2></div>
@@ -3136,10 +3210,10 @@ function viewStats() {
       </div>
     </div>` : ""}
 
-    ${p.strengths?.length || p.weaknesses?.length ? html`<div class="section-title">Сильные стороны и пробелы</div>
+    ${meaningful(p.strengths).length || meaningful(p.weaknesses).length ? html`<div class="section-title">Сильные стороны и пробелы</div>
     <div class="card stack">
-      ${p.strengths?.length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("checkCircle", "c-ok")} ПОЛУЧАЕТСЯ</div><div class="row wrap" style="gap:6px">${p.strengths.slice(0, 6).map((x) => html`<span class="badge ok">${x}</span>`)}</div></div>` : ""}
-      ${p.weaknesses?.length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("target", "c-warn")} ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px">${p.weaknesses.slice(0, 6).map((x) => html`<span class="badge warn">${x}</span>`)}</div></div>` : ""}
+      ${meaningful(p.strengths).length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("checkCircle", "c-ok")} ПОЛУЧАЕТСЯ</div><div class="row wrap" style="gap:6px">${meaningful(p.strengths).slice(0, 6).map((x) => html`<span class="badge ok multi">${x}</span>`)}</div></div>` : ""}
+      ${meaningful(p.weaknesses).length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("target", "c-warn")} ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px">${meaningful(p.weaknesses).slice(0, 6).map((x) => html`<span class="badge warn multi">${x}</span>`)}</div></div>` : ""}
     </div>` : ""}
 
     ${p.recommendations?.length ? html`<div class="section-title">Советы из разборов</div>
@@ -3244,6 +3318,8 @@ function mountFeedbackPrompt() {
 // Тарифы
 // ---------------------------------------------------
 const rub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 });
+/** Без пустышек от ИИ: «Нет», «Нет выявленных пробелов…», «—» */
+const meaningful = (list) => (list || []).filter((x) => { const t = String(x || "").trim(); return t.length > 3 && !/^(нет(?![а-яё])|не выявлен|не обнаружен|отсутству|n\/a)/i.test(t); });
 const dec = (v) => String(v ?? "").replace(".", ",");
 const PREMIUM_PERKS = [
   ["users", "Безлимит пациентов"],

@@ -515,3 +515,16 @@ test("причина отказа Google TTS — понятным текстом
   assert.match(ttsErrorReason("Google TTS HTTP 400: Voice 'ru-RU-X' does not exist."), /голос недоступен/);
   assert.equal(ttsErrorReason("Google TTS HTTP 500: oops"), "Google ответил ошибкой 500");
 });
+
+test("искажённые медицинские термины исправляются", async () => {
+  const { fixMedTerms } = await import("../src/lib/util.js");
+  assert.equal(fixMedTerms("Дыхание велосипедное, хрипов нет."), "Дыхание везикулярное, хрипов нет.");
+  assert.equal(fixMedTerms("Велосипедное дыхание над всеми полями"), "Везикулярное дыхание над всеми полями");
+  assert.equal(fixMedTerms("Весикулярное дыхание"), "Везикулярное дыхание");
+  assert.equal(fixMedTerms("Велоэргометрия: проба отрицательная"), "Велоэргометрия: проба отрицательная");
+});
+
+test("пустышки от ИИ в сильных сторонах и пробелах отбрасываются", async () => {
+  const { meaningfulItems } = await import("../src/lib/util.js");
+  assert.deepEqual(meaningfulItems(["Нет", "Нет выявленных пробелов в знаниях", "—", "Нетипичная клиника: не заподозрил", "Сбор анамнеза"]), ["Нетипичная клиника: не заподозрил", "Сбор анамнеза"]);
+});

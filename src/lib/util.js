@@ -135,3 +135,23 @@ export function isRefusal(text) {
   const t = String(text || "").trim();
   return !t || REFUSAL_RE.test(t) || /не могу (описать|выполнить|предоставить|помочь)|cannot (provide|assist|help)/i.test(t.slice(0, 200));
 }
+
+// Ошибки модели в медицинских терминах, которые она путает по созвучию («велосипедное дыхание» вместо «везикулярное»).
+// Пополнять по жалобам: слева — регулярное выражение, справа — замена (регистр первой буквы сохраняется).
+const MED_TERM_FIXES = [
+  [/весикулярн/gi, "везикулярн"],
+  [/везекулярн/gi, "везикулярн"],
+];
+/** Исправляет известные искажения медицинских терминов в тексте ИИ */
+export function fixMedTerms(text) {
+  let t = String(text || "");
+  if (/дыхан/i.test(t)) t = t.replace(/велосипедн/gi, (m) => (m[0] === "В" ? "Везикулярн" : "везикулярн"));
+  for (const [re, to] of MED_TERM_FIXES) t = t.replace(re, (m) => (m[0] === m[0].toUpperCase() ? to[0].toUpperCase() + to.slice(1) : to));
+  return t;
+}
+
+/** Пункты списка от ИИ без пустышек: «Нет», «Нет выявленных пробелов…», «—» */
+export function meaningfulItems(list) {
+  return (Array.isArray(list) ? list : []).map((x) => clampStr(String(x ?? "").trim(), 200))
+    .filter((t) => t.length > 3 && !/^(нет(?![а-яё])|не выявлен|не обнаружен|отсутству|n\/a)/i.test(t));
+}
