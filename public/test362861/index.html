@@ -207,7 +207,7 @@ function toast(text) {
   if (!el) { el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); $("#app").appendChild(el); }
   el.textContent = text;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.remove(), 3500);
+  toastTimer = setTimeout(() => el.remove(), Math.max(3500, text.length * 70));
 }
 async function api(path, body) {
   const opts = body instanceof FormData ? { method: "POST", body } : body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {};
@@ -391,7 +391,7 @@ function renderPick() {
 // ---------- приём ----------
 function startConsult(id) {
   S.pat = S.cfg.patients.find((p) => p.id === id);
-  S.items = []; S.actions = []; S.finished = false; S.busy = false;
+  S.items = []; S.actions = []; S.finished = false; S.busy = false; S.ttsWarned = false;
   renderConsult();
   const opening = { id: ++seq, role: "patient", text: S.pat.opening };
   S.items.push(opening);
@@ -409,6 +409,7 @@ async function sayLine(item) {
     const r = await api("/say", { pid: S.pat.id, text: item.text, quality: S.quality });
     item.loading = false;
     if (r.audio) { item.b64 = r.audio; item.voice = true; } else item.voice = false;
+    if (r.tts_error && !S.ttsWarned) { S.ttsWarned = true; toast(r.tts_error); }
   } catch { item.loading = false; item.voice = false; }
   rerender(item);
   if (item.voice) {

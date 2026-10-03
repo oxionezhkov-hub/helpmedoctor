@@ -496,3 +496,14 @@ test("голос пациента: по полу и возрасту, один �
     globalThis.fetch = realFetch;
   }
 });
+
+test("причина отказа Google TTS — понятным текстом", async () => {
+  const { ttsErrorReason } = await import("../src/lib/tts.js");
+  assert.match(ttsErrorReason('Google TTS HTTP 403: {"error":{"status":"PERMISSION_DENIED","details":[{"reason":"SERVICE_DISABLED"}]}}'), /не включён Cloud Text-to-Speech/);
+  assert.match(ttsErrorReason("Google TTS HTTP 400: API key not valid. Please pass a valid API key."), /неверный/);
+  assert.match(ttsErrorReason("Google TTS HTTP 403: Requests from referer <empty> are blocked."), /по сайтам/);
+  assert.match(ttsErrorReason("Google TTS HTTP 403: Requests to this API texttospeech.googleapis.com method are blocked."), /запрещён/);
+  assert.match(ttsErrorReason("Google TTS HTTP 403: This API method requires billing to be enabled."), /платёжный/);
+  assert.match(ttsErrorReason("Google TTS HTTP 400: Voice 'ru-RU-X' does not exist."), /голос недоступен/);
+  assert.equal(ttsErrorReason("Google TTS HTTP 500: oops"), "Google ответил ошибкой 500");
+});
