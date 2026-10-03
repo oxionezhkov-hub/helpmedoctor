@@ -4,6 +4,7 @@ import { renderCharts } from "./charts.js";
 import { viewDashboard, viewAnalytics } from "./views-stats.js";
 import { viewUsers, viewUser, viewPatient } from "./views-users.js";
 import { viewPartners } from "./views-partners.js";
+import { viewBloggers } from "./views-bloggers.js";
 import { viewSubs, viewMessages, viewBroadcast, viewFeedback, viewTasks, viewSettings, quickIdea, openTask } from "./views-ops.js";
 
 const app = $("#app");
@@ -180,6 +181,7 @@ const NAV = [
   ["users", "/users", "users", "Пользователи"],
   ["subs", "/subs", "gem", "Подписки и платежи"],
   ["partners", "/partners", "handshake", "Партнёры"],
+  ["bloggers", "/bloggers", "mic", "Блогеры"],
   ["messages", "/messages", "send", "Сообщения"],
   ["feedback", "/feedback", "star", "Отзывы и анкеты"],
   ["tasks", "/tasks", "tasks", "Задачи"],
@@ -239,6 +241,7 @@ async function refreshBadges() {
     set("feedback", c.feedback_new);
     set("tasks", c.my_tasks);
     set("partners", c.partners);
+    set("bloggers", c.bloggers);
   } catch {}
 }
 setInterval(() => { if (S.token && !document.hidden) refreshBadges(); }, 60000);
@@ -257,6 +260,7 @@ function parseRoute() {
   if (parts[0] === "users") return r("users");
   if (parts[0] === "subs") return r("subs");
   if (parts[0] === "partners") return r("partners");
+  if (parts[0] === "bloggers") return r("bloggers");
   if (parts[0] === "messages" && parts[1] === "broadcast" && parts[2]) return r("broadcast", { id: parts[2] });
   if (parts[0] === "messages") return r("messages");
   if (parts[0] === "feedback") return r("feedback");
@@ -274,6 +278,7 @@ const VIEWS = {
   patient: [viewPatient, "Пациент", "users"],
   subs: [viewSubs, "Подписки и платежи", "subs"],
   partners: [viewPartners, "Партнёры", "partners"],
+  bloggers: [viewBloggers, "Блогеры", "bloggers"],
   messages: [viewMessages, "Сообщения", "messages"],
   broadcast: [viewBroadcast, "Рассылка", "messages"],
   feedback: [viewFeedback, "Отзывы и анкеты", "feedback"],
