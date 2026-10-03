@@ -537,3 +537,13 @@ test("тест по ошибкам строится по тексту КР", asy
   const noText = P.quizPrompt(pat, ["эрадикация"], null, "Язвенная болезнь");
   assert.ok(!noText.prompt.includes("ЕДИНСТВЕННЫЙ источник") && noText.prompt.includes("«Язвенная болезнь»"));
 });
+
+test("«Кто круче?»: победитель по оценке, при равной — по времени, иначе ничья", async () => {
+  const { decideWinner } = await import("../src/lib/battles.js");
+  assert.equal(decideWinner({ rating: 4.5, ms: 900000 }, { rating: 4, ms: 60000 }), "owner", "оценка важнее скорости");
+  assert.equal(decideWinner({ rating: 3.9, ms: 1 }, { rating: 4.1, ms: 9e6 }), "guest");
+  assert.equal(decideWinner({ rating: 4, ms: 300000 }, { rating: 4, ms: 240000 }), "guest", "при равной оценке — кто быстрее");
+  assert.equal(decideWinner({ rating: 4, ms: 300000 }, { rating: 4, ms: 302000 }), "draw", "разница меньше 5 секунд — ничья");
+  assert.equal(decideWinner({ rating: 2 }, null), "owner", "второй не закончил");
+  assert.equal(decideWinner(null, null), "draw");
+});

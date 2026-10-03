@@ -108,6 +108,7 @@ const ICONS = {
   book: '<path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2Z"/><path d="M4 21a2 2 0 0 1 2-2h14"/>',
   trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/>',
   zap: '<path d="M13 2 4 14h7l-1 8 9-12h-7Z"/>',
+  swords: '<path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6M16 16l4 4M19 21l2-2"/><path d="M14.5 6.5 18 3h3v3l-3.5 3.5"/><path d="m5 14 4 4M7 17l-3 3M3 19l2 2"/>',
   inbox: '<path d="M3 13h5l1 3h6l1-3h5"/><path d="M5.5 5h13L21 13v6H3v-6Z"/>',
   archive: '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v12h14V8M10 12h4"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -400,6 +401,8 @@ async function boot() {
   const goParam = new URLSearchParams(window.__hmdQs ?? location.search).get("go");
   if (goParam && goParam.startsWith("/")) {
     history.replaceState(null, "", `${location.pathname}#${goParam}`);
+    // Ссылка-вызов «Кто круче?» — помним её на время входа (после Google/Яндекса адрес теряется)
+    if (goParam.startsWith("/battle/")) sessionStore("hmd_go", goParam);
   } else if (/tgWebApp/.test(location.hash)) {
     history.replaceState(null, "", `${location.pathname}#/`);
   }
@@ -473,6 +476,11 @@ async function boot() {
     return renderFatal(e.message);
   }
   connectWs();
+  const pendingGo = sessionStore("hmd_go");
+  if (pendingGo) {
+    sessionStore("hmd_go", "");
+    if (location.hash !== `#${pendingGo}`) history.replaceState(null, "", `${location.pathname}#${pendingGo}`);
+  }
   window.addEventListener("hashchange", route);
   route();
   if (S.authNotice) toast(S.authNotice, S.authNoticeKind), (S.authNotice = null);
@@ -842,6 +850,10 @@ function onSync(msg) {
   if (msg.scope === "evaluation") {
     onEvaluation(msg);
   }
+  if (msg.scope === "battle") {
+    onBattleSync(msg);
+    return;
+  }
   if (msg.scope === "partner") {
     if (msg.reward) toast(`+${rub(msg.reward)} ₽ партнёрского вознаграждения`, "ok");
     partnerData = null;
@@ -901,6 +913,8 @@ function parseRoute() {
   if (parts[0] === "profile" && parts[1] === "accounts") return { name: "accounts", params: {}, q };
   if (parts[0] === "profile" && parts[1] === "app") return { name: "install", params: {}, q };
   if (parts[0] === "partner") return { name: "partner", params: {}, q };
+  if (parts[0] === "battles") return { name: "battles", params: {}, q };
+  if (parts[0] === "battle" && parts[1]) return { name: "battle", params: { id: parts[1].toLowerCase() }, q };
   if (parts[0] === "profile") return { name: "profile", params: {}, q };
   if (parts[0] === "plans") return { name: "plans", params: {}, q };
   return { name: "home", params: {}, q };
@@ -919,7 +933,8 @@ function goBack() {
   if (r.name === "consult") return go(`/patient/${r.params.id}`);
   if (r.name === "patient") return go(r.q.from === "consult" ? `/consult/${r.params.id}` : "/patients");
   if (r.name === "quiz") return go("/quizzes");
-  if (["plans", "stats", "settings"].includes(r.name)) return go("/profile");
+  if (["plans", "stats", "settings", "battles"].includes(r.name)) return go("/profile");
+  if (r.name === "battle") return go("/battles");
   go("/");
 }
 
@@ -949,7 +964,7 @@ async function route() {
 function rerender(fresh = false) {
   const r = S.route;
   if (!S.me) return;
-  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, expert: viewExpert, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner };
+  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, expert: viewExpert, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner, battles: viewBattles, battle: viewBattle };
   (views[r.name] || viewHome)(fresh);
 }
 
@@ -957,7 +972,7 @@ function renderShell(content, withNav = true) {
   const r = S.route.name;
   const pendingQuizzes = (S.me?.quizzes || []).filter((q) => q.status !== "done").length;
   const queue = (S.me?.patients || []).filter((p) => p.status !== "closed").length;
-  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && ["patient", "expert"].includes(r)) || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install", "partner"].includes(r)) ? "active" : ""}">
+  const tab = (name, href, ico, label, badge) => html`<a href="#${href}" class="${r === name || (name === "patients" && ["patient", "expert"].includes(r)) || (name === "quizzes" && r === "quiz") || (name === "profile" && ["plans", "stats", "settings", "accounts", "install", "partner", "battles", "battle"].includes(r)) ? "active" : ""}">
     ${ic(ico, "nav-i")}<span>${label}</span>${badge ? html`<span class="dot">${badge}</span>` : ""}</a>`;
   const scrollY = window.scrollY;
   patchRoot(html`${content}${withNav ? html`<nav class="nav"><div class="nav-inner">
@@ -1301,7 +1316,7 @@ function patientCard(x, href = `/patient/${x.id}`, cta) {
   return html`<a class="card tap patient" href="#${href}">
     ${patAvatar(x)}
     <div class="grow stack-sm" style="gap:3px">
-      <div class="row between"><span class="name ellipsis">${x.name}</span>
+      <div class="row between"><span class="name ellipsis">${x.battle ? html`<span class="badge accent battle-tag">${ic("swords")} битва</span> ` : ""}${x.name}</span>
         ${x.evaluating ? html`<span class="badge warn">разбор…</span>` : last != null ? html`<span class="badge ${last >= 4 ? "ok" : last >= 3 ? "warn" : "danger"}">${ic("star", "on")} ${Number(last).toFixed(1)}</span>` : x.in_consultation ? html`<span class="badge accent">на приёме</span>` : x.status === "closed" ? "" : html`<span class="badge">новый</span>`}
       </div>
       <div class="tiny muted">${ageText(x)} · ${x.specialization}${x.consultations ? ` · приёмов: ${x.consultations}` : ""}</div>
@@ -2152,7 +2167,8 @@ function onEvaluation(r) {
     ${r.bonus_patient ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("party", "c-ok")}Оценка от ${dec(S.me?.profile?.bonus_rating || 4.5)} — ещё один бесплатный пациент сегодня!</span></div>` : ""}
     <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id, r.gift_kr)}</div>
     ${expertCta({ id: r.patient_id })}
-    <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
+    ${r.battle_id ? html`<a class="btn block" href="#/battle/${r.battle_id}">${ic("swords")}<span>Итог битвы «Кто круче?»</span></a>` : ""}
+    <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn${r.battle_id ? " ghost" : ""}" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
     <p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>
   </div>`[RAW];
   const nb = $("#eval-new");
@@ -2726,6 +2742,7 @@ function viewProfile() {
     <div class="menu card">
       ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}` : p.trial_available ? "7 дней за 1 ₽" : "Безлимит и разбор по КР")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")}${p.stats.ratings_count ? ` · ★ ${dec(p.stats.avg_rating.toFixed(1))}` : ""}`)}
+      ${item({ a: 'href="#/battles"' }, "warn", "swords", "Кто круче?", "Битва с другом на одном пациенте")}
       ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Профиль и сложность")}
       ${item({ a: 'href="#/partner"' }, "ok", "handshake", "Партнёрская программа", p.partner ? "50% с оплат приглашённых" : "До 30% с оплат друзей")}
       ${item({ a: 'href="#/profile/app"' }, "accent", "phone", "Приложение на телефон", IN_TG ? "iPhone и Android" : pushLabel(true))}
@@ -2901,6 +2918,213 @@ async function copyText(text, okMsg = "Скопировано") {
   try { await navigator.clipboard.writeText(text); toast(okMsg, "ok"); haptic("success"); }
   catch { prompt("Скопируйте:", text); }
 }
+// ---------------------------------------------------
+// «Кто круче?» — битва двух врачей на одном пациенте
+// ---------------------------------------------------
+let battlesData = null;
+const battleCache = new Map();
+const BATTLE_STATUS = { waiting: ["ждём соперника", "warn"], ready: ["соперник готов", "accent"], preparing: ["готовим пациента", "accent"], active: ["идёт", "accent"], finished: ["итог", ""], cancelled: ["отменена", ""], failed: ["не удалась", "danger"] };
+const msText = (ms) => { const s = Math.round((Number(ms) || 0) / 1000); if (!s) return "—"; const m = Math.floor(s / 60); return m ? `${m} мин ${String(s % 60).padStart(2, "0")} с` : `${s} с`; };
+const battleShareText = "Вызываю тебя на битву «Кто круче?» в Help me, Doctor: один ИИ-пациент на двоих — кто поставит диагноз лучше?";
+
+function battleRules() {
+  return html`<div class="small fact">${ic("check", "c-ok")}<span>Вам обоим приходит один и тот же пациент</span></div>
+    <div class="small fact">${ic("check", "c-ok")}<span>Каждый принимает его сам: расспрос, анализы, осмотр, диагноз</span></div>
+    <div class="small fact">${ic("trophy", "c-warn")}<span>Побеждает оценка эксперта выше, при равной — кто быстрее</span></div>
+    <div class="small fact">${ic("gem", "c-accent")}<span>Пациент битвы не тратит бесплатный лимит</span></div>`;
+}
+
+async function newBattle(btn, rematchOf = null) {
+  if (btn) btnBusy(btn);
+  try {
+    const b = await api("POST", "/battles", rematchOf ? { rematch_of: rematchOf } : {});
+    battleCache.set(b.id, b);
+    battlesData = null;
+    goal(rematchOf ? "battle_rematch" : "battle_create");
+    go(`/battle/${b.id}`);
+  } catch (e) {
+    toast(e.message, "error");
+    if (btn) btnBusy(btn, false);
+  }
+}
+
+async function viewBattles(fresh) {
+  const head = html`<div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Кто круче?</h2></div>`;
+  if (fresh || !battlesData) {
+    if (!battlesData) renderShell(html`<div class="page">${head}<div class="skeleton" style="height:200px"></div><div class="skeleton"></div></div>`);
+    try {
+      battlesData = await api("GET", "/battles");
+    } catch (e) {
+      renderShell(html`<div class="page">${head}<div class="card center small muted">${e.message}</div></div>`);
+      return;
+    }
+    if (S.route.name !== "battles") return;
+  }
+  const d = battlesData;
+  const sc = d.score;
+  const played = sc.wins + sc.losses + sc.draws;
+  renderShell(html`<div class="page">
+    ${head}
+    <div class="card stack battle-hero">
+      <div class="row-c"><div class="tile warn">${ic("swords")}</div><div class="grow"><b>Битва с другом на одном пациенте</b><div class="small muted">Покажите QR-код или отправьте ссылку</div></div></div>
+      ${battleRules()}
+      <button class="btn block lg" id="battle-new">${ic("swords")}<span>Новая битва</span></button>
+    </div>
+    ${played ? html`<div class="ref-kpis battle-score">
+      <div><b class="c-ok">${sc.wins}</b><span>${plural(sc.wins, "победа", "победы", "побед")}</span></div>
+      <div><b class="c-danger">${sc.losses}</b><span>${plural(sc.losses, "поражение", "поражения", "поражений")}</span></div>
+      <div><b>${sc.draws}</b><span>${plural(sc.draws, "ничья", "ничьи", "ничьих")}</span></div>
+    </div>` : ""}
+    ${d.battles.length ? html`<div class="section-title">Мои битвы</div>
+    <div class="card ref-list">${d.battles.map((b) => {
+      const st = b.status === "finished" ? (b.winner === "me" ? ["победа", "ok"] : b.winner === "draw" ? ["ничья", ""] : ["поражение", "danger"])
+        : b.status === "waiting" && b.role === "invitee" ? ["вызов вам", "warn"] : BATTLE_STATUS[b.status] || [b.status, ""];
+      return html`<a class="ref-row tap" href="#/battle/${b.id}">
+        <div class="grow"><b>${b.opponent ? `Соперник — ${b.opponent.name}` : "Соперника ещё нет"}</b>
+          <div class="tiny muted">${dateText(b.created_at)}${b.patient ? ` · ${b.patient.name}, ${b.patient.age}` : ""}</div></div>
+        <div class="ref-sum"><span class="badge ${st[1]}">${st[0]}</span>${b.status === "finished" && b.me?.result ? html`<span class="tiny muted">${dec(Number(b.me.result.rating).toFixed(1))} : ${b.opponent?.result ? dec(Number(b.opponent.result.rating).toFixed(1)) : "—"}</span>` : ""}</div>
+      </a>`;
+    })}</div>` : html`<div class="card center stack-sm"><div class="tile warn lg">${ic("trophy")}</div><b>Пока ни одной битвы</b><p class="small muted">Создайте битву и покажите однокурснику QR-код — посмотрим, кто круче.</p></div>`}
+  </div>`);
+  $("#battle-new").onclick = (e) => newBattle(e.currentTarget);
+}
+
+async function viewBattle(fresh) {
+  const id = S.route.params.id;
+  const head = html`<div class="page-head"><button class="back" data-go="/battles" aria-label="Назад">${ic("back")}</button><h2 class="grow">Кто круче?</h2></div>`;
+  let b = battleCache.get(id);
+  if (fresh || !b) {
+    if (!b) renderShell(html`<div class="page">${head}<div class="skeleton" style="height:260px"></div></div>`);
+    try {
+      b = await api("GET", `/battles/${id}`);
+      // Пришли по ссылке-вызову — сразу подключаемся
+      if (b.status === "waiting" && (!b.role || b.role === "invitee")) {
+        b = await api("POST", `/battles/${id}/join`);
+        goal("battle_join");
+        haptic("success");
+      }
+    } catch (e) {
+      renderShell(html`<div class="page">${head}<div class="card center stack-sm"><div class="tile danger lg">${ic("swords")}</div><b>${e.message}</b><button class="btn" id="battle-new">${ic("swords")}<span>Создать свою битву</span></button></div></div>`);
+      const nb = $("#battle-new");
+      if (nb) nb.onclick = (ev) => newBattle(ev.currentTarget);
+      return;
+    }
+    battleCache.set(id, b);
+    if (S.route.name !== "battle" || S.route.params.id !== id) return;
+  }
+  const isOwner = b.role === "owner";
+  const op = b.opponent;
+  const me = b.me;
+  const versus = html`<div class="vs">
+    <div class="vs-side">${userAvatar(S.me.profile)}<b class="ellipsis">Вы</b></div>
+    <div class="vs-mid">${ic("swords")}</div>
+    <div class="vs-side">${op && (b.status !== "waiting" || !isOwner) ? html`<div class="avatar">${initials(op.name)}</div><b class="ellipsis">${op.name}</b>` : html`<div class="avatar vs-wait">?</div><b class="muted">ждём</b>`}</div>
+  </div>`;
+  let body = "";
+  if (b.status === "waiting" && isOwner) {
+    const link = IN_TG ? b.links.bot : b.links.site;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(battleShareText)}`;
+    body = html`<div class="card stack center battle-wait">
+        <b>${op ? `Ждём, когда ${op.name} примет реванш` : "Покажите QR-код сопернику"}</b>
+        <img class="qr" src="/api/qr?d=${encodeURIComponent(b.links.site)}" alt="QR-код битвы" width="220" height="220">
+        <p class="small muted">${op ? "Мы отправили ему приглашение. Можно поторопить ссылкой:" : "Он наводит камеру — и сразу попадает в битву. Или отправьте ссылку:"}</p>
+        <div class="ref-link"><span class="ellipsis">${link.replace(/^https?:\/\//, "")}</span><button class="btn sm" data-copy="${link}">${ic("copy")}<span>Копировать</span></button></div>
+        <div class="ref-share">
+          ${navigator.share ? html`<button class="btn ghost sm" id="battle-share">${ic("share")}<span>Поделиться</span></button>` : ""}
+          <a class="btn ghost sm" href="${shareUrl}" target="_blank" rel="noopener">${ic("telegram")}<span>Telegram</span></a>
+        </div>
+        <div class="row-c small muted wait-pulse"><span class="pulse"></span>Ждём подключения — придёт уведомление</div>
+      </div>
+      <button class="btn ghost block" id="battle-cancel">Отменить битву</button>`;
+  } else if (b.status === "waiting") {
+    body = html`<div class="card center stack-sm"><b>Подключаемся к битве…</b></div>`;
+  } else if (b.status === "ready") {
+    body = isOwner
+      ? html`<div class="card stack center"><b class="c-ok">Соперник подключился: ${op.name}</b><p class="small muted">Нажмите «Старт» — вам обоим придёт один и тот же пациент.</p>
+          <button class="btn block lg" id="battle-start">${ic("play")}<span>Старт</span></button></div>
+          <button class="btn ghost block" id="battle-cancel">Отменить битву</button>`
+      : html`<div class="card stack center"><b>Вы в битве. Соперник — ${b.owner_name}</b><div class="row-c small muted wait-pulse" style="justify-content:center"><span class="pulse"></span>Ждём, когда ${b.owner_name} нажмёт «Старт»</div></div>`;
+  } else if (b.status === "preparing") {
+    body = html`<div class="card stack center"><b>Готовим пациента для вас обоих…</b>${etaBox("patient", b.joined_at || Date.now())}</div>`;
+  } else if (b.status === "active") {
+    const p = b.patient;
+    const myRes = me.result;
+    body = html`<div class="card stack">
+        <div class="row-c">${patAvatar({ id: me.patient_id, name: p.name, sex: p.sex, age: p.age })}<div class="grow"><b>${p.name}, ${p.age}</b><div class="small muted">«${p.chief_complaint}»</div></div></div>
+        ${myRes ? html`<div class="card flat center" style="background:var(--ok-soft)"><b>Ваш результат: ${dec(Number(myRes.rating).toFixed(1))} из 5 · ${msText(myRes.ms)}</b><div class="small muted">${op?.done ? "Подводим итог…" : `Ждём, когда ${op?.name || "соперник"} закончит приём`}</div></div>`
+          : html`<a class="btn block lg" href="#/patient/${me.patient_id}">${ic("steth")}<span>${IN_TG ? "Открыть пациента" : "Принять пациента"}</span></a>`}
+        <div class="small muted row-c">${op?.done ? html`${ic("check", "c-ok")}${op.name}: приём завершён` : html`<span class="pulse"></span>${op?.name || "Соперник"} ещё на приёме`}</div>
+      </div>
+      ${battleRules()}`;
+  } else if (b.status === "finished") {
+    const mr = me.result;
+    const orr = op?.result;
+    const row = (label, a, c, better) => html`<tr><td class="muted">${label}</td><td class="${better === "me" ? "win" : ""}">${a}</td><td class="${better === "op" ? "win" : ""}">${c}</td></tr>`;
+    const cmp = (a, c, higher = true) => (a == null || c == null || a === c ? null : (higher ? a > c : a < c) ? "me" : "op");
+    const corr = (r) => (!r ? "—" : r.correct === "yes" ? "верный" : r.correct === "partial" ? "частично" : r.correct === "none" ? "не поставлен" : "неверный");
+    body = html`<div class="card stack center battle-result ${b.winner}">
+        <div class="tile ${b.winner === "me" ? "ok" : b.winner === "draw" ? "accent" : "danger"} lg">${ic(b.winner === "me" ? "trophy" : b.winner === "draw" ? "handshake" : "swords")}</div>
+        <h2>${b.winner === "me" ? "Вы победили!" : b.winner === "draw" ? "Ничья!" : "Победа за соперником"}</h2>
+        <p class="small muted">Диагноз: <b>${b.patient?.true_diagnosis || "—"}</b></p>
+        ${b.next_id && !b.next_mine ? html`<div class="badge warn">${ic("swords")} ${op?.name || "Соперник"} требует реванша!</div>` : ""}
+      </div>
+      <div class="card"><table class="battle-table">
+        <thead><tr><th></th><th>Вы</th><th>${op?.name || "Соперник"}</th></tr></thead>
+        <tbody>
+          ${row("Оценка", mr ? `${dec(Number(mr.rating).toFixed(1))} / 5` : "—", orr ? `${dec(Number(orr.rating).toFixed(1))} / 5` : "—", cmp(mr?.rating, orr?.rating))}
+          ${row("Диагноз", corr(mr), corr(orr), null)}
+          ${row("Время", mr ? msText(mr.ms) : "—", orr ? msText(orr.ms) : "—", mr && orr && Math.abs(mr.ms - orr.ms) >= 5000 ? cmp(mr.ms, orr.ms, false) : null)}
+          ${row("Вопросов", mr?.questions ?? "—", orr?.questions ?? "—", null)}
+          ${row("Обследований", mr?.tests ?? "—", orr?.tests ?? "—", null)}
+          ${row("Подсказок", mr?.hints ?? "—", orr?.hints ?? "—", cmp(mr?.hints, orr?.hints, false))}
+        </tbody></table></div>
+      <div class="grid-2">
+        <button class="btn" id="battle-rematch">${ic("repeat")}<span>${!b.next_id ? "Реванш" : b.next_mine ? "К реваншу" : "Принять реванш"}</span></button>
+        <button class="btn ghost" id="battle-new">${ic("swords")}<span>Новая битва</span></button>
+      </div>
+      ${me.patient_id ? html`<a class="btn ghost block" href="#/patient/${me.patient_id}">Мой разбор приёма</a>` : ""}`;
+  } else {
+    body = html`<div class="card center stack-sm"><b>Битва отменена</b><button class="btn" id="battle-new">${ic("swords")}<span>Новая битва</span></button></div>`;
+  }
+  renderShell(html`<div class="page">${head}${versus}${body}</div>`);
+  document.querySelectorAll("[data-copy]").forEach((el) => { el.onclick = () => { copyText(el.dataset.copy, "Ссылка скопирована"); goal("battle_copy"); }; });
+  const sh = $("#battle-share");
+  if (sh) sh.onclick = () => { navigator.share({ title: "Кто круче?", text: battleShareText, url: IN_TG ? b.links.bot : b.links.site }).catch(() => {}); goal("battle_share"); };
+  const st = $("#battle-start");
+  if (st) st.onclick = async () => {
+    btnBusy(st);
+    try { battleCache.set(id, await api("POST", `/battles/${id}/start`)); goal("battle_start"); viewBattle(); }
+    catch (e) { toast(e.message, "error"); btnBusy(st, false); }
+  };
+  const cn = $("#battle-cancel");
+  if (cn) cn.onclick = async () => {
+    if (!(await confirmDialog("Отменить битву?", "Ссылка и QR-код перестанут работать.", "Отменить"))) return;
+    try { await api("POST", `/battles/${id}/cancel`); battleCache.delete(id); battlesData = null; go("/battles"); } catch (e) { toast(e.message, "error"); }
+  };
+  const rm = $("#battle-rematch");
+  if (rm) rm.onclick = (e) => (b.next_id ? go(`/battle/${b.next_id}`) : newBattle(e.currentTarget, id));
+  const nb = $("#battle-new");
+  if (nb) nb.onclick = (e) => newBattle(e.currentTarget);
+}
+
+const BATTLE_TOASTS = { joined: "Соперник подключился — жмите «Старт»", started: "Битва началась! Пациент ждёт", opponent_done: "Соперник закончил приём", finished: "Итог битвы готов", rematch: "Вам предлагают реванш", failed: "Не получилось подготовить пациента — нажмите «Старт» ещё раз" };
+
+function onBattleSync(msg) {
+  battlesData = null;
+  battleCache.delete(msg.battle_id);
+  if (msg.rematch_of) battleCache.delete(msg.rematch_of);
+  const here = S.route.name === "battle" && [msg.battle_id, msg.rematch_of].includes(S.route.params.id);
+  if (msg.kind === "started") scheduleRefresh(0);
+  if (here) {
+    if (["joined", "started", "finished"].includes(msg.kind)) haptic("success");
+    viewBattle(true);
+    return;
+  }
+  if (S.route.name === "battles") viewBattles(true);
+  const t = BATTLE_TOASTS[msg.kind];
+  if (t) toast(t, "ok");
+}
+
 async function viewPartner(fresh) {
   const head = html`<div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Партнёрская программа</h2></div>`;
   if (fresh || !partnerData) {
