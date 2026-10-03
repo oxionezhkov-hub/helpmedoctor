@@ -916,6 +916,35 @@ await new Promise((res) => setTimeout(res, 500));
 assert.equal((await api(webToken, "GET", "/partner")).data.recent.length, 2, "исключённому не начисляем");
 step("партнёрка в админке: одобрение (50%, бессрочный доступ), аннулирование начисления, исключение");
 
+// ---------------------------------------------------------------- блогеры в партнёрке
+r = await adm(admTok, "POST", "/q", { op: "blogger_save", args: { handle: "@med_notes", uid: "@nobody_here_123" } });
+assert.equal(r.status, 500, "неизвестный пользователь не связывается");
+assert.match(r.data.error || "", /не найден/);
+const bl = await aq("blogger_save", { name: "Анна Блогер", handle: "@med_notes", platform: "telegram", audience: 5000, next_action: "написать", next_at: Date.now() - 1000 });
+assert.ok(bl.id);
+let bls = await aq("bloggers");
+let b1 = bls.rows.find((x) => x.id === bl.id);
+assert.equal(b1.stage, "found");
+assert.equal(b1.stats, null, "без пользователя статистики нет");
+assert.ok((await aq("counts")).bloggers >= 1, "просроченный шаг — в значке");
+await aq("blogger_save", { id: bl.id, stage: "onboarded", uid: U, checklist: { audit: true, first: true, bogus: false } });
+bls = await aq("bloggers");
+b1 = bls.rows.find((x) => x.id === bl.id);
+assert.equal(b1.stage, "onboarded");
+assert.deepEqual(b1.checklist, { audit: true, first: true });
+assert.ok(b1.stats.invited >= 1 && b1.stats.paying >= 1, `живая статистика ссылки: ${JSON.stringify(b1.stats)}`);
+assert.equal(b1.links.code, pi.code, "ссылка блогера — его личный код");
+assert.match(b1.links.site, /\?ref=r_[a-z0-9]+&utm_source=blogger&utm_medium=telegram&utm_campaign=med_notes$/);
+await aq("blogger_note", { id: bl.id, text: "созвонились" });
+const blog = await aq("blogger_log", { id: bl.id });
+assert.ok(blog.some((x) => x.kind === "stage" && x.text === "found → onboarded"));
+assert.ok(blog.some((x) => x.kind === "uid") && blog.some((x) => x.kind === "note" && x.text === "созвонились"));
+assert.equal((await aq("bloggers_plan", { key: "ord", done: true })).plan.ord.by, "1326867567");
+assert.equal(Object.keys((await aq("bloggers_plan", { key: "ord", done: false })).plan).length, 0);
+await aq("blogger_delete", { id: bl.id });
+assert.equal((await aq("bloggers")).rows.length, 0);
+step("блогеры: карточка, связь с партнёром и статистика его ссылки, этапы, история, план запуска");
+
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");
