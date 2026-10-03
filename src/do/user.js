@@ -1168,8 +1168,10 @@ export class UserDO extends DurableObject {
     const rec = pat?.consultations?.[pat.consultations.length - 1];
     if (!rec?.feedback || rec.evaluating) return;
     const ev = { ...rec.feedback, mkb10: pat.mkb10 };
-    const kr = pat.kr || matchKr({ diagnosis: pat.true_diagnosis, mkb: pat.mkb10, pediatric: Number(pat.age) < 18 && !pat.is_alien });
-    await this.generateQuiz(pat, ev, pat.quiz_facts || {}, kr ? { kr } : null);
+    const kr = rec.guide?.kr || pat.kr || matchKr({ diagnosis: pat.true_diagnosis, mkb: pat.mkb10, pediatric: Number(pat.age) < 18 && !pat.is_alien });
+    // Тест строится по тексту КР из рубрикатора Минздрава (и по готовому разбору по КР, если он уже есть), а не по памяти модели
+    const text = kr ? await krText(this.env, kr.id).catch(() => null) : null;
+    await this.generateQuiz(pat, ev, pat.quiz_facts || {}, kr ? { ...(rec.guide || {}), kr, text } : null);
   }
 
   async generateQuiz(pat, ev, facts, guide = null) {
@@ -1187,6 +1189,7 @@ export class UserDO extends DurableObject {
     const quiz = {
       pat_id: pat.id, pat_name: pat.name, pat_diagnosis: pat.true_diagnosis, specialization: pat.specialization,
       kr: guide?.kr || null,
+      grounded: !!guide?.text, // вопросы составлены по тексту КР
       gift: !!pat.gift_kr, // первый пациент нового пользователя — тест в подарок, как и разбор по КР
       created_at: Date.now(), status: "pending", questions, answers: [], score: null, finished_at: null,
     };

@@ -528,3 +528,12 @@ test("пустышки от ИИ в сильных сторонах и проб�
   const { meaningfulItems } = await import("../src/lib/util.js");
   assert.deepEqual(meaningfulItems(["Нет", "Нет выявленных пробелов в знаниях", "—", "Нетипичная клиника: не заподозрил", "Сбор анамнеза"]), ["Нетипичная клиника: не заподозрил", "Сбор анамнеза"]);
 });
+
+test("тест по ошибкам строится по тексту КР", async () => {
+  const P = await import("../src/lib/prompts.js");
+  const pat = { true_diagnosis: "Язвенная болезнь", age: 40, sex: "male", name: "Иван", specialization: "Гастроэнтерология" };
+  const withText = P.quizPrompt(pat, ["эрадикация"], { text: { diagnostics: "ЭГДС с биопсией", treatment: "амоксициллин 1000 мг 2 раза в сутки 14 дней" } }, "Язвенная болезнь");
+  assert.ok(withText.prompt.includes("амоксициллин 1000 мг") && withText.prompt.includes("ЕДИНСТВЕННЫЙ источник"));
+  const noText = P.quizPrompt(pat, ["эрадикация"], null, "Язвенная болезнь");
+  assert.ok(!noText.prompt.includes("ЕДИНСТВЕННЫЙ источник") && noText.prompt.includes("«Язвенная болезнь»"));
+});
