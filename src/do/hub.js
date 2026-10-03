@@ -13,6 +13,7 @@ import { emailHtml, sendEmail } from "../lib/email.js";
 import * as A from "../lib/analytics.js";
 import * as PT from "../lib/partners.js";
 import * as BL from "../lib/bloggers.js";
+import * as BT from "../lib/battles.js";
 
 const NOTIFY_KINDS = A.NOTIFY_KINDS;
 
@@ -84,6 +85,7 @@ export class HubDO extends DurableObject {
     `);
     PT.initPartnerTables(this.sql);
     BL.initBloggerTables(this.sql);
+    BT.initBattleTables(this.sql);
     // Миграции: новые колонки в старых таблицах
     for (const [col, type] of Object.entries(USER_COLS)) this.addColumn("users", col, type);
     this.addColumn("payments", "amount", "REAL DEFAULT 0");
@@ -490,6 +492,19 @@ export class HubDO extends DurableObject {
       console.log(`seed broadcast ${b.key} → №${bid}`);
     }
   }
+
+  // ---------------------------------------------------
+  // «Кто круче?» — битвы двух врачей (src/lib/battles.js)
+  // ---------------------------------------------------
+  battleCreate(uid, opts) { return BT.battleCreate(this, uid, opts); }
+  battleGet(id, uid) { return BT.battleGet(this, id, uid); }
+  battleJoin(id, uid) { return BT.battleJoin(this, id, uid); }
+  battleStart(id, uid) { return BT.battleStart(this, id, uid); }
+  battleCancel(id, uid) { return BT.battleCancel(this, id, uid); }
+  battleList(uid) { return BT.battleList(this, uid); }
+  battlePatientReady(id, data) { return BT.battlePatientReady(this, id, data); }
+  battlePatientFailed(id) { return BT.battlePatientFailed(this, id); }
+  battleResult(id, uid, result) { return BT.battleResult(this, id, uid, result); }
 
   // ---------------------------------------------------
   // Партнёрская программа (src/lib/partners.js)

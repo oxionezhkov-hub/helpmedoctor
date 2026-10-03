@@ -13,6 +13,7 @@ import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 import { adminApi } from "./admin-api.js";
 import { faceSvg } from "./lib/face.js";
 import { protoApi } from "./proto.js";
+import qrcode from "qrcode-generator";
 
 export { UserDO } from "./do/user.js";
 export { HubDO } from "./do/hub.js";
@@ -150,6 +151,19 @@ async function api(request, env, url) {
     await userStub(env, res.uid).init(res.uid);
     return json({ status: "ok", token: await createSession(env, res.uid) });
   }
+  // QR-код для «Кто круче?» и ссылок приглашения: только ссылки на наш сайт и бота
+  if (path === "/qr" && method === "GET") {
+    const d = String(url.searchParams.get("d") || "").slice(0, 300);
+    const base = String(env.PUBLIC_URL || "").replace(/\/$/, "");
+    const ok = (base && d.startsWith(`${base}/`)) || d.startsWith(`https://t.me/${env.BOT_USERNAME}`) || d.startsWith(`${url.origin}/`);
+    if (!ok) return json({ error: "Недопустимая ссылка" }, 400);
+    const q = qrcode(0, "M");
+    q.addData(d);
+    q.make();
+    return new Response(q.createSvgTag({ cellSize: 6, margin: 2, scalable: true }), {
+      headers: { "Content-Type": "image/svg+xml; charset=utf-8", "Cache-Control": "public, max-age=86400" },
+    });
+  }
   // Лицо пациента (DiceBear Open Peeps): детерминировано параметрами, поэтому кэшируется навсегда
   if (path === "/face" && method === "GET") {
     const q = url.searchParams;
@@ -234,6 +248,20 @@ async function api(request, env, url) {
     }
     if (path === "/profile" && method === "PATCH") {
       return json({ profile: await user.updateProfile(await readJson(request)) });
+    }
+    // --- «Кто круче?»: битвы на одном пациенте ---
+    if (path === "/battles" && method === "GET") return json(await hubStub(env).battleList(uid));
+    if (path === "/battles" && method === "POST") {
+      const b = await readJson(request);
+      return json(await hubStub(env).battleCreate(uid, { rematch_of: b.rematch_of ? String(b.rematch_of).slice(0, 12) : null }));
+    }
+    const bm = /^\/battles\/([a-z0-9]{4,12})(?:\/(join|start|cancel))?$/.exec(path);
+    if (bm) {
+      const hub = hubStub(env);
+      if (!bm[2] && method === "GET") return json(await hub.battleGet(bm[1], uid));
+      if (bm[2] === "join" && method === "POST") return json(await hub.battleJoin(bm[1], uid));
+      if (bm[2] === "start" && method === "POST") return json(await hub.battleStart(bm[1], uid));
+      if (bm[2] === "cancel" && method === "POST") return json(await hub.battleCancel(bm[1], uid));
     }
     // --- Партнёрская программа ---
     if (path === "/partner" && method === "GET") {

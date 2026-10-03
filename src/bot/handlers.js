@@ -209,6 +209,21 @@ async function onStart(ctx, payload) {
     // Telegram принимает в кнопке только полноценный адрес сайта
     ok && /^https?:\/\/[^/]+\.[^/]+/.test(site) ? [[urlBtn("↩️ Вернуться на сайт", site)]] : undefined);
   }
+  // «Кто круче?»: ссылка-вызов t.me/<бот>?start=b_<код>
+  if (payload.startsWith("b_")) {
+    try {
+      const b = await hubStub(env).battleJoin(payload.slice(2).toLowerCase(), uid);
+      const owner = b.role === "owner";
+      await bot.send(uid, owner
+        ? "⚔️ Это ваша битва «Кто круче?». Отправьте ссылку сопернику — когда он подключится, нажмите «Старт»."
+        : `⚔️ <b>Вы в битве «Кто круче?»</b>. Соперник — ${esc(b.opponent?.name || "врач")}.\n\nКак только соперник нажмёт «Старт», вам обоим придёт один и тот же пациент. Побеждает оценка выше, при равенстве — скорость.`,
+      [[appBtn("⚔️ Открыть битву", R.appUrl(env, `/battle/${b.id}`))]]);
+    } catch (e) {
+      const ue = userError(e);
+      await bot.send(uid, `⚠️ ${esc(ue?.message || "Не получилось подключиться к битве. Попросите новую ссылку.")}`);
+      if (!ue) console.error("battle join", e);
+    }
+  }
   await user.touch({ username: from.username });
   const { profile, waiting } = await user.waitingSummary();
   if (!profile.onboarding_done) {

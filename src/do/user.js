@@ -17,7 +17,7 @@ import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
 import { cleanAttribution } from "../lib/attribution.js";
 import { clampStr, daysBetween, declDays, esc, fixMedTerms, isRefusal, meaningfulItems, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
-import { tg } from "../lib/telegram.js";
+import { appBtn, tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
 import { emailHtml, sendEmail } from "../lib/email.js";
 import { signData } from "../lib/auth.js";
@@ -447,38 +447,8 @@ export class UserDO extends DurableObject {
 
     const now = Date.now();
     const id = `pat_${prof0.uid}_${now}`;
-    const pat = {
-      id,
-      doctor_uid: prof0.uid,
-      is_alien: false,
-      specialization: spec,
-      specialty: clampStr(data.specialty, 40).toLowerCase(),
-      name: clampStr(data.name, 60),
-      age: data.age,
-      sex: data.sex,
-      chief_complaint: clampStr(data.chief_complaint, 300),
-      true_diagnosis: clampStr(data.true_diagnosis, 200),
-      mkb10: clampStr(data.mkb10, 20),
-      full_history: clampStr(data.full_history, 1500),
-      personality: clampStr(data.personality, 300),
-      opening_phrase: clampStr(data.opening_phrase, 400),
-      key_findings: clampStr(data.key_findings, 600),
-      findings: normalizeFindings(data.findings),
-      condition_trajectory: data.condition_trajectory || "stable",
-      status: "new",
-      created_at: now,
-      closed_at: null,
-      consultations: [],
-      conversation_history: [],
-      summary: null,
-      test_results: [],
-      exam_results: [],
-      hints: [],
-      current: null,
-    };
-    // Клиническая рекомендация Минздрава по диагнозу: для подсказок и разбора. Текст подтягиваем заранее (кэш KV).
-    pat.kr = matchKr({ diagnosis: pat.true_diagnosis, mkb: pat.mkb10, pediatric: Number(pat.age) < 18 });
-    if (pat.kr) this.ctx.waitUntil(krText(this.env, pat.kr.id).catch(() => null));
+    const pat = buildPatient(data, { id, uid: prof0.uid, spec, now });
+    this.attachKr(pat);
 
     // Профиль перечитываем после ИИ — он мог измениться
     const prof = await this.profile();
@@ -523,6 +493,63 @@ export class UserDO extends DurableObject {
     }
     console.error("new_patient failed", err);
     await this.track("patient_failed", { error: String(err?.message || err).slice(0, 300) }, { source: job.source });
+  }
+
+  /** Клиническая рекомендация Минздрава по диагнозу: для подсказок и разбора. Текст подтягиваем заранее (кэш KV). */
+  attachKr(pat) {
+    pat.kr = matchKr({ diagnosis: pat.true_diagnosis, mkb: pat.mkb10, pediatric: Number(pat.age) < 18 });
+    if (pat.kr) this.ctx.waitUntil(krText(this.env, pat.kr.id).catch(() => null));
+  }
+
+  // ---------------------------------------------------
+  // «Кто круче?» — битва на одном пациенте (логика битвы — в HubDO, src/lib/battles.js)
+  // ---------------------------------------------------
+
+  /** Создатель нажал «Старт»: пациент для битвы готовится в его очереди */
+  async battleGenerate(battleId) {
+    await this.enqueue({ type: "battle_patient", battleId, source: this.source() });
+    return { queued: true };
+  }
+
+  async jobBattlePatient(job) {
+    const prof = await this.profile();
+    const spec = pick(prof.specializations?.length ? prof.specializations : SPECIALIZATIONS["Терапевт"]);
+    // Сложность одна для обоих — средняя, чтобы битва была честной
+    const p = P.patientPrompt({ spec, profession: prof.profession, complexity: "medium", usedDiagnoses: [] });
+    const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: 0.95, kind: "patient", uid: prof.uid });
+    validatePatient(data);
+    await this.hub().battlePatientReady(job.battleId, { ...data, spec });
+  }
+
+  /** Копия пациента битвы у этого игрока. Бесплатный лимит не тратит. Возвращает id пациента. */
+  async battleAddPatient(battle, data) {
+    const prof0 = await this.profile();
+    const now = Date.now();
+    const id = `pat_${prof0.uid}_${now}_b`;
+    const pat = buildPatient(data, { id, uid: prof0.uid, spec: data.spec, now });
+    pat.battle = { id: battle.id, opponent: battle.opponent || null };
+    this.attachKr(pat);
+    const prof = await this.profile();
+    prof.active_patient_ids = [...prof.active_patient_ids.filter((x) => x !== id), id];
+    prof.stats.patients_total = (prof.stats.patients_total || 0) + 1;
+    await this.ctx.storage.put({ [patKey(id)]: pat, [PROFILE]: prof });
+    this.broadcast("patients", { patient_id: id });
+    await this.track("battle_patient", { battle: battle.id, name: pat.name, diagnosis: pat.true_diagnosis });
+    return id;
+  }
+
+  /** Событие битвы: открытые вкладки, пуш и сообщение в Telegram */
+  async battleNotify(p = {}) {
+    this.broadcast("battle", { kind: p.kind, battle_id: p.battle_id, patient_id: p.patient_id || null, rematch_of: p.rematch_of || null });
+    if (p.silent) return { ok: true };
+    const prof = await this.profile();
+    const path = p.button?.path || `/battle/${p.battle_id}`;
+    if (p.push) await this.pushNotify({ ...p.push, url: `/app#${path}`, tag: `battle-${p.battle_id}` }, { away: true });
+    if (/^\d+$/.test(prof.uid) && p.text) {
+      await tg(this.env, { kind: "system" }).send(prof.uid, p.text, p.button ? [[appBtn(p.button.text, R.appUrl(this.env, path))]] : undefined).catch(() => {});
+    }
+    await this.track("battle_event", { battle: p.battle_id, kind: p.kind });
+    return { ok: true };
   }
 
   async rejectPatient(patId) {
@@ -1033,7 +1060,16 @@ export class UserDO extends DurableObject {
     };
     // Весь разбор приёма открыт всем; в премиуме — разбор по клиническим рекомендациям (по кнопке) и тест
     Object.assign(result, { recommendation: ev.recommendation, premium: G.isPremium(prof), trial_available: !prof.trial_used });
+    if (fresh.battle?.id) result.battle_id = fresh.battle.id;
     this.broadcast("evaluation", result);
+    // Приём в битве «Кто круче?» — результат в HubDO: когда закончат оба, он определит победителя и сообщит обоим
+    if (fresh.battle?.id) {
+      await this.hub().battleResult(fresh.battle.id, prof.uid, {
+        rating: ev.rating, axes: ev.axes, correct: ev.diagnosis_correct, diagnosis: facts.diagnosis,
+        ms: rec.date && rec.started_at ? rec.date - rec.started_at : 0, questions: facts.doctorMessages.length,
+        tests: facts.tests.length, hints: facts.hints?.length || 0, xp: earned,
+      }).catch((e) => console.error("battleResult", e));
+    }
     const evSource = { source: job.source || (job.origin === "bot" ? "bot" : "web") };
     await this.track("evaluation", {
       patient: job.patId, spec: fresh.specialization, rating: ev.rating, axes: ev.axes, correct: ev.diagnosis_correct, xp: earned,
@@ -1957,6 +1993,7 @@ export class UserDO extends DurableObject {
         if (job.type === "evaluate") await this.jobEvaluate(job);
         if (job.type === "guide") await this.jobGuide(job);
         if (job.type === "quiz") await this.jobQuiz(job);
+        if (job.type === "battle_patient") await this.jobBattlePatient(job);
         await this.dropJob(job.id);
       } catch (e) {
         console.error(`job ${job.type} attempt ${job.attempt}`, e);
@@ -1967,6 +2004,7 @@ export class UserDO extends DurableObject {
           if (job.type === "new_patient") await this.jobNewPatientFailed(job, e);
           if (job.type === "evaluate") await this.jobEvaluateFailed(job, e);
           if (job.type === "guide") await this.jobGuideFailed(job, e);
+          if (job.type === "battle_patient") await this.hub().battlePatientFailed(job.battleId).catch((err) => console.error("battle failed", err));
           if (job.type === "quiz") await this.track("quiz_failed", { patient: job.patId, error: String(e?.message || e).slice(0, 300) }, { source: "system" });
         }
       }
@@ -2141,6 +2179,39 @@ function actionsList(cur) {
 
 function mergeList(fresh = [], old = [], max) {
   return [...new Set([...(fresh || []).filter(Boolean).map((s) => clampStr(s, 160)), ...(old || [])])].slice(0, max);
+}
+
+/** Пациент из ответа ИИ (обычный приём и битва «Кто круче?») */
+function buildPatient(data, { id, uid, spec, now }) {
+  return {
+    id,
+    doctor_uid: uid,
+    is_alien: false,
+    specialization: spec,
+    specialty: clampStr(data.specialty, 40).toLowerCase(),
+    name: clampStr(data.name, 60),
+    age: data.age,
+    sex: data.sex,
+    chief_complaint: clampStr(data.chief_complaint, 300),
+    true_diagnosis: clampStr(data.true_diagnosis, 200),
+    mkb10: clampStr(data.mkb10, 20),
+    full_history: clampStr(data.full_history, 1500),
+    personality: clampStr(data.personality, 300),
+    opening_phrase: clampStr(data.opening_phrase, 400),
+    key_findings: clampStr(data.key_findings, 600),
+    findings: normalizeFindings(data.findings),
+    condition_trajectory: data.condition_trajectory || "stable",
+    status: "new",
+    created_at: now,
+    closed_at: null,
+    consultations: [],
+    conversation_history: [],
+    summary: null,
+    test_results: [],
+    exam_results: [],
+    hints: [],
+    current: null,
+  };
 }
 
 function normalizeFindings(f) {
@@ -2327,6 +2398,7 @@ export function patientSummary(p) {
     id: p.id, name: p.name, age: p.age, sex: p.sex, is_alien: !!p.is_alien, specialization: specialtyOf(p),
     chief_complaint: p.chief_complaint, status: p.status, created_at: p.created_at, closed_at: p.closed_at,
     in_consultation: !!p.current,
+    battle: p.battle?.id || null,
     consultations: (p.consultations || []).length,
     last_rating: last?.rating ?? null,
     evaluating: !!last?.evaluating,

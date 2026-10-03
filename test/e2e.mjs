@@ -949,6 +949,64 @@ await aq("blogger_delete", { id: bl.id });
 assert.equal((await aq("bloggers")).rows.length, 0);
 step("блогеры: карточка, связь с партнёром и статистика его ссылки, этапы, история, план запуска");
 
+// ---------------------------------------------------------------- «Кто круче?»: битва на одном пациенте
+const BA = "9101", BB = "9102";
+const ta = await login(BA), tb = await login(BB);
+let bt = (await api(ta, "POST", "/battles")).data;
+assert.equal(bt.status, "waiting");
+assert.equal(bt.role, "owner");
+assert.ok(bt.links.site.includes(encodeURIComponent(`/battle/${bt.id}`)) && bt.links.bot.endsWith(`start=b_${bt.id}`));
+assert.equal((await api(ta, "POST", "/battles")).data.id, bt.id, "незапущенная битва не плодится");
+let qr = await fetch(`${BASE}/api/qr?d=${encodeURIComponent(bt.links.site)}`);
+assert.equal(qr.status, 200);
+assert.match(await qr.text(), /^<svg/);
+assert.equal((await fetch(`${BASE}/api/qr?d=${encodeURIComponent("https://evil.example/x")}`)).status, 400, "QR только для наших ссылок");
+assert.equal((await api(tb, "GET", `/battles/${bt.id}`)).data.role, null);
+r = await api(tb, "POST", `/battles/${bt.id}/join`);
+assert.equal(r.data.status, "ready");
+assert.equal(r.data.role, "guest");
+await waitFor(() => sent(BA).some((m) => m.text.includes("Соперник подключился")), "battle joined notify");
+assert.equal((await api(tb, "POST", `/battles/${bt.id}/start`)).status, 409, "стартует только создатель");
+assert.equal((await api(await login("9103"), "POST", `/battles/${bt.id}/join`)).status, 409, "третий лишний");
+r = await api(ta, "POST", `/battles/${bt.id}/start`);
+assert.equal(r.status, 200, JSON.stringify(r.data));
+bt = await waitFor(async () => { const x = (await api(ta, "GET", `/battles/${bt.id}`)).data; return x.status === "active" && x; }, "battle active", 20000);
+const btB = (await api(tb, "GET", `/battles/${bt.id}`)).data;
+assert.ok(bt.me.patient_id && btB.me.patient_id && bt.me.patient_id !== btB.me.patient_id);
+assert.equal(bt.patient.name, btB.patient.name, "один пациент на двоих");
+assert.equal(bt.patient.true_diagnosis, null, "диагноз скрыт до итога");
+await waitFor(() => sent(BB).some((m) => m.text.includes("Битва началась")), "battle started notify");
+const meA = (await api(ta, "GET", "/me")).data;
+assert.ok(meA.patients.find((p) => p.id === bt.me.patient_id)?.battle === bt.id);
+for (const [tok, pid, dx] of [[ta, bt.me.patient_id, "Язва двенадцатиперстной кишки"], [tb, btB.me.patient_id, "Гастрит"]]) {
+  assert.equal((await api(tok, "POST", `/patients/${pid}/start`)).status, 200);
+  assert.equal((await api(tok, "POST", `/patients/${pid}/message`, { text: "Что беспокоит?" })).status, 200);
+  assert.equal((await api(tok, "POST", `/patients/${pid}/finish`, { type: "diagnosis", value: dx })).status, 200);
+}
+bt = await waitFor(async () => { const x = (await api(ta, "GET", `/battles/${bt.id}`)).data; return x.status === "finished" && x; }, "battle finished", 30000);
+const btB2 = (await api(tb, "GET", `/battles/${bt.id}`)).data;
+assert.ok(bt.me.result && bt.opponent.result && bt.patient.true_diagnosis);
+assert.equal({ me: "opponent", opponent: "me", draw: "draw" }[bt.winner], btB2.winner, "победитель один для обоих");
+await waitFor(() => [BA, BB].every((u) => sent(u).some((m) => m.text.includes("итог битвы"))), "battle result notify");
+// Реванш: второй предлагает, первому приходит вызов; первый жмёт «Реванш» — попадает в ту же битву
+const rm = (await api(tb, "POST", "/battles", { rematch_of: bt.id })).data;
+assert.equal(rm.status, "waiting");
+await waitFor(() => sent(BA).some((m) => m.text.includes("требует реванша")), "rematch notify");
+const rmA = (await api(ta, "POST", "/battles", { rematch_of: bt.id })).data;
+assert.equal(rmA.id, rm.id, "реванш один на двоих");
+assert.equal(rmA.status, "ready");
+assert.equal((await api(ta, "GET", `/battles/${bt.id}`)).data.next_id, rm.id);
+const listA = (await api(ta, "GET", "/battles")).data;
+assert.equal(listA.score.wins + listA.score.losses + listA.score.draws, 1);
+assert.ok(listA.battles.some((x) => x.id === rm.id));
+assert.equal((await api(tb, "POST", `/battles/${rm.id}/cancel`)).data.status, "cancelled");
+// Вызов через бота: t.me/<бот>?start=b_<код>
+const bt3 = (await api(ta, "POST", "/battles")).data;
+await text("9104", `/start b_${bt3.id}`);
+await waitFor(() => sent("9104").some((m) => m.text.includes("Вы в битве")), "battle join via bot");
+assert.equal((await api(ta, "GET", `/battles/${bt3.id}`)).data.status, "ready");
+step("«Кто круче?»: QR и ссылка, подключение с уведомлением, старт, один пациент на двоих, итог, реванш, вызов через бота");
+
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");
