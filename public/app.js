@@ -1738,12 +1738,15 @@ function outOfRange(value, norm) {
 /** Разбор строки протокола: { name, value, norm } или null для обычного текста */
 function labRow(line) {
   // «Гемоглобин — 118 г/л (норма 130–160)», «СОЭ: 25 мм/ч», а без разделителя — «Hb 118 г/л (130-160)»
-  const m = line.match(/^\s*[•\-–]?\s*([^:]{2,70}?)(?::|\s[—–-])\s+(.+)$/) || line.match(/^\s*[•\-–]?\s*(.{2,70}?)\s+(-?\d[\d.,]*(?:\s.*)?)$/);
+  // Делим только вне скобок: «ось сердца в норме (от -30 до +90)» и «увеличены (норма — по возрасту)» — не таблица
+  const balanced = (x) => !x || (x.match(/\(/g) || []).length === (x.match(/\)/g) || []).length;
+  const m = [line.match(/^\s*[•\-–]?\s*([^:]{2,70}?)(?::|\s[—–-])\s+(.+)$/), line.match(/^\s*[•\-–]?\s*(.{2,70}?)\s+(-?\d[\d.,]*\S*(?:\s.*)?)$/)]
+    .find((x) => x && balanced(x[1]));
   if (!m) return null;
   let value = m[2].trim(), norm = "";
   // Норма — в скобках в конце: «(норма 130–160)» или просто «(4–9)», «(< 5)»; «(нормальный)» и «(5%)» — часть значения
   const nm = value.match(/\((?:норма|N|референс\S*)(?:\s*:\s*|\s+)([^)]*)\)\s*\.?$/i) || value.match(/\(([^)]*\d[^)]*(?:[–—-]|<|>|≤|≥|до|от)[^)]*|(?:<|>|≤|≥|до|от)[^)]*\d[^)]*)\)\s*\.?$/);
-  if (nm) { norm = nm[1].trim(); value = value.slice(0, nm.index).trim(); }
+  if (nm) { norm = nm[1].trim().replace(/^[—–:-]\s*/, ""); value = value.slice(0, nm.index).trim(); }
   if (!value || value.length > 90 || m[1].trim().split(/\s+/).length > 8) return null;
   return { name: m[1].trim(), value, norm };
 }
@@ -1753,7 +1756,9 @@ function labTable(text) {
     const r = labRow(line);
     if (!r) return html`<div class="lab-text line" style="--i:${i}">${line}</div>`;
     const st = outOfRange(r.value, r.norm);
-    return html`<div class="lab-row line ${st && st !== "ok" ? "off" : ""}" style="--i:${i}">
+    // Длинное словесное значение («структура и подвижность в пределах нормы») — под названием, на всю ширину
+    const wide = !/^[-+<>≤≥]?\s*\d/.test(r.value) && r.value.length > 22;
+    return html`<div class="lab-row line ${wide ? "wide" : ""} ${st && st !== "ok" ? "off" : ""}" style="--i:${i}">
       <div class="lab-name">${r.name}</div>
       <div class="lab-val"><b>${r.value}</b>${st === "high" ? html`<span class="lab-arrow" title="Выше нормы">↑</span>` : st === "low" ? html`<span class="lab-arrow" title="Ниже нормы">↓</span>` : ""}${r.norm ? html`<span class="lab-norm">норма ${r.norm}</span>` : ""}</div>
     </div>`;
