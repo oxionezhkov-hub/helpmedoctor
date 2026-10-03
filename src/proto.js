@@ -4,7 +4,7 @@
 import { PHYSICAL_EXAMPLES, TEST_TYPES } from "./config.js";
 import { aiJson, aiText, transcribe } from "./lib/ai.js";
 import * as P from "./lib/prompts.js";
-import { synthesize, TTS_QUALITIES, voiceFor } from "./lib/tts.js";
+import { synthesize, ttsErrorReason, TTS_QUALITIES, voiceFor } from "./lib/tts.js";
 import { arrayBufferToBase64, clampStr, isRefusal, json } from "./lib/util.js";
 
 const UID = "proto";
@@ -106,7 +106,7 @@ async function voiceOf(env, pat, text, quality) {
   } catch (e) {
     console.error("tts", e);
     await logTts(env, { model: `google:${voice.name}`, ms: Date.now() - t0, ok: 0, err: String(e.message || e).slice(0, 300) });
-    return { audio: null, tts_error: "Не удалось озвучить ответ" };
+    return { audio: null, tts_error: `Не удалось озвучить: ${ttsErrorReason(e.message)}` };
   }
 }
 

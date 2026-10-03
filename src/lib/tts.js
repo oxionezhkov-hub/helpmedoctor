@@ -83,3 +83,19 @@ export async function synthesize(env, text, voice) {
   }
   return { audio: j.audioContent, voice: voice.name, chars: clean.length };
 }
+
+/** Понятная причина отказа Google (по тексту ошибки) — без ключа и деталей проекта */
+export function ttsErrorReason(message) {
+  const m = String(message || "");
+  if (/GOOGLE_TTS_API_KEY не задан/.test(m)) return "ключ Google TTS не задан";
+  if (/API_KEY_INVALID|API key not valid|API key expired/i.test(m)) return "ключ Google неверный или просрочен";
+  if (/referer|referrer/i.test(m)) return "ключ ограничен по сайтам (HTTP referrers) — запросы идут с сервера, нужен ключ без ограничения по сайтам";
+  if (/ip address|API_KEY_IP_ADDRESS_BLOCKED/i.test(m)) return "ключ ограничен по IP-адресам — уберите это ограничение";
+  if (/SERVICE_DISABLED|has not been used|is disabled|accessNotConfigured/i.test(m)) return "в проекте Google не включён Cloud Text-to-Speech API (или включён только что — подождите 5 минут)";
+  if (/API_KEY_SERVICE_BLOCKED|are blocked/i.test(m)) return "ключу запрещён Text-to-Speech API — в ограничениях ключа отметьте Cloud Text-to-Speech API";
+  if (/billing/i.test(m)) return "в проекте Google не подключён платёжный аккаунт";
+  if (/HTTP 429|RESOURCE_EXHAUSTED|quota/i.test(m)) return "превышена квота Google";
+  if (/voice|Voice/.test(m) && /HTTP 400/.test(m)) return "этот голос недоступен — выберите другой";
+  const code = m.match(/HTTP (\d{3})/);
+  return code ? `Google ответил ошибкой ${code[1]}` : "Google не ответил";
+}
