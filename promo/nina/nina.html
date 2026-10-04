@@ -102,15 +102,19 @@ body{font-family:var(--sans);color:#fff;-webkit-font-smoothing:antialiased}
 .score small{font-size:140px;color:#fff}
 
 /* cta */
-.cta{position:absolute;left:0;right:0;top:860px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.cta{position:absolute;left:0;right:0;top:1130px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .cta .l1{font:800 84px/1.05 var(--sans);color:#fff;text-shadow:0 6px 24px rgba(0,0,0,.6)}
 .cta .free{margin-top:26px;font:800 130px/1 var(--sans);background:var(--yel);color:var(--ink);padding:14px 44px 26px;border-radius:30px;box-shadow:0 14px 0 rgba(0,0,0,.3);--r:-4deg}
-.cta .go{margin-top:60px;padding:30px 70px 36px;border-radius:999px;background:var(--green-l);color:#06211d;font:800 72px var(--sans);border:8px solid var(--ink);box-shadow:0 14px 0 var(--ink)}
-.gobounce{animation:gob .46875s cubic-bezier(.3,0,.3,1) 0s infinite alternate}
-@keyframes gob{to{transform:translateY(-16px) scale(1.04)}}
-.cta .url{margin-top:44px;font:800 44px var(--sans);color:#fff;text-shadow:0 4px 18px rgba(0,0,0,.7)}
-.cta .url span{color:var(--yel)}
 
+.grpA{display:flex;flex-direction:column;align-items:center;animation:outUp .3s cubic-bezier(.6,0,.8,.4) calc(var(--at)*1s) forwards}
+@keyframes outUp{to{opacity:0;transform:translateY(-260px) scale(.7)}}
+.grpB{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center}
+.cmt{margin-top:0;width:930px;border-radius:44px;background:#fff;color:var(--ink);padding:28px 32px 32px;text-align:left;border:8px solid var(--ink);box-shadow:0 14px 0 var(--ink);--r:-2deg}
+.cmt-h{display:flex;align-items:center;gap:14px;font:800 44px var(--sans)}
+.cmt-row{display:flex;align-items:center;gap:18px;margin-top:18px}
+.cmt-in{flex:1;height:130px;border-radius:65px;background:#f1efe8;border:4px solid var(--ink);display:flex;align-items:center;padding:0 40px;font:800 88px var(--sans);letter-spacing:.04em;color:var(--green)}
+.kc{display:inline-block;width:7px;height:84px;background:var(--green);margin-left:8px}
+.send{width:130px;height:130px;border-radius:50%;background:var(--green-l);border:6px solid var(--ink);display:flex;align-items:center;justify-content:center;flex:none}
 /* fx */
 #flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:20;pointer-events:none}
 #confetti{position:absolute;inset:0;z-index:15;pointer-events:none}
@@ -211,16 +215,22 @@ body{font-family:var(--sans);color:#fff;-webkit-font-smoothing:antialiased}
   <!-- 6. cta -->
   <section class="scene" data-scene="cta" style="z-index:6">
     <div class="cam">
-      <img class="photo" src="../../content/telegram-channel/img/nina/yagody-podmigivaet.jpg" style="object-position:50% 30%">
+      <img class="photo" src="../../content/telegram-channel/img/nina/yagody-podmigivaet.jpg" style="object-position:50% 30%;top:-300px;height:calc(100% + 300px)">
       <div class="shade" style="height:1200px"></div>
-      <div class="emo pp" data-at="cta" data-dt="0.1" style="left:800px;top:220px;--s:150px;--r:10deg"><div class="wob"><img src="emoji/1f609.svg"></div></div>
+      <div class="emo pp" data-at="cta" data-dt="0.1" style="left:880px;top:170px;--s:140px;--r:10deg"><div class="wob"><img src="emoji/1f352.svg"></div></div>
       <div class="cta">
-        <div class="l1 su" data-at="cta:Два">2 пациента в&nbsp;день</div>
-        <div class="free slam" data-at="cta:бесплатно" data-dt="-0.05">БЕСПЛАТНО</div>
-        <div class="pp" data-at="cta:Залетай" data-dt="-0.1"><div class="go gobounce">Залетай →</div></div>
-        <div class="url su" data-at="cta:Залетай" data-dt="0.2">helpmedoctor.ru · <span>@helpmedoctor_aibot</span></div>
+        <div class="grpA" data-at="cta:Пиши" data-dt="-0.15"><div class="l1 su" data-at="cta:Два">2 пациента в&nbsp;день</div>
+        <div class="free slam" data-at="cta:бесплатно" data-dt="-0.05">БЕСПЛАТНО</div></div>
+        <div class="grpB">
+        <div class="cmt su" data-at="cta:Пиши" data-dt="-0.1">
+          <div class="cmt-h"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#191c1b" stroke-width="2.4" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>пиши в комменты</div>
+          <div class="cmt-row"><div class="cmt-in"><span id="kw"></span><span class="kc" id="kwCur"></span></div>
+            <div class="send slam" data-at="cta:приём" data-dt="0.3"><svg width="54" height="54" viewBox="0 0 24 24" fill="#06211d"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg></div></div>
+        </div>
+        <div class="stk g pp" data-at="cta:скину" data-dt="-0.05" style="position:relative;margin-top:40px;--r:3deg">скину ссылку <img src="emoji/1f609.svg" style="width:62px;height:62px;vertical-align:-10px"></div>
+        </div>
       </div>
-      <div class="emo pp" data-at="cta:Залетай" data-dt="0.1" style="left:60px;top:1240px;--s:130px;--r:-10deg"><div class="wob"><img src="emoji/1f389.svg"></div></div>
+      <div class="emo pp" data-at="cta:приём" data-dt="0.35" style="left:40px;top:1060px;--s:130px;--r:-10deg"><div class="wob"><img src="emoji/1f389.svg"></div></div>
     </div>
   </section>
 </div>
@@ -255,9 +265,9 @@ function init(tl){
   // comic burst polygon
   const pts=[]; for(let i=0;i<28;i++){const a=i/28*Math.PI*2, r=(i%2?300:440)*(0.9+0.2*R()); pts.push((450+Math.cos(a)*r).toFixed(1)+','+(450+Math.sin(a)*r).toFixed(1))}
   document.getElementById('burst').setAttribute('points',pts.join(' '));
-  SHAKES=[[resolve('hi:Нина'),18],[resolve('skel:теорию'),12],[resolve('but:вести'),10],[resolve('app:Хэлп'),14],[resolve('app:бац'),34],[resolve('score')-0.05,26],[resolve('cta:бесплатно'),16],[resolve('cta:Залетай'),14]];
+  SHAKES=[[resolve('hi:Нина'),18],[resolve('skel:теорию'),12],[resolve('but:вести'),10],[resolve('app:Хэлп'),14],[resolve('app:бац'),34],[resolve('score')-0.05,26],[resolve('cta:бесплатно'),16],[resolve('cta:приём')+0.3,16]];
   FLASHES=[[L('app').start-0.12,.7],[resolve('app:бац')-0.03,.95],[L('score').start-0.12,.8]];
-  BURSTS=[[resolve('app:бац'),540,900,70],[resolve('score')+0.05,540,520,110],[resolve('cta:Залетай'),540,1250,70]];
+  BURSTS=[[resolve('app:бац'),540,900,70],[resolve('score')+0.05,540,520,110],[resolve('cta:приём')+0.3,540,1250,80]];
   const box=document.getElementById('confetti'); const cols=['#ffd84d','#5cc0b0','#ff7aa8','#f08a6f','#ffffff','#7c5cff'];
   BURSTS.forEach(([t0,x,y,n])=>{for(let i=0;i<n;i++){const el=document.createElement('i');el.style.background=cols[i%cols.length];box.appendChild(el);
     const a=-Math.PI/2+(R()-.5)*Math.PI*1.5, v=900+R()*1500;
@@ -284,6 +294,10 @@ function seek(t){
     const x=c.x+c.vx*d*Math.exp(-d*1.2), y=c.y+c.vy*d*Math.exp(-d*1.2)+900*d*d;
     c.el.style.opacity=1-clamp((d-1.6)/.6);
     c.el.style.transform=`translate(${x}px,${y}px) rotate(${c.rot+c.vr*d}deg) scale(${c.s},${c.s*Math.abs(Math.cos(d*9+c.rot))})`}
+  // keyword typed into the comment
+  const k0=resolve('cta:комментах')+0.1, k1=resolve('cta:приём')+0.35, KW='ПРИЁМ';
+  document.getElementById('kw').textContent=KW.slice(0,Math.round(KW.length*clamp((t-k0)/(k1-k0))));
+  document.getElementById('kwCur').style.opacity=(t<k1||Math.floor(t*2.5)%2===0)?1:0;
   // score count-up
   const s0=resolve('score'); document.getElementById('sc').textContent=(4.5*eout(clamp((t-s0)/.45))).toFixed(1).replace('.',',');
   // captions

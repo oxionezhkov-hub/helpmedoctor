@@ -2,7 +2,7 @@
 import json, numpy as np, wave
 SR=48000; tl=json.load(open('timeline.json')); T=tl['total']; N=int(T*SR)
 L={l['key']:l for l in tl['lines']}
-def W(k,w): return next(x[0] for x in L[k]['words'] if x[2].lower().strip('.,!')==w.lower())
+def W(k,w): return next(x[0] for x in L[k]['words'] if x[2].lower().strip('.,!«»')==w.lower())
 rng=np.random.default_rng(3)
 mus=np.zeros(N); sfx=np.zeros(N)
 def add(buf,t,sig,g=1.0):
@@ -81,7 +81,7 @@ for w in [('hi','нина'),('hi','четвёртый'),('skel','скелет'),
     add(sfx,W(*w),pop(800+200*(hash(w[1])%4)),.4)
 add(sfx,W('app','бац'),boom(),.9)
 add(sfx,L['score']['start']-0.1,boom(),.6); add(sfx,L['score']['start'],ding(),.35)
-add(sfx,W('cta','залетай'),ding(),.3)
+add(sfx,W('cta','приём')+0.3,ding(),.3)
 def save(fn,x):
     x=np.clip(x,-1,1); w=wave.open(fn,'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x*32767).astype('<i2').tobytes()); w.close()
 save('music.wav',mus/np.max(np.abs(mus))*.8); save('sfx.wav',sfx/np.max(np.abs(sfx))*.8); print('ok')
