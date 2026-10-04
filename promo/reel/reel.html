@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Help me, Doctor — reel</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+:root{
+  --bg:#0d1110; --bg2:#141917; --tile:#1a201e; --line:#2d3531;
+  --paper:#f6f4ee; --card:#fffdf8; --ink:#191c1b; --ink2:#353a38; --muted:#5f6662; --muted-d:#9ba39e;
+  --green:#0d5c55; --green-l:#5cc0b0; --green-soft:#dceae5; --green-dk:#173630;
+  --red:#b3391f; --red-l:#f08a6f; --mark:#f4e4a1; --cream:#ecebe5;
+  --sans:"Manrope",system-ui,sans-serif; --serif:"Literata",Georgia,serif;
+  --ease:cubic-bezier(.2,.8,.2,1); --back:cubic-bezier(.3,1.5,.5,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+
+/* ---------- background ---------- */
+.bg{position:absolute;inset:0;overflow:hidden}
+.bg .grid{position:absolute;inset:-80px;background-image:linear-gradient(rgba(236,235,229,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(236,235,229,.045) 1px,transparent 1px);background-size:80px 80px;animation:gridmove 30s linear 0s infinite}
+@keyframes gridmove{to{transform:translate(80px,160px)}}
+.glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+.glow.g1{width:900px;height:900px;left:-300px;top:-200px;background:radial-gradient(circle,#0d5c55 0%,transparent 70%);animation:float1 14s ease-in-out 0s infinite alternate}
+.glow.g2{width:800px;height:800px;right:-320px;bottom:100px;background:radial-gradient(circle,#5a2416 0%,transparent 70%);opacity:.5;animation:float2 11s ease-in-out 0s infinite alternate}
+@keyframes float1{to{transform:translate(260px,520px) scale(1.2)}}
+@keyframes float2{to{transform:translate(-240px,-460px) scale(1.15)}}
+.cross{position:absolute;color:rgba(92,192,176,.18);font:800 54px var(--sans);animation:drift 9s ease-in-out 0s infinite alternate}
+@keyframes drift{to{transform:translateY(-70px) rotate(25deg)}}
+.vign{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 50%,rgba(0,0,0,.55) 100%)}
+.grain{position:absolute;inset:0;opacity:.06;mix-blend-mode:overlay;background:url(grain.png) 0 0/1080px 1920px}
+
+/* ---------- generic anim utilities (all seeked by JS) ---------- */
+.fu,.pp,.mu,.fi,.sr,.sl,.st{animation-duration:.6s;animation-fill-mode:both;animation-delay:calc(var(--at,0)*1s);animation-timing-function:var(--ease)}
+.fu{animation-name:fu} @keyframes fu{from{opacity:0;transform:translateY(46px)}to{opacity:1;transform:none}}
+.fi{animation-name:fi;animation-duration:.45s} @keyframes fi{from{opacity:0}to{opacity:1}}
+.pp{animation-name:pp;animation-duration:.55s;animation-timing-function:var(--back)} @keyframes pp{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+.sr{animation-name:sr} @keyframes sr{from{opacity:0;transform:translateX(90px)}to{opacity:1;transform:none}}
+.sl{animation-name:sl} @keyframes sl{from{opacity:0;transform:translateX(-90px)}to{opacity:1;transform:none}}
+.st{animation-name:st;animation-duration:.42s;animation-timing-function:cubic-bezier(.5,0,.6,1.4)} @keyframes st{0%{opacity:0;transform:scale(2.6) rotate(-4deg)}70%{opacity:1;transform:scale(.94) rotate(-11deg)}100%{opacity:1;transform:scale(1) rotate(-10deg)}}
+.mask{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .04em .08em}
+.mu{display:inline-block;animation-name:mu;animation-duration:.55s} @keyframes mu{from{transform:translateY(105%);opacity:0}to{transform:none;opacity:1}}
+.mark{background:linear-gradient(var(--mark),var(--mark)) no-repeat 0 88%/0% 42%;animation:markswipe .5s var(--ease) calc(var(--at,0)*1s) both}
+.mark.full{background:none;animation:none;position:relative;display:inline-block}
+.mark.full .f{position:absolute;left:0;top:0;bottom:0;right:0;padding:inherit;background:var(--mark);color:var(--ink);clip-path:inset(0 100% 0 0);animation:wipe .45s var(--ease) calc(var(--at,0)*1s) both}
+@keyframes wipe{to{clip-path:inset(0 0 0 0)}}
+@keyframes markswipe{to{background-size:100% 42%}}
+@keyframes markfull{0%{color:var(--cream)}40%{color:var(--ink)}100%{background-size:100% 100%;color:var(--ink)}}
+
+/* ---------- scenes ---------- */
+.scene{position:absolute;inset:0;animation:sIn .5s var(--ease) calc(var(--in)*1s) both,sOut .4s cubic-bezier(.6,0,.8,.4) calc(var(--out)*1s) forwards}
+@keyframes sIn{from{opacity:0;transform:translateX(70px) scale(.98);filter:blur(12px)}to{opacity:1;transform:none;filter:none}}
+@keyframes sOut{from{opacity:1;transform:none;filter:none}to{opacity:0;transform:translateX(-90px) scale(1.02);filter:blur(14px)}}
+.scene>.cam{position:absolute;inset:0;animation:cam 6s linear calc(var(--in)*1s) both}
+@keyframes cam{from{transform:scale(1)}to{transform:scale(1.035)}}
+
+/* ---------- hook ---------- */
+.eyebrow{font:700 30px var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--green-l)}
+.hook-lines{position:absolute;left:90px;right:90px;top:400px}
+.hook-lines .eyebrow{margin-bottom:46px}
+.big{font:700 112px/1.08 var(--serif);letter-spacing:-.02em;color:var(--cream)}
+.big .mark{padding:0 .08em;margin:0 -.08em}
+.big .accent{color:var(--green-l)}
+.vs{position:absolute;left:90px;right:90px;top:1250px;display:flex;align-items:center;justify-content:space-between}
+.vs .side{width:330px;height:330px;border-radius:40px;background:var(--tile);border:3px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;font:700 36px var(--sans);color:var(--muted-d)}
+.vs .side.on{border-color:var(--green-l);color:var(--cream)}
+.vs .side svg{width:130px;height:130px}
+.vs .ne{font:600 170px var(--serif);color:var(--red-l)}
+
+/* ECG sweep */
+.sweep{position:absolute;left:0;top:780px;width:1080px;height:360px;pointer-events:none}
+.sweep path{fill:none;stroke:var(--green-l);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 18px rgba(92,192,176,.9));stroke-dasharray:2400;stroke-dashoffset:2400}
+.sweep .p{animation:draw .75s cubic-bezier(.4,0,.2,1) calc(var(--at)*1s) both,fadeout .35s ease calc((var(--at) + .7)*1s) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fadeout{to{opacity:0}}
+
+/* ---------- brand ---------- */
+.logo{width:320px;height:320px;border-radius:56px;background:var(--card);border:16px solid var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:0 30px 90px -20px rgba(92,192,176,.55),0 0 0 10px rgba(92,192,176,.12)}
+.logo svg{width:250px;height:250px}
+.logo path{fill:none;stroke:var(--red);stroke-width:24;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:520;stroke-dashoffset:520;animation:draw .9s cubic-bezier(.5,0,.2,1) calc(var(--at)*1s) both}
+.brand-wrap{position:absolute;left:0;right:0;top:400px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.title{font:700 116px/1 var(--serif);letter-spacing:-.025em;color:var(--cream);margin-top:70px}
+.title em{font-style:normal;color:var(--green-l)}
+.subtitle{margin-top:44px;font:600 58px/1.25 var(--sans);color:var(--cream)}
+.pill{display:inline-block;padding:10px 34px 14px;border-radius:999px;background:var(--green-l);color:#08201c;font-weight:800}
+.chips{position:absolute;left:70px;right:70px;top:1320px;display:flex;flex-wrap:wrap;justify-content:center;gap:22px}
+.chip{padding:16px 30px;border-radius:999px;border:2.5px solid var(--line);background:rgba(26,32,30,.85);font:700 36px var(--sans);color:var(--cream)}
+.chip i{font-style:normal;color:var(--green-l)}
+
+/* ---------- stepper ---------- */
+#stepper{position:absolute;left:70px;right:70px;top:150px;height:84px;display:flex;justify-content:space-between;align-items:center;opacity:0}
+#stepper .s{position:relative;z-index:2;font:800 29px var(--sans);color:var(--muted-d);padding:0 18px;display:flex;align-items:center;gap:12px;white-space:nowrap}
+#stepper .s b{display:inline-flex;width:44px;height:44px;border-radius:50%;border:2.5px solid currentColor;align-items:center;justify-content:center;font-size:22px}
+#stepper .ind{position:absolute;z-index:1;top:0;height:84px;border-radius:999px;background:var(--green-dk);border:2.5px solid var(--green-l)}
+
+/* ---------- chat ---------- */
+.phone{position:absolute;left:80px;right:80px;top:290px;height:1070px;border-radius:56px;background:var(--paper);overflow:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.8),0 0 0 2px rgba(255,255,255,.06);color:var(--ink)}
+.ph-head{position:absolute;left:0;right:0;top:0;height:150px;background:var(--card);border-bottom:2px solid #dcd7ca;display:flex;align-items:center;gap:26px;padding:0 40px}
+.ava{width:92px;height:92px;border-radius:50%;background:var(--green-soft);color:var(--green);display:flex;align-items:center;justify-content:center;font:800 36px var(--sans);flex:none}
+.ph-head .nm{font:800 38px var(--sans)}
+.ph-head .sb{font:600 27px var(--sans);color:var(--muted);margin-top:4px}
+.live{margin-left:auto;display:flex;align-items:center;gap:12px;font:800 24px var(--sans);color:var(--red);letter-spacing:.06em;text-transform:uppercase}
+.live i{width:16px;height:16px;border-radius:50%;background:var(--red);animation:blink 1s ease-in-out 0s infinite alternate}
+@keyframes blink{to{opacity:.2}}
+.msgs{position:absolute;left:0;right:0;top:150px;bottom:140px;padding:0 34px 26px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.m{flex:none;max-height:0;overflow:hidden;animation:grow .45s var(--ease) calc(var(--at)*1s) both}
+.m.typing{animation:grow .3s var(--ease) calc(var(--at)*1s) both,shrink .25s ease calc(var(--to)*1s) forwards}
+@keyframes grow{from{max-height:0}to{max-height:420px}}
+@keyframes shrink{from{max-height:420px;opacity:1}to{max-height:0;opacity:0}}
+.m .bub{margin-top:24px;max-width:84%;padding:24px 32px 26px;border-radius:36px;font:600 37px/1.34 var(--sans);animation:bub .45s var(--back) calc(var(--at)*1s) both}
+@keyframes bub{from{opacity:0;transform:translateY(30px) scale(.9)}to{opacity:1;transform:none}}
+.m.pt .bub{background:var(--card);border:2px solid #dcd7ca;border-bottom-left-radius:10px;transform-origin:0 100%}
+.m.dr{display:flex;justify-content:flex-end}
+.m.dr .bub{background:var(--green);color:#fbfaf6;border-bottom-right-radius:10px;transform-origin:100% 100%}
+.who{display:block;font:800 22px var(--sans);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;opacity:.6}
+.bub .mark{padding:0 .06em}
+.dots{display:flex;gap:12px;padding:6px 4px}
+.dots i{width:18px;height:18px;border-radius:50%;background:var(--muted);animation:dot .6s ease-in-out 0s infinite alternate}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes dot{to{transform:translateY(-12px);opacity:.4}}
+.voice{display:flex;align-items:center;gap:20px}
+.voice .play{width:66px;height:66px;border-radius:50%;background:#fbfaf6;display:flex;align-items:center;justify-content:center;flex:none}
+.voice .wave{display:flex;align-items:center;gap:7px;height:66px}
+.voice .wave i{width:8px;border-radius:4px;background:#fbfaf6;height:var(--h);animation:wv .5s ease-in-out calc(var(--d)*1s) infinite alternate}
+@keyframes wv{to{transform:scaleY(.35)}}
+.voice .tm{font:700 28px var(--sans);opacity:.85}
+.ph-in{position:absolute;left:0;right:0;bottom:0;height:140px;background:var(--card);border-top:2px solid #dcd7ca;display:flex;align-items:center;gap:20px;padding:0 30px}
+.ph-in .field{flex:1;height:84px;border-radius:42px;background:var(--paper);border:2px solid #dcd7ca;display:flex;align-items:center;padding:0 32px;font:600 32px var(--sans);color:var(--muted)}
+.ph-in .caret{display:inline-block;width:3px;height:40px;background:var(--green);margin-left:4px;animation:blink .5s steps(1) 0s infinite}
+.mic{position:relative;width:84px;height:84px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex:none}
+.mic .ring{position:absolute;inset:-6px;border-radius:50%;border:5px solid var(--red);opacity:0;animation:ring 1s ease-out calc(var(--at)*1s) 3}
+@keyframes ring{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.7)}}
+
+/* ---------- exams ---------- */
+.h2{position:absolute;left:90px;right:90px;top:300px;font:700 84px/1.05 var(--serif);letter-spacing:-.02em}
+.h2 small{display:block;font:700 34px var(--sans);letter-spacing:0;color:var(--muted-d);margin-top:16px}
+.tiles{position:absolute;left:80px;right:80px;top:530px;display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.tile{position:relative;height:150px;border-radius:32px;background:var(--tile);border:3px solid var(--line);display:flex;align-items:center;gap:22px;padding:0 28px}
+.tile .tsel{position:absolute;inset:-3px;border-radius:32px;border:3px solid var(--green-l);background:rgba(92,192,176,.14);opacity:0;animation:fi .25s ease calc(var(--sel)*1s) both}
+.tile svg.ic{width:64px;height:64px;flex:none;position:relative}
+.tile .tl{position:relative;font:800 38px var(--sans);line-height:1.1}
+.tile .tl small{display:block;font:600 24px var(--sans);color:var(--muted-d);margin-top:6px}
+.tile .chk{position:absolute;right:20px;top:20px;width:46px;height:46px;border-radius:50%;background:var(--green-l);display:flex;align-items:center;justify-content:center;--at:var(--sel)}
+.ecgmini{stroke-dasharray:180;animation:ecgrun 1.2s linear 0s infinite}
+@keyframes ecgrun{from{stroke-dashoffset:360}to{stroke-dashoffset:0}}
+.result{position:absolute;left:80px;right:80px;top:1080px;border-radius:40px;background:var(--card);color:var(--ink);padding:36px 42px 40px;box-shadow:0 40px 100px -30px rgba(0,0,0,.85)}
+.result .lb{font:800 25px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
+.result .tx{font:700 50px/1.18 var(--serif);margin-top:12px}
+.result .row{display:flex;gap:16px;margin-top:22px}
+.tag{padding:10px 22px;border-radius:999px;font:800 27px var(--sans);background:var(--green-soft);color:var(--green);display:flex;align-items:center;gap:10px}
+.tag.lock{background:var(--ink);color:var(--paper)}
+.tag.lock .bl{filter:blur(7px);letter-spacing:.05em}
+
+/* ---------- review ---------- */
+.dx{position:absolute;left:80px;right:80px;top:290px;height:210px;border-radius:40px;background:var(--card);color:var(--ink);padding:34px 42px}
+.dx .lb{font:800 25px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.dx .tx{font:700 50px/1.15 var(--serif);margin-top:40px;white-space:nowrap}
+.dx .tx .cur{display:inline-block;width:4px;height:56px;background:var(--green);vertical-align:-6px;margin-left:4px}
+.stamp{position:absolute;right:22px;top:12px;padding:6px 22px 8px;border:6px solid var(--green);border-radius:16px;color:var(--green);font:800 40px var(--sans);letter-spacing:.06em;background:rgba(220,234,229,.6)}
+.rv{position:absolute;left:80px;right:80px;top:530px;height:830px;border-radius:40px;background:#161b19;border:3px solid var(--line);padding:38px 42px}
+.rv .top{display:flex;align-items:flex-end;justify-content:space-between}
+.rv .lb{font:800 26px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--green-l)}
+.rv .h{font:700 54px var(--serif);margin-top:8px}
+.score{font:700 150px/0.9 var(--serif);color:var(--cream);letter-spacing:-.03em}
+.score small{font-size:56px;color:var(--muted-d)}
+.bars{margin-top:30px;display:flex;flex-direction:column;gap:20px}
+.bar{display:grid;grid-template-columns:270px 1fr 70px;align-items:center;gap:20px;font:700 31px var(--sans)}
+.bar .tr{height:20px;border-radius:10px;background:#2a322f;overflow:hidden}
+.bar .fl{height:100%;border-radius:10px;background:var(--green-l);transform-origin:0 50%;animation:fill .9s var(--ease) calc(var(--at)*1s) both}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(var(--w))}}
+.bar b{text-align:right;color:var(--cream)}
+.kr{margin-top:30px;display:flex;align-items:center;gap:16px;padding:16px 24px;border-radius:22px;background:var(--green-dk);border:2px solid #2f6b62;font:700 29px/1.25 var(--sans)}
+.kr small{display:block;font-weight:600;color:var(--muted-d);font-size:24px}
+.pts{margin-top:24px;display:flex;flex-direction:column;gap:16px}
+.pt{display:flex;gap:18px;align-items:flex-start;font:600 31px/1.3 var(--sans)}
+.pt .ic{flex:none;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 28px var(--sans);margin-top:-2px}
+.pt.bad .ic{background:var(--red-l);color:#2b0d06}
+.pt.good .ic{background:var(--green-l);color:#08201c}
+
+/* ---------- free ---------- */
+.free{position:absolute;left:0;right:0;top:330px;text-align:center}
+.two{font:700 560px/0.9 var(--serif);color:var(--green-l);text-shadow:0 0 120px rgba(92,192,176,.45);letter-spacing:-.04em}
+.free .l1{font:700 92px/1.1 var(--sans);margin-top:10px}
+.free .l2{font:800 132px/1.1 var(--serif);margin-top:30px}
+.free .l2 .mark{padding:0 .12em}
+.free .chip{display:inline-block;margin-top:56px}
+
+/* ---------- cta ---------- */
+.cta{position:absolute;left:0;right:0;top:250px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.cta .logo{width:250px;height:250px;border-radius:46px;border-width:13px}
+.cta .logo svg{width:196px;height:196px}
+.cta .title{font-size:112px;margin-top:56px}
+.cta .tag2{font:600 44px var(--sans);color:var(--muted-d);margin-top:26px}
+.btn{margin-top:60px;padding:34px 66px 38px;border-radius:999px;background:var(--green-l);color:#08201c;font:800 54px var(--sans);box-shadow:0 20px 70px -10px rgba(92,192,176,.7)}
+.btnpulse{animation:pulse 1.1s ease-in-out 0s infinite alternate}
+@keyframes pulse{to{transform:scale(1.045)}}
+.url{margin-top:62px;font:800 64px var(--sans);letter-spacing:-.01em}
+.tg{margin-top:16px;font:700 38px var(--sans);color:var(--muted-d)}
+.tg b{color:var(--green-l)}
+.bio{margin-top:52px;display:inline-flex;align-items:center;gap:16px;padding:20px 40px;border-radius:999px;background:var(--mark);color:var(--ink);font:800 42px var(--sans)}
+.monitor{position:absolute;left:0;right:0;top:1640px;height:180px;opacity:.55}
+.monitor path{fill:none;stroke:var(--green-l);stroke-width:6;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:700 1900;animation:mon 1.6s linear 0s infinite;filter:drop-shadow(0 0 10px rgba(92,192,176,.9))}
+@keyframes mon{from{stroke-dashoffset:2600}to{stroke-dashoffset:0}}
+
+/* ---------- captions ---------- */
+#cap{position:absolute;left:60px;right:60px;top:1420px;height:170px;display:flex;align-items:center;justify-content:center;text-align:center}
+#cap .ln{font:800 64px/1.15 var(--sans);color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.55),0 0 30px rgba(0,0,0,.6);letter-spacing:-.01em}
+#cap .w{display:inline-block;margin:0 .12em;padding:0 .1em;border-radius:12px}
+#cap .w.on{color:var(--ink);background:var(--mark);text-shadow:none}
+</style></head>
+<body>
+<div id="stage">
+  <div class="bg">
+    <div class="grid"></div>
+    <div class="glow g1"></div><div class="glow g2"></div>
+    <div class="cross" style="left:880px;top:300px">+</div>
+    <div class="cross" style="left:120px;top:1500px;animation-delay:-3s">+</div>
+    <div class="cross" style="left:940px;top:1250px;animation-delay:-6s;font-size:40px">+</div>
+    <div class="cross" style="left:60px;top:220px;animation-delay:-2s;font-size:36px">+</div>
+    <div class="grain"></div>
+    <div class="vign"></div>
+  </div>
+
+  <!-- 1. HOOK -->
+  <section class="scene" data-scene="hook">
+    <div class="cam">
+      <div class="hook-lines">
+        <div class="eyebrow fi" data-at="0.05">Студентам-медикам и врачам</div>
+        <div class="big">
+          <span class="mask"><span class="mu" data-at="hook:Знать">Знать</span></span>
+          <span class="mask"><span class="mu" data-at="hook:болезнь">болезнь</span></span><br>
+          <span class="mask"><span class="mu" data-at="hook:узнать">и&nbsp;узнать её</span></span><br>
+          <span class="mask"><span class="mu accent" data-at="hook:пациента">у&nbsp;пациента</span></span><br>
+          <span class="mask"><span class="mu" data-at="hook:это">—&nbsp;<span class="mark full" data-at="hook:разные" data-dt="0.05">разные</span></span></span>
+          <span class="mask"><span class="mu" data-at="hook:навыки">навыки</span></span>
+        </div>
+      </div>
+      <div class="vs">
+        <div class="side pp" data-at="hook:болезнь">
+          <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12h18a6 6 0 0 1 6 6v36a5 5 0 0 0-5-5H10z"/><path d="M54 12H38a6 6 0 0 0-6 6v36a5 5 0 0 1 5-5h17z"/><path d="M17 22h10M17 30h10M39 22h9M39 30h9"/></svg>
+          учебник
+        </div>
+        <div class="ne pp" data-at="hook:это">≠</div>
+        <div class="side on pp" data-at="hook:пациента">
+          <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8v14a12 12 0 0 0 24 0V8"/><path d="M28 34v8a12 12 0 0 0 24 0v-6"/><circle cx="52" cy="31" r="5"/><path d="M12 8h8M36 8h8"/></svg>
+          пациент
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ECG sweep transition -->
+  <svg class="sweep" viewBox="0 0 1080 360"><path class="p" data-at="brand" data-dt="-0.55" d="M-20 180H400l30-70 50 220 45-290 45 250 30-110h470"/></svg>
+
+  <!-- 2. BRAND -->
+  <section class="scene" data-scene="brand">
+    <div class="cam">
+      <div class="brand-wrap">
+        <div class="pp" data-at="brand" data-dt="-0.05">
+          <div class="logo"><svg viewBox="96 96 320 320"><path data-at="brand" data-dt="0.05" d="M136 270h66l29-66 47 132 31-66h75"/></svg></div>
+        </div>
+        <div class="title fu" data-at="brand:Хэлп" data-dt="0.15">Help me, <em>Doctor</em></div>
+        <div class="subtitle">
+          <span class="fu" style="display:inline-block" data-at="brand:тренажёр">тренажёр врача</span><br>
+          <span class="pill pp" style="margin-top:22px" data-at="brand:виртуальными">с ИИ-пациентами</span>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="chip pp" data-at="brand:тренажёр" data-dt="0.10"><i>+</i> Терапия</span>
+        <span class="chip pp" data-at="brand:тренажёр" data-dt="0.22"><i>+</i> Кардиология</span>
+        <span class="chip pp" data-at="brand:тренажёр" data-dt="0.34"><i>+</i> Хирургия</span>
+        <span class="chip pp" data-at="brand:тренажёр" data-dt="0.46"><i>+</i> Педиатрия</span>
+        <span class="chip pp" data-at="brand:тренажёр" data-dt="0.58"><i>+</i> Неврология</span>
+        <span class="chip pp" data-at="brand:тренажёр" data-dt="0.70"><i>+</i> Скорая помощь</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. CHAT -->
+  <section class="scene" data-scene="chat">
+    <div class="cam">
+      <div class="phone">
+        <div class="ph-head">
+          <div class="ava">МЛ</div>
+          <div><div class="nm">Мирон Л., 47 лет</div><div class="sb">водитель · боль в животе</div></div>
+          <div class="live"><i></i>приём</div>
+        </div>
+        <div class="msgs">
+          <div class="m pt" data-at="chat" data-dt="0.15"><div class="bub"><span class="who">Пациент</span>Доктор, жжёт под ложечкой уже третью неделю. Сил нет.</div></div>
+          <div class="m dr" data-at="chat:чём"><div class="bub"><span class="who">Вы</span>Когда болит — натощак или после еды? Какие лекарства?</div></div>
+          <div class="m pt typing" data-at="chat:спросили" data-dt="0.25" data-to="chat:спросили" data-todt="0.95"><div class="bub"><div class="dots"><i></i><i></i><i></i></div></div></div>
+          <div class="m pt" data-at="chat:спросили" data-dt="1.1"><div class="bub"><span class="who">Пациент</span>Натощак хуже, поем — отпускает. От спины пью <span class="mark" data-at="chat:Текстом" data-dt="0.1">ибупрофен</span>, месяц уже.</div></div>
+          <div class="m dr" data-at="chat:голосом"><div class="bub"><div class="voice">
+            <div class="play"><svg width="26" height="30" viewBox="0 0 26 30"><path d="M2 2l22 13L2 28z" fill="#0d5c55"/></svg></div>
+            <div class="wave" id="wave"></div><div class="tm">0:04</div></div></div></div>
+        </div>
+        <div class="ph-in">
+          <div class="field">Задайте вопрос<span class="caret"></span></div>
+          <div class="mic"><div class="ring" data-at="chat:голосом" data-dt="-0.2"></div>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fbfaf6" stroke-width="2.4" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fbfaf6"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. EXAMS -->
+  <section class="scene" data-scene="exams">
+    <div class="cam">
+      <div class="h2 fu" data-at="exams" data-dt="0">Обследования<small>результаты — под скрытый диагноз</small></div>
+      <div class="tiles">
+        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.00" data-sel="exams:анализы"><div class="tsel"></div>
+          <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6h16M28 6v18L14 50a6 6 0 0 0 5 8h26a6 6 0 0 0 5-8L36 24V6"/><path d="M19 40h26"/></svg>
+          <div class="tl">Анализы<small>ОАК, биохимия</small></div><div class="chk pp"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#08201c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div></div>
+        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.08" data-sel="exams:УЗИ"><div class="tsel"></div>
+          <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 26a22 22 0 0 1 44 0L36 50h-8z"/><path d="M22 30a10 10 0 0 1 20 0M28 36a4 4 0 0 1 8 0"/></svg>
+          <div class="tl">УЗИ<small>брюшная полость</small></div><div class="chk pp"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#08201c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div></div>
+        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.16" data-sel="exams:ЭКГ"><div class="tsel"></div>
+          <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path class="ecgmini" d="M4 34h14l5-12 8 24 6-18 4 6h19"/></svg>
+          <div class="tl">ЭКГ<small>ритм, ишемия</small></div><div class="chk pp"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#08201c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div></div>
+        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.24" data-sel="exams:результаты" data-seldt="-0.15"><div class="tsel"></div>
+          <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="9"/><path d="M27 27l9 9a8 8 0 0 1 0 11l-3 3a8 8 0 0 0 0 11"/><path d="M42 40l12 12"/></svg>
+          <div class="tl">ФГДС<small>гастроскопия</small></div><div class="chk pp"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#08201c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div></div>
+        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.32" data-sel="99"><div class="tsel"></div>
+          <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="24"/><circle cx="32" cy="32" r="12"/><path d="M32 8v6M32 50v6M8 32h6M50 32h6"/></svg>
+          <div class="tl">КТ<small>с контрастом</small></div></div>
+        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.40" data-sel="99"><div class="tsel"></div>
+          <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="8" width="44" height="48" rx="8"/><path d="M32 16v32M22 22c4 2 6 2 10 0M22 32c4 2 6 2 10 0M42 22c-4 2-6 2-10 0M42 32c-4 2-6 2-10 0"/></svg>
+          <div class="tl">Рентген<small>грудная клетка</small></div></div>
+      </div>
+      <div class="result fu" data-at="exams:результаты">
+        <div class="lb">ФГДС · результат</div>
+        <div class="tx">Язвенный дефект 8&nbsp;мм в&nbsp;луковице ДПК</div>
+        <div class="row">
+          <span class="tag pp" data-at="exams:честные">H. pylori: +</span>
+          <span class="tag lock pp" data-at="exams:скрытый">
+            <svg width="26" height="28" viewBox="0 0 24 26" fill="none" stroke="#f6f4ee" stroke-width="3" stroke-linecap="round"><rect x="3" y="11" width="18" height="13" rx="3"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            диагноз: <span class="bl">язва ДПК</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. DIAGNOSIS + REVIEW -->
+  <section class="scene" data-scene="review">
+    <div class="cam">
+      <div class="dx fu" data-at="review" data-dt="0">
+        <div class="lb">Ваш диагноз</div>
+        <div class="tx"><span id="dxText"></span><span class="cur" id="dxCur"></span></div>
+        <div class="stamp st" data-at="review:диагноз" data-dt="0.35">ВЕРНО ✓</div>
+      </div>
+      <div class="rv fu" data-at="review:получаете">
+        <div class="top">
+          <div><div class="lb">ИИ-разбор приёма</div><div class="h">Разбор</div></div>
+          <div class="score"><span id="score">0,0</span><small> / 5</small></div>
+        </div>
+        <div class="bars">
+          <div class="bar"><span>Диагностика</span><div class="tr"><div class="fl" style="--w:.9" data-at="review:разбор" data-dt="0.1"></div></div><b>4,5</b></div>
+          <div class="bar"><span>Коммуникация</span><div class="tr"><div class="fl" style="--w:1" data-at="review:разбор" data-dt="0.25"></div></div><b>5</b></div>
+          <div class="bar"><span>Лечение</span><div class="tr"><div class="fl" style="--w:.8" data-at="review:разбор" data-dt="0.4"></div></div><b>4</b></div>
+        </div>
+        <div class="kr pp" data-at="review:клиническим">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#5cc0b0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+          <div>По клиническим рекомендациям Минздрава РФ<small>cr.minzdrav.gov.ru · КР «Язвенная болезнь»</small></div>
+        </div>
+        <div class="pts">
+          <div class="pt bad sr" data-at="review:упустили" data-dt="-0.1"><span class="ic">✕</span><span>Не спросили о чёрном стуле — признак кровотечения</span></div>
+          <div class="pt good sr" data-at="review:лечить" data-dt="-0.25"><span class="ic">✓</span><span>Эрадикация 14 дней: ИПП + амоксициллин + кларитромицин</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. FREE -->
+  <section class="scene" data-scene="free">
+    <div class="cam">
+      <div class="free">
+        <div class="two pp" data-at="free:Два" data-dt="-0.1">2</div>
+        <div class="l1 fu" data-at="free:пациента">пациента в&nbsp;день</div>
+        <div class="l2 fu" data-at="free:бесплатно" data-dt="-0.15"><span class="mark full" data-at="free:бесплатно" data-dt="0.1">бесплатно</span></div>
+        <div class="chip fi" data-at="free:бесплатно" data-dt="0.4">без карты · текстом и голосом</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. CTA -->
+  <section class="scene" data-scene="cta">
+    <div class="cam">
+      <div class="cta">
+        <div class="pp" data-at="cta" data-dt="-0.1"><div class="logo"><svg viewBox="96 96 320 320"><path data-at="cta" data-dt="0.05" d="M136 270h66l29-66 47 132 31-66h75"/></svg></div></div>
+        <div class="title fu" data-at="cta:Хэлп">Help me, <em>Doctor</em></div>
+        <div class="tag2 fu" data-at="cta:Доктор">тренажёр врача с ИИ-пациентами</div>
+        <div class="fu" data-at="cta:Доктор" data-dt="0.25"><div class="btn btnpulse">Принять пациента →</div></div>
+        <div class="url fu" data-at="cta:Ссылка" data-dt="-0.3">helpmedoctor.ru</div>
+        <div class="tg fu" data-at="cta:Ссылка" data-dt="-0.15">Telegram: <b>@helpmedoctor_aibot</b></div>
+        <div class="pp" data-at="cta:профиле"><div class="bio">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#191c1b" stroke-width="2.6" stroke-linecap="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+          ссылка в профиле</div></div>
+      </div>
+      <svg class="monitor" viewBox="0 0 1080 180" preserveAspectRatio="none"><path d="M0 100H180l20-40 30 90 30-120 26 100 20-30h170l20-40 30 90 30-120 26 100 20-30h170l20-40 30 90 30-120 26 100 20-30h200"/></svg>
+    </div>
+  </section>
+
+  <div id="stepper">
+    <div class="ind" id="ind"></div>
+    <div class="s"><b>1</b>Расспрос</div><div class="s"><b>2</b>Обследования</div><div class="s"><b>3</b>Диагноз</div><div class="s"><b>4</b>Разбор</div>
+  </div>
+  <div id="cap"></div>
+</div>
+
+<script>
+let TL = null;
+const clamp = (x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const eio = x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eout = x=>1-Math.pow(1-x,3);
+function L(k){return TL.lines.find(l=>l.key===k)}
+function resolve(spec){
+  if(spec==null) return null;
+  if(!isNaN(+spec)) return +spec;
+  const [k,w]=spec.split(':'); const l=L(k);
+  if(!w) return l.start;
+  const hit=l.words.find(x=>x[2].toLowerCase().replace(/[^а-яёa-z]/g,'')===w.toLowerCase());
+  if(!hit) throw new Error('no word '+spec);
+  return hit[0];
+}
+function init(tl){
+  TL=tl;
+  const keys=TL.lines.map(l=>l.key);
+  // scenes: in a bit before their line, out just before the next scene comes in
+  const ins=keys.map((k,i)=>i===0?0:L(k).start-0.28);
+  document.querySelectorAll('.scene').forEach(s=>{
+    const i=keys.indexOf(s.dataset.scene);
+    s.style.setProperty('--in',ins[i]);
+    s.style.setProperty('--out',i+1<keys.length?ins[i+1]-0.12:999);
+  });
+  document.querySelectorAll('[data-at]').forEach(e=>{
+    e.style.setProperty('--at',resolve(e.dataset.at)+(+e.dataset.dt||0));
+  });
+  document.querySelectorAll('[data-to]').forEach(e=>e.style.setProperty('--to',resolve(e.dataset.to)+(+e.dataset.todt||0)));
+  document.querySelectorAll('[data-sel]').forEach(e=>e.style.setProperty('--sel',resolve(e.dataset.sel)+(+e.dataset.seldt||0)));
+  // voice wave bars
+  const wv=document.getElementById('wave');
+  for(let i=0;i<16;i++){const b=document.createElement('i');b.style.setProperty('--h',(18+Math.abs(Math.sin(i*1.7))*44)+'px');b.style.setProperty('--d',-(i*.13));wv.appendChild(b)}
+  // captions: chunk words of selected lines
+  CH=[];
+  for(const k of ['chat','exams','review']){
+    const ws=L(k).words; let cur=[];
+    ws.forEach((w,i)=>{cur.push(w);
+      const gapNext = i+1<ws.length ? ws[i+1][0]-(w[0]+w[1]) : 9;
+      if(cur.length>=3 || gapNext>0.25 || i===ws.length-1){CH.push({words:cur,start:cur[0][0],end:(i+1<ws.length?Math.min(ws[i+1][0],w[0]+w[1]+0.6):w[0]+w[1]+0.5)});cur=[]}
+    });
+  }
+  document.querySelectorAll('.mark.full').forEach(m=>{const t=m.textContent;m.innerHTML='<span class="b">'+t+'</span><span class="f">'+t+'</span>'});
+  window.ready=true;
+}
+let CH=[];
+const DX='Язва ДПК на фоне НПВП';
+function seek(t){
+  for(const a of document.getAnimations()){a.pause();a.currentTime=t*1000}
+  // stepper
+  const st=document.getElementById('stepper'), ind=document.getElementById('ind');
+  const s0=L('chat').start-0.28, s1=L('review').end+0.2;
+  st.style.opacity = clamp((t-s0)/0.4)*clamp((s1+0.3-t)/0.3);
+  st.style.transform = `translateY(${(1-eout(clamp((t-s0)/0.5)))*-30}px)`;
+  const marks=[s0, L('exams').start-0.3, resolve('review'), resolve('review:разбор')-0.1];
+  let pos=0; marks.forEach((m,i)=>{ if(i>0) pos+=eio(clamp((t-m)/0.45)); });
+  const pills=[...st.querySelectorAll('.s')];
+  const r=pills.map(p=>({x:p.offsetLeft,w:p.offsetWidth}));
+  const i0=Math.floor(pos), f=pos-i0, a=r[i0], b=r[Math.min(i0+1,3)];
+  ind.style.left=(a.x+(b.x-a.x)*f-6)+'px'; ind.style.width=(a.w+(b.w-a.w)*f+12)+'px';
+  pills.forEach((p,i)=>{const on=1-clamp(Math.abs(pos-i)); p.style.color=on>.5?'#ecebe5':(i<pos?'#5cc0b0':'#9ba39e')});
+  // diagnosis typewriter
+  const d0=resolve('review')+0.15, d1=resolve('review:диагноз')+0.25;
+  const n=Math.round(DX.length*clamp((t-d0)/(d1-d0)));
+  document.getElementById('dxText').textContent=DX.slice(0,n);
+  document.getElementById('dxCur').style.opacity = (t<d1+0.1 || Math.floor(t*2)%2===0) && t<d1+1.2 ? 1 : 0;
+  // score counter
+  const c0=resolve('review:разбор')+0.05;
+  const v=4.5*eout(clamp((t-c0)/1.0));
+  document.getElementById('score').textContent=v.toFixed(1).replace('.',',');
+  // captions
+  const cap=document.getElementById('cap');
+  const ch=CH.find(c=>t>=c.start-0.05&&t<c.end);
+  if(!ch){cap.innerHTML='';return}
+  const pop=eout(clamp((t-ch.start+0.05)/0.18));
+  cap.innerHTML='<div class="ln" style="transform:scale('+(0.85+0.15*pop)+');opacity:'+pop+'">'+ch.words.map(w=>`<span class="w${t>=w[0]-0.03&&t<w[0]+Math.max(w[1],0.25)?' on':''}">${w[2]}</span>`).join('')+'</div>';
+}
+window.init=init; window.seek=seek;
+// preview mode: open file directly with ?play
+if(location.search.includes('play')){fetch('timeline.json').then(r=>r.json()).then(tl=>{init(tl);const t0=performance.now();const loop=()=>{seek((performance.now()-t0)/1000%TL.total);requestAnimationFrame(loop)};loop()})}
+</script>
+</body></html>
