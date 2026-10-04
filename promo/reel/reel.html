@@ -197,6 +197,15 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
 .tg{margin-top:16px;font:700 38px var(--sans);color:var(--muted-d)}
 .tg b{color:var(--green-l)}
 .bio{margin-top:52px;display:inline-flex;align-items:center;gap:16px;padding:20px 40px;border-radius:999px;background:var(--mark);color:var(--ink);font:800 42px var(--sans)}
+.cm{margin-top:70px;width:920px;border-radius:40px;background:var(--card);color:var(--ink);padding:30px 34px 34px;text-align:left;box-shadow:0 40px 100px -30px rgba(0,0,0,.85)}
+.cm-h{display:flex;align-items:center;gap:16px;font:700 38px var(--sans);color:var(--muted)}
+.cm-row{display:flex;align-items:center;gap:20px;margin-top:22px}
+.cm-in{flex:1;height:130px;border-radius:65px;background:var(--paper);border:3px solid #dcd7ca;display:flex;align-items:center;padding:0 44px;font:800 84px var(--sans);letter-spacing:.04em;color:var(--green)}
+.cm-cur{display:inline-block;width:6px;height:80px;background:var(--green);margin-left:8px}
+.send{position:relative;width:130px;height:130px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex:none}
+.send .ring{position:absolute;inset:-6px;border-radius:50%;border:6px solid var(--green-l);opacity:0;animation:ring 1s ease-out calc(var(--at)*1s) 3}
+.reply{margin-top:50px;font:700 56px var(--sans);color:var(--cream)}
+.reply .mark{background:none;animation:none;color:var(--mark)}
 .monitor{position:absolute;left:0;right:0;top:1640px;height:180px;opacity:.55}
 .monitor path{fill:none;stroke:var(--green-l);stroke-width:6;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:700 1900;animation:mon 1.6s linear 0s infinite;filter:drop-shadow(0 0 10px rgba(92,192,176,.9))}
 @keyframes mon{from{stroke-dashoffset:2600}to{stroke-dashoffset:0}}
@@ -258,7 +267,7 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
         <div class="pp" data-at="brand" data-dt="-0.05">
           <div class="logo"><svg viewBox="96 96 320 320"><path data-at="brand" data-dt="0.05" d="M136 270h66l29-66 47 132 31-66h75"/></svg></div>
         </div>
-        <div class="title fu" data-at="brand:Хэлп" data-dt="0.15">Help me, <em>Doctor</em></div>
+        <div class="title fu" data-at="brand" data-dt="0.1">Help me, <em>Doctor</em></div>
         <div class="subtitle">
           <span class="fu" style="display:inline-block" data-at="brand:тренажёр">тренажёр врача</span><br>
           <span class="pill pp" style="margin-top:22px" data-at="brand:виртуальными">с ИИ-пациентами</span>
@@ -313,10 +322,10 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
         <div class="tile pp" data-at="exams:Назначаете" data-dt="0.08" data-sel="exams:УЗИ"><div class="tsel"></div>
           <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 26a22 22 0 0 1 44 0L36 50h-8z"/><path d="M22 30a10 10 0 0 1 20 0M28 36a4 4 0 0 1 8 0"/></svg>
           <div class="tl">УЗИ<small>брюшная полость</small></div><div class="chk pp"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#08201c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div></div>
-        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.16" data-sel="exams:ЭКГ"><div class="tsel"></div>
+        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.16" data-sel="99"><div class="tsel"></div>
           <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path class="ecgmini" d="M4 34h14l5-12 8 24 6-18 4 6h19"/></svg>
           <div class="tl">ЭКГ<small>ритм, ишемия</small></div><div class="chk pp"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#08201c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div></div>
-        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.24" data-sel="exams:результаты" data-seldt="-0.15"><div class="tsel"></div>
+        <div class="tile pp" data-at="exams:Назначаете" data-dt="0.24" data-sel="exams:гастроскопию"><div class="tsel"></div>
           <svg class="ic" viewBox="0 0 64 64" fill="none" stroke="#5cc0b0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="9"/><path d="M27 27l9 9a8 8 0 0 1 0 11l-3 3a8 8 0 0 0 0 11"/><path d="M42 40l12 12"/></svg>
           <div class="tl">ФГДС<small>гастроскопия</small></div><div class="chk pp"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#08201c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div></div>
         <div class="tile pp" data-at="exams:Назначаете" data-dt="0.32" data-sel="99"><div class="tsel"></div>
@@ -330,8 +339,8 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
         <div class="lb">ФГДС · результат</div>
         <div class="tx">Язвенный дефект 8&nbsp;мм в&nbsp;луковице ДПК</div>
         <div class="row">
-          <span class="tag pp" data-at="exams:честные">H. pylori: +</span>
-          <span class="tag lock pp" data-at="exams:скрытый">
+          <span class="tag pp" data-at="exams:настоящего">H. pylori: +</span>
+          <span class="tag lock pp" data-at="exams:пациента">
             <svg width="26" height="28" viewBox="0 0 24 26" fill="none" stroke="#f6f4ee" stroke-width="3" stroke-linecap="round"><rect x="3" y="11" width="18" height="13" rx="3"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             диагноз: <span class="bl">язва ДПК</span></span>
         </div>
@@ -386,14 +395,14 @@ body{font-family:var(--sans);color:var(--cream);-webkit-font-smoothing:antialias
     <div class="cam">
       <div class="cta">
         <div class="pp" data-at="cta" data-dt="-0.1"><div class="logo"><svg viewBox="96 96 320 320"><path data-at="cta" data-dt="0.05" d="M136 270h66l29-66 47 132 31-66h75"/></svg></div></div>
-        <div class="title fu" data-at="cta:Хэлп">Help me, <em>Doctor</em></div>
-        <div class="tag2 fu" data-at="cta:Доктор">тренажёр врача с ИИ-пациентами</div>
-        <div class="fu" data-at="cta:Доктор" data-dt="0.25"><div class="btn btnpulse">Принять пациента →</div></div>
-        <div class="url fu" data-at="cta:Ссылка" data-dt="-0.3">helpmedoctor.ru</div>
-        <div class="tg fu" data-at="cta:Ссылка" data-dt="-0.15">Telegram: <b>@helpmedoctor_aibot</b></div>
-        <div class="pp" data-at="cta:профиле"><div class="bio">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#191c1b" stroke-width="2.6" stroke-linecap="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
-          ссылка в профиле</div></div>
+        <div class="title fu" data-at="cta" data-dt="0.1">Help me, <em>Doctor</em></div>
+        <div class="tag2 fu" data-at="cta" data-dt="0.25">тренажёр врача с ИИ-пациентами</div>
+        <div class="cm su" data-at="cta:комментариях" data-dt="-0.2">
+          <div class="cm-h"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#5f6662" stroke-width="2.2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Напишите в комментариях</div>
+          <div class="cm-row"><div class="cm-in"><span id="kw"></span><span class="cm-cur" id="kwCur"></span></div>
+            <div class="send"><div class="ring" data-at="cta:пришлём" data-dt="-0.1"></div><svg width="46" height="46" viewBox="0 0 24 24" fill="#fbfaf6"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg></div></div>
+        </div>
+        <div class="reply fu" data-at="cta:пришлём" data-dt="-0.15">и мы пришлём <span class="mark" data-at="cta:ссылку">ссылку</span> в ответ</div>
       </div>
       <svg class="monitor" viewBox="0 0 1080 180" preserveAspectRatio="none"><path d="M0 100H180l20-40 30 90 30-120 26 100 20-30h170l20-40 30 90 30-120 26 100 20-30h170l20-40 30 90 30-120 26 100 20-30h200"/></svg>
     </div>
@@ -472,6 +481,10 @@ function seek(t){
   const n=Math.round(DX.length*clamp((t-d0)/(d1-d0)));
   document.getElementById('dxText').textContent=DX.slice(0,n);
   document.getElementById('dxCur').style.opacity = (t<d1+0.1 || Math.floor(t*2)%2===0) && t<d1+1.2 ? 1 : 0;
+  // keyword typed into the comment field
+  const k0=resolve('cta:слово')+0.15, k1=resolve('cta:приём')+0.4, KW='ПРИЁМ';
+  document.getElementById('kw').textContent=KW.slice(0,Math.round(KW.length*clamp((t-k0)/(k1-k0))));
+  document.getElementById('kwCur').style.opacity=(t<k1||Math.floor(t*2.5)%2===0)?1:0;
   // score counter
   const c0=resolve('review:разбор')+0.05;
   const v=4.5*eout(clamp((t-c0)/1.0));

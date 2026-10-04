@@ -97,11 +97,12 @@ for kk in keys[2:]:
 add(sfx,drop-0.55,whoosh(0.75),0.4)          # ECG sweep
 add(sfx,drop+0.15,beep(1000),0.22); add(sfx,drop+0.5,beep(1000),0.12)
 add(sfx,L['cta']['start']+0.1,beep(1000),0.2)
+add(sfx,W('cta','приём')+0.45,pop(1200),0.35)  # «отправлено»
 add(sfx,T-1.4,beep(1000,0.9),0.1)          # final flat beep
 cs=L['chat']['start']
 for tt_ in [cs+0.15, W('chat','чём'), W('chat','спросили')+0.25, W('chat','спросили')+1.1, W('chat','голосом')]:
     add(sfx,tt_+0.05,pop(900),0.35)
-for tt_ in [W('exams','анализы'),W('exams','узи'),W('exams','экг'),W('exams','результаты')-0.15]:
+for tt_ in [W('exams','анализы'),W('exams','узи'),W('exams','гастроскопию'),W('exams','результаты')]:
     add(sfx,tt_+0.05,pop(1400),0.3)
 add(sfx,W('review','диагноз')+0.35+0.28,thud(),0.55)
 for tt_ in [W('review','клиническим'),W('review','упустили')-0.1,W('review','лечить')-0.25,W('free','два')-0.1]:
