@@ -1046,7 +1046,12 @@ await waitFor(() => sent("1062804986").some((m) => m.text.includes("дашбор
 const cron = await fetch(`${BASE}/__scheduled?cron=0+17+*+*+*`);
 assert.equal(cron.status, 200);
 assert.equal((await fetch(`${BASE}/__scheduled?cron=0+7+*+*+*`)).status, 200);
-step("админка и cron отвечают");
+// Итоги дня: дата без года, сначала воронка, ИИ — в процентах лимита
+assert.equal((await fetch(`${BASE}/__scheduled?cron=0+18+*+*+*`)).status, 200);
+const daily = await waitFor(() => sent("1326867567").find((m) => m.text.includes("Итоги дня")), "daily summary");
+assert.match(daily.text, /Итоги дня · \d{1,2} [а-я]+</);
+assert.ok(daily.text.includes("Воронка") && daily.text.includes("Пытались вернуть") && daily.text.includes("% дневного лимита") && !daily.text.includes("нейрон"));
+step("админка и cron отвечают; итоги дня с воронкой");
 
 ws.close();
 console.log("\nВсе проверки пройдены ✅");

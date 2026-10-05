@@ -108,7 +108,8 @@ function tiles(h, from, to) {
   const newUsers = n("SELECT COUNT(*) AS n FROM users WHERE registered_at >= ? AND registered_at < ?", from, to);
   return {
     new_users: newUsers,
-    active: n("SELECT COUNT(DISTINCT uid) AS n FROM events WHERE ts >= ? AND ts < ? AND uid != ''", from, to),
+    // Активный — сам что-то делал; напоминания, письма и автопродления (source = 'system') не в счёт
+    active: n("SELECT COUNT(DISTINCT uid) AS n FROM events WHERE ts >= ? AND ts < ? AND uid != '' AND COALESCE(source, '') != 'system'", from, to),
     patients: evCount("patient_ready"),
     finished: evCount("finish"),
     avg_rating: round(h.one("SELECT AVG(val) AS n FROM events WHERE type = 'evaluation' AND ts >= ? AND ts < ?", from, to)?.n, 2),
@@ -599,19 +600,54 @@ export function report(h, f) {
 // ---------------------------------------------------
 // Итоги дня
 // ---------------------------------------------------
-export function daySummary(h, day) {
+export async function daySummary(h, day) {
   const from = Date.parse(`${day}T00:00:00Z`) - MSK;
   const to = from + DAY;
   const t = tiles(h, from, to);
   const fb = h.one("SELECT COUNT(*) AS n, ROUND(AVG(rating), 1) AS avg FROM feedback WHERE ts >= ? AND ts < ?", from, to);
   const neurons = h.one("SELECT COALESCE(SUM(neurons), 0) AS n FROM ai_usage WHERE ts >= ? AND ts < ?", from, to).n;
+  // Попытки вернуть: напоминания в боте и письма «вернись»; вернулись — после этого сами что-то сделали в тот же день
+  const nudged = h.all("SELECT uid, MIN(ts) AS ts FROM events WHERE type IN ('reminder', 'winback') AND ts >= ? AND ts < ? AND uid != '' GROUP BY uid", from, to);
+  const returned = nudged.filter((r) => h.one("SELECT 1 AS x FROM events WHERE uid = ? AND ts > ? AND ts < ? AND COALESCE(source, '') != 'system' LIMIT 1", r.uid, r.ts, to)).length;
+  // Сайт — из Метрики (если подключена): визиты и посетители за день
+  let site = null;
+  const token = String(h.env?.YANDEX_METRIKA_TOKEN || "").trim();
+  if (token) {
+    const m = await metrikaFetch(h, { from, to }, token).catch(() => null);
+    const row = m?.days?.find((x) => x.day === day);
+    if (row) site = { visits: row.visits || 0, users: row.users || 0 };
+  }
   return {
-    new_users: t.new_users, active: t.active, finished: t.finished, avg_rating: t.avg_rating, revenue: t.revenue,
+    site, new_users: t.new_users, active: t.active, nudged: nudged.length, returned,
+    finished: t.finished, avg_rating: t.avg_rating, revenue: t.revenue,
     payments: h.one("SELECT COUNT(*) AS n FROM payments WHERE status = 'paid' AND updated_at >= ? AND updated_at < ?", from, to).n,
     quizzes: h.one("SELECT COUNT(*) AS n FROM events WHERE type = 'quiz_done' AND ts >= ? AND ts < ?", from, to).n,
-    feedback: fb.n, feedback_avg: fb.avg, neurons, usd: usd(neurons - AI_FREE_NEURONS_PER_DAY), over_free: neurons > AI_FREE_NEURONS_PER_DAY,
+    feedback: fb.n, feedback_avg: fb.avg, neurons, ai_pct: Math.round((neurons / AI_FREE_NEURONS_PER_DAY) * 100),
     errors: t.errors, tasks_due: h.one("SELECT COUNT(*) AS n FROM tasks WHERE due = ? AND status NOT IN ('done', 'rejected')", day).n,
   };
+}
+
+const MONTHS_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+/** «2026-10-04» → «4 октября» */
+export function dayTitle(day) {
+  const [, m, d] = String(day).split("-").map(Number);
+  return `${d} ${MONTHS_GEN[m - 1] || ""}`.trim();
+}
+
+/** Текст «Итоги дня» для админов: сначала воронка, потом приёмы, тесты, деньги, отзывы, ИИ */
+export function daySummaryText(d, day) {
+  const dec = (v) => String(v).replace(".", ",");
+  const lines = [`📊 <b>Итоги дня · ${dayTitle(day)}</b>`, "", "<b>Воронка</b>"];
+  if (d.site) lines.push(`🌐 Сайт: ${d.site.visits} визитов · ${d.site.users} посетителей`);
+  lines.push(`🆕 Регистраций: ${d.new_users}`, `👥 Активных: ${d.active}`);
+  lines.push(`🔔 Пытались вернуть: ${d.nudged}${d.nudged ? ` · вернулись ${d.returned}` : ""}`);
+  lines.push("", `🩺 Приёмов: ${d.finished}${d.finished && d.avg_rating != null ? ` (оценка ${dec(d.avg_rating)})` : ""}`);
+  lines.push(`📝 Тестов пройдено: ${d.quizzes}`, `💰 Выручка: ${d.revenue} ₽ (${d.payments} оплат)`);
+  lines.push(`⭐ Отзывов: ${d.feedback}${d.feedback_avg ? ` (средняя ${dec(d.feedback_avg)})` : ""}`);
+  lines.push(`🤖 ИИ: ${d.ai_pct}% дневного лимита`);
+  if (d.errors) lines.push(`⚠️ Ошибок: ${d.errors}`);
+  if (d.tasks_due) lines.push(`📌 Задач со сроком сегодня: ${d.tasks_due}`);
+  return lines.join("\n");
 }
 
 // ---------------------------------------------------
