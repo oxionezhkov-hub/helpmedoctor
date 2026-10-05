@@ -13,6 +13,20 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
   <meta name="apple-mobile-web-app-title" content="Help me, Doctor">
+  <script>
+    // helpmedoctor.ru открывается через прокси. Если он не отвечает (замечено с VPN) и кабинет не загрузился за 4 секунды —
+    // берём код приложения напрямую с Cloudflare, и приложение дальше ходит в API туда же (см. API_BASE в app.js)
+    window.__hmdDirect = "https://helpmedoctor.oxion-ezhkov.workers.dev";
+    if (location.hostname === "helpmedoctor.ru") setTimeout(function () {
+      if (window.__hmdBooted) return;
+      var main = document.querySelector("script[type=module]");
+      var s = document.createElement("script");
+      s.type = "module";
+      s.src = window.__hmdDirect + (main ? new URL(main.src).pathname + new URL(main.src).search : "/app.js");
+      window.__hmdApiBase = window.__hmdDirect;
+      document.head.appendChild(s);
+    }, 4000);
+  </script>
   <link rel="stylesheet" href="/app.css">
   <script>
     // Тема, выбранная на сайте или в приложении (общая настройка hmd_theme), — до отрисовки, без мигания

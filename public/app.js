@@ -149,11 +149,11 @@ function patAvatar(p, size = "") {
   const rating = p.last_rating ?? p.consultations?.at?.(-1)?.rating;
   const mood = rating == null ? "" : rating >= 4 ? "good" : rating < 3 ? "bad" : "";
   const q = new URLSearchParams({ v: "3", s: p.id || p.name || "", g: p.sex === "female" ? "f" : "m", a: String(parseInt(p.age, 10) || 0), ...(mood ? { m: mood } : {}) });
-  return html`<div class="pav face ${size}" style="--h:${hashHue(p.name)}"><img src="/api/face?${q}" alt="" loading="lazy"></div>`;
+  return html`<div class="pav face ${size}" style="--h:${hashHue(p.name)}"><img src="${API_BASE}/api/face?${q}" alt="" loading="lazy"></div>`;
 }
 /** Аватар врача: фото (из Telegram или своё) или первая буква имени */
 function userAvatar(p, cls = "") {
-  if (p.avatar?.id) return html`<img class="avatar ${cls}" src="/api/avatar/${p.avatar.id}" alt="">`;
+  if (p.avatar?.id) return html`<img class="avatar ${cls}" src="${API_BASE}/api/avatar/${p.avatar.id}" alt="">`;
   return html`<div class="avatar ${cls}">${initials(p.name)}</div>`;
 }
 
@@ -208,7 +208,7 @@ function etaState(kind, start, est, now = Date.now()) {
 function etaBox(kind, start, extraCls = "") {
   const est = etaEstimate(kind);
   const st = etaState(kind, start, est);
-  return html`<div class="eta ${extraCls}" id="eta-${kind}-${start}" data-eta="${kind}" data-start="${start}" data-est="${est}">
+  return html`<div class="eta ${extraCls}" id="eta-${kind}-${start}" data-eta="${kind}" data-eta-start="${start}" data-est="${est}">
     <div class="eta-top"><span class="eta-step">${st.step}</span><span class="eta-left">${st.left}</span></div>
     <div class="eta-bar"><i style="transform:scaleX(${st.frac.toFixed(4)})"></i></div></div>`;
 }
@@ -221,7 +221,7 @@ function tickEta() {
     const updText = now - etaTextAt > 250;
     if (updText) etaTextAt = now;
     els.forEach((el) => {
-      const st = etaState(el.dataset.eta, Number(el.dataset.start), Number(el.dataset.est), now);
+      const st = etaState(el.dataset.eta, Number(el.dataset.etaStart), Number(el.dataset.est), now);
       const bar = el.firstElementChild?.nextElementSibling?.firstElementChild;
       if (bar) bar.style.transform = `scaleX(${st.frac.toFixed(4)})`;
       if (updText) {
@@ -357,6 +357,7 @@ const ageText = (p) => (p.is_alien ? String(p.age) : `${p.age} ${plural(Number(p
 const patIcon = (p) => patAvatar(p);
 
 const timeText = (ts) => new Date(ts).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
+const shortDate = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "short" }).replace(".", "");
 const dateText = (ts) => new Date(ts).toLocaleDateString("ru", { day: "numeric", month: "long", ...(new Date(ts).getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}) });
 const initials = (name) => String(name || "Д").trim().slice(0, 1).toUpperCase();
 
@@ -367,6 +368,45 @@ class ApiError extends Error {
   constructor(message, status, code) { super(message); this.status = status; this.code = code; }
 }
 
+// ---------- Запасной путь к API ----------
+// helpmedoctor.ru открывается через прокси. Если прокси молчит (замечено с VPN), идём в воркер Cloudflare напрямую:
+// GET-запрос, который не ответил за 2 секунды, дублируем на прямой адрес; кто ответил первым — тот путь и держим до конца сессии.
+// POST не дублируем (нельзя дважды завершить приём) — он сразу идёт выбранным путём.
+const DIRECT_API = window.__hmdDirect || "https://helpmedoctor.oxion-ezhkov.workers.dev";
+const CAN_DIRECT = location.hostname === "helpmedoctor.ru";
+let API_BASE = window.__hmdApiBase || (CAN_DIRECT && sessionStore("hmd_api_direct") === "1" ? DIRECT_API : "");
+let apiProbed = !CAN_DIRECT || !!API_BASE;
+function useDirectApi() {
+  if (API_BASE) return;
+  API_BASE = DIRECT_API;
+  apiProbed = true;
+  sessionStore("hmd_api_direct", "1");
+  try { S.ws?.close(); } catch {}
+}
+async function apiFetch(method, path, init) {
+  const url = (base) => `${base}/api${path}`;
+  if (apiProbed || method !== "GET") return fetch(url(API_BASE), init);
+  return new Promise((resolve, reject) => {
+    let done = false, fails = 0, directStarted = false;
+    const win = (r, direct) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      if (direct) useDirectApi(); else apiProbed = true;
+      resolve(r);
+    };
+    // Ошибка одного пути не мешает другому; отказ — только если не ответили оба
+    const lose = (e) => { if (++fails === 2 && !done) reject(e); };
+    const tryDirect = () => {
+      if (directStarted || done) return;
+      directStarted = true;
+      fetch(url(DIRECT_API), init).then((r) => win(r, true), lose);
+    };
+    const timer = setTimeout(tryDirect, 2000);
+    fetch(url(""), init).then((r) => win(r, false), (e) => { lose(e); tryDirect(); });
+  });
+}
+
 async function api(method, path, body, opts = {}) {
   const headers = { "X-Client": IN_TG ? "miniapp" : "web" };
   if (S.token) headers.Authorization = `Bearer ${S.token}`;
@@ -375,7 +415,7 @@ async function api(method, path, body, opts = {}) {
   else if (body !== undefined) { headers["Content-Type"] = "application/json"; payload = JSON.stringify(body); }
   let r;
   try {
-    r = await fetch(`/api${path}`, { method, headers, body: payload, signal: opts.signal });
+    r = await apiFetch(method, path, { method, headers, body: payload, signal: opts.signal });
   } catch (e) {
     throw new ApiError("Нет соединения. Проверьте интернет.", 0, "network");
   }
@@ -762,7 +802,7 @@ function connectWs() {
   if (!S.token) return;
   try { S.ws?.close(); } catch {}
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  const ws = new WebSocket(`${proto}://${location.host}/api/ws?token=${encodeURIComponent(S.token)}`);
+  const ws = new WebSocket(API_BASE ? `${API_BASE.replace(/^http/, "ws")}/api/ws?token=${encodeURIComponent(S.token)}` : `${proto}://${location.host}/api/ws?token=${encodeURIComponent(S.token)}`);
   S.ws = ws;
   ws.onopen = () => {
     const wasDown = wsRetry > 0;
@@ -1359,6 +1399,8 @@ function viewPatient() {
   const closed = p.status === "closed";
   const consults = [...(p.consultations || [])].reverse();
   const never = !(p.consultations || []).length && !p.current;
+  // Пациент битвы: диагноз, оценка и разбор — только после итога битвы
+  const battleLock = !!(p.battle?.id && consults.length && !battleRevealed(p.battle.id));
 
   const y = renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="${S.route.q.from === "consult" ? `/consult/${p.id}` : "/patients"}" aria-label="Назад">${ic("back")}</button><h2 class="grow ellipsis">Карточка пациента</h2></div>
@@ -1371,21 +1413,22 @@ function viewPatient() {
         </div>
       </div>
       ${p.chief_complaint ? html`<div class="quote">${p.chief_complaint}</div>` : ""}
-      ${closed ? html`<div class="card flat" style="background:var(--surface-2)"><div class="tiny muted">ИСТИННЫЙ ДИАГНОЗ</div><b>${p.true_diagnosis}</b></div>` : ""}
+      ${closed && !battleLock ? html`<div class="card flat" style="background:var(--surface-2)"><div class="tiny muted">ИСТИННЫЙ ДИАГНОЗ</div><b>${p.true_diagnosis}</b></div>` : ""}
+      ${battleLock ? html`<a class="card flat row" href="#/battle/${p.battle.id}" style="text-decoration:none;color:inherit;background:var(--warn-soft)"><div class="tile warn">${ic("swords")}</div><div class="grow"><b>Пациент битвы</b><div class="small muted">Диагноз и разбор откроются после итога</div></div>${ic("chevron", "c-muted")}</a>` : ""}
       <div class="stack-sm">
         ${!closed ? html`<button class="btn lg block" data-start="${p.id}">${ic(IN_TG ? "chat" : "play")}<span>${p.current ? "Продолжить приём" : p.consultations?.length ? "Начать повторный приём" : "Начать приём"}${IN_TG ? " в чате" : ""}</span></button>` : ""}
-        ${closed ? html`<button class="btn block outline" data-reopen="${p.id}">${ic("repeat")}<span>Повторный приём</span></button>` : ""}
+        ${closed && !battleLock ? html`<button class="btn block outline" data-reopen="${p.id}">${ic("repeat")}<span>Повторный приём</span></button>` : ""}
         ${(p.conversation_history || []).length ? html`<a class="btn block ghost" href="#/consult/${p.id}">${ic("chat")}<span>${closed || IN_TG ? "История диалога" : "Открыть чат приёма"}</span></a>` : ""}
         ${never ? html`<button class="btn block danger" data-reject="${p.id}">Отказаться от пациента</button>` : ""}
       </div>
     </div>
 
-    ${quiz ? html`<a class="card tap row" href="#/quiz/${p.id}" style="text-decoration:none;color:inherit">
+    ${quiz && !battleLock ? html`<a class="card tap row" href="#/quiz/${p.id}" style="text-decoration:none;color:inherit">
       <div class="tile warn">${ic("quiz")}</div>
       <div class="grow"><b>Работа над ошибками</b><div class="small muted">${quiz.locked ? `${quiz.total} вопросов по вашим ошибкам · в премиуме` : quiz.status === "done" ? `Пройден: ${quiz.score} из ${quiz.total}` : `${quiz.answered} из ${quiz.total} вопросов`}</div></div>
       ${quiz.locked ? html`<span class="badge accent">${ic("gem")} премиум</span>` : ic("chevron", "c-muted")}</a>` : ""}
 
-    ${consults.length ? html`<div class="section-title">Приёмы</div>
+    ${consults.length && !battleLock ? html`<div class="section-title">Приёмы</div>
       ${consults.map((c, i) => html`<div class="card stack">
         <div class="row between"><b>Приём №${consults.length - i}</b><span class="tiny muted">${dateText(c.date)}</span></div>
         ${c.evaluating ? etaBox("evaluation", c.date) : evaluationBlock(c)}
@@ -2101,8 +2144,16 @@ async function finishConsult(p, body) {
     const t0 = Date.now();
     const res = await api("POST", `/patients/${p.id}/finish`, body);
     etaRecord("finish", Date.now() - t0);
-    S.evalStart = Date.now();
     haptic("success");
+    // Битва: ни оценки, ни диагноза — сразу экран ожидания соперника, итог откроется, когда закончат оба
+    if (p.battle?.id) {
+      closeSheet();
+      battleCache.delete(p.battle.id);
+      Promise.all([loadPatient(p.id), loadMe()]).catch(() => {});
+      go(`/battle/${p.battle.id}`);
+      return;
+    }
+    S.evalStart = Date.now();
     S.evalWaiting = p.id;
     openSheet(html`<h2 class="row-c">${ic("checkCircle", "c-ok")}Приём завершён</h2>
       <div class="msg from-patient" style="max-width:100%;margin-bottom:12px"><span class="txt" id="farewell-txt"></span></div>
@@ -2150,6 +2201,8 @@ async function pollEvaluation(id) {
 function onEvaluation(r) {
   scheduleRefresh(0);
   if (S.evalWaiting !== r.patient_id) {
+    // В битве оценку не показываем до итога — интрига
+    if (r.battle_id) { battleCache.delete(r.battle_id); if (S.route.name === "battle" && S.route.params.id === r.battle_id) viewBattle(true); return; }
     if (!r.fromPoll) toast(`Разбор приёма готов: ${Number(r.rating).toFixed(1)} из 5`, "ok");
     return;
   }
@@ -2660,7 +2713,7 @@ function bindAvatar() {
     btnBusy(label);
     try {
       const blob = await squareImage(f, 320);
-      const r = await fetch("/api/avatar", { method: "POST", headers: { Authorization: `Bearer ${S.token}`, "Content-Type": blob.type, "X-Client": IN_TG ? "miniapp" : "web" }, body: blob });
+      const r = await fetch(`${API_BASE}/api/avatar`, { method: "POST", headers: { Authorization: `Bearer ${S.token}`, "Content-Type": blob.type, "X-Client": IN_TG ? "miniapp" : "web" }, body: blob });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.error || "Не удалось загрузить фото");
       S.me.profile = data.profile;
@@ -2923,13 +2976,34 @@ async function copyText(text, okMsg = "Скопировано") {
 // ---------------------------------------------------
 let battlesData = null;
 const battleCache = new Map();
-const BATTLE_STATUS = { waiting: ["ждём соперника", "warn"], ready: ["соперник готов", "accent"], preparing: ["готовим пациента", "accent"], active: ["идёт", "accent"], finished: ["итог", ""], cancelled: ["отменена", ""], failed: ["не удалась", "danger"] };
+const BATTLE_STATUS = { waiting: ["ждём", "warn"], ready: ["выбор", "accent"], draft: ["выбор", "accent"], preparing: ["готовим", "accent"], active: ["идёт", "accent"], finished: ["итог", ""], cancelled: ["отменена", ""], failed: ["ошибка", "danger"] };
+const DIFF_LIST = [
+  { key: "easy", label: "Лёгкая", emoji: "🟢", hint: "типичная картина" },
+  { key: "medium", label: "Средняя", emoji: "🟡", hint: "отвлекающий симптом" },
+  { key: "medium_hard", label: "Сложная", emoji: "🟠", hint: "два похожих диагноза" },
+  { key: "hard", label: "Очень сложная", emoji: "🔴", hint: "редкая патология" },
+];
+const diffLabel = (k) => DIFF_LIST.find((x) => x.key === k)?.label || "";
+/** Итог битвы уже известен (тогда разбор приёма открыт). Не знаем — спрашиваем и перерисовываем карточку */
+const battleFetching = new Set();
+function battleRevealed(id) {
+  const b = battleCache.get(id);
+  if (b) return ["finished", "cancelled"].includes(b.status);
+  if (!battleFetching.has(id)) {
+    battleFetching.add(id);
+    api("GET", `/battles/${id}`).then((x) => {
+      battleCache.set(id, x);
+      if (S.route.name === "patient" && S.patients.get(S.route.params.id)?.patient?.battle?.id === id) viewPatient();
+    }).catch(() => {}).finally(() => battleFetching.delete(id));
+  }
+  return false;
+}
 const msText = (ms) => { const s = Math.round((Number(ms) || 0) / 1000); if (!s) return "—"; const m = Math.floor(s / 60); return m ? `${m} мин ${String(s % 60).padStart(2, "0")} с` : `${s} с`; };
 const battleShareText = "Вызываю тебя на битву «Кто круче?» в Help me, Doctor: один ИИ-пациент на двоих — кто поставит диагноз лучше?";
 
 function battleRules() {
-  return html`<div class="small fact">${ic("check", "c-ok")}<span>Вам обоим приходит один и тот же пациент</span></div>
-    <div class="small fact">${ic("check", "c-ok")}<span>Каждый принимает его сам: расспрос, анализы, осмотр, диагноз</span></div>
+  return html`<div class="small fact">${ic("check", "c-ok")}<span>По очереди вычёркиваете профессии — по последней будет пациент</span></div>
+    <div class="small fact">${ic("check", "c-ok")}<span>Пациент один на двоих, каждый принимает его сам</span></div>
     <div class="small fact">${ic("trophy", "c-warn")}<span>Побеждает оценка эксперта выше, при равной — кто быстрее</span></div>
     <div class="small fact">${ic("gem", "c-accent")}<span>Пациент битвы не тратит бесплатный лимит</span></div>`;
 }
@@ -2979,10 +3053,11 @@ async function viewBattles(fresh) {
     <div class="card ref-list">${d.battles.map((b) => {
       const st = b.status === "finished" ? (b.winner === "me" ? ["победа", "ok"] : b.winner === "draw" ? ["ничья", ""] : ["поражение", "danger"])
         : b.status === "waiting" && b.role === "invitee" ? ["вызов вам", "warn"] : BATTLE_STATUS[b.status] || [b.status, ""];
-      return html`<a class="ref-row tap" href="#/battle/${b.id}">
-        <div class="grow"><b>${b.opponent ? `Соперник — ${b.opponent.name}` : "Соперника ещё нет"}</b>
-          <div class="tiny muted">${dateText(b.created_at)}${b.patient ? ` · ${b.patient.name}, ${b.patient.age}` : ""}</div></div>
-        <div class="ref-sum"><span class="badge ${st[1]}">${st[0]}</span>${b.status === "finished" && b.me?.result ? html`<span class="tiny muted">${dec(Number(b.me.result.rating).toFixed(1))} : ${b.opponent?.result ? dec(Number(b.opponent.result.rating).toFixed(1)) : "—"}</span>` : ""}</div>
+      const prof = b.patient?.profession || b.draft?.pick || "";
+      return html`<a class="ref-row tap battle-row" href="#/battle/${b.id}">
+        <div class="grow battle-row-main"><b class="ellipsis">${b.opponent ? b.opponent.name : "Без соперника"}</b>
+          <div class="tiny muted ellipsis">${shortDate(b.created_at)}${prof ? ` · ${prof}` : ""}</div></div>
+        <div class="ref-sum">${b.status === "finished" && b.me?.result ? html`<b class="tiny">${dec(Number(b.me.result.rating).toFixed(1))} : ${b.opponent?.result ? dec(Number(b.opponent.result.rating).toFixed(1)) : "—"}</b>` : ""}<span class="badge ${st[1]}">${st[0]}</span></div>
       </a>`;
     })}</div>` : html`<div class="card center stack-sm"><div class="tile warn lg">${ic("trophy")}</div><b>Пока ни одной битвы</b><p class="small muted">Создайте битву и покажите однокурснику QR-код — посмотрим, кто круче.</p></div>`}
   </div>`);
@@ -3015,6 +3090,8 @@ async function viewBattle(fresh) {
   const isOwner = b.role === "owner";
   const op = b.opponent;
   const me = b.me;
+  // В подсказках — только имя: «Константин Константинопольский» ломает строки
+  const opName = String(op?.name || "").split(/\s+/)[0] || "Соперник";
   const versus = html`<div class="vs">
     <div class="vs-side">${userAvatar(S.me.profile)}<b class="ellipsis">Вы</b></div>
     <div class="vs-mid">${ic("swords")}</div>
@@ -3026,7 +3103,7 @@ async function viewBattle(fresh) {
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(battleShareText)}`;
     body = html`<div class="card stack center battle-wait">
         <b>${op ? `Ждём, когда ${op.name} примет реванш` : "Покажите QR-код сопернику"}</b>
-        <img class="qr" src="/api/qr?d=${encodeURIComponent(b.links.site)}" alt="QR-код битвы" width="220" height="220">
+        <img class="qr" src="${API_BASE}/api/qr?d=${encodeURIComponent(b.links.site)}" alt="QR-код битвы" width="220" height="220">
         <p class="small muted">${op ? "Мы отправили ему приглашение. Можно поторопить ссылкой:" : "Он наводит камеру — и сразу попадает в битву. Или отправьте ссылку:"}</p>
         <div class="ref-link"><span class="ellipsis">${link.replace(/^https?:\/\//, "")}</span><button class="btn sm" data-copy="${link}">${ic("copy")}<span>Копировать</span></button></div>
         <div class="ref-share">
@@ -3038,40 +3115,64 @@ async function viewBattle(fresh) {
       <button class="btn ghost block" id="battle-cancel">Отменить битву</button>`;
   } else if (b.status === "waiting") {
     body = html`<div class="card center stack-sm"><b>Подключаемся к битве…</b></div>`;
-  } else if (b.status === "ready") {
-    body = isOwner
-      ? html`<div class="card stack center"><b class="c-ok">Соперник подключился: ${op.name}</b><p class="small muted">Нажмите «Старт» — вам обоим придёт один и тот же пациент.</p>
-          <button class="btn block lg" id="battle-start">${ic("play")}<span>Старт</span></button></div>
-          <button class="btn ghost block" id="battle-cancel">Отменить битву</button>`
-      : html`<div class="card stack center"><b>Вы в битве. Соперник — ${b.owner_name}</b><div class="row-c small muted wait-pulse" style="justify-content:center"><span class="pulse"></span>Ждём, когда ${b.owner_name} нажмёт «Старт»</div></div>`;
+  } else if (b.status === "draft" && b.draft && !b.draft.pick) {
+    const d = b.draft;
+    const myTurn = d.turn === "me";
+    body = html`<div class="card stack battle-draft">
+        <div class="center"><b>${myTurn ? "Ваш ход: вычеркните профессию" : html`<span class="row-c" style="justify-content:center"><span class="pulse"></span>Ход: ${opName}</span>`}</b>
+          <div class="small muted">По очереди — пока не останется одна. По ней будет пациент.</div></div>
+        <div class="stack-sm">${d.options.map((name) => {
+          const ban = d.banned.find((x) => x.name === name);
+          return html`<button class="draft-opt ${ban ? "out" : ""}" ${ban || !myTurn ? "disabled" : ""} data-ban="${name}">
+            <span class="grow">${name}</span>${ban ? html`<span class="tiny muted">${ban.by === "me" ? "вы" : op?.name || "соперник"}</span>` : myTurn ? ic("x", "c-muted") : ""}</button>`;
+        })}</div>
+      </div>
+      <button class="btn ghost block" id="battle-cancel">Отменить битву</button>`;
+  } else if (b.status === "draft" && b.draft?.pick) {
+    const d = b.draft;
+    body = html`<div class="card stack center battle-draft">
+        <div class="tiny muted">ПРОФЕССИЯ</div><h2 class="battle-pick">${d.pick}</h2>
+        ${d.level_by === "me" ? html`<b>Выберите сложность</b>
+          <div class="stack-sm" style="text-align:left">${DIFF_LIST.map((x) => html`<button class="draft-opt" data-level="${x.key}"><span>${x.emoji}</span><span class="grow"><b>${x.label}</b><span class="tiny muted"> · ${x.hint}</span></span></button>`)}</div>`
+          : html`<div class="row-c small muted" style="justify-content:center"><span class="pulse"></span>${opName} выбирает сложность</div>`}
+      </div>`;
   } else if (b.status === "preparing") {
-    body = html`<div class="card stack center"><b>Готовим пациента для вас обоих…</b>${etaBox("patient", b.joined_at || Date.now())}</div>`;
+    body = html`<div class="card stack center"><b>Создаём пациента</b>
+      <div class="small muted">${b.draft?.pick || ""}${b.draft?.level ? ` · ${diffLabel(b.draft.level)}` : ""}</div>${etaBox("patient", b.joined_at || Date.now())}</div>`;
   } else if (b.status === "active") {
     const p = b.patient;
-    const myRes = me.result;
-    body = html`<div class="card stack">
-        <div class="row-c">${patAvatar({ id: me.patient_id, name: p.name, sex: p.sex, age: p.age })}<div class="grow"><b>${p.name}, ${p.age}</b><div class="small muted">«${p.chief_complaint}»</div></div></div>
-        ${myRes ? html`<div class="card flat center" style="background:var(--ok-soft)"><b>Ваш результат: ${dec(Number(myRes.rating).toFixed(1))} из 5 · ${msText(myRes.ms)}</b><div class="small muted">${op?.done ? "Подводим итог…" : `Ждём, когда ${op?.name || "соперник"} закончит приём`}</div></div>`
-          : html`<a class="btn block lg" href="#/patient/${me.patient_id}">${ic("steth")}<span>${IN_TG ? "Открыть пациента" : "Принять пациента"}</span></a>`}
-        <div class="small muted row-c">${op?.done ? html`${ic("check", "c-ok")}${op.name}: приём завершён` : html`<span class="pulse"></span>${op?.name || "Соперник"} ещё на приёме`}</div>
-      </div>
-      ${battleRules()}`;
+    const mp = S.me?.patients?.find((x) => x.id === me.patient_id);
+    const myDone = !!me.result || mp?.status === "closed";
+    body = myDone
+      ? html`<div class="card stack center battle-waiting">
+          <div class="battle-waiting-ic">${ic("swords")}</div>
+          <h2>${op?.done ? "Подводим итог…" : "Ждём соперника"}</h2>
+          <p class="small muted">${op?.done ? "Оба закончили — сравниваем результаты" : `Ваш приём завершён. Итог откроется, когда ${opName} закончит.`}</p>
+          <div class="row-c small muted" style="justify-content:center"><span class="pulse"></span>${op?.done ? "Эксперт сверяет приёмы" : `${opName} ещё на приёме`}</div>
+        </div>`
+      : html`<div class="card stack">
+          <div class="tiny muted">${[p.profession, diffLabel(b.draft?.level)].filter(Boolean).join(" · ").toUpperCase()}</div>
+          <div class="row-c">${patAvatar({ id: me.patient_id, name: p.name, sex: p.sex, age: p.age })}<div class="grow"><b>${p.name}, ${p.age}</b><div class="small muted">«${p.chief_complaint}»</div></div></div>
+          <button class="btn block lg" data-start="${me.patient_id}">${ic(IN_TG ? "chat" : "play")}<span>Начать приём</span></button>
+          <div class="small muted row-c">${op?.done ? html`${ic("check", "c-ok")}${opName} уже закончил` : html`<span class="pulse"></span>${opName} на приёме`}</div>
+        </div>`;
   } else if (b.status === "finished") {
     const mr = me.result;
     const orr = op?.result;
     const row = (label, a, c, better) => html`<tr><td class="muted">${label}</td><td class="${better === "me" ? "win" : ""}">${a}</td><td class="${better === "op" ? "win" : ""}">${c}</td></tr>`;
     const cmp = (a, c, higher = true) => (a == null || c == null || a === c ? null : (higher ? a > c : a < c) ? "me" : "op");
-    const corr = (r) => (!r ? "—" : r.correct === "yes" ? "верный" : r.correct === "partial" ? "частично" : r.correct === "none" ? "не поставлен" : "неверный");
+    const corr = (r) => (!r ? "—" : r.correct === "yes" ? "верный" : r.correct === "partial" ? "частично" : r.correct === "none" ? "нет" : "неверный");
     body = html`<div class="card stack center battle-result ${b.winner}">
         <div class="tile ${b.winner === "me" ? "ok" : b.winner === "draw" ? "accent" : "danger"} lg">${ic(b.winner === "me" ? "trophy" : b.winner === "draw" ? "handshake" : "swords")}</div>
         <h2>${b.winner === "me" ? "Вы победили!" : b.winner === "draw" ? "Ничья!" : "Победа за соперником"}</h2>
+        <div class="battle-score-big">${mr ? dec(Number(mr.rating).toFixed(1)) : "—"} <span class="muted">:</span> ${orr ? dec(Number(orr.rating).toFixed(1)) : "—"}</div>
         <p class="small muted">Диагноз: <b>${b.patient?.true_diagnosis || "—"}</b></p>
-        ${b.next_id && !b.next_mine ? html`<div class="badge warn">${ic("swords")} ${op?.name || "Соперник"} требует реванша!</div>` : ""}
+        ${b.next_id && !b.next_mine ? html`<div class="badge warn">${ic("swords")} ${opName} зовёт на реванш</div>` : ""}
       </div>
       <div class="card"><table class="battle-table">
-        <thead><tr><th></th><th>Вы</th><th>${op?.name || "Соперник"}</th></tr></thead>
+        <thead><tr><th></th><th>Вы</th><th class="ellipsis">${opName}</th></tr></thead>
         <tbody>
-          ${row("Оценка", mr ? `${dec(Number(mr.rating).toFixed(1))} / 5` : "—", orr ? `${dec(Number(orr.rating).toFixed(1))} / 5` : "—", cmp(mr?.rating, orr?.rating))}
+          ${row("Оценка", mr ? dec(Number(mr.rating).toFixed(1)) : "—", orr ? dec(Number(orr.rating).toFixed(1)) : "—", cmp(mr?.rating, orr?.rating))}
           ${row("Диагноз", corr(mr), corr(orr), null)}
           ${row("Время", mr ? msText(mr.ms) : "—", orr ? msText(orr.ms) : "—", mr && orr && Math.abs(mr.ms - orr.ms) >= 5000 ? cmp(mr.ms, orr.ms, false) : null)}
           ${row("Вопросов", mr?.questions ?? "—", orr?.questions ?? "—", null)}
@@ -3082,7 +3183,8 @@ async function viewBattle(fresh) {
         <button class="btn" id="battle-rematch">${ic("repeat")}<span>${!b.next_id ? "Реванш" : b.next_mine ? "К реваншу" : "Принять реванш"}</span></button>
         <button class="btn ghost" id="battle-new">${ic("swords")}<span>Новая битва</span></button>
       </div>
-      ${me.patient_id ? html`<a class="btn ghost block" href="#/patient/${me.patient_id}">Мой разбор приёма</a>` : ""}`;
+      ${me.patient_id ? html`<a class="card tap row" href="#/patient/${me.patient_id}" style="text-decoration:none;color:inherit">
+        <div class="tile accent">${ic("card")}</div><div class="grow"><b>Мой разбор от эксперта</b><div class="small muted">Оценка по шагам, КР Минздрава, чат с экспертом</div></div>${ic("chevron", "c-muted")}</a>` : ""}`;
   } else {
     body = html`<div class="card center stack-sm"><b>Битва отменена</b><button class="btn" id="battle-new">${ic("swords")}<span>Новая битва</span></button></div>`;
   }
@@ -3090,24 +3192,30 @@ async function viewBattle(fresh) {
   document.querySelectorAll("[data-copy]").forEach((el) => { el.onclick = () => { copyText(el.dataset.copy, "Ссылка скопирована"); goal("battle_copy"); }; });
   const sh = $("#battle-share");
   if (sh) sh.onclick = () => { navigator.share({ title: "Кто круче?", text: battleShareText, url: IN_TG ? b.links.bot : b.links.site }).catch(() => {}); goal("battle_share"); };
-  const st = $("#battle-start");
-  if (st) st.onclick = async () => {
-    btnBusy(st);
-    try { battleCache.set(id, await api("POST", `/battles/${id}/start`)); goal("battle_start"); viewBattle(); }
-    catch (e) { toast(e.message, "error"); btnBusy(st, false); }
-  };
   const cn = $("#battle-cancel");
   if (cn) cn.onclick = async () => {
     if (!(await confirmDialog("Отменить битву?", "Ссылка и QR-код перестанут работать.", "Отменить"))) return;
     try { await api("POST", `/battles/${id}/cancel`); battleCache.delete(id); battlesData = null; go("/battles"); } catch (e) { toast(e.message, "error"); }
   };
+  document.querySelectorAll("[data-ban]").forEach((el) => (el.onclick = async () => {
+    document.querySelectorAll("[data-ban]").forEach((x) => (x.disabled = true));
+    el.classList.add("out");
+    haptic();
+    try { battleCache.set(id, await api("POST", `/battles/${id}/ban`, { name: el.dataset.ban })); } catch (e) { toast(e.message, "error"); battleCache.delete(id); }
+    viewBattle(!battleCache.has(id));
+  }));
+  document.querySelectorAll("[data-level]").forEach((el) => (el.onclick = async () => {
+    btnBusy(el);
+    try { battleCache.set(id, await api("POST", `/battles/${id}/level`, { level: el.dataset.level })); goal("battle_start"); } catch (e) { toast(e.message, "error"); battleCache.delete(id); }
+    viewBattle(!battleCache.has(id));
+  }));
   const rm = $("#battle-rematch");
   if (rm) rm.onclick = (e) => (b.next_id ? go(`/battle/${b.next_id}`) : newBattle(e.currentTarget, id));
   const nb = $("#battle-new");
   if (nb) nb.onclick = (e) => newBattle(e.currentTarget);
 }
 
-const BATTLE_TOASTS = { joined: "Соперник подключился — жмите «Старт»", started: "Битва началась! Пациент ждёт", opponent_done: "Соперник закончил приём", finished: "Итог битвы готов", rematch: "Вам предлагают реванш", failed: "Не получилось подготовить пациента — нажмите «Старт» ещё раз" };
+const BATTLE_TOASTS = { joined: "Соперник в битве — ваш ход", started: "Пациент готов — битва началась", opponent_done: "Соперник закончил приём", finished: "Итог битвы готов", rematch: "Вас зовут на реванш", failed: "Пациент не создался — выберите сложность ещё раз" };
 
 function onBattleSync(msg) {
   battlesData = null;
@@ -3701,7 +3809,7 @@ function bindStudent() {
     btnBusy(label);
     try {
       const blob = await fitImage(f, 1600);
-      const r = await fetch("/api/student", { method: "POST", headers: { Authorization: `Bearer ${S.token}`, "Content-Type": blob.type, "X-Client": IN_TG ? "miniapp" : "web" }, body: blob });
+      const r = await fetch(`${API_BASE}/api/student`, { method: "POST", headers: { Authorization: `Bearer ${S.token}`, "Content-Type": blob.type, "X-Client": IN_TG ? "miniapp" : "web" }, body: blob });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.error || "Не удалось отправить фото");
       S.me.profile = data.profile;
@@ -3809,4 +3917,8 @@ function closeSheet(silent = false) {
   if (!silent && cb) cb();
 }
 
-boot();
+// Запасная копия приложения (app.html грузит её, если основная не ответила) не запускается второй раз
+if (!window.__hmdBooted) {
+  window.__hmdBooted = true;
+  boot();
+}

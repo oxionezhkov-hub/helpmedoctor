@@ -86,6 +86,8 @@ export class HubDO extends DurableObject {
     PT.initPartnerTables(this.sql);
     BL.initBloggerTables(this.sql);
     BT.initBattleTables(this.sql);
+    // Битва: выбор профессии вычёркиванием и сложности (JSON)
+    this.addColumn("battles", "draft", "TEXT");
     // Миграции: новые колонки в старых таблицах
     for (const [col, type] of Object.entries(USER_COLS)) this.addColumn("users", col, type);
     this.addColumn("payments", "amount", "REAL DEFAULT 0");
@@ -500,6 +502,8 @@ export class HubDO extends DurableObject {
   battleGet(id, uid) { return BT.battleGet(this, id, uid); }
   battleJoin(id, uid) { return BT.battleJoin(this, id, uid); }
   battleStart(id, uid) { return BT.battleStart(this, id, uid); }
+  battleBan(id, uid, name) { return BT.battleBan(this, id, uid, name); }
+  battleLevel(id, uid, level) { return BT.battleLevel(this, id, uid, level); }
   battleCancel(id, uid) { return BT.battleCancel(this, id, uid); }
   battleList(uid) { return BT.battleList(this, uid); }
   battlePatientReady(id, data) { return BT.battlePatientReady(this, id, data); }

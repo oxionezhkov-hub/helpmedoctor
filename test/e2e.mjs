@@ -963,19 +963,36 @@ assert.match(await qr.text(), /^<svg/);
 assert.equal((await fetch(`${BASE}/api/qr?d=${encodeURIComponent("https://evil.example/x")}`)).status, 400, "QR только для наших ссылок");
 assert.equal((await api(tb, "GET", `/battles/${bt.id}`)).data.role, null);
 r = await api(tb, "POST", `/battles/${bt.id}/join`);
-assert.equal(r.data.status, "ready");
+assert.equal(r.data.status, "draft");
 assert.equal(r.data.role, "guest");
-await waitFor(() => sent(BA).some((m) => m.text.includes("Соперник подключился")), "battle joined notify");
-assert.equal((await api(tb, "POST", `/battles/${bt.id}/start`)).status, 409, "стартует только создатель");
+await waitFor(() => sent(BA).some((m) => m.text.includes("в битве — ваш ход")), "battle joined notify");
+assert.ok(sent(BA).filter((m) => m.text.includes("в битве")).every((m) => m.text.length < 80), "уведомление короткое");
 assert.equal((await api(await login("9103"), "POST", `/battles/${bt.id}/join`)).status, 409, "третий лишний");
-r = await api(ta, "POST", `/battles/${bt.id}/start`);
+// Выбор профессии: 5 вариантов, вычёркивают по очереди — создатель, соперник, создатель, соперник
+let dr = r.data.draft;
+assert.equal(dr.options.length, 5);
+assert.equal(dr.turn, "opponent", "первым вычёркивает создатель");
+assert.equal((await api(tb, "POST", `/battles/${bt.id}/ban`, { name: dr.options[0] })).status, 409, "не в свой ход нельзя");
+const banOrder = [ta, tb, ta, tb];
+for (let i = 0; i < 4; i++) {
+  r = await api(banOrder[i], "POST", `/battles/${bt.id}/ban`, { name: dr.options[i] });
+  assert.equal(r.status, 200, JSON.stringify(r.data));
+}
+assert.equal((await api(ta, "POST", `/battles/${bt.id}/ban`, { name: dr.options[4] })).status, 409, "последнюю не вычеркнуть");
+dr = (await api(ta, "GET", `/battles/${bt.id}`)).data.draft;
+assert.equal(dr.pick, dr.options[4], "осталась одна профессия");
+assert.equal(dr.level_by, "me", "сложность выбирает тот, кто не вычёркивал последним");
+assert.equal((await api(tb, "POST", `/battles/${bt.id}/level`, { level: "hard" })).status, 409, "сложность — не за соперником");
+r = await api(ta, "POST", `/battles/${bt.id}/level`, { level: "easy" });
 assert.equal(r.status, 200, JSON.stringify(r.data));
+assert.equal(r.data.status, "preparing");
 bt = await waitFor(async () => { const x = (await api(ta, "GET", `/battles/${bt.id}`)).data; return x.status === "active" && x; }, "battle active", 20000);
 const btB = (await api(tb, "GET", `/battles/${bt.id}`)).data;
 assert.ok(bt.me.patient_id && btB.me.patient_id && bt.me.patient_id !== btB.me.patient_id);
 assert.equal(bt.patient.name, btB.patient.name, "один пациент на двоих");
 assert.equal(bt.patient.true_diagnosis, null, "диагноз скрыт до итога");
-await waitFor(() => sent(BB).some((m) => m.text.includes("Битва началась")), "battle started notify");
+await waitFor(() => sent(BB).some((m) => m.text.includes("битва началась")), "battle started notify");
+assert.equal(bt.patient.profession, dr.pick, "пациент по выбранной профессии");
 const meA = (await api(ta, "GET", "/me")).data;
 assert.ok(meA.patients.find((p) => p.id === bt.me.patient_id)?.battle === bt.id);
 for (const [tok, pid, dx] of [[ta, bt.me.patient_id, "Язва двенадцатиперстной кишки"], [tb, btB.me.patient_id, "Гастрит"]]) {
@@ -987,14 +1004,16 @@ bt = await waitFor(async () => { const x = (await api(ta, "GET", `/battles/${bt.
 const btB2 = (await api(tb, "GET", `/battles/${bt.id}`)).data;
 assert.ok(bt.me.result && bt.opponent.result && bt.patient.true_diagnosis);
 assert.equal({ me: "opponent", opponent: "me", draw: "draw" }[bt.winner], btB2.winner, "победитель один для обоих");
-await waitFor(() => [BA, BB].every((u) => sent(u).some((m) => m.text.includes("итог битвы"))), "battle result notify");
+await waitFor(() => [BA, BB].every((u) => sent(u).some((m) => /Победа|Поражение|Ничья/.test(m.text) && m.text.length < 80)), "battle result notify");
+assert.ok(![BA, BB].some((u) => sent(u).some((m) => m.text.includes("Разбор приёма") && m.text.includes(bt.patient.true_diagnosis))), "оценка не приходит до итога");
 // Реванш: второй предлагает, первому приходит вызов; первый жмёт «Реванш» — попадает в ту же битву
 const rm = (await api(tb, "POST", "/battles", { rematch_of: bt.id })).data;
 assert.equal(rm.status, "waiting");
-await waitFor(() => sent(BA).some((m) => m.text.includes("требует реванша")), "rematch notify");
+await waitFor(() => sent(BA).some((m) => m.text.includes("зовёт на реванш")), "rematch notify");
 const rmA = (await api(ta, "POST", "/battles", { rematch_of: bt.id })).data;
 assert.equal(rmA.id, rm.id, "реванш один на двоих");
-assert.equal(rmA.status, "ready");
+assert.equal(rmA.status, "draft", "реванш — снова выбор профессии");
+assert.equal(rmA.draft.options.length, 5);
 assert.equal((await api(ta, "GET", `/battles/${bt.id}`)).data.next_id, rm.id);
 const listA = (await api(ta, "GET", "/battles")).data;
 assert.equal(listA.score.wins + listA.score.losses + listA.score.draws, 1);
@@ -1004,8 +1023,20 @@ assert.equal((await api(tb, "POST", `/battles/${rm.id}/cancel`)).data.status, "c
 const bt3 = (await api(ta, "POST", "/battles")).data;
 await text("9104", `/start b_${bt3.id}`);
 await waitFor(() => sent("9104").some((m) => m.text.includes("Вы в битве")), "battle join via bot");
-assert.equal((await api(ta, "GET", `/battles/${bt3.id}`)).data.status, "ready");
-step("«Кто круче?»: QR и ссылка, подключение с уведомлением, старт, один пациент на двоих, итог, реванш, вызов через бота");
+assert.equal((await api(ta, "GET", `/battles/${bt3.id}`)).data.status, "draft");
+// Запасной путь: страница helpmedoctor.ru ходит в API воркера напрямую — CORS только для своего сайта (PUBLIC_URL)
+const SITE = "http://localhost:8787";
+let pre = await fetch(`${BASE}/api/me`, { method: "OPTIONS", headers: { Origin: SITE, "Access-Control-Request-Method": "GET", "Access-Control-Request-Headers": "authorization" } });
+assert.equal(pre.status, 204);
+assert.equal(pre.headers.get("access-control-allow-origin"), SITE);
+assert.match(pre.headers.get("access-control-allow-headers"), /Authorization/);
+pre = await fetch(`${BASE}/api/me`, { headers: { Origin: SITE, Authorization: `Bearer ${ta}` } });
+assert.equal(pre.status, 200);
+assert.equal(pre.headers.get("access-control-allow-origin"), SITE);
+pre = await fetch(`${BASE}/api/me`, { headers: { Origin: "https://evil.example", Authorization: `Bearer ${ta}` } });
+assert.equal(pre.headers.get("access-control-allow-origin"), null, "чужому сайту CORS не даём");
+assert.equal((await fetch(`${BASE}/app.js`, { headers: { Origin: SITE } })).headers.get("access-control-allow-origin"), SITE, "код приложения грузится с запасного адреса");
+step("«Кто круче?»: QR и ссылка, подключение, выбор профессии вычёркиванием и сложности, один пациент на двоих, итог, реванш, вызов через бота, короткие уведомления; CORS запасного пути");
 
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");

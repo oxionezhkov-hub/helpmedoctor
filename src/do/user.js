@@ -505,20 +505,22 @@ export class UserDO extends DurableObject {
   // «Кто круче?» — битва на одном пациенте (логика битвы — в HubDO, src/lib/battles.js)
   // ---------------------------------------------------
 
-  /** Создатель нажал «Старт»: пациент для битвы готовится в его очереди */
-  async battleGenerate(battleId) {
-    await this.enqueue({ type: "battle_patient", battleId, source: this.source() });
+  /** Профессия и сложность выбраны: пациент для битвы готовится в очереди создателя */
+  async battleGenerate(battleId, opts = {}) {
+    await this.enqueue({ type: "battle_patient", battleId, profession: opts.profession || null, complexity: opts.complexity || null, source: this.source() });
     return { queued: true };
   }
 
   async jobBattlePatient(job) {
     const prof = await this.profile();
-    const spec = pick(prof.specializations?.length ? prof.specializations : SPECIALIZATIONS["Терапевт"]);
-    // Сложность одна для обоих — средняя, чтобы битва была честной
-    const p = P.patientPrompt({ spec, profession: prof.profession, complexity: "medium", usedDiagnoses: [] });
+    // Профессию выбрали вычёркиванием, сложность — один из игроков; пациент один на двоих
+    const profession = SPECIALIZATIONS[job.profession] ? job.profession : null;
+    const spec = pick(profession ? SPECIALIZATIONS[profession] : prof.specializations?.length ? prof.specializations : SPECIALIZATIONS["Терапевт"]);
+    const complexity = ["easy", "medium", "medium_hard", "hard"].includes(job.complexity) ? job.complexity : "medium";
+    const p = P.patientPrompt({ spec, profession: profession || prof.profession, complexity, usedDiagnoses: [] });
     const data = await aiJson(this.env, { prompt: p.prompt, maxTokens: p.maxTokens, temperature: 0.95, kind: "patient", uid: prof.uid });
     validatePatient(data);
-    await this.hub().battlePatientReady(job.battleId, { ...data, spec });
+    await this.hub().battlePatientReady(job.battleId, { ...data, spec, profession, complexity });
   }
 
   /** Копия пациента битвы у этого игрока. Бесплатный лимит не тратит. Возвращает id пациента. */
@@ -975,7 +977,7 @@ export class UserDO extends DurableObject {
         tests: facts.tests.length, exams: facts.physicals.length, msgs: facts.doctorMessages.length,
         minutes: Math.round((Date.now() - (record.started_at || Date.now())) / 60000),
       });
-      return { farewell, true_diagnosis: fresh.true_diagnosis, consultation_number: fresh.consultations.length, patient_name: fresh.name };
+      return { farewell, true_diagnosis: fresh.true_diagnosis, consultation_number: fresh.consultations.length, patient_name: fresh.name, battle_id: fresh.battle?.id || null };
     });
   }
 
@@ -1080,10 +1082,11 @@ export class UserDO extends DurableObject {
     if (taskDone) await this.track("task_done", { id: prof.daily_task.id, desc: prof.daily_task.desc, xp: prof.daily_task.xp }, evSource);
     if (prof.streak !== prevStreak) await this.track(prof.streak > prevStreak ? "streak_up" : "streak_reset", { streak: prof.streak, before: prevStreak }, evSource);
 
-    if (job.origin !== "bot") {
+    // Битва: оценку и разбор не присылаем до итога — его пришлёт битва, когда закончат оба
+    if (job.origin !== "bot" && !fresh.battle?.id) {
       await this.pushNotify({ title: `✅ Разбор приёма готов — ${ev.rating}/5`, body: `${fresh.name}: ${fresh.true_diagnosis}. +${earned} XP`, url: `/app#/patient/${job.patId}`, tag: `ev-${job.patId}` }, { away: true });
     }
-    if (job.origin === "bot") {
+    if (job.origin === "bot" && !fresh.battle?.id) {
       const m = R.evaluation(this.env, result);
       await tg(this.env).send(prof.uid, m.text, m.kb);
       // Первый разобранный приём и отзыва ещё нет — сразу просим оценить тренажёр (на сайте это окно в листе завершения)

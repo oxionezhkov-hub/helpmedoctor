@@ -766,6 +766,29 @@ details.card[open] summary { margin-bottom: 12px; }
 .battle-table td:first-child { text-align: left; }
 .battle-table tr:last-child td { border-bottom: 0; }
 .battle-table td.win { color: var(--ok); font-weight: 700; }
-@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+/* Мои битвы: одна строка на битву, длинное имя обрезается, а не растягивает строку */
+.battle-row { min-width: 0; }
+.battle-row-main { min-width: 0; }
+.battle-row-main b { display: block; }
+.battle-row .ref-sum { flex-direction: row; align-items: center; gap: 8px; }
+.battle-row .ref-sum .badge { margin-top: 0; }
+.battle-table { table-layout: fixed; }
+.battle-table th { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Выбор профессии и сложности */
+.draft-opt { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 50px; padding: 10px 14px; border-radius: 14px; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text); font: inherit; font-size: 16px; text-align: left; cursor: pointer; transition: transform .12s, background .2s, opacity .2s; }
+.draft-opt:not(:disabled):active { transform: scale(.98); }
+.draft-opt:not(:disabled):hover { border-color: var(--accent); }
+.draft-opt:disabled { cursor: default; }
+.draft-opt.out { opacity: .5; background: var(--surface-2); }
+.draft-opt.out .grow { text-decoration: line-through; }
+.battle-pick { margin: 0; font-size: 26px; }
+.battle-score-big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+/* Ждём соперника: интрига до итога */
+.battle-waiting { padding: 28px 18px; }
+.battle-waiting h2 { margin: 0; }
+.battle-waiting-ic { width: 72px; height: 72px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--warn-soft); color: var(--warn); animation: battle-pulse 1.6s ease-in-out infinite; }
+.battle-waiting-ic .i { width: 34px; height: 34px; }
+@media (prefers-reduced-motion: reduce) { .pulse, .battle-waiting-ic { animation: none; } }
 .tile.danger { background: var(--danger-soft); color: var(--danger); }
 a.ref-row.tap { color: inherit; text-decoration: none; }
