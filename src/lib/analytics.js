@@ -3,6 +3,7 @@
 import { AI_CAP_DEFAULT, AI_DEFAULT_MODEL, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AI_MODELS, AI_ROUTING_DEFAULT, AI_STEPS, AI_USD_PER_1000_NEURONS, PLANS, SPECIALIZATIONS, DOCTOR_LEVELS } from "../config.js";
 import { mskDate, toTelegramHtml, utcDate } from "./util.js";
 import GENERATED_HISTORY from "../data/history.json" with { type: "json" };
+import { mdPlain } from "./md-plain.js";
 
 const DAY = 86400000;
 const MSK = 3 * 3600000;
@@ -108,8 +109,8 @@ function tiles(h, from, to) {
   const newUsers = n("SELECT COUNT(*) AS n FROM users WHERE registered_at >= ? AND registered_at < ?", from, to);
   return {
     new_users: newUsers,
-    // Активный — сам что-то делал; напоминания, письма и автопродления (source = 'system') не в счёт
-    active: n("SELECT COUNT(DISTINCT uid) AS n FROM events WHERE ts >= ? AND ts < ? AND uid != '' AND COALESCE(source, '') != 'system'", from, to),
+    // Активный — сам что-то делал; напоминания, письма, автопродления (source = 'system') и действия админа не в счёт
+    active: n("SELECT COUNT(DISTINCT uid) AS n FROM events WHERE ts >= ? AND ts < ? AND uid != '' AND COALESCE(source, '') NOT IN ('system', 'admin')", from, to),
     patients: evCount("patient_ready"),
     finished: evCount("finish"),
     avg_rating: round(h.one("SELECT AVG(val) AS n FROM events WHERE type = 'evaluation' AND ts >= ? AND ts < ?", from, to)?.n, 2),
@@ -608,7 +609,7 @@ export async function daySummary(h, day) {
   const neurons = h.one("SELECT COALESCE(SUM(neurons), 0) AS n FROM ai_usage WHERE ts >= ? AND ts < ?", from, to).n;
   // Попытки вернуть: напоминания в боте и письма «вернись»; вернулись — после этого сами что-то сделали в тот же день
   const nudged = h.all("SELECT uid, MIN(ts) AS ts FROM events WHERE type IN ('reminder', 'winback') AND ts >= ? AND ts < ? AND uid != '' GROUP BY uid", from, to);
-  const returned = nudged.filter((r) => h.one("SELECT 1 AS x FROM events WHERE uid = ? AND ts > ? AND ts < ? AND COALESCE(source, '') != 'system' LIMIT 1", r.uid, r.ts, to)).length;
+  const returned = nudged.filter((r) => h.one("SELECT 1 AS x FROM events WHERE uid = ? AND ts > ? AND ts < ? AND COALESCE(source, '') NOT IN ('system', 'admin') LIMIT 1", r.uid, r.ts, to)).length;
   // Сайт — из Метрики (если подключена): визиты и посетители за день
   let site = null;
   const token = String(h.env?.YANDEX_METRIKA_TOKEN || "").trim();
@@ -1211,6 +1212,14 @@ function runHistoryImport(h) {
  * Не дублирует: запись с тем же ключом, PR, уже привязанный к задаче (кроме статей блога — у них своя запись), и то же название.
  */
 function runHistorySync(h, items = GENERATED_HISTORY) {
+  // Задачи из PR, созданные до чистки markdown, показывали «**» и «###» — один раз переписываем описания
+  if (!h.getMeta("history_md_plain")) {
+    for (const t of h.all("SELECT id, descr FROM tasks WHERE created_by = 'system' AND descr LIKE '%**%' OR created_by = 'system' AND descr LIKE '%#%'")) {
+      const clean = mdPlain(t.descr);
+      if (clean !== t.descr) h.sql.exec("UPDATE tasks SET descr = ? WHERE id = ?", clean, t.id);
+    }
+    h.setMeta("history_md_plain", Date.now());
+  }
   const seen = new Set(h.getMeta("history_keys", []) || []);
   const before = seen.size;
   const now = Date.now();
