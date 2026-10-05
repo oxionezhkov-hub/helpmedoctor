@@ -140,12 +140,16 @@ function init(tl, meta) {
   TL = tl; meta.forEach((m) => (META[m.file.replace('.png', '').replace(/^\d+-/, '')] = m));
   const cam = document.getElementById('cam'), head = document.getElementById('head');
   const lines = TL.lines;
+  const rep = (x) => Object.entries(TL.replace || {}).reduce((s, [a, b]) => s.split(a).join(b), x);  // «вы» → «ты» и т. п.
+  const NSTEP = lines.filter((l) => SCENES[l.key].step !== '').length; let step = 0;
   lines.forEach((l, i) => {
-    const sc = SCENES[l.key];
+    const base = SCENES[l.key];  // l.only — оставить только эти кадры (короткая сцена), l.title — свой заголовок
+    const sc = { ...base, step: base.step === '' ? '' : ++step, title: rep(l.title || base.title),
+      shots: (l.only ? base.shots.filter((x) => l.only.includes(x.f)) : base.shots).map((x) => ({ ...x, tips: (x.tips || []).map((tp) => ({ ...tp, t: rep(tp.t), s: tp.s && rep(tp.s) })) })) };
     const a = i === 0 ? 0 : l.start - 0.45, b = i + 1 < lines.length ? lines[i + 1].start - 0.45 : TL.total;
     const W = sc.shots.reduce((s, x) => s + x.w, 0);
     let t = a;
-    const h = document.createElement('div'); h.className = 'h'; h.innerHTML = (sc.step !== '' ? `<div class="step"><b>${sc.step}</b>шаг из 12</div>` : `<div class="badge"><div class="logo"><svg viewBox="96 96 320 320"><path d="M136 270h66l29-66 47 132 31-66h75"/></svg></div>Help me, Doctor</div>`) + `<div class="title"${sc.small ? ' style="font-size:54px;white-space:nowrap"' : ''}>${sc.title}</div>`;
+    const h = document.createElement('div'); h.className = 'h'; h.innerHTML = (sc.step !== '' ? `<div class="step"><b>${sc.step}</b>шаг из ${NSTEP}</div>` : `<div class="badge"><div class="logo"><svg viewBox="96 96 320 320"><path d="M136 270h66l29-66 47 132 31-66h75"/></svg></div>Help me, Doctor</div>`) + `<div class="title"${sc.small ? ' style="font-size:54px;white-space:nowrap"' : ''}>${sc.title}</div>`;
       head.appendChild(h);
     sc.shots.forEach((s) => {
       const d = (b - a) * s.w / W;

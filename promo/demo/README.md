@@ -39,4 +39,17 @@ scripts/dev-local.sh stop && git checkout src/lib/mock-ai.js
 
 Устроено как `promo/reel/`: `demo.html` перематывается функцией `seek(t)` по таймингам слов озвучки (`timeline.json`), `render.mjs` рендерит кадры, `audio.py` синтезирует светлый поп 100 BPM и звуки (щелчки нажатий, «поп» подсказок, вжухи между шагами), музыка приглушается под голос.
 
+## Версии со своим голосом
+
+- `helpmedoctor-demo-a.mp4` (~53 с, на «вы»): «Хотите потренироваться и вести пациентов без риска для реальных людей?…», в конце — экран входа без голоса.
+- `helpmedoctor-demo-b.mp4` (~58 с, на «ты»): «Ты студент‑медик или начинающий врач…», в конце — «Заходи в Help me, Doctor…».
+
+Записи лежат в `own/a.ogg` и `own/b.ogg`, тайминги слов (faster-whisper) — в `own/*.words.json`. `own_voice.py` размечает сцены по номерам слов, исправляет написание в субтитрах и пишет `voice-a/` или `voice-b/` (`timeline.json` + обработанный `voice.wav`). Короткие сцены показывают только часть кадров (`only`), номера шагов считаются сами, во второй версии подсказки переведены на «ты».
+
+```bash
+VAR=a ./build.sh    # или VAR=b
+```
+
+Новая запись: положите `own/<v>.ogg`, получите тайминги (`faster-whisper`, `word_timestamps=True`) в `own/<v>.words.json` и разметьте сцены в `CFG` в `own_voice.py`.
+
 Шрифты: Inter, Literata, Manrope — SIL Open Font License.

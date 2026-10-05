@@ -1,7 +1,7 @@
 # Музыка и звуки для демо: светлый поп 100 BPM (C–G–Am–F), щелчки нажатий, «поп» подсказок, вжух на смене шага.
-import json, numpy as np, wave
-SR = 48000; tl = json.load(open('timeline.json')); T = tl['total']; N = int(T * SR)
-ev = json.load(open('events.json'))
+import json, os, numpy as np, wave
+SR = 48000; tl = json.load(open(os.environ.get('TL', 'timeline.json'))); T = tl['total']; N = int(T * SR)
+ev = json.load(open(os.environ.get('EVENTS', 'events.json')))
 rng = np.random.default_rng(11)
 mus = np.zeros(N); sfx = np.zeros(N)
 def add(buf, t, sig, g=1.0):
@@ -58,4 +58,4 @@ for e in ev:
     elif e['type'] == 'scene': add(sfx, e['t'] - .2, whoosh(), .28)
 def save(fn, x):
     x = np.clip(x, -1, 1); w = wave.open(fn, 'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
-save('music.wav', mus / np.max(np.abs(mus)) * .8); save('sfx.wav', sfx / max(1e-9, np.max(np.abs(sfx))) * .8); print('ok', len(ev), 'events')
+P = os.environ.get('PREFIX', ''); save(P + 'music.wav', mus / np.max(np.abs(mus)) * .8); save(P + 'sfx.wav', sfx / max(1e-9, np.max(np.abs(sfx))) * .8); print('ok', len(ev), 'events')

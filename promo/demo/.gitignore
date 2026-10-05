@@ -7,3 +7,5 @@ parts.txt
 *.log
 frames/
 events.json
+voice-*/*
+!voice-*/timeline.json

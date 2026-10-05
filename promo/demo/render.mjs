@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
 import { spawn } from 'child_process';
 import fs from 'fs';
 const dir = process.cwd();
-const tl = JSON.parse(fs.readFileSync('timeline.json','utf8'));
+const tl = JSON.parse(fs.readFileSync(process.env.TL || 'timeline.json','utf8'));
 const mode = process.argv[2] || 'shots';
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport:{width:1080,height:1920}, deviceScaleFactor:1 });
@@ -13,7 +13,7 @@ await page.goto('file://'+dir+'/demo.html');
 await page.evaluate(()=>document.fonts.ready);
 const meta = JSON.parse(fs.readFileSync('shots/meta.json','utf8')).meta;
 await page.evaluate(([tl, meta]) => window.init(tl, meta), [tl, meta]);
-fs.writeFileSync('events.json', JSON.stringify(await page.evaluate(() => window.events())));
+fs.writeFileSync(process.env.EVENTS || 'events.json', JSON.stringify(await page.evaluate(() => window.events())));
 if (mode==='shots') {
   const ts = process.argv.slice(3).map(Number);
   fs.mkdirSync('frames',{recursive:true});
