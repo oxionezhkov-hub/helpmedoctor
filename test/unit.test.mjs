@@ -547,3 +547,12 @@ test("«Кто круче?»: победитель по оценке, при р�
   assert.equal(decideWinner({ rating: 2 }, null), "owner", "второй не закончил");
   assert.equal(decideWinner(null, null), "draw");
 });
+
+test("итоги дня: дата без года, сначала воронка, ИИ в процентах лимита", async () => {
+  const { daySummaryText, dayTitle } = await import("../src/lib/analytics.js");
+  assert.equal(dayTitle("2026-10-04"), "4 октября");
+  const t = daySummaryText({ site: { visits: 120, users: 95 }, new_users: 3, active: 5, nudged: 11, returned: 2, finished: 1, avg_rating: 4.2, quizzes: 0, revenue: 0, payments: 0, feedback: 1, feedback_avg: 5, ai_pct: 2, errors: 0, tasks_due: 0 }, "2026-10-04");
+  assert.ok(t.startsWith("📊 <b>Итоги дня · 4 октября</b>"));
+  assert.ok(t.indexOf("Сайт: 120 визитов") < t.indexOf("Регистраций: 3") && t.indexOf("Регистраций") < t.indexOf("Приёмов"));
+  assert.ok(t.includes("Пытались вернуть: 11 · вернулись 2") && t.includes("ИИ: 2% дневного лимита") && !t.includes("нейрон"));
+});

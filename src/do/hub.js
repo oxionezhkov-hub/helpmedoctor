@@ -240,10 +240,12 @@ export class HubDO extends DurableObject {
       "INSERT INTO events (ts, day, hour, dow, uid, type, source, meta, dur, val) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       ts, p.day, p.hour, p.dow, uid, e.type, e.source || null, e.meta ? JSON.stringify(e.meta) : null, e.dur ?? null, e.val ?? null,
     );
+    // Напоминания, письма, автопродления (source = 'system') человек не делал сам — он от них не становится активным
+    const own = e.source !== "system";
     if (uid) {
-      this.sql.exec("INSERT OR IGNORE INTO active (day, uid) VALUES (?, ?)", p.day, uid);
-      if (e.summary) this.upsertUser(uid, { ...e.summary, last_active: Math.max(ts, e.summary.last_active || 0), ...(e.source ? { last_source: e.source } : {}) });
-      else this.sql.exec("UPDATE users SET last_active = MAX(COALESCE(last_active, 0), ?) WHERE uid = ?", ts, uid);
+      if (own) this.sql.exec("INSERT OR IGNORE INTO active (day, uid) VALUES (?, ?)", p.day, uid);
+      if (e.summary) this.upsertUser(uid, { ...e.summary, ...(own ? { last_active: Math.max(ts, e.summary.last_active || 0) } : {}), ...(own && e.source ? { last_source: e.source } : {}) });
+      else if (own) this.sql.exec("UPDATE users SET last_active = MAX(COALESCE(last_active, 0), ?) WHERE uid = ?", ts, uid);
     }
     if (e.type === "finish") this.bump("consultations");
     if (e.type === "quiz_done") this.bump("quizzes");
@@ -910,12 +912,8 @@ export class HubDO extends DurableObject {
   /** Итоги дня (cron 21:00 МСК) */
   async dailySummary() {
     const t = mskDate();
-    const d = A.daySummary(this, t);
-    const text = `📊 <b>Итоги дня · ${t}</b>\n\n` +
-      `🆕 Новых: ${d.new_users}\n👥 Активных: ${d.active}\n🩺 Приёмов: ${d.finished} (оценка ${d.avg_rating ?? "—"})\n` +
-      `📝 Тестов пройдено: ${d.quizzes}\n💰 Выручка: ${d.revenue} ₽ (${d.payments} оплат)\n⭐ Отзывов: ${d.feedback}${d.feedback_avg ? ` (средняя ${d.feedback_avg})` : ""}\n` +
-      `🤖 ИИ: ${Math.round(d.neurons)} нейронов (≈ $${d.usd.toFixed(3)} сверх бесплатного лимита — ${d.over_free ? "да" : "нет"})` +
-      (d.errors ? `\n⚠️ Ошибок: ${d.errors}` : "") + (d.tasks_due ? `\n📌 Задач со сроком сегодня: ${d.tasks_due}` : "");
+    const d = await A.daySummary(this, t);
+    const text = A.daySummaryText(d, t);
     await this.notifyAdmin(text, "daily", { kb: [[{ text: "Открыть админку", url: this.adminUrl("/") }]] });
     // Напоминание о задачах со сроком сегодня — исполнителю
     for (const task of this.all("SELECT id, title, assignee FROM tasks WHERE due = ? AND status NOT IN ('done', 'rejected') AND assignee IS NOT NULL", t)) {
