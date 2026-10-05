@@ -102,6 +102,7 @@ const ICONS = {
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
   send: '<path d="M21 3 10 14"/><path d="M21 3 14 21l-4-7-7-4Z"/>',
   gem: '<path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M2 9h20M12 21 8 9l4-6 4 6-4 12"/>',
+  gift: '<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8S10.5 3 8 3.5 7 8 12 8Zm0 0s1.5-5 4-4.5S17 8 12 8Z"/>',
   pill: '<path d="m10.5 20.5 10-10a4.9 4.9 0 0 0-7-7l-10 10a4.9 4.9 0 0 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
   arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z"/>',
@@ -485,6 +486,8 @@ async function boot() {
     const qs = new URLSearchParams(window.__hmdQs ?? location.search);
     const handoff = qs.get("login");
     if (qs.get("from")) sessionStore("hmd_from", qs.get("from").slice(0, 40));
+    // Промокод из ссылки (/app?promo=КОД) — применим сразу после входа или регистрации
+    if (qs.get("promo")) sessionStore("hmd_promo", qs.get("promo").slice(0, 32));
     // Личная ссылка партнёра (?ref=r_<код>, или сохранённая сайтом) — метка уходит в регистрацию любым способом входа
     let refLabel = qs.get("ref") || "";
     try { if (!refLabel) { const saved = JSON.parse(localStorage.getItem("hmd_ref") || "null"); if (saved && Date.now() - saved.at < 30 * 86400000) refLabel = saved.r; } } catch {}
@@ -536,7 +539,36 @@ function goal(name, params) {
 }
 
 /** Пришли с сайта по кнопке тарифа (from=…_trial / _month …) — после входа сразу открываем тарифы */
+/** Промокод: из «Тарифов» или по ссылке /app?promo=КОД (сохраняется на время входа и регистрации) */
+async function redeemPromo(code, btn) {
+  code = String(code || "").trim();
+  if (!code) return toast("Введите промокод", "error");
+  if (btn) btnBusy(btn);
+  try {
+    S.promoAt = Date.now();
+    const r = await api("POST", "/promo", { code });
+    sessionStore("hmd_promo", "");
+    goal("promo_ok", { code: r.code });
+    haptic("success");
+    await loadMe().catch(() => {});
+    rerender(true);
+    openSheet(html`<div class="stack center notice-sheet">
+      <div class="tile ok lg" style="margin:0 auto">${ic("gift")}</div>
+      <h2>Промокод активирован</h2>
+      <p class="muted">+${r.days} ${plural(r.days, "день", "дня", "дней")} премиума${r.until ? ` — доступ до ${r.until}` : ""}. Пациенты без лимита, разбор по клиническим рекомендациям и тесты уже открыты.</p>
+      <button class="btn lg block" data-close-sheet>${ic("plus")}<span>Принять пациента</span></button></div>`, (el) => {
+      el.querySelector("[data-close-sheet]").onclick = () => { closeSheet(); go("/"); };
+    });
+  } catch (e) {
+    sessionStore("hmd_promo", "");
+    toast(e.message, "error");
+    if (btn && document.body.contains(btn)) btnBusy(btn, false);
+  }
+}
+
 function followIntent() {
+  const promo = sessionStore("hmd_promo");
+  if (promo && S.me?.profile) { redeemPromo(promo); return; }
   const from = sessionStore("hmd_from") || "";
   if (!/_(trial|week|month|quarter|year)$/.test(from) || !S.me?.profile?.onboarding_done || IN_TG) return;
   sessionStore("hmd_from", from.replace(/_(trial|week|month|quarter|year)$/, "_done"));
@@ -878,7 +910,8 @@ function onSync(msg) {
   }
   if (msg.scope === "profile" && msg.error) toast(msg.error, "error");
   if (msg.scope === "profile" && msg.notice) showNotice(msg.notice);
-  if (msg.scope === "profile" && msg.paid) paidNotice(msg.paid === "gift" ? "Подписка активирована!" : undefined);
+  // Промокод показывает своё окно — общее «Подписка активирована» поверх него не нужно
+  if (msg.scope === "profile" && msg.paid && !(msg.paid === "gift" && Date.now() - (S.promoAt || 0) < 15000)) paidNotice(msg.paid === "gift" ? "Подписка активирована!" : undefined);
   if (msg.scope === "patients" && msg.new_patient_id && Date.now() - S.expectNewPatient < 120000) {
     etaRecord("patient", Date.now() - S.expectNewPatient);
     S.expectNewPatient = 0;
@@ -3747,6 +3780,10 @@ function viewPlans(fresh) {
     ${order.length ? html`<div class="plans ${order.length === 1 ? "single" : ""}">${order.map(planCard)}</div>` : ""}
     ${p.has_sub ? "" : studentCard(p, o.student, ap)}
 
+    <details class="card promo-box" ${S.promoOpen ? "open" : ""}><summary class="row-c">${ic("gift", "c-accent")}<b>Есть промокод?</b></summary>
+      <form class="row" id="promo-form" style="margin-top:10px;gap:8px"><input class="input grow" id="promo-code" placeholder="Например: SOBOL" maxlength="32" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn" id="promo-go">Применить</button></form>
+    </details>
+
     ${consentBox()}
 
     ${Object.keys(o.packs || {}).length ? html`<div class="section-title">Разовые покупки</div>
@@ -3760,6 +3797,8 @@ function viewPlans(fresh) {
   bindConsent(root);
   root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = () => payFor(b.dataset.plan, b, root)));
   bindStudent();
+  const pf = $("#promo-form");
+  if (pf) pf.onsubmit = (e) => { e.preventDefault(); redeemPromo($("#promo-code").value, $("#promo-go")); };
   // Переход из другого раздела с конкретной покупкой (?buy=freeze) — сразу открываем её, а не всю страницу тарифов
   if (fresh && S.route.q.buy) checkout(S.route.q.buy);
   const off = $("#autopay-off");

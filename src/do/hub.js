@@ -13,6 +13,7 @@ import { emailHtml, sendEmail } from "../lib/email.js";
 import * as A from "../lib/analytics.js";
 import * as PT from "../lib/partners.js";
 import * as BL from "../lib/bloggers.js";
+import * as PR from "../lib/promos.js";
 import * as BT from "../lib/battles.js";
 
 const NOTIFY_KINDS = A.NOTIFY_KINDS;
@@ -86,6 +87,7 @@ export class HubDO extends DurableObject {
     PT.initPartnerTables(this.sql);
     BL.initBloggerTables(this.sql);
     BT.initBattleTables(this.sql);
+    PR.initPromoTables(this.sql);
     // Битва: выбор профессии вычёркиванием и сложности (JSON)
     this.addColumn("battles", "draft", "TEXT");
     // Миграции: новые колонки в старых таблицах
@@ -508,6 +510,8 @@ export class HubDO extends DurableObject {
   battleLevel(id, uid, level) { return BT.battleLevel(this, id, uid, level); }
   battleCancel(id, uid) { return BT.battleCancel(this, id, uid); }
   battleList(uid) { return BT.battleList(this, uid); }
+  // Промокоды (src/lib/promos.js)
+  promoRedeem(uid, code) { return PR.promoRedeem(this, uid, code); }
   battlePatientReady(id, data) { return BT.battlePatientReady(this, id, data); }
   battlePatientFailed(id) { return BT.battlePatientFailed(this, id); }
   battleResult(id, uid, result) { return BT.battleResult(this, id, uid, result); }
@@ -1159,7 +1163,7 @@ export class HubDO extends DurableObject {
   // API админки: один вход, чтобы не плодить RPC-методы
   // ---------------------------------------------------
   async admin(op, args = {}, adminId = "") {
-    const fn = A.ADMIN_OPS[op] || PARTNER_OPS[op] || BL.BLOGGER_OPS[op];
+    const fn = A.ADMIN_OPS[op] || PARTNER_OPS[op] || BL.BLOGGER_OPS[op] || PR.PROMO_OPS[op];
     if (!fn) throw new Error(`unknown admin op ${op}`);
     return fn(this, args, String(adminId));
   }
