@@ -40,7 +40,14 @@ export default {
       if (path.startsWith("/api/admin/")) return adminApi(request, env, url, ctx);
       // Прототип голосового приёма без входа (страница /test362861)
       if (path.startsWith("/api/proto/")) return protoApi(request, env, url);
-      if (path.startsWith("/api/")) return api(request, env, url);
+      if (path.startsWith("/api/")) {
+        // Сайт может ходить в API воркера напрямую (запасной путь, когда прокси helpmedoctor.ru молчит) — разрешаем CORS только своему сайту
+        const cors = corsFor(request, env);
+        if (cors && request.method === "OPTIONS") {
+          return new Response(null, { status: 204, headers: { ...cors, "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE", "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Client", "Access-Control-Max-Age": "86400" } });
+        }
+        return withCors(await api(request, env, url), cors);
+      }
       // Админка — отдельное одностраничное приложение в public/admin
       if (path === "/admin" || path === "/admin/") {
         return env.ASSETS.fetch(new Request(`${url.origin}/admin/`, request));
@@ -67,6 +74,8 @@ export default {
         res = new Response(res.body, res);
         res.headers.set("Cache-Control", "public, max-age=31536000, immutable");
       }
+      // Код приложения можно загрузить с запасного адреса со страницы сайта (модульный скрипт требует CORS)
+      if (path === "/app.js" || path === "/app.css") res = withCors(res, corsFor(request, env));
       // Запасной адрес *.workers.dev не должен попадать в поиск — только helpmedoctor.ru
       if (canonicalHost) return res;
       const out = new Response(res.body, res);
@@ -255,13 +264,15 @@ async function api(request, env, url) {
       const b = await readJson(request);
       return json(await hubStub(env).battleCreate(uid, { rematch_of: b.rematch_of ? String(b.rematch_of).slice(0, 12) : null }));
     }
-    const bm = /^\/battles\/([a-z0-9]{4,12})(?:\/(join|start|cancel))?$/.exec(path);
+    const bm = /^\/battles\/([a-z0-9]{4,12})(?:\/(join|start|cancel|ban|level))?$/.exec(path);
     if (bm) {
       const hub = hubStub(env);
       if (!bm[2] && method === "GET") return json(await hub.battleGet(bm[1], uid));
       if (bm[2] === "join" && method === "POST") return json(await hub.battleJoin(bm[1], uid));
       if (bm[2] === "start" && method === "POST") return json(await hub.battleStart(bm[1], uid));
       if (bm[2] === "cancel" && method === "POST") return json(await hub.battleCancel(bm[1], uid));
+      if (bm[2] === "ban" && method === "POST") return json(await hub.battleBan(bm[1], uid, String((await readJson(request)).name || "").slice(0, 60)));
+      if (bm[2] === "level" && method === "POST") return json(await hub.battleLevel(bm[1], uid, String((await readJson(request)).level || "").slice(0, 20)));
     }
     // --- Партнёрская программа ---
     if (path === "/partner" && method === "GET") {
@@ -570,6 +581,19 @@ async function readJson(request) {
 const MAIN_HOST = "helpmedoctor.ru";
 
 /** helpmedoctor.ru приходит через прокси на VPS: nginx передаёт исходный хост в X-Forwarded-Host */
+/** CORS только для своего сайта (PUBLIC_URL): запросы со страницы helpmedoctor.ru на запасной адрес воркера */
+function corsFor(request, env) {
+  const origin = request.headers.get("Origin");
+  const site = String(env.PUBLIC_URL || "").replace(/\/$/, "");
+  return origin && site && origin === site ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : null;
+}
+function withCors(res, cors) {
+  if (!cors || res.status === 101 || res.webSocket) return res;
+  const out = new Response(res.body, res);
+  for (const [k, v] of Object.entries(cors)) k === "Vary" ? out.headers.append(k, v) : out.headers.set(k, v);
+  return out;
+}
+
 function isCanonicalHost(request) {
   const fwd = (request.headers.get("X-Forwarded-Host") || "").toLowerCase();
   const host = new URL(request.url).hostname.toLowerCase();

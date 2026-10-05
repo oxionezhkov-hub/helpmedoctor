@@ -1,8 +1,10 @@
 // «Кто круче?» — битва двух врачей на одном пациенте. Хранится в SQLite HubDO.
-// Создатель делится QR-кодом или ссылкой → соперник подключается (создателю приходит уведомление) →
-// создатель жмёт «Старт» → один пациент готовится в очереди создателя и копируется обоим →
+// Создатель делится QR-кодом или ссылкой → соперник подключается → обоим выпадает 5 случайных профессий,
+// по очереди вычёркивают (создатель, соперник, создатель, соперник) → по оставшейся профессии будет пациент;
+// сложность выбирает тот, кто не вычёркивал последним → один пациент готовится в очереди создателя и копируется обоим →
 // каждый принимает своего, после разбора результат приходит сюда → побеждает оценка выше, при равенстве — кто быстрее.
-// Потом — реванш (то же двое, соперник получает приглашение) или новая битва.
+// Потом — реванш (то же двое, снова выбор профессии) или новая битва.
+import { DIFFICULTIES, SPECIALIZATIONS } from "../config.js";
 import { refBind, refCode } from "./partners.js";
 import { UserError } from "./util.js";
 
@@ -11,6 +13,31 @@ const HOUR = 3600000;
 const ACTIVE_TTL = 48 * HOUR; // идущая битва без результата одного из игроков — итог через 48 часов
 const WAIT_TTL = 7 * 24 * HOUR; // никто не подключился за неделю — битва отменяется
 const TIE_MS = 5000; // разница во времени меньше 5 секунд — ничья
+const DRAFT_SIZE = 5; // столько профессий выпадает на выбор
+
+/** Новый выбор: 5 случайных профессий, первым вычёркивает создатель */
+export function newDraft() {
+  const all = Object.keys(SPECIALIZATIONS);
+  const options = [];
+  while (options.length < Math.min(DRAFT_SIZE, all.length)) {
+    const x = all[crypto.getRandomValues(new Uint32Array(1))[0] % all.length];
+    if (!options.includes(x)) options.push(x);
+  }
+  return { options, banned: [], turn: "owner", pick: null, level_by: null, level: null };
+}
+
+/** Ход вычёркивания: возвращает новый драфт или бросает ошибку. Последняя оставшаяся — выбранная профессия */
+export function draftBan(d, role, name) {
+  if (d.pick) throw userErr("Профессия уже выбрана");
+  if (d.turn !== role) throw userErr("Сейчас ход соперника");
+  const left = d.options.filter((x) => !d.banned.some((b) => b.name === x));
+  if (!left.includes(name)) throw userErr("Эту профессию уже вычеркнули");
+  const banned = [...d.banned, { name, by: role }];
+  const rest = left.filter((x) => x !== name);
+  const other = role === "owner" ? "guest" : "owner";
+  if (rest.length === 1) return { ...d, banned, turn: null, pick: rest[0], level_by: other };
+  return { ...d, banned, turn: other };
+}
 
 export function initBattleTables(sql) {
   sql.exec(`
@@ -69,6 +96,8 @@ export function battleView(hub, b, uid) {
   const res = { owner: safeJson(b.owner_res), guest: safeJson(b.guest_res) };
   const finished = b.status === "finished";
   const pat = safeJson(b.patient);
+  const d = safeJson(b.draft);
+  const meRole = role === "owner" || role === "guest" ? role : null;
   const base = String(hub.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "");
   return {
     id: b.id, status: b.status, role, created_at: b.created_at, joined_at: b.joined_at, started_at: b.started_at, finished_at: b.finished_at,
@@ -78,8 +107,14 @@ export function battleView(hub, b, uid) {
     me: { ...(userName(hub, role === "invitee" ? uid : b[meKey]) || {}), patient_id: role === "owner" || role === "guest" ? b[`${meKey}_pat`] : null, result: role && role !== "invitee" ? res[meKey] : null },
     opponent: opUid ? { ...userName(hub, opUid), done: !!(role === "owner" ? res.guest : res.owner), result: finished ? (role === "owner" ? res.guest : res.owner) : null } : null,
     winner: finished ? (b.winner === "draw" ? "draw" : b.winner === meKey ? "me" : "opponent") : null,
-    patient: pat && b.started_at ? { name: pat.name, age: pat.age, sex: pat.sex, chief_complaint: pat.chief_complaint, specialty: pat.specialty, true_diagnosis: finished ? pat.true_diagnosis : null } : null,
+    patient: pat && b.started_at ? { name: pat.name, age: pat.age, sex: pat.sex, chief_complaint: pat.chief_complaint, specialty: pat.specialty, profession: pat.profession || d?.pick || null, true_diagnosis: finished ? pat.true_diagnosis : null } : null,
     owner_name: userName(hub, b.owner)?.name,
+    // Выбор профессии и сложности: чей ход — «me» или «opponent»
+    draft: d ? {
+      options: d.options, banned: d.banned.map((x) => ({ name: x.name, by: x.by === meRole ? "me" : "opponent" })),
+      turn: d.turn ? (d.turn === meRole ? "me" : "opponent") : null,
+      pick: d.pick, level_by: d.level_by ? (d.level_by === meRole ? "me" : "opponent") : null, level: d.level,
+    } : null,
     links: { site: `${base}/app?go=${encodeURIComponent(`/battle/${b.id}`)}`, bot: `https://t.me/${hub.env.BOT_USERNAME || "helpmedoctor_aibot"}?start=b_${b.id}` },
   };
 }
@@ -97,7 +132,12 @@ async function notify(hub, uid, payload) {
 async function expire(hub, b) {
   const now = Date.now();
   if (b.status === "active" && b.started_at && now - b.started_at > ACTIVE_TTL) return finish(hub, b, { expired: true });
-  if (["waiting", "ready"].includes(b.status) && now - b.created_at > WAIT_TTL) {
+  // Битвы до выбора профессии (статус ready, «Старт») — сразу в выбор
+  if (b.status === "ready") {
+    hub.sql.exec("UPDATE battles SET status = 'draft', draft = ? WHERE id = ? AND status = 'ready'", JSON.stringify(newDraft()), b.id);
+    b = load(hub, b.id);
+  }
+  if (["waiting", "draft"].includes(b.status) && now - b.created_at > WAIT_TTL) {
     hub.sql.exec("UPDATE battles SET status = 'cancelled', finished_at = ? WHERE id = ?", now, b.id);
     return load(hub, b.id);
   }
@@ -114,17 +154,19 @@ async function finish(hub, b, { expired = false } = {}) {
     const v = battleView(hub, fresh, fresh[role]);
     const me = v.me.result;
     const op = v.opponent?.result;
-    const head = v.winner === "me" ? "🏆 <b>Вы победили!</b>" : v.winner === "draw" ? "🤝 <b>Ничья!</b>" : `😤 <b>Победа за соперником — ${v.opponent?.name || "врач"}</b>`;
-    const line = (r) => (r ? `${String(r.rating).replace(".", ",")}/5${r.correct === "yes" ? " ✅" : r.correct === "partial" ? " ◐" : ""} · ${fmtMs(r.ms)}` : "не закончил");
+    const score = `${me ? rate(me.rating) : "—"} : ${op ? rate(op.rating) : "—"}`;
+    const head = v.winner === "me" ? "🏆 <b>Победа!</b>" : v.winner === "draw" ? "🤝 <b>Ничья</b>" : "😤 <b>Поражение</b>";
     await notify(hub, fresh[role], {
       kind: "finished", battle_id: fresh.id,
-      text: `⚔️ <b>Кто круче?</b> — итог битвы\n\n${head}\n\nВы: ${line(me)}\n${v.opponent?.name || "Соперник"}: ${line(op)}\n\nДиагноз: ${v.patient?.true_diagnosis || "—"}${expired ? "\n\n<i>Время битвы вышло — засчитан тот, кто успел.</i>" : ""}`,
-      button: { text: "⚔️ Реванш или новая битва", path: `/battle/${fresh.id}` },
+      text: `${head} ${score}${expired ? " · время вышло" : ""}`,
+      button: { text: "⚔️ Итог", path: `/battle/${fresh.id}` },
       push: { title: v.winner === "me" ? "🏆 Вы победили в битве" : v.winner === "draw" ? "🤝 Ничья в битве" : "⚔️ Битва окончена", body: `Вы ${me ? `${me.rating}/5` : "—"} · соперник ${op ? `${op.rating}/5` : "—"}` },
     });
   }
   return fresh;
 }
+
+const rate = (r) => String(Math.round(Number(r || 0) * 10) / 10).replace(".", ",");
 
 function fmtMs(ms) {
   const s = Math.round((Number(ms) || 0) / 1000);
@@ -160,8 +202,8 @@ export async function battleCreate(hub, uid, { rematch_of = null } = {}) {
     const me = userName(hub, uid);
     await notify(hub, other, {
       kind: "rematch", battle_id: id, rematch_of: old.id,
-      text: `⚔️ <b>${me.name} требует реванша!</b>\n\nТот же соперник, новый пациент. Принимаете вызов?`,
-      button: { text: "⚔️ Принять вызов", path: `/battle/${id}` },
+      text: `⚔️ ${me.name} зовёт на реванш`,
+      button: { text: "⚔️ Принять", path: `/battle/${id}` },
       push: { title: "⚔️ Вам бросили вызов", body: `${me.name} требует реванша в «Кто круче?»` },
     });
     return battleView(hub, b, uid);
@@ -190,7 +232,7 @@ export async function battleJoin(hub, id, uid) {
   if (b.status !== "waiting") throw userErr(b.status === "cancelled" ? "Эту битву отменили — попросите новую ссылку" : "В этой битве уже два врача");
   if (b.invitee && b.invitee !== uid) throw userErr("Этот реванш предложили другому врачу");
   const now = Date.now();
-  hub.sql.exec("UPDATE battles SET guest = ?, status = 'ready', joined_at = ? WHERE id = ? AND status = 'waiting'", uid, now, b.id);
+  hub.sql.exec("UPDATE battles SET guest = ?, status = 'draft', draft = ?, joined_at = ? WHERE id = ? AND status = 'waiting'", uid, JSON.stringify(newDraft()), now, b.id);
   b = load(hub, b.id);
   if (b.guest !== uid) throw userErr("В этой битве уже два врача");
   // Новичок пришёл по вызову — закрепляем за пригласившим, как по личной ссылке
@@ -201,24 +243,55 @@ export async function battleJoin(hub, id, uid) {
   const guest = userName(hub, uid);
   await notify(hub, b.owner, {
     kind: "joined", battle_id: b.id,
-    text: `⚔️ <b>Соперник подключился: ${guest.name}</b>\n\nНажмите «Старт» — вам обоим придёт один и тот же пациент. Побеждает тот, у кого оценка выше, а при равенстве — кто быстрее.`,
-    button: { text: "▶️ Старт", path: `/battle/${b.id}` },
-    push: { title: "⚔️ Соперник подключился", body: `${guest.name} готов к битве — нажмите «Старт»` },
+    text: `⚔️ ${guest.name} в битве — ваш ход`,
+    button: { text: "⚔️ Выбрать профессию", path: `/battle/${b.id}` },
+    push: { title: "⚔️ Соперник в битве", body: "Ваш ход: вычеркните профессию" },
   });
   return battleView(hub, b, uid);
 }
 
+/** Старый «Старт» (до выбора профессии): переводит готовую битву в выбор */
 export async function battleStart(hub, id, uid) {
+  return battleGet(hub, id, uid);
+}
+
+function draftRole(b, uid) {
+  return b.owner === uid ? "owner" : b.guest === uid ? "guest" : null;
+}
+
+/** Ход: вычеркнуть профессию. Когда остаётся одна — выбор сложности за тем, кто не вычёркивал последним */
+export async function battleBan(hub, id, uid, name) {
   uid = String(uid);
-  const b = load(hub, id);
+  let b = load(hub, id);
   if (!b) throw userErr("Битва не найдена");
-  if (b.owner !== uid) throw userErr("Начать битву может тот, кто её создал");
-  if (b.status === "preparing" || b.status === "active") return battleView(hub, b, uid);
-  if (b.status !== "ready") throw userErr("Сначала дождитесь соперника");
-  hub.sql.exec("UPDATE battles SET status = 'preparing' WHERE id = ? AND status = 'ready'", b.id);
-  await userStub(hub, b.owner).battleGenerate(b.id);
+  b = await expire(hub, b);
+  const role = draftRole(b, uid);
+  if (!role) throw userErr("Вы не участник этой битвы");
+  if (b.status !== "draft") throw userErr("Выбор профессии уже закончился");
+  const next = draftBan(safeJson(b.draft), role, String(name || ""));
+  hub.sql.exec("UPDATE battles SET draft = ? WHERE id = ? AND draft = ?", JSON.stringify(next), b.id, b.draft);
   const fresh = load(hub, b.id);
-  await notify(hub, b.guest, { kind: "preparing", battle_id: b.id, silent: true });
+  for (const r of ["owner", "guest"]) await notify(hub, fresh[r], { kind: "draft", battle_id: b.id, silent: true });
+  return battleView(hub, fresh, uid);
+}
+
+/** Выбор сложности — и пациент готовится в очереди создателя */
+export async function battleLevel(hub, id, uid, level) {
+  uid = String(uid);
+  let b = load(hub, id);
+  if (!b) throw userErr("Битва не найдена");
+  b = await expire(hub, b);
+  const role = draftRole(b, uid);
+  const d = safeJson(b.draft);
+  if (!role || b.status !== "draft" || !d?.pick) throw userErr("Сначала выберите профессию");
+  if (d.level_by !== role) throw userErr("Сложность выбирает соперник");
+  if (!DIFFICULTIES.some((x) => x.key === level)) throw userErr("Нет такой сложности");
+  const next = { ...d, level };
+  hub.sql.exec("UPDATE battles SET status = 'preparing', draft = ? WHERE id = ? AND status = 'draft'", JSON.stringify(next), b.id);
+  const fresh = load(hub, b.id);
+  if (fresh.status !== "preparing") return battleView(hub, fresh, uid);
+  await userStub(hub, b.owner).battleGenerate(b.id, { profession: d.pick, complexity: level });
+  for (const r of ["owner", "guest"]) await notify(hub, fresh[r], { kind: "preparing", battle_id: b.id, silent: true });
   return battleView(hub, fresh, uid);
 }
 
@@ -234,9 +307,9 @@ export async function battlePatientReady(hub, id, data) {
   for (const [uid, pat, other] of [[b.owner, ownerPat, b.guest], [b.guest, guestPat, b.owner]]) {
     await notify(hub, uid, {
       kind: "started", battle_id: b.id, patient_id: pat,
-      text: `⚔️ <b>Битва началась!</b> Соперник — ${userName(hub, other).name}.\n\n🩺 ${data.name}, ${data.age}: «${data.chief_complaint}»\n\nРасспросите, назначьте обследования, поставьте диагноз. Побеждает оценка выше, при равенстве — скорость.`,
-      button: { text: "🩺 Начать приём", path: `/patient/${pat}` },
-      push: { title: "⚔️ Битва началась!", body: `${data.name}: «${data.chief_complaint}»` },
+      text: "⚔️ Пациент готов — битва началась",
+      button: { text: "🩺 К битве", path: `/battle/${b.id}` },
+      push: { title: "⚔️ Битва началась", body: "Пациент готов — начинайте приём" },
     });
   }
   return { ok: true };
@@ -245,9 +318,11 @@ export async function battlePatientReady(hub, id, data) {
 export async function battlePatientFailed(hub, id) {
   const b = load(hub, id);
   if (!b || b.status !== "preparing") return { ok: false };
-  hub.sql.exec("UPDATE battles SET status = 'ready' WHERE id = ?", b.id);
+  // Профессия остаётся, сложность — выбрать заново (та же кнопка повторит создание пациента)
+  const d = safeJson(b.draft);
+  hub.sql.exec("UPDATE battles SET status = 'draft', draft = ? WHERE id = ?", JSON.stringify(d ? { ...d, level: null } : newDraft()), b.id);
   for (const uid of [b.owner, b.guest]) {
-    await notify(hub, uid, { kind: "failed", battle_id: b.id, text: "😔 Не получилось подготовить пациента для битвы. Нажмите «Старт» ещё раз.", button: { text: "⚔️ К битве", path: `/battle/${b.id}` } });
+    await notify(hub, uid, { kind: "failed", battle_id: b.id, text: "😔 Пациент не создался — выберите сложность ещё раз", button: { text: "⚔️ К битве", path: `/battle/${b.id}` } });
   }
   return { ok: true };
 }
@@ -270,9 +345,9 @@ export async function battleResult(hub, id, uid, result) {
   const me = userName(hub, uid);
   await notify(hub, other, {
     kind: "opponent_done", battle_id: b.id,
-    text: `⏱ <b>Соперник (${me.name}) завершил приём в битве.</b> Ваша очередь — результат откроется, когда закончите вы.`,
-    button: { text: "🩺 К пациенту", path: `/patient/${fresh[`${role === "owner" ? "guest" : "owner"}_pat`]}` },
-    push: { title: "⏱ Соперник закончил приём", body: "Ваша очередь в «Кто круче?»" },
+    text: `⏱ ${me.name} закончил приём — ждём вас`,
+    button: { text: "🩺 К битве", path: `/battle/${b.id}` },
+    push: { title: "⏱ Соперник закончил приём", body: "Итог откроется, когда закончите вы" },
   });
   await notify(hub, uid, { kind: "waiting_result", battle_id: b.id, silent: true });
   return { ok: true, finished: false };
@@ -281,7 +356,7 @@ export async function battleResult(hub, id, uid, result) {
 export async function battleCancel(hub, id, uid) {
   const b = load(hub, id);
   if (!b || b.owner !== String(uid)) throw userErr("Отменить может только создатель");
-  if (!["waiting", "ready"].includes(b.status)) throw userErr("Битва уже началась");
+  if (!["waiting", "ready", "draft"].includes(b.status)) throw userErr("Битва уже началась");
   hub.sql.exec("UPDATE battles SET status = 'cancelled', finished_at = ? WHERE id = ?", Date.now(), b.id);
   if (b.guest || b.invitee) await notify(hub, b.guest || b.invitee, { kind: "cancelled", battle_id: b.id, silent: true });
   return battleView(hub, load(hub, b.id), uid);

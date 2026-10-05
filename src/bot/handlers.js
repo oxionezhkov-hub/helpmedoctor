@@ -215,8 +215,8 @@ async function onStart(ctx, payload) {
       const b = await hubStub(env).battleJoin(payload.slice(2).toLowerCase(), uid);
       const owner = b.role === "owner";
       await bot.send(uid, owner
-        ? "⚔️ Это ваша битва «Кто круче?». Отправьте ссылку сопернику — когда он подключится, нажмите «Старт»."
-        : `⚔️ <b>Вы в битве «Кто круче?»</b>. Соперник — ${esc(b.opponent?.name || "врач")}.\n\nКак только соперник нажмёт «Старт», вам обоим придёт один и тот же пациент. Побеждает оценка выше, при равенстве — скорость.`,
+        ? "⚔️ Это ваша битва — отправьте ссылку сопернику"
+        : `⚔️ Вы в битве с ${esc(b.opponent?.name || "врачом")} — выбираем профессию`,
       [[appBtn("⚔️ Открыть битву", R.appUrl(env, `/battle/${b.id}`))]]);
     } catch (e) {
       const ue = userError(e);
@@ -382,6 +382,8 @@ async function finish(ctx, patId, action) {
   await bot.typing(uid);
   const res = await user.finishConsultation(patId, action, "bot");
   await bot.send(uid, R.patientMsg(res.patient_name, res.farewell));
+  // Битва: диагноз и оценка — только в итоге, когда закончат оба
+  if (res.battle_id) return bot.send(uid, "⚔️ Приём завершён — ждём соперника", [[appBtn("⚔️ К битве", R.appUrl(ctx.env, `/battle/${res.battle_id}`))]]);
   await bot.send(uid, R.finishCard(res));
 }
 
