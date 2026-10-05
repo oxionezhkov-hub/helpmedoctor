@@ -8,6 +8,7 @@ import { webhookOperationId, planFromPurpose } from "../src/lib/tochka.js";
 import { b64u, encryptPayload, validSubscription } from "../src/lib/webpush.js";
 import nodeCrypto from "node:crypto";
 import { STOP_PHRASES, styleIssues } from "../scripts/site/style.mjs";
+import { mdPlain } from "../src/lib/md-plain.js";
 
 test("parseJsonLoose достаёт JSON из болтовни модели", () => {
   assert.deepEqual(parseJsonLoose('Вот:\n```json\n{"a":1}\n```'), { a: 1 });
@@ -555,4 +556,9 @@ test("итоги дня: дата без года, сначала воронка
   assert.ok(t.startsWith("📊 <b>Итоги дня · 4 октября</b>"));
   assert.ok(t.indexOf("Сайт: 120 визитов") < t.indexOf("Регистраций: 3") && t.indexOf("Регистраций") < t.indexOf("Приёмов"));
   assert.ok(t.includes("Пытались вернуть: 11 · вернулись 2") && t.includes("ИИ: 2% дневного лимита") && !t.includes("нейрон"));
+});
+
+test("описание PR без markdown для задач в админке", () => {
+  const t = mdPlain("**Промокоды**\n- **Админка → «Промокоды»**\n  - Создать: `код`, [ссылка](https://x.ru)\n### Проверка\nЗадачи: #12\n2 * 3 = 6");
+  assert.equal(t, "Промокоды\n• Админка → «Промокоды»\n  • Создать: код, ссылка\nПроверка\nЗадачи: #12\n2 * 3 = 6");
 });

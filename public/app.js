@@ -3781,7 +3781,7 @@ function viewPlans(fresh) {
     ${p.has_sub ? "" : studentCard(p, o.student, ap)}
 
     <details class="card promo-box" ${S.promoOpen ? "open" : ""}><summary class="row-c">${ic("gift", "c-accent")}<b>Есть промокод?</b></summary>
-      <form class="row" id="promo-form" style="margin-top:10px;gap:8px"><input class="input grow" id="promo-code" placeholder="Например: SOBOL" maxlength="32" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn" id="promo-go">Применить</button></form>
+      <form class="row" id="promo-form" style="margin-top:10px;gap:8px"><input class="input grow" id="promo-code" placeholder="Введите промокод" maxlength="32" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn" id="promo-go">Применить</button></form>
     </details>
 
     ${consentBox()}

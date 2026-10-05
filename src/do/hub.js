@@ -110,6 +110,15 @@ export class HubDO extends DurableObject {
     // Рассылка с картинкой: ссылка на фото, текст уходит подписью
     this.addColumn("broadcasts", "photo", "TEXT");
     for (const r of this.all("SELECT uid FROM users WHERE search IS NULL LIMIT 20000")) this.refreshSearch(r.uid);
+    // Раньше напоминание или подарок от админа ставили «последнюю активность» = время этого события. Откатываем такие
+    // значения к последнему собственному действию человека (если оно есть в событиях)
+    if (!this.getMeta("last_active_fix")) {
+      this.sql.exec(`UPDATE users SET last_active = (SELECT MAX(ts) FROM events e WHERE e.uid = users.uid AND COALESCE(e.source, '') NOT IN ('system', 'admin'))
+        WHERE EXISTS (SELECT 1 FROM events s WHERE s.uid = users.uid AND s.ts = users.last_active AND s.source IN ('system', 'admin'))
+          AND NOT EXISTS (SELECT 1 FROM events o WHERE o.uid = users.uid AND o.ts = users.last_active AND COALESCE(o.source, '') NOT IN ('system', 'admin'))
+          AND EXISTS (SELECT 1 FROM events o WHERE o.uid = users.uid AND COALESCE(o.source, '') NOT IN ('system', 'admin'))`);
+      this.setMeta("last_active_fix", Date.now());
+    }
     this.sql.exec("UPDATE payments SET status = 'paid' WHERE done = 1 AND (status IS NULL OR status = 'link')");
     // Разовые рассылки из кода — после миграций (сегмент пользователей читает новые колонки)
     if (env.AI_MOCK !== "1") this.seedBroadcasts(ctx);
@@ -242,8 +251,9 @@ export class HubDO extends DurableObject {
       "INSERT INTO events (ts, day, hour, dow, uid, type, source, meta, dur, val) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       ts, p.day, p.hour, p.dow, uid, e.type, e.source || null, e.meta ? JSON.stringify(e.meta) : null, e.dur ?? null, e.val ?? null,
     );
-    // Напоминания, письма, автопродления (source = 'system') человек не делал сам — он от них не становится активным
-    const own = e.source !== "system";
+    // Напоминания, письма, автопродления (source = 'system') и действия админа (подарок, смена тарифа) человек не делал сам —
+    // он от них не становится активным
+    const own = e.source !== "system" && e.source !== "admin";
     if (uid) {
       if (own) this.sql.exec("INSERT OR IGNORE INTO active (day, uid) VALUES (?, ?)", p.day, uid);
       if (e.summary) this.upsertUser(uid, { ...e.summary, ...(own ? { last_active: Math.max(ts, e.summary.last_active || 0) } : {}), ...(own && e.source ? { last_source: e.source } : {}) });
