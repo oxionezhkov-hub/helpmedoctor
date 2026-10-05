@@ -949,6 +949,25 @@ await aq("blogger_delete", { id: bl.id });
 assert.equal((await aq("bloggers")).rows.length, 0);
 step("блогеры: карточка, связь с партнёром и статистика его ссылки, этапы, история, план запуска");
 
+// ---------------------------------------------------------------- промокоды
+await aq("promo_create", { code: "sobol", title: "ВК Белый соболь", days: 7, until: "2099-12-31" });
+assert.equal((await adm(admTok, "POST", "/q", { op: "promo_create", args: { code: "SOBOL", days: 7 } })).status !== 200, true, "код не дублируется");
+await aq("promo_create", { code: "OLD-1", days: 3, until: "2020-01-01" });
+const tp = await login("9301");
+assert.equal((await api(tp, "POST", "/promo", { code: "нет-такого" })).status, 409);
+assert.match((await api(tp, "POST", "/promo", { code: "old-1" })).data.error, /закончился/);
+r = await api(tp, "POST", "/promo", { code: " sobol " });
+assert.equal(r.status, 200, JSON.stringify(r.data));
+assert.equal(r.data.days, 7);
+assert.equal((await api(tp, "GET", "/me")).data.profile.premium, true, "промокод дал премиум");
+assert.match((await api(tp, "POST", "/promo", { code: "SOBOL" })).data.error, /уже активировали/);
+let promos = (await aq("promos")).rows;
+assert.equal(promos.find((x) => x.code === "SOBOL").uses, 1, "счётчик активаций");
+assert.equal((await aq("promo_uses", { code: "SOBOL" })).rows[0].uid, "9301");
+await aq("promo_toggle", { code: "SOBOL", active: false });
+assert.match((await api(await login("9302"), "POST", "/promo", { code: "SOBOL" })).data.error, /отключён/);
+step("промокоды: создание, срок действия, активация с премиумом, повтор и отключение, счётчик и список активаций");
+
 // ---------------------------------------------------------------- «Кто круче?»: битва на одном пациенте
 const BA = "9101", BB = "9102";
 const ta = await login(BA), tb = await login(BB);

@@ -19,6 +19,7 @@ const HUB_OPS = new Set([
   "task_comment", "payment_status", "audit_log", "notify_get", "notify_save", "backfill_status", "counts", "ai_models_get", "ai_models_set", "autopay_list", "autopay_run",
   "partners", "partner_decide", "payout_decide", "earning_cancel",
   "bloggers", "blogger_log", "blogger_save", "blogger_note", "blogger_delete", "bloggers_plan", "bloggers_goal",
+  "promos", "promo_create", "promo_toggle", "promo_uses",
 ]);
 
 
