@@ -795,3 +795,4 @@ a.ref-row.tap { color: inherit; text-decoration: none; }
 /* Промокод в «Тарифах» */
 details.card.promo-box summary { justify-content: flex-start; gap: 10px; }
 details.card.promo-box summary::after { margin-left: auto; }
+#promo-code::placeholder { text-transform: none; }
