@@ -258,6 +258,11 @@ async function api(request, env, url) {
     if (path === "/profile" && method === "PATCH") {
       return json({ profile: await user.updateProfile(await readJson(request)) });
     }
+    // --- Промокод из «Тарифов» или по ссылке ?promo= ---
+    if (path === "/promo" && method === "POST") {
+      const b = await readJson(request);
+      return json(await hubStub(env).promoRedeem(uid, String(b.code || "").slice(0, 40)));
+    }
     // --- «Кто круче?»: битвы на одном пациенте ---
     if (path === "/battles" && method === "GET") return json(await hubStub(env).battleList(uid));
     if (path === "/battles" && method === "POST") {

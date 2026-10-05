@@ -5,6 +5,7 @@ import { viewDashboard, viewAnalytics } from "./views-stats.js";
 import { viewUsers, viewUser, viewPatient } from "./views-users.js";
 import { viewPartners } from "./views-partners.js";
 import { viewBloggers } from "./views-bloggers.js";
+import { viewPromos } from "./views-promos.js";
 import { viewSubs, viewMessages, viewBroadcast, viewFeedback, viewTasks, viewSettings, quickIdea, openTask } from "./views-ops.js";
 
 const app = $("#app");
@@ -182,6 +183,7 @@ const NAV = [
   ["subs", "/subs", "gem", "Подписки и платежи"],
   ["partners", "/partners", "handshake", "Партнёры"],
   ["bloggers", "/bloggers", "mic", "Блогеры"],
+  ["promos", "/promos", "gift", "Промокоды"],
   ["messages", "/messages", "send", "Сообщения"],
   ["feedback", "/feedback", "star", "Отзывы и анкеты"],
   ["tasks", "/tasks", "tasks", "Задачи"],
@@ -261,6 +263,7 @@ function parseRoute() {
   if (parts[0] === "subs") return r("subs");
   if (parts[0] === "partners") return r("partners");
   if (parts[0] === "bloggers") return r("bloggers");
+  if (parts[0] === "promos") return r("promos");
   if (parts[0] === "messages" && parts[1] === "broadcast" && parts[2]) return r("broadcast", { id: parts[2] });
   if (parts[0] === "messages") return r("messages");
   if (parts[0] === "feedback") return r("feedback");
@@ -279,6 +282,7 @@ const VIEWS = {
   subs: [viewSubs, "Подписки и платежи", "subs"],
   partners: [viewPartners, "Партнёры", "partners"],
   bloggers: [viewBloggers, "Блогеры", "bloggers"],
+  promos: [viewPromos, "Промокоды", "promos"],
   messages: [viewMessages, "Сообщения", "messages"],
   broadcast: [viewBroadcast, "Рассылка", "messages"],
   feedback: [viewFeedback, "Отзывы и анкеты", "feedback"],

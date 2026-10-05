@@ -20,6 +20,7 @@ const EV = {
   sub_expired: ["clock", "Подписка закончилась"], extra_patients: ["gift", "Доп. пациенты"], reminder: ["send", "Напоминание"], bot_blocked: ["lock", "Заблокировал бота"],
   feedback: ["star", "Отзыв"], ai_error: ["alert", "Сбой ИИ"], ai_fallback: ["alert", "ИИ отказал, запасной ответ"], stt_error: ["mic", "Не распознан голос"], app_open: ["eye", "Открыл приложение"],
   blocked: ["lock", "Заблокирован админом"], unblocked: ["unlock", "Разблокирован"],
+  winback: ["mail", "Письмо «вернись»"], email: ["mail", "Письмо"], promo: ["gift", "Промокод"],
 };
 const FINISH = { diagnosis: "диагноз", referral: "направление", discharge: "отказ" };
 
@@ -47,6 +48,9 @@ export function evLabel(e) {
   else if (e.type === "message") extra = m.voice ? "голосом" : "";
   else if (e.type === "profile_update") extra = (m.fields || []).join(", ");
   else if (e.type === "extra_patients") extra = `+${m.n}`;
+  else if (e.type === "winback") extra = `${m.days ?? m.stage} ${(m.days ?? m.stage) === 1 ? "день" : (m.days ?? m.stage) < 5 ? "дня" : "дней"} без активности`;
+  else if (e.type === "email") extra = m.subject || "";
+  else if (e.type === "promo") extra = `${m.code || ""}${m.days ? ` · +${m.days} дн.` : ""}`;
   return { icon, label, extra };
 }
 

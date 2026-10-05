@@ -158,6 +158,10 @@ export async function viewUsers(el, ctx) {
 }
 
 // ---------- Карточка пользователя ----------
+/** Письмо «вернись» пишет два события — этап (winback) и отправку (email); в хронологии показываем одной строкой */
+function mergeMail(rows) {
+  return rows.filter((e) => !(e.type === "email" && e.meta?.kind === "winback" && rows.some((w) => w.type === "winback" && Math.abs(w.ts - e.ts) < 120000)));
+}
 const TABS = [["overview", "Обзор"], ["patients", "Пациенты"], ["chat", "Переписка"], ["timeline", "Хронология"], ["quizzes", "Тесты"], ["payments", "Оплаты"]];
 
 export async function viewUser(el, ctx) {
@@ -340,7 +344,7 @@ const TAB_RENDER = {
       let lastDay = "";
       box.innerHTML = str(html`<div class="card">
         <div class="card-head"><h2>Хронология</h2><select class="input" id="ev-type" style="width:auto">${types.map(([k, l]) => html`<option value="${k}" ${k === type ? "selected" : ""}>${l}</option>`)}</select></div>
-        <div class="feed">${rows.length ? rows.map((e) => {
+        <div class="feed">${rows.length ? mergeMail(rows).map((e) => {
           const l = evLabel(e);
           const day = mskDay(e.ts);
           const sep = day !== lastDay ? html`<div class="day-sep" style="margin:10px 0 4px;align-self:flex-start">${fDate(e.ts)}</div>` : "";
