@@ -3302,6 +3302,18 @@ async function viewPartner(fresh) {
     ["chat", "WhatsApp", `https://wa.me/?text=${encodeURIComponent(`${shareText} ${link}`)}`],
   ];
   const canWithdraw = b.available >= d.min_payout && !b.requested;
+  // Пока никого не пригласили: вместо нулевой статистики — советы сразу под балансом, предложение стать партнёром — в самом низу
+  const noRefs = !d.counts.invited;
+  const hasStats = d.counts.invited || d.counts.active || d.counts.paying || b.earned;
+  const partner = partnerBlock(d);
+  const tips = html`<div class="card stack-sm">
+      <b class="row-c">${ic("bulb", "c-warn")}Как приглашать, чтобы работало</b>
+      <div class="small fact">${ic("check", "c-ok")}<span>Сначала примите 2–3 пациентов сами — рассказывать своими словами проще и честнее.</span></div>
+      <div class="small fact">${ic("check", "c-ok")}<span>Лучшие места: чат группы и потока, сторис, староста; лучшее время — перед сессией, аккредитацией и практикой.</span></div>
+      <div class="small fact">${ic("check", "c-ok")}<span>Показывайте, а не рекламируйте: скриншот своего разбора с оценкой работает лучше любого текста.</span></div>
+      <div class="small fact">${ic("xCircle", "c-danger")}<span>Без спама в чужих чатах, обещаний «сдашь аккредитацию» и регистрации самого себя — начисления за такое аннулируются.</span></div>
+      <a class="more-link" href="/partneram/" target="_blank" rel="noopener">Все подсказки и правила ${ic("chevron")}</a>
+    </div>`;
   renderShell(html`<div class="page">
     ${head}
 
@@ -3322,24 +3334,19 @@ async function viewPartner(fresh) {
 
     <div class="card stack">
       <div class="row between"><b class="row-c">${ic("wallet", "c-accent")}Баланс</b><span class="tiny muted">вывод от ${rub(d.min_payout)} ₽</span></div>
-      <div class="bal-main"><b>${rub(b.available)} ₽</b><span class="small muted">доступно к выводу</span></div>
-      <div class="bal-grid">
-        <div><b>${rub(b.hold)} ₽</b><span>в ожидании ${d.hold_days} дней</span></div>
-        <div><b>${rub(b.requested)} ₽</b><span>выводится</span></div>
-        <div><b>${rub(b.paid)} ₽</b><span>выплачено</span></div>
-      </div>
+      <div class="bal-main"><b>${rub(b.available)} ₽</b><span class="small muted">${["доступно к выводу", b.hold && `ещё ${rub(b.hold)} ₽ в ожидании ${d.hold_days} дней`, b.requested && `${rub(b.requested)} ₽ выводится`].filter(Boolean).join(" · ")}</span></div>
       <button class="btn block" id="payout-open" ${canWithdraw ? "" : "disabled"}>${ic("wallet")}<span>${b.requested ? "Выплата в работе" : "Вывести на карту или по СБП"}</span></button>
-      <p class="tiny muted">${b.requested ? "Мы переведём деньги в течение нескольких рабочих дней и напишем в Telegram."
-        : b.available < d.min_payout ? `Вывести можно, когда на балансе будет от ${rub(d.min_payout)} ₽. Новые начисления доступны через ${d.hold_days} дней — на случай возврата оплаты.`
-        : "Реквизиты спросим на следующем шаге."}</p>
+      <a class="small center" href="https://t.me/oleg_ezhkov" target="_blank" rel="noopener">Написать в поддержку</a>
     </div>
 
-    <div class="ref-kpis">
+    ${noRefs ? tips : ""}
+
+    ${hasStats ? html`<div class="ref-kpis">
       <div><b>${d.counts.invited}</b><span>${plural(d.counts.invited, "приглашён", "приглашено", "приглашено")}</span></div>
       <div><b>${d.counts.active}</b><span>принимают пациентов</span></div>
       <div><b>${d.counts.paying}</b><span>${plural(d.counts.paying, "оплатил", "оплатили", "оплатили")}</span></div>
       <div><b>${rub(b.earned)} ₽</b><span>заработано всего</span></div>
-    </div>
+    </div>` : ""}
 
     <div class="section-title">Приглашённые</div>
     ${d.referrals.length ? html`<div class="card ref-list">${d.referrals.map((r) => html`<div class="ref-row">
@@ -3356,19 +3363,13 @@ async function viewPartner(fresh) {
     <div class="card ref-list">${d.payouts.map((p) => html`<div class="ref-row"><div class="grow"><b>${rub(p.amount)} ₽</b><div class="tiny muted">${dateText(p.created_at)} · ${p.method === "sbp" ? "СБП" : "карта"}${p.note ? ` · ${p.note}` : ""}</div></div>
       <span class="badge ${p.status === "paid" ? "ok" : p.status === "rejected" ? "danger" : "warn"}">${p.status === "paid" ? "Выплачено" : p.status === "rejected" ? "Отклонено" : "В работе"}</span></div>`)}</div>` : ""}
 
-    ${partnerBlock(d)}
+    ${noRefs ? "" : partner}
 
     <div class="section-title">Готовые тексты</div>
     <div class="stack-sm">${inviteTexts(link).map(([t, text], i) => html`<div class="card stack-sm ref-tpl"><div class="row between"><b class="small">${t}</b><button class="btn ghost sm" data-copy-tpl="${i}">${ic("copy")}<span>Скопировать</span></button></div><p class="small muted">${text}</p></div>`)}</div>
 
-    <div class="card stack-sm">
-      <b class="row-c">${ic("bulb", "c-warn")}Как приглашать, чтобы работало</b>
-      <div class="small fact">${ic("check", "c-ok")}<span>Сначала примите 2–3 пациентов сами — рассказывать своими словами проще и честнее.</span></div>
-      <div class="small fact">${ic("check", "c-ok")}<span>Лучшие места: чат группы и потока, сторис, староста; лучшее время — перед сессией, аккредитацией и практикой.</span></div>
-      <div class="small fact">${ic("check", "c-ok")}<span>Показывайте, а не рекламируйте: скриншот своего разбора с оценкой работает лучше любого текста.</span></div>
-      <div class="small fact">${ic("xCircle", "c-danger")}<span>Без спама в чужих чатах, обещаний «сдашь аккредитацию» и регистрации самого себя — начисления за такое аннулируются.</span></div>
-      <a class="more-link" href="/partneram/" target="_blank" rel="noopener">Все подсказки и правила ${ic("chevron")}</a>
-    </div>
+    ${noRefs ? partner : tips}
+
     <p class="tiny muted center">Участвуя, вы принимаете <a href="/partner-oferta/" target="_blank" rel="noopener">партнёрское соглашение</a>. Налоги с вознаграждения уплачиваете самостоятельно.</p>
   </div>`);
   document.querySelectorAll("[data-copy]").forEach((el) => { el.onclick = () => { copyText(el.dataset.copy, "Ссылка скопирована"); goal("ref_copy"); }; });

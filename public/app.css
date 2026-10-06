@@ -733,10 +733,9 @@ details.card[open] summary { margin-bottom: 12px; }
 .ref-share .btn { flex: 1 1 auto; }
 .bal-main { display: flex; flex-direction: column; }
 .bal-main b { font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.bal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.bal-grid > div, .ref-kpis > div { background: var(--surface-2); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.bal-grid b, .ref-kpis b { font-size: 16px; font-variant-numeric: tabular-nums; }
-.bal-grid span, .ref-kpis span { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
+.ref-kpis > div { background: var(--surface-2); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ref-kpis b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.ref-kpis span { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
 .ref-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .ref-kpis > div { background: var(--surface); border: 1px solid var(--border); }
 @media (max-width: 420px) { .ref-kpis { grid-template-columns: repeat(2, 1fr); } }
