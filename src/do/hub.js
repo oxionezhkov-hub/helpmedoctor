@@ -20,6 +20,7 @@ const NOTIFY_KINDS = A.NOTIFY_KINDS;
 
 const LOGIN_TTL_MS = 10 * 60 * 1000;
 const HOUR = 3600000;
+const DAY = 24 * HOUR;
 
 // Колонки сводки пользователя (приходят из UserDO с каждым событием)
 const USER_COLS = {
@@ -820,7 +821,7 @@ export class HubDO extends DurableObject {
    */
   async notifyAdmin(text, kind = "other", { kb = null, except = null, only = null } = {}) {
     const bot = tg(this.env, { log: false });
-    const ids = adminIds(this.env).filter((id) => id !== except && (!only || only.includes(id)) && this.notifyPrefs(id)[kind] !== false);
+    const ids = this.adminTargets(kind, { except, only });
     await Promise.all(ids.map(async (id) => {
       try {
         await bot.send(id, text, kb || undefined);
@@ -844,7 +845,55 @@ export class HubDO extends DurableObject {
       return;
     }
     this.setMeta("nu_window", w);
-    await this.notifyAdmin(`🆕 Новый пользователь: ${line}`, "new_user", { kb: [[{ text: "Карточка", url: this.adminUrl(`/users/${uid}`) }]] });
+    // Одно сообщение на нового пользователя: анкету и первого пациента потом дописываем в него же (userNote)
+    const head = `🆕 Новый пользователь: ${line}`;
+    const kb = [[{ text: "Карточка", url: this.adminUrl(`/users/${uid}`) }]];
+    const bot = tg(this.env, { log: false });
+    const mids = {};
+    await Promise.all(this.adminTargets("new_user").map(async (id) => {
+      try {
+        const mid = await bot.send(id, head, kb);
+        if (mid) mids[id] = mid;
+      } catch (e) {
+        console.error("notifyNewUser", e);
+      }
+    }));
+    const cards = this.userCards();
+    cards[uid] = { ts: Date.now(), head, kb, parts: {}, mids };
+    this.setMeta("nu_cards", cards);
+  }
+
+  adminTargets(kind, { except = null, only = null } = {}) {
+    return adminIds(this.env).filter((id) => id !== except && (!only || only.includes(id)) && this.notifyPrefs(id)[kind] !== false);
+  }
+
+  /** Карточки новых пользователей за последние сутки: { uid: { ts, head, kb, parts, mids: { adminId: messageId } } } */
+  userCards() {
+    const cards = this.getMeta("nu_cards", {}) || {};
+    for (const [k, c] of Object.entries(cards)) if (Date.now() - (c.ts || 0) > DAY) delete cards[k];
+    return cards;
+  }
+
+  /**
+   * Событие нового пользователя (анкета, первый пациент): дописываем в его сообщение «Новый пользователь»,
+   * если оно было в последние сутки; иначе — отдельным сообщением (full).
+   */
+  async userNote(uid, part, short, full, kind) {
+    uid = String(uid);
+    const cards = this.userCards();
+    const card = cards[uid];
+    const order = ["onboarding", "first_patient"];
+    if (card) {
+      card.parts[part] = short;
+      this.setMeta("nu_cards", cards);
+      const text = [card.head, ...order.filter((k) => card.parts[k]).map((k) => card.parts[k])].join("\n\n");
+      const bot = tg(this.env, { log: false });
+      await Promise.all(Object.entries(card.mids || {}).map(([id, mid]) => bot.edit(id, mid, text, card.kb).catch((e) => console.error("userNote", e))));
+    }
+    // Тем, у кого карточки нет (выключены уведомления о новых), — отдельно, если этот вид уведомлений включён
+    const has = new Set(Object.keys(card?.mids || {}));
+    const rest = this.adminTargets(kind).filter((id) => !has.has(String(id)));
+    if (rest.length) await this.notifyAdmin(full, kind, { only: rest });
   }
 
   async flushNewUsers() {

@@ -13,7 +13,7 @@ import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 import { adminApi } from "./admin-api.js";
 import { faceSvg } from "./lib/face.js";
 import { protoApi } from "./proto.js";
-import { vkFeedPush, vkFeedRss, vkFeedImage } from "./lib/vkfeed.js";
+import { vkFeedPush, vkFeedRss, vkFeedImage, vkFeedPage } from "./lib/vkfeed.js";
 import qrcode from "qrcode-generator";
 
 export { UserDO } from "./do/user.js";
@@ -43,6 +43,8 @@ export default {
       if (path === "/vk/rss.xml") return vkFeedRss(env, env.PUBLIC_URL || url.origin);
       const vkImg = path.match(/^\/vk\/img\/([a-z0-9-]{3,80})\.jpg$/);
       if (vkImg) return vkFeedImage(env, vkImg[1]);
+      const vkPage = path.match(/^\/vk\/p\/([a-z0-9-]{3,80})$/);
+      if (vkPage) return vkFeedPage(env, vkPage[1]);
       if (path.startsWith("/api/admin/")) return adminApi(request, env, url, ctx);
       // Прототип голосового приёма без входа (страница /test362861)
       if (path.startsWith("/api/proto/")) return protoApi(request, env, url);
