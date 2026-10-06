@@ -1072,7 +1072,9 @@ step("«Кто круче?»: QR и ссылка, подключение, выб
   execFileSync("node", ["scripts/vk-feed.mjs", f], { env, stdio: "pipe" });
   const rss = await (await fetch(`${BASE}/vk/rss.xml`)).text();
   assert.ok(rss.includes("<rss") && rss.includes("Как читать ОАК за минуту") && rss.includes("лейкоциты &amp; формула") === false && rss.includes("лейкоциты & формула"), "запись в ленте, текст в CDATA");
-  assert.ok(rss.includes('<enclosure url="http://localhost:8787/vk/img/2026-10-07-e2e-test.jpg"') && !rss.includes("<link>http://localhost:8787/vk"), "картинка записи, без ссылки у обычного поста");
+  assert.ok(rss.includes('<enclosure url="http://localhost:8787/vk/img/2026-10-07-e2e-test.jpg"') && rss.includes("<link>http://localhost:8787/vk/p/2026-10-07-e2e-test</link>"), "картинка записи и ссылка на её страницу");
+  const page = await fetch(`${BASE}/vk/p/2026-10-07-e2e-test`);
+  assert.equal(page.status, 200); assert.ok((await page.text()).includes("Второй абзац"), "страница записи");
   const img = await fetch(`${BASE}/vk/img/2026-10-07-e2e-test.jpg`);
   assert.equal(img.status, 200); assert.equal(img.headers.get("content-type"), "image/png");
   const forged = await fetch(`${BASE}/feed/vk/push`, { method: "POST", body: JSON.stringify({ id: "hack-1", text: "x", ts: Date.now() }), headers: { "X-Feed-Sig": "00".repeat(32) } });

@@ -59,7 +59,7 @@ export async function vkFeedRss(env, origin) {
   const body = items.map((it) => `
     <item>
       <title>${xml(it.title)}</title>
-      ${it.link ? `<link>${xml(it.link)}</link>` : ""}
+      <link>${xml(it.link || `${site}/vk/p/${it.id}`)}</link>
       <guid isPermaLink="false">vk-${xml(it.id)}</guid>
       <pubDate>${new Date(it.ts).toUTCString()}</pubDate>
       <description>${cdata(it.text)}</description>
@@ -75,6 +75,18 @@ export async function vkFeedRss(env, origin) {
   </channel>
 </rss>`;
   return new Response(out, { headers: { "Content-Type": "application/rss+xml; charset=utf-8", "Cache-Control": "public, max-age=300", "X-Robots-Tag": "noindex" } });
+}
+
+/** Страница записи: ссылка нужна каждой записи RSS (импорт ВК без неё пропускает запись); в группе её скрывает настройка «Не указывать ссылку» */
+export async function vkFeedPage(env, id) {
+  const items = (await env.HELPMEDOCTOR.get(ITEMS, "json")) || [];
+  const it = items.find((x) => x.id === id);
+  if (!it) return new Response("not found", { status: 404 });
+  const body = xml(it.text).replace(/\n/g, "<br>");
+  const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>${xml(it.title)} — Для будущих врачей</title><style>body{font:17px/1.55 system-ui,sans-serif;max-width:680px;margin:0 auto;padding:24px 16px;background:#f5f2e9;color:#1b1f1d}img{max-width:100%;border-radius:12px}</style></head>
+<body>${it.img ? `<img src="/vk/img/${it.id}.jpg" alt="">` : ""}<p>${body}</p></body></html>`;
+  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex" } });
 }
 
 /** Картинка записи */
