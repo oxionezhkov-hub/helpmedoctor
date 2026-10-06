@@ -533,9 +533,10 @@ async function boot() {
   sendAttribution();
 }
 
-/** Цели Яндекс Метрики (счётчик сайта) */
+/** Цели Яндекс Метрики (счётчик сайта) и пикселя VK Рекламы (3799574) — одни и те же имена */
 function goal(name, params) {
   try { window.ym?.(113057442, "reachGoal", name, params); } catch {}
+  try { (window._tmr = window._tmr || []).push({ type: "reachGoal", id: 3799574, goal: name }); } catch {}
 }
 
 /** Пришли с сайта по кнопке тарифа (from=…_trial / _month …) — после входа сразу открываем тарифы */

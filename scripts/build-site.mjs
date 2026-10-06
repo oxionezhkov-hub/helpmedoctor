@@ -40,6 +40,21 @@ const METRIKA_HEAD = `<!-- Yandex.Metrika counter -->
 </script>
 <!-- /Yandex.Metrika counter -->`;
 const METRIKA_NOSCRIPT = `<noscript><div><img src="https://mc.yandex.ru/watch/113057442" style="position:absolute; left:-9999px;" alt="" /></div></noscript>`;
+// Пиксель VK Рекламы (Top.Mail.Ru, 3799574) — там же, где Метрика: аудитории сайта и конверсии для рекламы в ВК
+const VK_PIXEL_HEAD = `<!-- Top.Mail.Ru counter -->
+<script type="text/javascript">
+var _tmr = window._tmr || (window._tmr = []);
+_tmr.push({id: "3799574", type: "pageView", start: (new Date()).getTime()});
+(function (d, w, id) {
+  if (d.getElementById(id)) return;
+  var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
+  ts.src = "https://top-fwz1.mail.ru/js/code.js";
+  var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
+  if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
+})(document, window, "tmr-code");
+</script>
+<!-- /Top.Mail.Ru counter -->`;
+const VK_PIXEL_NOSCRIPT = `<noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3799574;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>`;
 
 const LOGO = `<svg viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="4" stroke="currentColor" style="stroke:var(--ink)" stroke-width="1.6"/><path d="M6.5 17h5l2.2-5 3.6 10 2.4-5h5.8"/></svg>`;
 const BURGER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
@@ -91,11 +106,13 @@ ${noindex ? "" : `<link rel="canonical" href="${canonical}">\n`}<meta name="robo
 <script src="/site.js" defer></script>
 ${extra}
 ${METRIKA_HEAD}
+${VK_PIXEL_HEAD}
 </head>`;
 }
 
 const bodyOpen = (page) => `<body data-page="${page}"${page.startsWith("blog_") ? ' data-popup="read"' : ""}>
-${METRIKA_NOSCRIPT}`;
+${METRIKA_NOSCRIPT}
+${VK_PIXEL_NOSCRIPT}`;
 
 const promo = () => `<div class="promo" hidden><div class="wrap"><span class="long">Премиум — первые 7 дней за ${rub(TRIAL.price)} ₽, дальше <b>${rub(MONTH.price)} ₽</b> в месяц, студентам — ${rub(STUDENT.price)} ₽.</span><span class="short">Премиум <b>7 дней за ${rub(TRIAL.price)} ₽</b>, потом ${rub(MONTH.price)} ₽/мес</span> <a href="${app("promo")}">Попробовать</a><button class="promo-x" type="button" aria-label="Скрыть">×</button></div></div>`;
 
