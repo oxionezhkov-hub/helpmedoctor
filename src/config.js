@@ -46,6 +46,7 @@ export const TRIAL = { key: "trial", label: "Премиум на 7 дней", da
 export const PACKS = {
   patients3: { label: "+3 пациента", price: "39.00", patients: 3 },
   freeze:    { label: "Заморозка стрика", price: "29.00", freezes: 1 },
+  community: { label: "Предзаказ доступа к комьюнити", price: "300.00", preorder: "community" },
 };
 // Сколько раз пробуем списать продление, прежде чем отключить автоплатёж
 export const AUTOPAY_MAX_FAILS = 3;

@@ -3795,6 +3795,8 @@ function viewPlans(fresh) {
   // Подписка с автопродлением (месяц, студенческий, пробный) — апгрейд только на год; подарок и разовые без продления — можно продлить любым тарифом
   const upgradeOnly = p.has_sub && ap?.status === "active";
   const order = (p.has_sub ? (maxed ? [] : upgradeOnly ? ["year"] : ["month", "year"]) : ["month", "year"]).filter((k) => o.plans[k]);
+  // Разовые покупки на этой странице: предзаказ комьюнити и пациенты (без подписки). Заморозка — из стрика по ссылке ?buy=freeze
+  const packs = Object.entries(o.packs || {}).filter(([k]) => k !== "freeze" && !(p.has_sub && k === "patients3"));
   const PLAN_NAMES = { trial: "пробный период", month: "1 месяц", year: "1 год", student: "студенческий", week: "1 неделя", quarter: "3 месяца", gift: "подарок", forever: "навсегда" };
   if (fresh && S.route.q.paid && !S.paidToastAt) { toast("Проверяем оплату…"); watchPayment(); }
   if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
@@ -3841,13 +3843,11 @@ function viewPlans(fresh) {
 
     ${consentBox()}
 
-    ${Object.keys(o.packs || {}).length ? html`<div class="section-title">Разовые покупки</div>
-      <div class="card packs">${Object.entries(o.packs).filter(([k]) => !(p.has_sub && k === "patients3")).map(([k, x]) => html`<div class="pack-row">
-        <div class="tile ${k === "freeze" ? "accent" : "warn"}">${ic(k === "freeze" ? "flame" : "users")}</div>
-        <div class="grow"><b>${x.label}</b><div class="small muted">${k === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}`}</div></div>
-        <button class="btn sm" data-plan="${k}">${rub(x.price)} ₽</button></div>`)}</div>` : ""}
-
-    <p class="tiny muted center">Карта или СБП. Доступ включается сразу — и в боте, и на сайте.<br>${docLink("offer", "Оферта")} · ${docLink("privacy", "Политика конфиденциальности")}</p>
+    ${packs.length ? html`<div class="section-title">Разовые покупки</div>
+      <div class="card packs">${packs.map(([k, x]) => { const m = packMeta(k, p); return html`<div class="pack-row">
+        <div class="tile ${m.tile}">${ic(m.icon)}</div>
+        <div class="grow"><b>${x.label}</b><div class="small muted">${m.sub}</div></div>
+        ${k === "community" && p.community_preorder ? html`<span class="badge ok">${ic("check")} оформлен</span>` : html`<button class="btn sm" data-plan="${k}">${rub(x.price)} ₽</button>`}</div>`; })}</div>` : ""}
   </div>`);
   bindConsent(root);
   root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = () => payFor(b.dataset.plan, b, root)));
@@ -3953,6 +3953,13 @@ async function payFor(key, b, scope) {
   btnBusy(b, false);
 }
 
+/** Разовая покупка: плитка, иконка и пояснение */
+function packMeta(key, p) {
+  if (key === "freeze") return { tile: "accent", icon: "flame", sub: `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` };
+  if (key === "community") return { tile: "ok", icon: "users", sub: p.community_preorder ? "Напишем, как только откроем, — вы попадёте первыми" : "Закрытое сообщество врачей и студентов. Откроем скоро — участники предзаказа попадут первыми" };
+  return { tile: "warn", icon: "users", sub: `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}` };
+}
+
 /** Покупка на месте: лист с одним товаром (пробный период или разовая покупка) без перехода к тарифам */
 function checkout(key) {
   const p = S.me.profile;
@@ -3965,8 +3972,8 @@ function checkout(key) {
     ? html`<h2>Премиум 7 дней за ${rub(trial.price)} ₽</h2>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div>
       <p class="tiny muted">Через 7 дней — ${rub(trial.then_price)} ₽ в месяц автоматически. Отключить можно в любой момент в профиле, до конца пробного периода — бесплатно.</p>`
-    : html`<div class="row-c"><div class="tile ${key === "freeze" ? "accent" : "warn"}">${ic(key === "freeze" ? "flame" : "users")}</div>
-        <div class="grow"><h2>${pack.label}</h2><div class="small muted">${key === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}`}</div></div></div>`;
+    : html`<div class="row-c"><div class="tile ${packMeta(key, p).tile}">${ic(packMeta(key, p).icon)}</div>
+        <div class="grow"><h2>${pack.label}</h2><div class="small muted">${packMeta(key, p).sub}</div></div></div>`;
   const price = trial ? trial.price : pack.price;
   openSheet(html`<div class="stack checkout">${body}
     <button class="btn lg block" data-buy="${key}">Оплатить ${rub(price)} ₽</button>

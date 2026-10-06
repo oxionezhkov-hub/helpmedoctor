@@ -89,6 +89,7 @@ test("вебхук Точки: operationId из JWT и JSON", () => {
   assert.equal(webhookOperationId('{"operationId":"op2"}'), "op2");
   assert.equal(planFromPurpose("HelpMeDoctor uid1: 1 неделя"), "week");
   assert.equal(planFromPurpose("… Навсегда"), "forever");
+  assert.equal(planFromPurpose("HelpMeDoctor uid1: Предзаказ доступа к комьюнити"), "community");
 });
 
 test("анкета: новым — показываем, старым из KV — нет", () => {

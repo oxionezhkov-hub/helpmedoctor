@@ -137,6 +137,7 @@ export function planFromPurpose(purpose) {
   if (p.includes("7 дней") || p.includes("пробн")) return TRIAL.key;
   if (p.includes("пациент")) return "patients3";
   if (p.includes("замороз")) return "freeze";
+  if (p.includes("комьюнити")) return "community";
   if (p.includes("навсегда")) return "forever";
   if (p.includes("студен")) return "student";
   if (p.includes("3 месяц")) return "quarter";
