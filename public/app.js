@@ -531,11 +531,13 @@ async function boot() {
   followIntent();
   resumePaymentWatch();
   sendAttribution();
+  registrationGoal();
 }
 
-/** Цели Яндекс Метрики (счётчик сайта) */
+/** Цели Яндекс Метрики (счётчик сайта) и пикселя VK Рекламы (3799574) — одни и те же имена */
 function goal(name, params) {
   try { window.ym?.(113057442, "reachGoal", name, params); } catch {}
+  try { (window._tmr = window._tmr || []).push({ type: "reachGoal", id: 3799574, goal: name }); } catch {}
 }
 
 /** Пришли с сайта по кнопке тарифа (from=…_trial / _month …) — после входа сразу открываем тарифы */
@@ -678,6 +680,7 @@ async function renderLogin() {
         toast("Вы вошли");
         followIntent();
         sendAttribution();
+        registrationGoal();
       } else if (r.status === "expired") {
         renderLogin();
       }
@@ -732,6 +735,16 @@ function metrikaClientId() {
       window.ym(113057442, "getClientID", (id) => { clearTimeout(t); resolve(String(id || "")); });
     } catch { resolve(""); }
   });
+}
+
+/** Цель «registration» (Метрика и пиксель VK): один раз на аккаунт, если он создан меньше суток назад */
+function registrationGoal() {
+  try {
+    const p = S.me?.profile;
+    if (!p?.uid || !p.registered_at || Date.now() - p.registered_at > 86400000 || localStorage.getItem("hmd_reg_goal") === String(p.uid)) return;
+    goal("registration", { via: IN_TG ? "telegram_app" : "site" });
+    localStorage.setItem("hmd_reg_goal", String(p.uid));
+  } catch {}
 }
 
 async function sendAttribution() {

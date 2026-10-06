@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VK Реклама: 10 объявлений</title>
+<style>
+:root { --bg: #f5f2e9; --card: #fffdf8; --ink: #1b1f1d; --ink2: #3a403d; --muted: #6a716d; --green: #0d5c55; --gsoft: #dceae5; --red: #b3391f; --rule: #dcd6c6; --field: #f7f5ef; --ok: #15803d; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121514; --card: #1b201e; --ink: #e9eeec; --ink2: #c3cbc8; --muted: #8f9995; --green: #2dd4bf; --gsoft: #173a36; --red: #f08a6c; --rule: #2c3431; --field: #232927; --ok: #4ade80; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 80px; }
+h1 { font: 800 32px/1.15 Georgia, "Times New Roman", serif; margin: 8px 0 6px; }
+h2 { font: 800 24px/1.2 Georgia, serif; margin: 0; }
+h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 10px; }
+.lead { color: var(--ink2); margin: 0 0 18px; }
+nav { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0; display: flex; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--rule); margin-bottom: 20px; }
+nav a { flex: none; text-decoration: none; color: var(--ink); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+nav a:hover { border-color: var(--green); }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 22px; margin-bottom: 22px; scroll-margin-top: 64px; }
+.info ul, .info ol { margin: 6px 0 0; padding-left: 20px; } .info li { margin: 4px 0; }
+.info p { margin: 8px 0; }
+.ttl { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.key { font: 700 13px ui-monospace, Menlo, monospace; color: #fff; background: var(--red); border-radius: 999px; padding: 3px 10px; }
+.grid { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 24px; margin-top: 16px; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+.pics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+figure { margin: 0; } figure img { width: 100%; display: block; border-radius: 10px; border: 1px solid var(--rule); }
+figcaption { font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.4; } figcaption a { color: var(--green); }
+.f { margin-bottom: 12px; }
+.fh { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.fl { font-weight: 700; font-size: 14px; }
+.cnt { font: 12px ui-monospace, Menlo, monospace; color: var(--muted); }
+.cp { margin-left: auto; font: 600 13px system-ui, sans-serif; color: var(--green); background: var(--gsoft); border: 0; border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+.cp:hover { filter: brightness(.95); } .cp.done { color: #fff; background: var(--ok); }
+.fv { background: var(--field); border: 1px solid var(--rule); border-radius: 10px; padding: 9px 12px; overflow-wrap: anywhere; user-select: all; }
+.fv.multi { font-size: 14.5px; color: var(--ink2); }
+code { font: 13px ui-monospace, Menlo, monospace; background: var(--field); border-radius: 5px; padding: 1px 5px; }
+</style></head>
+<body><div class="wrap">
+<h1>VK Реклама: 10 объявлений</h1>
+<p class="lead">Help me, Doctor · универсальное объявление, цель «Сайт». У каждого поля кнопка «Копировать», картинки открываются по клику.</p>
+<nav><a href="#info">Как запускать</a><a href="#a01">1. Аккредитация</a><a href="#a02">2. Пациент недоговаривает</a><a href="#a03">3. Разбор ошибок</a><a href="#a04">4. Голос</a><a href="#a05">5. Анализы с нормами</a><a href="#a06">6. Дуэль «Кто круче?»</a><a href="#a07">7. Бесплатно</a><a href="#a08">8. 10 специальностей</a><a href="#a09">9. Первый пациент</a><a href="#a10">10. Каждый день</a></nav>
+
+<section class="card info" id="info">
+  <h2>Как запускать</h2>
+  <ul>
+    <li><b>Картинки:</b> к каждому объявлению загружайте обе, 1:1 (1080×1080) и 4:5 (1080×1350), кабинет сам подберёт под площадку.</li>
+    <li><b>Ссылка:</b> у каждого объявления своя метка <code>from=vk_a01</code>…<code>vk_a10</code>, переходы и регистрации видны в админке → «Источники».</li>
+    <li><b>Лимиты полей:</b> заголовок 40, короткое описание 90, длинное 220, текст рядом с кнопкой 30 символов. Счётчик стоит у каждого поля.</li>
+    <li><b>Тест:</b> все 10 с одинаковым бюджетом на 2–3 дня, затем отключите те, где регистрация в 1,5 раза дороже средней, и переложите бюджет в 2–3 лучших.</li>
+    <li><b>Модерация:</b> не добавляйте «лучший / №1» (по закону о рекламе это нужно подтверждать) и упоминания Минздрава. Если модератор спросит — это образовательный тренажёр для студентов, не медицинская услуга.</li>
+  </ul>
+  <h3>Пиксель и конверсии</h3>
+  <p>Пиксель 3799574 стоит на сайте и в приложении (заработает после деплоя). В кабинете:</p>
+  <ol>
+    <li>«Пиксели» → «Диагностика сайта»: проверьте, что пиксель на helpmedoctor.ru виден.</li>
+    <li>«События» → создать событие → «JS-событие», по одному на каждое имя:</li>
+  </ol>
+  <div class="f">
+    <div class="fh"><span class="fl">registration <span class="cnt">— новый аккаунт, один раз на человека — главная цель для оптимизации</span></span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">registration</div></div><div class="f">
+    <div class="fh"><span class="fl">onboarding_done <span class="cnt">— заполнил анкету после регистрации</span></span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">onboarding_done</div></div><div class="f">
+    <div class="fh"><span class="fl">login_ok <span class="cnt">— вошёл через Яндекс или Google</span></span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">login_ok</div></div><div class="f">
+    <div class="fh"><span class="fl">pay_click <span class="cnt">— нажал «оплатить» в тарифах</span></span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">pay_click</div></div><div class="f">
+    <div class="fh"><span class="fl">promo_ok <span class="cnt">— применил промокод</span></span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">promo_ok</div></div>
+  <ol start="3"><li>В кампании цель «Конверсии на сайте» → событие <code>registration</code>. Пока событий меньше 10–20 в неделю, можно начать с оптимизации на клики.</li></ol>
+  <h3>Промпты для ChatGPT</h3>
+  <p>Вставляйте как есть. В большинстве промптов текста на картинке нет: так модель не ошибётся в русских буквах. Нужна надпись — допишите: «Сверху крупная надпись на русском: "…", шрифт с засечками, проверь орфографию». Текст на картинке держите в пределах ~20% площади.</p>
+</section>
+
+<section class="card" id="a01">
+  <div class="ttl"><span class="key">a01</span><h2>Аккредитация</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a01-1x1.jpg" target="_blank"><img src="img/a01-1x1.jpg" alt="Аккредитация, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a01-1x1.jpg" download>скачать</a> · <code>a01-1x1.jpg</code></figcaption></figure><figure><a href="img/a01-4x5.jpg" target="_blank"><img src="img/a01-4x5.jpg" alt="Аккредитация, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a01-4x5.jpg" download>скачать</a> · <code>a01-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">37 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Репетиция аккредитации на ИИ-пациенте</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">82 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Расспрос, анализы, диагноз и разбор ошибок — тренажёр приёма для студентов-медиков</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">204 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Пациент жалуется своими словами, ты собираешь анамнез, назначаешь обследования и ставишь диагноз. После приёма — оценка и вывод эксперта: что упустил и на чём легко ошибиться. 2 пациента в день бесплатно.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">27 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">2 пациента в день бесплатно</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Попробовать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a01</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Фотореалистичная сцена, вертикальный кадр 4:5. Студентка-медик лет 21 в белом халате и со стетоскопом на шее сидит за столом в учебной аудитории медицинского вуза и сосредоточенно смотрит в смартфон; на экране смартфона виден мессенджер-подобный чат с пациентом (бирюзовые и белые пузыри сообщений, текст неразборчив). Рядом на столе — раскрытый конспект, маркер, бейдж «Аккредитация». Тёплый дневной свет из окна, мягкий фон с размытием, спокойная уверенная атмосфера. Цвета: тёплая бумага #f5f2e9, глубокий бирюзовый #0d5c55, акцент кирпично-красный #b3391f. Без логотипов и брендов. Сверху свободное пространство под заголовок (примерно треть кадра однотонная). Текст на картинке не добавляй.</div></div>
+</section>
+<section class="card" id="a02">
+  <div class="ttl"><span class="key">a02</span><h2>Пациент недоговаривает</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a02-1x1.jpg" target="_blank"><img src="img/a02-1x1.jpg" alt="Пациент недоговаривает, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a02-1x1.jpg" download>скачать</a> · <code>a02-1x1.jpg</code></figcaption></figure><figure><a href="img/a02-4x5.jpg" target="_blank"><img src="img/a02-4x5.jpg" alt="Пациент недоговаривает, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a02-4x5.jpg" download>скачать</a> · <code>a02-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">29 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Пациент не скажет главное сам</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">83 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Тренажёр расспроса: ИИ-пациенты путаются, недоговаривают и ждут правильного вопроса</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">192 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Как на настоящем приёме: пациент описывает жалобы своими словами и молчит о важном, пока не спросишь. Учись собирать анамнез, назначать обследования и ставить диагноз. После — оценка эксперта.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">26 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Первый пациент — за минуту</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Начать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a02</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Иллюстрация в стиле современного редакционного флэт-дизайна с лёгкой фактурой бумаги, квадрат 1:1. Кабинет врача: мужчина лет 47 сидит на стуле, держится за живот и уклончиво отводит взгляд; над его головой — облачко мысли с перечёркнутой луной и тарелкой (намёк на ночные и голодные боли), которое он не произносит вслух. Напротив — молодой врач в халате с планшетом, внимательно слушает. Палитра: фон тёплая бумага #f5f2e9, бирюзовый #0d5c55, кирпично-красный #b3391f, жёлтый маркер #f5d97c, тёмные контуры. Много воздуха сверху под заголовок. Без текста на картинке.</div></div>
+</section>
+<section class="card" id="a03">
+  <div class="ttl"><span class="key">a03</span><h2>Разбор ошибок</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a03-1x1.jpg" target="_blank"><img src="img/a03-1x1.jpg" alt="Разбор ошибок, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a03-1x1.jpg" download>скачать</a> · <code>a03-1x1.jpg</code></figcaption></figure><figure><a href="img/a03-4x5.jpg" target="_blank"><img src="img/a03-4x5.jpg" alt="Разбор ошибок, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a03-4x5.jpg" download>скачать</a> · <code>a03-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">34 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Разбор ошибок после каждого приёма</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">87 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Принимаешь ИИ-пациента — эксперт показывает, что упустил в анамнезе, анализах и лечении</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">197 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Расспрос, обследования, осмотр, диагноз, лечение — а потом оценка по трём шкалам и вывод эксперта. В премиуме — подробный разбор по клиническим рекомендациям и тест по твоим ошибкам: 7 дней за 1 ₽.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">25 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Оценка эксперта бесплатно</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Попробовать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a03</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Фотореалистичный крупный план, квадрат 1:1: рука студента-медика держит смартфон над столом; на экране — карточка с оценкой «3.5» и звёздами, три горизонтальные шкалы (две почти полные бирюзовые, одна короткая красная) и два пункта списка с красными крестиками. Рядом на столе — стетоскоп, кружка чая, тетрадь с пометками. Мягкий тёплый свет, малая глубина резкости, фон размыт. Палитра: бумажно-бежевый, бирюзовый #0d5c55, акцент красный #b3391f. Текст на экране неразборчивый, без логотипов. Сверху место под заголовок.</div></div>
+</section>
+<section class="card" id="a04">
+  <div class="ttl"><span class="key">a04</span><h2>Голос</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a04-1x1.jpg" target="_blank"><img src="img/a04-1x1.jpg" alt="Голос, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a04-1x1.jpg" download>скачать</a> · <code>a04-1x1.jpg</code></figcaption></figure><figure><a href="img/a04-4x5.jpg" target="_blank"><img src="img/a04-4x5.jpg" alt="Голос, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a04-4x5.jpg" download>скачать</a> · <code>a04-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">23 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Собирай анамнез голосом</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">90 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Говоришь с ИИ-пациентом вслух — он отвечает своими словами. Тренажёр для студентов-медиков</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">197 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Нажми микрофон и спрашивай, как на настоящем приёме: пациент поймёт и ответит своими словами. Назначай анализы и осмотр, ставь диагноз — и получай оценку эксперта. Работает в браузере и в Telegram.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">26 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Без установки — в браузере</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Попробовать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a04</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Фотореалистичная сцена, вертикаль 4:5. Студент-медик в форменном медицинском костюме (бирюзовом) стоит у окна в коридоре больницы и говорит в смартфон, держа его как рацию у рта; на экране видна большая кнопка микрофона и звуковая волна. Лёгкая улыбка, уверенный вид. Вечерний тёплый свет, размытый фон коридора. Палитра: бирюзовый #0d5c55, тёплый бежевый #f5f2e9, немного кирпично-красного. Без логотипов, без текста. Сверху место под заголовок.</div></div>
+</section>
+<section class="card" id="a05">
+  <div class="ttl"><span class="key">a05</span><h2>Анализы с нормами</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a05-1x1.jpg" target="_blank"><img src="img/a05-1x1.jpg" alt="Анализы с нормами, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a05-1x1.jpg" download>скачать</a> · <code>a05-1x1.jpg</code></figcaption></figure><figure><a href="img/a05-4x5.jpg" target="_blank"><img src="img/a05-4x5.jpg" alt="Анализы с нормами, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a05-4x5.jpg" download>скачать</a> · <code>a05-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">29 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Анализы приходят, как в жизни</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">86 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">ОАК, биохимия, ЭКГ, УЗИ, КТ — результаты с нормами. Найди отклонения и поставь диагноз</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">192 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Назначаешь обследования ИИ-пациенту — получаешь результаты с референсами: отклонения видно сразу, а выводы делаешь сам. Тренируй чтение анализов на клинических случаях, а не на сухих таблицах.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">27 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">2 пациента в день бесплатно</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Попробовать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a05</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Фотореалистичный натюрморт сверху (flat lay), квадрат 1:1: на светлом столе лежит бланк лабораторного анализа крови (таблица, часть строк обведена красной ручкой, цифры неразборчивы), пробирка с фиолетовой крышкой в штативе, стетоскоп, смартфон с бирюзовым интерфейсом, жёлтый текстовыделитель. Мягкий рассеянный дневной свет, чистая композиция, много свободного места в верхней трети под заголовок. Палитра: тёплый белый, бирюзовый #0d5c55, красный #b3391f, жёлтый #f5d97c. Без логотипов и читаемого текста.</div></div>
+</section>
+<section class="card" id="a06">
+  <div class="ttl"><span class="key">a06</span><h2>Дуэль «Кто круче?»</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a06-1x1.jpg" target="_blank"><img src="img/a06-1x1.jpg" alt="Дуэль «Кто круче?», 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a06-1x1.jpg" download>скачать</a> · <code>a06-1x1.jpg</code></figcaption></figure><figure><a href="img/a06-4x5.jpg" target="_blank"><img src="img/a06-4x5.jpg" alt="Дуэль «Кто круче?», 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a06-4x5.jpg" download>скачать</a> · <code>a06-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">33 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Дуэль с одногруппником на диагноз</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">80 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Один пациент на двоих: кто поставит диагноз точнее и быстрее. Режим «Кто круче?»</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">160 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Брось вызов другу ссылкой — вы оба принимаете одного и того же ИИ-пациента. Точнее диагноз, лучше лечение, быстрее приём — выше счёт. Проиграл — требуй реванша.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">22 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Вызови друга по ссылке</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Начать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a06</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Яркая динамичная иллюстрация в стиле спортивного постера, квадрат 1:1. Два студента-медика в белых халатах стоят друг напротив друга, каждый со смартфоном в руке, азартно и по-дружески; между ними крупная буква-символ «VS» в виде кардиограммы. Над ними — силуэт одного пациента, общего для обоих. Фон — тёплая бумага #f5f2e9 с тонкой бирюзовой сеткой, акценты бирюзовый #0d5c55 и кирпично-красный #b3391f, золотая звёздочка победителя. Плоский рисунок с чёткими контурами и лёгкими тенями. Без текста кроме «VS».</div></div>
+</section>
+<section class="card" id="a07">
+  <div class="ttl"><span class="key">a07</span><h2>Бесплатно</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a07-1x1.jpg" target="_blank"><img src="img/a07-1x1.jpg" alt="Бесплатно, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a07-1x1.jpg" download>скачать</a> · <code>a07-1x1.jpg</code></figcaption></figure><figure><a href="img/a07-4x5.jpg" target="_blank"><img src="img/a07-4x5.jpg" alt="Бесплатно, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a07-4x5.jpg" download>скачать</a> · <code>a07-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">30 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">2 ИИ-пациента в день бесплатно</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">83 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Тренажёр врачебного приёма: расспрос, анализы, диагноз и оценка эксперта. Без карты</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">186 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Каждый день — два новых клинических случая. Принимай пациента, назначай обследования, ставь диагноз и получай оценку с выводом эксперта. За приём на 4,5 и выше — ещё один пациент сверху.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">25 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Без карты и без установки</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Начать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a07</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Минималистичная графика, квадрат 1:1. По центру — огромная цифра «2», собранная из двух медицинских карточек пациентов, лежащих веером; рядом стетоскоп, свернувшийся в форме сердца. Фон — тёплая бумага #f5f2e9 с тонкой бирюзовой сеткой как в тетради, акцентные цвета бирюзовый #0d5c55 и жёлтый маркер #f5d97c, немного кирпично-красного #b3391f. Чистый современный флэт с мягкими тенями. Под цифрой надпись крупно по-русски: «пациента в день бесплатно». Больше никакого текста.</div></div>
+</section>
+<section class="card" id="a08">
+  <div class="ttl"><span class="key">a08</span><h2>10 специальностей</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a08-1x1.jpg" target="_blank"><img src="img/a08-1x1.jpg" alt="10 специальностей, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a08-1x1.jpg" download>скачать</a> · <code>a08-1x1.jpg</code></figcaption></figure><figure><a href="img/a08-4x5.jpg" target="_blank"><img src="img/a08-4x5.jpg" alt="10 специальностей, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a08-4x5.jpg" download>скачать</a> · <code>a08-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">39 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Клинические случаи по 10 специальностям</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">87 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Терапия, кардиология, хирургия, педиатрия, неврология и не только. Сложность — на выбор</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">185 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Выбери специальность и уровень: от типичной картины болезни до редкой патологии с противоречивыми данными. Пациенты каждый раз новые — это не сборник задач, где ответы гуляют по группе.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">29 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Сложность от лёгкой до редкой</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Выбрать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a08</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Иллюстрация-коллаж, вертикаль 4:5. Сетка из 10 небольших плоских иконок-сцен в аккуратных скруглённых карточках: сердце с ЭКГ, лёгкие, мозг, детская соска и плюшевый мишка, скальпель, кожа под лупой, капельница, машина скорой помощи, клетка под микроскопом, голова с облачком мыслей. Единый стиль: тонкие тёмные контуры, заливки бирюзовый #0d5c55, кирпично-красный #b3391f, жёлтый #f5d97c на фоне тёплой бумаги #f5f2e9. Верхняя треть свободна под заголовок. Без текста.</div></div>
+</section>
+<section class="card" id="a09">
+  <div class="ttl"><span class="key">a09</span><h2>Первый пациент</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a09-1x1.jpg" target="_blank"><img src="img/a09-1x1.jpg" alt="Первый пациент, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a09-1x1.jpg" download>скачать</a> · <code>a09-1x1.jpg</code></figcaption></figure><figure><a href="img/a09-4x5.jpg" target="_blank"><img src="img/a09-4x5.jpg" alt="Первый пациент, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a09-4x5.jpg" download>скачать</a> · <code>a09-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">36 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Ошибайся на тренажёре, а не в палате</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">77 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Приём ИИ-пациента от жалоб до лечения — потренируйся до практики и ординатуры</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">199 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">На практике страшно спросить лишнее и стыдно ошибиться. Здесь можно: ИИ-пациент не обидится, а эксперт спокойно покажет, что ты упустил. Набей руку на десятках случаев до встречи с живыми пациентами.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">22 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Начни с лёгкого случая</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Попробовать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a09</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Тёплая фотореалистичная сцена, вертикаль 4:5. Вечер, общежитие или съёмная квартира: студентка-медик в домашней толстовке сидит на кровати, на коленях ноутбук, рядом на покрывале — белый халат и стетоскоп, кружка чая, стопка учебников. Она сосредоточенно печатает, на экране — чат с пациентом (бирюзовые и белые пузыри, текст неразборчив). Атмосфера: уютно, безопасно, без стресса. Тёплый свет настольной лампы. Палитра с акцентами бирюзового #0d5c55 и тёплого бежевого. Без логотипов и текста, сверху место под заголовок.</div></div>
+</section>
+<section class="card" id="a10">
+  <div class="ttl"><span class="key">a10</span><h2>Каждый день</h2></div>
+  <div class="grid">
+    <div class="pics"><figure><a href="img/a10-1x1.jpg" target="_blank"><img src="img/a10-1x1.jpg" alt="Каждый день, 1:1" loading="lazy"></a>
+    <figcaption>1:1 · <a href="img/a10-1x1.jpg" download>скачать</a> · <code>a10-1x1.jpg</code></figcaption></figure><figure><a href="img/a10-4x5.jpg" target="_blank"><img src="img/a10-4x5.jpg" alt="Каждый день, 4:5" loading="lazy"></a>
+    <figcaption>4:5 · <a href="img/a10-4x5.jpg" download>скачать</a> · <code>a10-4x5.jpg</code></figcaption></figure></div>
+    <div>
+      <div class="f">
+    <div class="fh"><span class="fl">Заголовок</span><span class="cnt">34 / 40</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Клиническое мышление — каждый день</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Короткое описание</span><span class="cnt">70 / 90</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Пациент дня, задания и стрики. После приёма — тест по твоим же ошибкам</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Длинное описание</span><span class="cnt">177 / 220</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Один приём — 10–15 минут, успеешь между парами. Задания дня, опыт и стрик держат в ритме, а тест «работа над ошибками» закрепляет то, на чём споткнулся. Премиум — 7 дней за 1 ₽.</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Текст рядом с кнопкой</span><span class="cnt">21 / 30</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Премиум 7 дней за 1 ₽</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Кнопка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">Попробовать</div></div>
+      <div class="f">
+    <div class="fh"><span class="fl">Ссылка</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv">https://helpmedoctor.ru/app?from=vk_a10</div></div>
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  <div class="f">
+    <div class="fh"><span class="fl">Промпт</span><button class="cp" type="button">Копировать</button></div>
+    <div class="fv multi">Иллюстрация в стиле мобильной игры, но сдержанная и «взрослая», квадрат 1:1. Смартфон крупным планом под небольшим наклоном: на экране карточка теста с вопросом и тремя вариантами ответа (один подсвечен зелёным, один красным; текст неразборчив), над ней — огонёк стрика с цифрой «12». Вокруг телефона летают маленькие элементы: кардиограмма, звёздочки опыта, галочки выполненных заданий. Фон — тёплая бумага #f5f2e9 с бирюзовой сеткой, цвета бирюзовый #0d5c55, кирпично-красный #b3391f, жёлтый #f5d97c. Кроме цифры «12» никакого текста.</div></div>
+</section>
+</div>
+<script>
+function copy(t) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+  var ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } finally { ta.remove(); }
+  return Promise.resolve();
+}
+document.addEventListener("click", function (e) {
+  var b = e.target.closest(".cp"); if (!b) return;
+  var v = b.closest(".f").querySelector(".fv").textContent;
+  copy(v).then(function () { b.textContent = "Скопировано"; b.classList.add("done");
+    setTimeout(function () { b.textContent = "Копировать"; b.classList.remove("done"); }, 1400); });
+});
+</script>
+</body></html>
