@@ -2873,13 +2873,11 @@ function viewProfile() {
   const item = (attrs, tile, icon, title, sub2, extra = "") => html`<${attrs.tag || "a"} class="menu-item${attrs.cls ? " " + attrs.cls : ""}" ${raw(attrs.a || "")}>
     <div class="tile ${tile}">${ic(icon)}</div><div class="grow"><b>${title}</b>${sub2 ? html`<div class="small muted ellipsis">${sub2}</div>` : ""}</div>${extra || ic("chevron", "c-muted")}</${attrs.tag || "a"}>`;
   renderShell(html`<div class="page">
-    <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">Врач ${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
-      <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
       ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}` : p.trial_available ? "7 дней за 1 ₽" : "Безлимит и разбор по КР")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")}${p.stats.ratings_count ? ` · ★ ${dec(p.stats.avg_rating.toFixed(1))}` : ""}`)}
       ${item({ a: 'href="#/battles"' }, "warn", "swords", "Кто круче?", "Битва с другом на одном пациенте")}
-      ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Профиль и сложность")}
+      ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, имя, специальность и сложность")}
       ${item({ a: 'href="#/partner"' }, "ok", "handshake", "Партнёрская программа", p.partner ? "50% с оплат приглашённых" : "До 30% с оплат друзей")}
       ${item({ a: 'href="#/profile/app"' }, "accent", "phone", "Приложение на телефон", IN_TG ? "iPhone и Android" : pushLabel(true))}
       ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привязать Telegram")}
