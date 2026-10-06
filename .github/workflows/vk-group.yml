@@ -1,0 +1,42 @@
+name: Группа ВК
+
+# Отправляет посты из content/vk-group/queue/*.json в ленту RSS группы ВК «Для будущих врачей» (helpmedoctor.ru/vk/rss.xml).
+# ВК забирает ленту сам (импорт RSS в настройках сообщества), обычно в течение часа.
+# Запуск: пуш ветки vk/** с новым файлом в очереди (отправляются только добавленные файлы) или вручную с указанием файла.
+on:
+  push:
+    branches: ["vk/**"]
+    paths: ["content/vk-group/queue/**"]
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "Файл поста, например content/vk-group/queue/2026-10-07-anamnez.json"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: В ленту ВК
+        env:
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          BEFORE: ${{ github.event.before }}
+          INPUT_FILE: ${{ github.event.inputs.file }}
+        run: |
+          if [ -n "$INPUT_FILE" ]; then files="$INPUT_FILE"
+          elif [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            # Новая ветка: только файлы из последнего коммита — чтобы не отправить старые посты
+            files=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- content/vk-group/queue)
+          else
+            files=$(git diff --name-only --diff-filter=A "$BEFORE" "$GITHUB_SHA" -- content/vk-group/queue)
+          fi
+          [ -z "$files" ] && { echo "Новых постов нет"; exit 0; }
+          for f in $files; do echo "== $f"; node scripts/vk-feed.mjs "$f"; done
