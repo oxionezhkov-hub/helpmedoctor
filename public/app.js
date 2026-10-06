@@ -124,6 +124,7 @@ const ICONS = {
   party: '<path d="M4 20 9 7l8 8Z"/><path d="M14 4v2M19 9h2M17 3l-1 2M20 6l-2 1"/>',
   sad: '<circle cx="12" cy="12" r="9"/><path d="M8 16a5 5 0 0 1 8 0M9 9.5h.01M15 9.5h.01"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+  pencil: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
   external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4Z"/><circle cx="12" cy="13" r="3.5"/>',
   chart: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
@@ -2619,6 +2620,32 @@ async function suggestSections(profession) {
   }
 }
 
+/** Ползунок по шагам: метки-точки на дорожке, подпись текущего выбора — под ним */
+function stepSlider(id, items, idx) {
+  const max = items.length - 1;
+  return html`<div class="steps" style="--f:${idx / max}">
+      <input type="range" id="${id}" min="0" max="${max}" step="1" value="${idx}" aria-valuetext="${items[idx].label}">
+      <div class="steps-ticks">${items.map((_, i) => html`<i class="${i < idx ? "on" : i === idx ? "cur" : ""}" style="--t:${i / max}"></i>`)}</div>
+    </div>
+    <div class="steps-cap" id="${id}-cap">${stepCap(items[idx])}</div>`;
+}
+const stepCap = (it) => html`<b>${it.label}</b><span class="small muted">${it.hint || ""}</span>`;
+/** Пока тянут — меняем только подпись и заливку; выбор фиксируем, когда отпустили */
+function bindStepSlider(id, items, onPick) {
+  const el = $(`#${id}`);
+  const box = el.parentElement;
+  const max = items.length - 1;
+  const paint = () => {
+    const i = Number(el.value);
+    box.style.setProperty("--f", i / max);
+    box.querySelectorAll(".steps-ticks i").forEach((t, j) => (t.className = j < i ? "on" : j === i ? "cur" : ""));
+    $(`#${id}-cap`).innerHTML = stepCap(items[i])[RAW];
+    el.setAttribute("aria-valuetext", items[i].label);
+  };
+  el.oninput = () => { paint(); haptic(); };
+  el.onchange = () => onPick(Number(el.value));
+}
+
 /** Специальность выпадающим списком: по алфавиту, «Другая…» — в конце */
 function professionSelect(id, value) {
   const names = Object.keys(S.me.config.specializations).sort((a, b) => a.localeCompare(b, "ru"));
@@ -2640,32 +2667,28 @@ function viewSettings(fresh) {
   const cfg = S.me.config;
   if (fresh || !pf) pf = profileDraft(p, cfg);
   const custom = pf.profession === "__custom";
+  // Ползунки «Кто вы» и «Сложность»: подпись текущего выбора — под ползунком
+  const diffLabel = (key) => cfg.difficulties.find((d) => d.key === key)?.label || "";
+  const levelItems = cfg.levels.map((l) => ({ label: l.label, hint: `по умолчанию сложность «${diffLabel(l.complexity)}» · опыт ×${String(l.xpMult).replace(".", ",")}` }));
+  const levelIdx = Math.max(0, cfg.levels.findIndex((l) => l.key === pf.level));
+  const diffItems = [
+    { label: "По уровню", hint: `сейчас «${diffLabel(cfg.levels[levelIdx]?.complexity)}» — меняется вместе с «Кто вы»` },
+    ...cfg.difficulties.map((d) => ({ label: `${d.emoji} ${d.label}`, hint: d.key === "hard" && !p.premium ? `${d.hint} · в премиуме` : d.hint })),
+  ];
+  const diffIdx = pf.difficulty ? cfg.difficulties.findIndex((d) => d.key === pf.difficulty) + 1 : 0;
 
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Настройки</h2></div>
 
-    <div class="card stack">
-      <h3>Фото профиля</h3>
-      <div class="row">
-        ${userAvatar(p, "xl")}
-        <div class="stack-sm grow">
-          <label class="btn sm ghost file-btn">${ic("camera")}<span>Загрузить фото</span><input type="file" accept="image/*" id="av-file" hidden></label>
-          <div class="row" style="gap:6px">
-            <button class="btn sm ghost grow" id="av-tg">${ic("telegram")}<span>Из Telegram</span></button>
-            ${p.avatar ? html`<button class="btn sm ghost" id="av-del" aria-label="Убрать фото">${ic("trash")}</button>` : ""}
-          </div>
-        </div>
-      </div>
+    <div class="card row-c pf-head">
+      <button class="pf-ava" id="av-edit" type="button" aria-label="Изменить фото">${userAvatar(p, "xl")}<span class="pf-ava-pen">${ic("pencil")}</span></button>
+      <div class="field grow"><label for="pf-name">Имя</label><input class="input" id="pf-name" value="${pf.name}" maxlength="40" autocomplete="given-name"></div>
     </div>
 
+    <div class="section-title">Настройка тренажёра</div>
     <div class="card stack" id="profile-form">
-      <h3>Профиль врача</h3>
-      <div class="field"><label>Имя</label><input class="input" id="pf-name" value="${pf.name}" maxlength="40"></div>
-      <div class="field"><label>Кто вы</label>
-        <div class="row wrap" style="gap:6px">${cfg.levels.map((l) => html`<button class="chip ${pf.level === l.key ? "on" : ""}" data-level="${l.key}">${l.label}</button>`)}</div></div>
-      <div class="field"><label>Сложность пациентов</label>
-        <div class="row wrap" style="gap:6px"><button class="chip ${!pf.difficulty ? "on" : ""}" data-diff="">По уровню</button>${cfg.difficulties.map((d) => html`<button class="chip ${pf.difficulty === d.key ? "on" : ""}" data-diff="${d.key}">${d.emoji} ${d.label}${d.key === "hard" && !p.premium ? html` ${ic("gem")}` : ""}</button>`)}</div>
-        <span class="tiny muted">${(cfg.difficulties.find((d) => d.key === (pf.difficulty || cfg.levels.find((l) => l.key === pf.level)?.complexity)) || {}).hint || ""}</span></div>
+      <div class="field"><label>Кто вы</label>${stepSlider("pf-level", levelItems, levelIdx)}</div>
+      <div class="field"><label>Сложность пациентов</label>${stepSlider("pf-diff", diffItems, diffIdx)}</div>
       <div class="field"><label for="pf-prof">Специальность</label>
         ${professionSelect("pf-prof", pf.profession)}
         <input class="input ${custom ? "" : "hidden"}" id="pf-prof-custom" value="${pf.custom}" placeholder="Ваша специальность, например: неонатолог" maxlength="40"></div>
@@ -2675,18 +2698,25 @@ function viewSettings(fresh) {
         ${!pf.suggesting && !pf.options.length ? html`<div class="small muted">${custom ? (pf.custom ? "Добавьте разделы ниже — или сохраните без них: пациенты будут по всей специальности." : "Введите специальность — разделы подберутся автоматически.") : "Добавьте хотя бы один раздел."}</div>` : ""}
         ${inlineForm("pf-spec-add", "Свой раздел, например: желтуха новорождённых", 60, ic("plus"), "btn ghost")}
       </div>
-      <button class="btn block" id="pf-save">Сохранить</button>
     </div>
+    <button class="btn block" id="pf-save">Сохранить</button>
 
   </div>`);
 
   $("#pf-name").oninput = (e) => { pf.name = e.target.value; };
-  root.querySelectorAll("[data-level]").forEach((b) => (b.onclick = () => { pf.level = b.dataset.level; viewSettings(); }));
-  root.querySelectorAll("[data-diff]").forEach((b) => (b.onclick = () => {
-    if (b.dataset.diff === "hard" && !p.premium) { toast("«Очень сложные» случаи — в премиуме"); return go("/plans"); }
-    pf.difficulty = b.dataset.diff;
-    viewSettings();
-  }));
+  // «По уровню» зависит от «Кто вы» — после выбора уровня перерисовываем
+  bindStepSlider("pf-level", levelItems, (i) => { pf.level = cfg.levels[i].key; viewSettings(); });
+  bindStepSlider("pf-diff", diffItems, (i) => {
+    const d = cfg.difficulties[i - 1];
+    if (d?.key === "hard" && !p.premium) { toast("«Очень сложные» случаи — в премиуме"); return go("/plans"); }
+    pf.difficulty = d?.key || "";
+  });
+  $("#av-edit").onclick = () => openSheet(html`<h2>Фото профиля</h2>
+    <div class="stack-sm" style="margin-top:12px">
+      <label class="btn ghost block file-btn">${ic("camera")}<span>Загрузить фото</span><input type="file" accept="image/*" id="av-file" hidden></label>
+      <button class="btn ghost block" id="av-tg" type="button">${ic("telegram")}<span>Взять из Telegram</span></button>
+      ${p.avatar ? html`<button class="btn danger block" id="av-del" type="button">${ic("trash")}<span>Убрать фото</span></button>` : ""}
+    </div>`, bindAvatar);
   $("#pf-prof").onchange = (e) => {
     if (e.target.value !== "__custom") return pickProfession(e.target.value);
     pf.profession = "__custom";
@@ -2750,7 +2780,6 @@ function viewSettings(fresh) {
       btnBusy(btn, false);
     }
   };
-  bindAvatar();
 }
 
 /** Фото профиля: своё (сжимаем в браузере до 320 px), из Telegram или без фото */
@@ -2770,6 +2799,7 @@ function bindAvatar() {
       S.me.profile = data.profile;
       haptic("success");
       toast("Фото обновлено", "ok");
+      closeSheet();
       viewSettings();
     } catch (e) {
       toast(e.message, "error");
@@ -2783,6 +2813,7 @@ function bindAvatar() {
       const { profile } = await api("POST", "/avatar/telegram");
       S.me.profile = profile;
       toast("Фото из Telegram", "ok");
+      closeSheet();
       viewSettings();
     } catch (e) {
       toast(e.message, "error");
@@ -2795,6 +2826,7 @@ function bindAvatar() {
     try {
       const { profile } = await api("DELETE", "/avatar");
       S.me.profile = profile;
+      closeSheet();
       viewSettings();
     } catch (e) {
       toast(e.message, "error");

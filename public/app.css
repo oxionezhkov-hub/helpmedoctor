@@ -802,3 +802,22 @@ a.ref-row.tap { color: inherit; text-decoration: none; }
 details.card.promo-box summary { justify-content: flex-start; gap: 10px; }
 details.card.promo-box summary::after { margin-left: auto; }
 #promo-code::placeholder { text-transform: none; }
+
+/* ---------- Настройки: фото + имя, ползунки ---------- */
+.pf-head { gap: 16px; align-items: center; }
+.pf-ava { position: relative; padding: 0; border: 0; background: none; border-radius: 50%; flex: none; cursor: pointer; }
+.pf-ava-pen { position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-contrast); display: grid; place-items: center; box-shadow: 0 0 0 3px var(--surface); }
+.pf-ava-pen .i { width: 16px; height: 16px; }
+.steps { position: relative; --thumb: 26px; }
+.steps input[type=range] { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 36px; margin: 0; background: transparent; cursor: pointer; touch-action: pan-y; }
+.steps input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--f)), var(--surface-2) 0); }
+.steps input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--f)), var(--surface-2) 0); }
+.steps input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: var(--thumb); height: var(--thumb); margin-top: -10px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); box-shadow: 0 1px 4px rgb(0 0 0 / .18); }
+.steps input[type=range]::-moz-range-thumb { width: var(--thumb); height: var(--thumb); box-sizing: border-box; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); box-shadow: 0 1px 4px rgb(0 0 0 / .18); }
+.steps input[type=range]:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--accent-soft); }
+.steps-ticks { position: absolute; inset: 0; pointer-events: none; }
+.steps-ticks i { position: absolute; top: 50%; left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--t)); width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--border); }
+.steps-ticks i.on { background: var(--accent-contrast); opacity: .8; }
+.steps-ticks i.cur { visibility: hidden; }
+.steps-cap { display: flex; flex-direction: column; gap: 2px; }
+.steps-cap b { font-size: 16px; }
