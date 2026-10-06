@@ -13,7 +13,7 @@ import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 import { adminApi } from "./admin-api.js";
 import { faceSvg } from "./lib/face.js";
 import { protoApi } from "./proto.js";
-import { vkFeedPush, vkFeedRss, vkFeedImage, vkFeedPage } from "./lib/vkfeed.js";
+import { vkFeedPush, vkFeedRss, vkFeedImage, vkFeedPage, vkFeedHits } from "./lib/vkfeed.js";
 import qrcode from "qrcode-generator";
 
 export { UserDO } from "./do/user.js";
@@ -40,7 +40,8 @@ export default {
       }
       // Лента для группы ВК (импорт RSS): посты присылает workflow «Группа ВК», ВК забирает /vk/rss.xml
       if (request.method === "POST" && path === "/feed/vk/push") return vkFeedPush(request, env);
-      if (path === "/vk/rss.xml") return vkFeedRss(env, env.PUBLIC_URL || url.origin);
+      if (path === "/vk/rss.xml") return vkFeedRss(env, env.PUBLIC_URL || url.origin, request, ctx);
+      if (path === "/vk/hits.json") return vkFeedHits(env);
       const vkImg = path.match(/^\/vk\/img\/([a-z0-9-]{3,80})\.jpg$/);
       if (vkImg) return vkFeedImage(env, vkImg[1]);
       const vkPage = path.match(/^\/vk\/p\/([a-z0-9-]{3,80})$/);
