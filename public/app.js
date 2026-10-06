@@ -3502,15 +3502,16 @@ async function viewAccounts(fresh) {
   const p = S.me.profile;
   const ids = Object.fromEntries(a.identities.map((i) => [i.provider, i]));
   const total = (a.telegram ? 1 : 0) + a.identities.length;
+  // Единый вид строк: галочка у названия = привязан, справа — только действие одного размера
   const row = (key, linked, sub, action) => html`<div class="menu-item acc-row"><div class="tile plain">${brand(key)}</div>
-    <div class="grow"><b>${PROVIDER_LABEL[key]}</b><div class="small muted ellipsis">${sub}</div></div>${action}</div>`;
+    <div class="grow"><b class="acc-name">${PROVIDER_LABEL[key]}${linked ? html`<span class="acc-ok" aria-label="привязан">${ic("check")}</span>` : ""}</b><div class="small muted ellipsis">${sub}</div></div>${action}</div>`;
   const tgRow = row("telegram", a.telegram, a.telegram ? (p.username ? "@" + p.username : "Привязан") : "Приёмы в чате с ботом, напоминания и стрики",
-    a.telegram ? html`<span class="badge ok">привязан</span>` : html`<button class="btn sm" id="link-tg" type="button">Привязать</button>`);
+    a.telegram ? "" : html`<button class="btn sm outline acc-btn" id="link-tg" type="button">Привязать</button>`);
   const provRows = a.providers.map((key) => {
     const i = ids[key];
-    if (i) return row(key, true, i.email || i.name || "Привязан", total > 1 ? html`<button class="btn sm ghost" data-unlink="${key}" type="button">Отвязать</button>` : html`<span class="badge ok">привязан</span>`);
+    if (i) return row(key, true, i.email || i.name || "Привязан", total > 1 ? html`<button class="btn sm ghost acc-btn" data-unlink="${key}" type="button">Отвязать</button>` : "");
     if (IN_TG) return row(key, false, "Привязывается в веб-версии", "");
-    return row(key, false, "Входить без Telegram", html`<button class="btn sm outline" data-link="${key}" type="button">Привязать</button>`);
+    return row(key, false, "Вход без Telegram", html`<button class="btn sm outline acc-btn" data-link="${key}" type="button">Привязать</button>`);
   });
   renderShell(html`<div class="page">${head}
     <div class="menu card">${tgRow}${provRows}</div>
@@ -3549,7 +3550,7 @@ async function linkTelegram(btn) {
     return btnBusy(btn, false);
   }
   btnBusy(btn, false);
-  btn.outerHTML = html`<a class="btn sm" href="${r.tg || r.url}" id="link-tg-open">${ic("clock")}Ждём…</a>`[RAW];
+  btn.outerHTML = html`<a class="btn sm outline acc-btn" href="${r.tg || r.url}" id="link-tg-open">${ic("clock")}Ждём…</a>`[RAW];
   const hint = $("#link-tg-hint");
   if (hint) hint.innerHTML = html`<div class="card small">В Telegram нажмите «Запустить», затем «✅ Привязать» — эта страница обновится сама.<br>Telegram не открылся? <a href="${r.url}" target="_blank" rel="noopener">Открыть бота в браузере</a></div>`[RAW];
   location.href = r.tg || r.url;
