@@ -74,19 +74,24 @@ const q4 = await waitFor(() => sent(U).find((m) => m.text.includes("4/4") && m.t
 assert.ok(q4.reply_markup.inline_keyboard.flat().some((b) => b.text.includes("Лёгкая ⭐")), "для студента рекомендуем лёгкую");
 await press(U, "ob_df_medium");
 await waitFor(() => sent(U).some((m) => m.text.includes("Профиль готов") && m.text.includes("гастроэнтерология") && m.text.includes("средняя")), "onboarding done");
-await waitFor(() => sent("1326867567").some((m) => m.text.includes("Анкета") && m.text.includes("Терапевт") && m.text.includes("Сложность: Средняя")), "admin onboarding");
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета") && m.text.includes("гастроэнтерология")), "second admin onboarding");
+// Админам — одно сообщение «Новый пользователь», анкета и первый пациент дописываются в него правкой
+const adminCard = (chat) => tgCalls().filter((c) => c.method === "editMessageText" && String(c.chat_id) === chat).map((c) => c.text);
+await waitFor(() => adminCard("1326867567").some((t) => t.startsWith("🆕 Новый пользователь") && t.includes("Анкета") && t.includes("Терапевт") && t.includes("Сложность: Средняя")), "admin onboarding");
+await waitFor(() => adminCard("1062804986").some((t) => t.includes("Новый пользователь") && t.includes("гастроэнтерология")), "second admin onboarding");
+assert.ok(!sent("1326867567").some((m) => m.text.startsWith("📝 Анкета")), "анкета не отдельным сообщением");
 await waitFor(() => sent(U).some((m) => m.text.includes("Пока пациент готовится")), "about ask");
 await text(U, "4 курс, Сеченовский, хочу научиться ставить диагноз");
 await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо! Пациент уже на подходе")), "about saved");
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("Анкета дополнена") && m.text.includes("4 курс")), "admin about");
+await waitFor(() => adminCard("1062804986").some((t) => t.includes("Новый пользователь") && t.includes("О себе: 4 курс")), "admin about");
 step("бот: анкета (роль, специальность, разделы, сложность, о себе) → профиль, оба админа получают ответы");
 
 // Первый пациент приходит сам — по выбранному профилю, без нажатия «Новый пациент»
 const ready = await waitFor(() => sent(U).find((m) => m.text.includes("Новый пациент готов")), "new patient");
 const patId = ready.reply_markup.inline_keyboard[0][0].callback_data.slice(3);
 assert.match(patId, /^pat_777_/);
-step("бот: первый пациент создаётся сразу после анкеты (очередь, alarm) и приходит сообщением");
+await waitFor(() => adminCard("1326867567").some((t) => t.includes("Новый пользователь") && t.includes("Анкета") && t.includes("🩺 Первый пациент")), "first patient in card");
+assert.ok(!sent("1326867567").some((m) => m.text.startsWith("🩺 Первый пациент")), "первый пациент не отдельным сообщением");
+step("бот: первый пациент создаётся сразу после анкеты (очередь, alarm) и приходит сообщением; админам всё в одной карточке");
 
 await press(U, `sp_${patId}`);
 await waitFor(() => sent(U).some((m) => m.text.includes("Мирон") && m.text.includes("живот крутит")), "opening phrase");

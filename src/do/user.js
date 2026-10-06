@@ -340,7 +340,7 @@ export class UserDO extends DurableObject {
         answered: !!(prof.about || prof.expectations), level: prof.level, profession: prof.profession,
         specs: prof.specializations, difficulty: G.complexityFor(prof), skipped: !!patch.skipped,
       });
-      if (!patch.skipped) await this.hub().notifyAdmin(onboardingNote(prof, "📝 Анкета"), "onboarding");
+      if (!patch.skipped) await this.hub().userNote(prof.uid, "onboarding", onboardingNote(prof, "📝 Анкета", true), onboardingNote(prof, "📝 Анкета"), "onboarding");
     } else if (fields.length) await this.track("profile_update", { fields, profession: prof.profession, notifications: prof.notifications !== false });
     return publicProfile(prof);
   }
@@ -352,7 +352,7 @@ export class UserDO extends DurableObject {
     await this.ctx.storage.put(PROFILE, prof);
     this.broadcast("profile");
     await this.track("onboarding_about", { len: prof.about.length });
-    await this.hub().notifyAdmin(onboardingNote(prof, "📝 Анкета дополнена"), "onboarding");
+    await this.hub().userNote(prof.uid, "onboarding", onboardingNote(prof, "📝 Анкета", true), onboardingNote(prof, "📝 Анкета дополнена"), "onboarding");
     return publicProfile(prof);
   }
 
@@ -477,7 +477,8 @@ export class UserDO extends DurableObject {
     }
     await this.track("patient_ready", { spec, diagnosis: pat.true_diagnosis, name: pat.name }, { dur: job.requested_at ? Date.now() - job.requested_at : null, source: job.source });
     if (prof.stats.patients_total === 1) {
-      await this.hub().notifyAdmin(`🩺 Первый пациент\nВрач: ${esc(prof.name)} ${prof.username ? "@" + esc(prof.username) : ""}\nuid: ${prof.uid}`, "first_patient");
+      await this.hub().userNote(prof.uid, "first_patient", `🩺 Первый пациент: ${esc(pat.name)}${pat.true_diagnosis ? ` · ${esc(pat.true_diagnosis)}` : ""}`,
+        `🩺 Первый пациент\nВрач: ${esc(prof.name)} ${prof.username ? "@" + esc(prof.username) : ""}\nuid: ${prof.uid}`, "first_patient");
     }
   }
 
@@ -2338,9 +2339,10 @@ function normalizeQuiz(t) {
 }
 
 /** Текст уведомления админам об анкете (HTML) */
-function onboardingNote(prof, title) {
+function onboardingNote(prof, title, short = false) {
   const e = (x) => esc(String(x || ""));
-  return `${title}: ${e(prof.name)}${prof.username ? " @" + e(prof.username) : ""} (${prof.uid})\n` +
+  // short — для карточки нового пользователя: имя уже в первой строке сообщения
+  return (short ? `${title}\n` : `${title}: ${e(prof.name)}${prof.username ? " @" + e(prof.username) : ""} (${prof.uid})\n`) +
     `Кто: ${e(G.levelMeta(prof.level).label)}\n` +
     `Специальность: ${e(prof.profession)}\n` +
     `Разделы: ${e((prof.specializations || []).join(", "))}\n` +
