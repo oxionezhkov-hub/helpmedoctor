@@ -688,6 +688,7 @@ export class UserDO extends DurableObject {
     prof.avatar_off = true;
     await this.ctx.storage.put(PROFILE, prof);
     if (old) await this.env.HELPMEDOCTOR?.delete(`avatar:${old}`).catch(() => {});
+    await this.track("avatar", { src: "off" }); // сводка в HubDO — чтобы соперник в битве не видел удалённое фото
     this.broadcast("profile");
     return { profile: publicProfile(prof) };
   }
@@ -1955,6 +1956,7 @@ export class UserDO extends DurableObject {
       src_channel: prof.src?.channel || (prof.ref?.startsWith("r_") ? "Партнёрская ссылка" : null), src_host: prof.src?.host || null,
       src_land: prof.src?.land || null, src_last: prof.src?.last || null, src_utm: prof.src?.utm || null, src_cid: prof.src?.cid || null,
       extra_today: prof.extra_patients?.date === today ? prof.extra_patients.n : 0,
+      avatar: prof.avatar?.id || "",
     };
   }
 

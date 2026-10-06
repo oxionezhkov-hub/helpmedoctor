@@ -3180,7 +3180,7 @@ async function viewBattle(fresh) {
   const versus = html`<div class="vs">
     <div class="vs-side">${userAvatar(S.me.profile)}<b class="ellipsis">Вы</b></div>
     <div class="vs-mid">${ic("swords")}</div>
-    <div class="vs-side">${op && (b.status !== "waiting" || !isOwner) ? html`<div class="avatar">${initials(op.name)}</div><b class="ellipsis">${op.name}</b>` : html`<div class="avatar vs-wait">?</div><b class="muted">ждём</b>`}</div>
+    <div class="vs-side">${op && (b.status !== "waiting" || !isOwner) ? html`${userAvatar({ name: op.name, avatar: op.avatar ? { id: op.avatar } : null })}<b class="ellipsis">${op.name}</b>` : html`<div class="avatar vs-wait">?</div><b class="muted">ждём</b>`}</div>
   </div>`;
   let body = "";
   if (b.status === "waiting" && isOwner) {
@@ -3230,7 +3230,7 @@ async function viewBattle(fresh) {
     const myDone = !!me.result || mp?.status === "closed";
     body = myDone
       ? html`<div class="card stack center battle-waiting">
-          <div class="battle-waiting-ic">${ic("swords")}</div>
+          <div class="battle-waiting-ic">${ic("clock")}</div>
           <h2>${op?.done ? "Подводим итог…" : "Ждём соперника"}</h2>
           <p class="small muted">${op?.done ? "Оба закончили — сравниваем результаты" : `Ваш приём завершён. Итог откроется, когда ${opName} закончит.`}</p>
           <div class="row-c small muted" style="justify-content:center"><span class="pulse"></span>${op?.done ? "Эксперт сверяет приёмы" : `${opName} ещё на приёме`}</div>
@@ -3248,11 +3248,11 @@ async function viewBattle(fresh) {
     const cmp = (a, c, higher = true) => (a == null || c == null || a === c ? null : (higher ? a > c : a < c) ? "me" : "op");
     const corr = (r) => (!r ? "—" : r.correct === "yes" ? "верный" : r.correct === "partial" ? "частично" : r.correct === "none" ? "нет" : "неверный");
     body = html`<div class="card stack center battle-result ${b.winner}">
-        <div class="tile ${b.winner === "me" ? "ok" : b.winner === "draw" ? "accent" : "danger"} lg">${ic(b.winner === "me" ? "trophy" : b.winner === "draw" ? "handshake" : "swords")}</div>
+        <div class="tile ${b.winner === "me" ? "ok" : b.winner === "draw" ? "accent" : "danger"} lg">${ic(b.winner === "me" ? "trophy" : b.winner === "draw" ? "handshake" : "flag")}</div>
         <h2>${b.winner === "me" ? "Вы победили!" : b.winner === "draw" ? "Ничья!" : "Победа за соперником"}</h2>
         <div class="battle-score-big">${mr ? dec(Number(mr.rating).toFixed(1)) : "—"} <span class="muted">:</span> ${orr ? dec(Number(orr.rating).toFixed(1)) : "—"}</div>
         <p class="small muted">Диагноз: <b>${b.patient?.true_diagnosis || "—"}</b></p>
-        ${b.next_id && !b.next_mine ? html`<div class="badge warn">${ic("swords")} ${opName} зовёт на реванш</div>` : ""}
+        ${b.next_id && !b.next_mine ? html`<div class="badge warn">${ic("repeat")} ${opName} зовёт на реванш</div>` : ""}
       </div>
       <div class="card"><table class="battle-table">
         <thead><tr><th></th><th>Вы</th><th class="ellipsis">${opName}</th></tr></thead>
@@ -3266,7 +3266,7 @@ async function viewBattle(fresh) {
         </tbody></table></div>
       <div class="grid-2">
         <button class="btn" id="battle-rematch">${ic("repeat")}<span>${!b.next_id ? "Реванш" : b.next_mine ? "К реваншу" : "Принять реванш"}</span></button>
-        <button class="btn ghost" id="battle-new">${ic("swords")}<span>Новая битва</span></button>
+        <button class="btn ghost" id="battle-new">${ic("plus")}<span>Новая битва</span></button>
       </div>
       ${me.patient_id ? html`<a class="card tap row" href="#/patient/${me.patient_id}" style="text-decoration:none;color:inherit">
         <div class="tile accent">${ic("card")}</div><div class="grow"><b>Мой разбор от эксперта</b><div class="small muted">Оценка по шагам, КР Минздрава, чат с экспертом</div></div>${ic("chevron", "c-muted")}</a>` : ""}`;
