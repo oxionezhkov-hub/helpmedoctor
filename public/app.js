@@ -3629,10 +3629,14 @@ function viewStats() {
   const rated = st.ratings_count || 0;
   const avg = rated ? st.avg_rating : 0;
   const quality = !rated ? "" : avg >= 4.5 ? "отлично — так держать" : avg >= 4 ? "хорошо, есть что подтянуть" : avg >= 3 ? "средне — смотрите советы ниже" : "ниже среднего — начните с советов ниже";
+  // Итог разборов одним блоком: 3 пробела, свежий совет, 2 сильные стороны
+  const weak = meaningful(p.weaknesses).slice(0, 3);
+  const strong = meaningful(p.strengths).slice(0, 2);
+  const tip = (p.recommendations || [])[0];
   // Что сделать дальше: одна понятная подсказка из того, что уже известно
   const next = !rated ? ["steth", "Примите первого пациента", "После разбора здесь появятся ваши оценки, сильные стороны и пробелы."]
     : !p.streak ? ["flame", "Начните серию заново", "Один приём в день — и серия дней растёт, а вместе с ней бонус к опыту."]
-    : meaningful(p.weaknesses).length ? ["target", `Подтяните: ${meaningful(p.weaknesses)[0]}`, "Это чаще всего встречается в ваших разборах. Обратите внимание на следующем приёме."]
+    : weak.length ? null // пробелы и совет — в блоке «Над чем поработать» ниже, здесь не повторяем
     : ["trophy", "Попробуйте сложнее", "Оценки высокие — поднимите сложность в настройках, чтобы расти дальше."];
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Статистика</h2></div>
@@ -3640,7 +3644,7 @@ function viewStats() {
     <div class="card lvl-card">${levelHead(p)}${kpis(p, true)}</div>
     ${consultCalendar(p)}
 
-    <div class="card next-step"><div class="tile accent">${ic(next[0])}</div><div class="grow"><div class="tiny muted">ЧТО ДЕЛАТЬ ДАЛЬШЕ</div><b>${next[1]}</b><div class="small muted">${next[2]}</div></div></div>
+    ${next ? html`<div class="card next-step"><div class="tile accent">${ic(next[0])}</div><div class="grow"><div class="tiny muted">ЧТО ДЕЛАТЬ ДАЛЬШЕ</div><b>${next[1]}</b><div class="small muted">${next[2]}</div></div></div>` : ""}
     ${rated || !p.onboarding_done ? "" : html`<button class="btn block" data-go="/">${ic("plus")}<span>Принять пациента</span></button>`}
 
     ${rated ? html`<div class="section-title">Качество приёмов</div>
@@ -3653,14 +3657,12 @@ function viewStats() {
       </div>
     </div>` : ""}
 
-    ${meaningful(p.strengths).length || meaningful(p.weaknesses).length ? html`<div class="section-title">Сильные стороны и пробелы</div>
-    <div class="card stack">
-      ${meaningful(p.strengths).length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("checkCircle", "c-ok")} ПОЛУЧАЕТСЯ</div><div class="row wrap" style="gap:6px">${meaningful(p.strengths).slice(0, 6).map((x) => html`<span class="badge ok multi">${x}</span>`)}</div></div>` : ""}
-      ${meaningful(p.weaknesses).length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("target", "c-warn")} ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px">${meaningful(p.weaknesses).slice(0, 6).map((x) => html`<span class="badge warn multi">${x}</span>`)}</div></div>` : ""}
+    ${weak.length || tip || strong.length ? html`<div class="section-title">Над чем поработать</div>
+    <div class="card stack-sm">
+      ${weak.map((x) => html`<div class="small fact">${ic("target", "c-warn")}<span>${x}</span></div>`)}
+      ${tip ? html`<div class="small fact">${ic("bulb", "c-accent")}<span><b>Совет:</b> ${tip}</span></div>` : ""}
+      ${strong.length ? html`<div class="small fact muted">${ic("checkCircle", "c-ok")}<span>Получается: ${strong.join("; ")}</span></div>` : ""}
     </div>` : ""}
-
-    ${p.recommendations?.length ? html`<div class="section-title">Советы из разборов</div>
-    <div class="card stack-sm">${p.recommendations.slice(0, 3).map((r) => html`<div class="small fact">${ic("bulb", "c-warn")}<span>${r}</span></div>`)}</div>` : ""}
   </div>`);
 }
 // Календарь приёмов за 30 дней (даты МСК, как на сервере): без чисел — только дни с приёмами и без
