@@ -134,6 +134,8 @@ const BRAND = {
   google: '<svg class="i brand" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
   yandex: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#FC3F1D"/><path fill="#fff" d="M13.32 7.666h-.924c-1.694 0-2.585.858-2.585 2.123 0 1.43.616 2.1 1.881 2.959l1.045.704-3.003 4.487H7.49l2.695-4.014c-1.55-1.111-2.42-2.19-2.42-4.015 0-2.288 1.595-3.85 4.62-3.85h3.003v11.868H13.32V7.666z"/></svg>',
   telegram: '<svg class="i brand" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="120" fill="#2AABEE"/><path fill="#fff" d="M54.3 118.8c35-15.2 58.3-25.3 70-30.2 33.3-13.9 40.3-16.3 44.8-16.4 1 0 3.2.2 4.7 1.4 1.2 1 1.5 2.3 1.7 3.3s.4 3.1.2 4.7c-1.8 19-9.6 65.1-13.6 86.3-1.7 9-5 12-8.2 12.3-7 .6-12.3-4.6-19-9-10.6-6.9-16.5-11.2-26.8-18-11.9-7.8-4.2-12.1 2.6-19.1 1.8-1.8 32.5-29.8 33.1-32.3.1-.3.1-1.5-.6-2.1-.7-.6-1.7-.4-2.5-.2-1.1.2-17.9 11.4-50.6 33.5-4.8 3.3-9.1 4.9-13 4.8-4.3-.1-12.5-2.4-18.7-4.4-7.5-2.4-13.5-3.7-13-7.9.3-2.2 3.3-4.4 8.9-6.7z"/></svg>',
+  vk: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#0077FF"/><path fill="#fff" d="M19.376 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4.03 8.57 4.03 8.096c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.677.863 2.49 2.303 4.675 2.896 4.675.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.204.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.254-1.406 2.151-3.574 2.151-3.574.119-.254.322-.491.763-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z"/></svg>',
+  instagram: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="ig-grad" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#FDF497"/><stop offset=".05" stop-color="#FDF497"/><stop offset=".45" stop-color="#FD5949"/><stop offset=".6" stop-color="#D6249F"/><stop offset=".9" stop-color="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig-grad)"/><rect x="5.5" y="5.5" width="13" height="13" rx="4" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="15.9" cy="8.1" r="1" fill="#fff"/></svg>',
 };
 const PROVIDER_LABEL = { google: "Google", yandex: "Яндекс ID", telegram: "Telegram" };
 const brand = (name) => raw(BRAND[name] || "");
@@ -3296,10 +3298,11 @@ async function viewPartner(fresh) {
   const link = IN_TG ? d.links.bot : d.links.site;
   const b = d.balance;
   const shareText = "Тренажёр врача: ИИ-пациенты, анализы, диагноз и разбор по клиническим рекомендациям Минздрава. Попробуй:";
+  // У Instagram нет ссылки «поделиться» — кнопка копирует текст со ссылкой и открывает приложение
   const shareLinks = [
     ["telegram", "Telegram", `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`],
-    ["external", "ВКонтакте", `https://vk.com/share.php?url=${encodeURIComponent(link)}`],
-    ["chat", "WhatsApp", `https://wa.me/?text=${encodeURIComponent(`${shareText} ${link}`)}`],
+    ["vk", "ВКонтакте", `https://vk.com/share.php?url=${encodeURIComponent(link)}`],
+    ["instagram", "Instagram", "https://www.instagram.com/", 'id="ref-ig"'],
   ];
   const canWithdraw = b.available >= d.min_payout && !b.requested;
   // Пока никого не пригласили: вместо нулевой статистики — советы сразу под балансом, предложение стать партнёром — в самом низу
@@ -3328,7 +3331,7 @@ async function viewPartner(fresh) {
       <div class="ref-link"><span class="ellipsis">${link.replace(/^https?:\/\//, "")}</span><button class="btn sm" data-copy="${link}">${ic("copy")}<span>Копировать</span></button></div>
       <div class="ref-share">
         ${navigator.share ? html`<button class="btn ghost sm" id="ref-native">${ic("share")}<span>Поделиться</span></button>` : ""}
-        ${shareLinks.map(([i, t, u]) => html`<a class="btn ghost sm" href="${u}" target="_blank" rel="noopener">${ic(i)}<span>${t}</span></a>`)}
+        ${shareLinks.map(([i, t, u, attr]) => html`<a class="btn ghost sm" href="${u}" target="_blank" rel="noopener" ${raw(attr || "")}>${brand(i)}<span>${t}</span></a>`)}
       </div>
     </div>
 
@@ -3374,6 +3377,8 @@ async function viewPartner(fresh) {
   </div>`);
   document.querySelectorAll("[data-copy]").forEach((el) => { el.onclick = () => { copyText(el.dataset.copy, "Ссылка скопирована"); goal("ref_copy"); }; });
   document.querySelectorAll("[data-copy-tpl]").forEach((el) => { el.onclick = () => { copyText(inviteTexts(link)[Number(el.dataset.copyTpl)][1], "Текст со ссылкой скопирован"); goal("ref_copy_tpl"); }; });
+  const ig = $("#ref-ig");
+  if (ig) ig.onclick = () => { copyText(`${shareText} ${link}`, "Текст со ссылкой скопирован — вставьте в сторис или директ"); goal("ref_share_ig"); };
   const nat = $("#ref-native");
   if (nat) nat.onclick = () => { navigator.share({ title: "Help me, Doctor", text: shareText, url: link }).catch(() => {}); goal("ref_share"); };
   const po = $("#payout-open");
