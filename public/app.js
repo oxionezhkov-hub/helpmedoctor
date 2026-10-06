@@ -1227,7 +1227,7 @@ function onboardingCard() {
   } else if (o.step === 2) {
     const custom = o.profession === "__custom";
     body = html`<h3>Какая специальность вам интересна?</h3><p class="small muted">Пациенты будут из этой области.</p>
-      <div class="row wrap" style="gap:6px">${Object.keys(cfg.specializations).map((x) => html`<button class="chip ${o.profession === x ? "on" : ""}" data-onb-prof="${x}">${x}</button>`)}<button class="chip ${custom ? "on" : ""}" data-onb-prof="__custom">Другая…</button></div>
+      <div class="field">${professionSelect("onb-prof", o.profession)}</div>
       ${custom ? html`<input class="input" id="onb-custom" value="${o.custom}" placeholder="Например: эндокринолог" maxlength="40">` : ""}`;
     next = html`<button class="btn" id="onb-next" ${o.profession && (!custom || o.custom.length >= 3) ? "" : "disabled"}>${o.suggesting ? html`<span class="spin"></span>` : ""}<span>Далее</span></button>`;
   } else if (o.step === 3) {
@@ -1288,12 +1288,13 @@ function bindOnboarding() {
   const back = $("#onb-back");
   if (back) back.onclick = () => { o.step -= 1; redraw(); };
   root.querySelectorAll("[data-onb-level]").forEach((b) => (b.onclick = () => { o.level = b.dataset.onbLevel; o.difficulty = null; o.step = 2; haptic(); redraw(); }));
-  root.querySelectorAll("[data-onb-prof]").forEach((b) => (b.onclick = () => {
-    o.profession = b.dataset.onbProf;
+  const op = $("#onb-prof");
+  if (op) op.onchange = () => {
+    o.profession = op.value;
     if (o.profession !== "__custom") { o.custom = ""; o.options = [...cfg.specializations[o.profession]]; o.specs = new Set(); o.step = 3; }
     redraw();
     if (o.profession === "__custom") $("#onb-custom")?.focus();
-  }));
+  };
   const ci = $("#onb-custom");
   if (ci) ci.oninput = () => { o.custom = ci.value.trim(); const n = $("#onb-next"); if (n) n.disabled = o.custom.length < 3; };
   root.querySelectorAll("[data-onb-spec]").forEach((b) => (b.onclick = () => {
@@ -2618,6 +2619,12 @@ async function suggestSections(profession) {
   }
 }
 
+/** Специальность выпадающим списком: по алфавиту, «Другая…» — в конце */
+function professionSelect(id, value) {
+  const names = Object.keys(S.me.config.specializations).sort((a, b) => a.localeCompare(b, "ru"));
+  return html`<select id="${id}">${value ? "" : html`<option value="" selected disabled>Выберите специальность</option>`}${names.map((x) => html`<option value="${x}" ${value === x ? "selected" : ""}>${x}</option>`)}<option value="__custom" ${value === "__custom" ? "selected" : ""}>Другая…</option></select>`;
+}
+
 function pickProfession(name) {
   const cfg = S.me.config;
   pf.profession = name;
@@ -2632,7 +2639,6 @@ function viewSettings(fresh) {
   const p = S.me.profile;
   const cfg = S.me.config;
   if (fresh || !pf) pf = profileDraft(p, cfg);
-  const professions = Object.keys(cfg.specializations);
   const custom = pf.profession === "__custom";
 
   renderShell(html`<div class="page">
@@ -2660,8 +2666,8 @@ function viewSettings(fresh) {
       <div class="field"><label>Сложность пациентов</label>
         <div class="row wrap" style="gap:6px"><button class="chip ${!pf.difficulty ? "on" : ""}" data-diff="">По уровню</button>${cfg.difficulties.map((d) => html`<button class="chip ${pf.difficulty === d.key ? "on" : ""}" data-diff="${d.key}">${d.emoji} ${d.label}${d.key === "hard" && !p.premium ? html` ${ic("gem")}` : ""}</button>`)}</div>
         <span class="tiny muted">${(cfg.difficulties.find((d) => d.key === (pf.difficulty || cfg.levels.find((l) => l.key === pf.level)?.complexity)) || {}).hint || ""}</span></div>
-      <div class="field"><label>Специальность</label>
-        <div class="row wrap" style="gap:6px">${professions.map((x) => html`<button class="chip ${pf.profession === x ? "on" : ""}" data-prof="${x}">${x}</button>`)}<button class="chip ${custom ? "on" : ""}" data-prof="__custom">Другая…</button></div>
+      <div class="field"><label for="pf-prof">Специальность</label>
+        ${professionSelect("pf-prof", pf.profession)}
         <input class="input ${custom ? "" : "hidden"}" id="pf-prof-custom" value="${pf.custom}" placeholder="Ваша специальность, например: неонатолог" maxlength="40"></div>
       <div class="field"><label>Разделы, из которых приходят пациенты${custom ? "" : ` · ${pf.profession}`}</label>
         ${pf.suggesting ? html`<div class="small muted row-c"><span class="spin"></span>Подбираем разделы для «${pf.custom}»…</div>` : ""}
@@ -2669,7 +2675,6 @@ function viewSettings(fresh) {
         ${!pf.suggesting && !pf.options.length ? html`<div class="small muted">${custom ? (pf.custom ? "Добавьте разделы ниже — или сохраните без них: пациенты будут по всей специальности." : "Введите специальность — разделы подберутся автоматически.") : "Добавьте хотя бы один раздел."}</div>` : ""}
         ${inlineForm("pf-spec-add", "Свой раздел, например: желтуха новорождённых", 60, ic("plus"), "btn ghost")}
       </div>
-      <label class="row" style="justify-content:space-between"><span>Напоминания о серии (Telegram и браузер)</span><input type="checkbox" id="pf-notify" ${p.notifications === false ? "" : "checked"} style="width:22px;height:22px;accent-color:var(--accent)"></label>
       <button class="btn block" id="pf-save">Сохранить</button>
     </div>
 
@@ -2682,17 +2687,15 @@ function viewSettings(fresh) {
     pf.difficulty = b.dataset.diff;
     viewSettings();
   }));
-  root.querySelectorAll("[data-prof]").forEach((b) => (b.onclick = () => {
-    if (b.dataset.prof !== "__custom") return pickProfession(b.dataset.prof);
-    if (custom) return;
+  $("#pf-prof").onchange = (e) => {
+    if (e.target.value !== "__custom") return pickProfession(e.target.value);
     pf.profession = "__custom";
     pf.options = [];
     pf.specs = new Set();
     viewSettings();
-    const inp = $("#pf-prof-custom");
-    inp.focus();
+    $("#pf-prof-custom").focus();
     if (pf.custom) suggestSections(pf.custom);
-  }));
+  };
   const customInput = $("#pf-prof-custom");
   customInput.oninput = () => {
     pf.custom = customInput.value.trim();
@@ -2735,7 +2738,7 @@ function viewSettings(fresh) {
     btnBusy(btn);
     try {
       const { profile } = await api("PATCH", "/profile", {
-        name: pf.name, level: pf.level, difficulty: pf.difficulty, profession, specializations: specs, notifications: $("#pf-notify").checked,
+        name: pf.name, level: pf.level, difficulty: pf.difficulty, profession, specializations: specs,
       });
       S.me.profile = profile;
       pf = null;
