@@ -52,21 +52,53 @@ export async function vkFeedPush(request, env) {
   return Response.json({ ok: true, id, items: next.length });
 }
 
-/** RSS 2.0 для импорта в ВК */
-export async function vkFeedRss(env, origin) {
+// Текст записи → HTML статьи ВК (режим «Публиковать в виде статьи»): без первой строки-заголовка, абзацы по пустой строке
+function articleHtml(it, site) {
+  const lines = String(it.text).split("\n");
+  const body = (lines[0].trim() === String(it.title).trim() ? lines.slice(1) : lines).join("\n").trim();
+  const paras = body.split(/\n{2,}/).map((p) => `<p>${xml(p).replace(/\n/g, "<br>")}</p>`).join("");
+  const img = it.img ? `<figure><img src="${xml(`${site}/vk/img/${it.id}.jpg`)}" alt="${xml(it.title)}"></figure>` : "";
+  return { html: img + paras, lead: body.split(/\n{2,}/)[0] || it.title };
+}
+
+const HITS = "vkfeed:hits";
+
+/** Кто забирал ленту (последние 30 запросов не от нас): видно, приходит ли ВК — /vk/hits.json */
+async function logHit(env, request) {
+  const ua = String(request?.headers.get("User-Agent") || "").slice(0, 200);
+  if (!ua || /curl|node|undici/i.test(ua)) return;
+  const hits = (await env.HELPMEDOCTOR.get(HITS, "json")) || [];
+  const last = hits[0];
+  if (last && last.ua === ua && Date.now() - last.ts < 5 * 60000) return;
+  await env.HELPMEDOCTOR.put(HITS, JSON.stringify([{ ts: Date.now(), ua }, ...hits].slice(0, 30)));
+}
+
+export async function vkFeedHits(env) {
+  const hits = (await env.HELPMEDOCTOR.get(HITS, "json")) || [];
+  return Response.json(hits.map((h) => ({ ...h, at: new Date(h.ts).toISOString() })), { headers: { "Cache-Control": "no-store" } });
+}
+
+/** RSS 2.0 для импорта в ВК: description — первый абзац, content:encoded — вся статья с картинкой, enclosure — обложка */
+export async function vkFeedRss(env, origin, request = null, ctx = null) {
+  const hit = logHit(env, request).catch(() => {});
+  if (ctx?.waitUntil) ctx.waitUntil(hit); else await hit;
   const items = (await env.HELPMEDOCTOR.get(ITEMS, "json")) || [];
   const site = origin.replace(/\/$/, "");
-  const body = items.map((it) => `
+  const body = items.map((it) => {
+    const a = articleHtml(it, site);
+    return `
     <item>
       <title>${xml(it.title)}</title>
       <link>${xml(it.link || `${site}/vk/p/${it.id}`)}</link>
       <guid isPermaLink="false">vk-${xml(it.id)}</guid>
       <pubDate>${new Date(it.ts).toUTCString()}</pubDate>
-      <description>${cdata(it.text)}</description>
+      <description>${cdata(a.lead)}</description>
+      <content:encoded>${cdata(a.html)}</content:encoded>
       ${it.img ? `<enclosure url="${xml(`${site}/vk/img/${it.id}.jpg`)}" length="${it.img.len}" type="${xml(it.img.type)}"/>` : ""}
-    </item>`).join("");
+    </item>`;
+  }).join("");
   const out = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Для будущих врачей</title>
     <link>${xml(site)}/</link>
@@ -82,10 +114,10 @@ export async function vkFeedPage(env, id) {
   const items = (await env.HELPMEDOCTOR.get(ITEMS, "json")) || [];
   const it = items.find((x) => x.id === id);
   if (!it) return new Response("not found", { status: 404 });
-  const body = xml(it.text).replace(/\n/g, "<br>");
+  const a = articleHtml(it, "");
   const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>${xml(it.title)} — Для будущих врачей</title><style>body{font:17px/1.55 system-ui,sans-serif;max-width:680px;margin:0 auto;padding:24px 16px;background:#f5f2e9;color:#1b1f1d}img{max-width:100%;border-radius:12px}</style></head>
-<body>${it.img ? `<img src="/vk/img/${it.id}.jpg" alt="">` : ""}<p>${body}</p></body></html>`;
+<body><h1>${xml(it.title)}</h1>${a.html}</body></html>`;
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex" } });
 }
 
