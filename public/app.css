@@ -348,6 +348,9 @@ html:has(.consult) { scrollbar-gutter: auto; overflow: hidden; }
 .stars { display: inline-flex; gap: 2px; color: var(--gold); }
 .stars .i { width: 18px; height: 18px; }
 .stars .i.on, .badge .i.on { fill: currentColor; }
+.stars .star { position: relative; display: inline-flex; }
+.star-fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; display: inline-flex; }
+.star-fill .i { flex: none; }
 .axis { display: grid; grid-template-columns: 110px 1fr 28px; gap: 8px; align-items: center; font-size: 14px; }
 .axis .bar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
 .axis .bar i { display: block; height: 100%; background: var(--accent); }
@@ -827,3 +830,4 @@ details.card.promo-box summary::after { margin-left: auto; }
 .steps-ticks i.cur { visibility: hidden; }
 .steps-cap { display: flex; flex-direction: column; gap: 2px; }
 .steps-cap b { font-size: 16px; }
+.rating-big + .stars .i { width: 26px; height: 26px; }

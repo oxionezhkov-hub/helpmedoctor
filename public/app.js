@@ -168,9 +168,13 @@ function limited(key, items, render) {
   return html`${items.slice(0, LIST_LIMIT).map(render)}<button class="btn ghost block more-btn" data-more="${key}">Показать все · ${items.length}</button>`;
 }
 
+/** Звёзды с половинками: 2,5 — две полные и половина третьей */
 function starsRow(n) {
-  const r = Math.round(n);
-  return html`<span class="stars">${[0, 1, 2, 3, 4].map((i) => ic("star", i < r ? "on" : ""))}</span>`;
+  const r = Math.round(Number(n) * 2) / 2;
+  return html`<span class="stars" role="img" aria-label="${String(r).replace(".", ",")} из 5">${[0, 1, 2, 3, 4].map((i) => {
+    const fill = Math.max(0, Math.min(1, r - i));
+    return html`<span class="star">${ic("star")}${fill ? html`<span class="star-fill" style="width:${fill * 100}%">${ic("star", "on")}</span>` : ""}</span>`;
+  })}</span>`;
 }
 
 // ---------- Ожидание с оценкой времени ----------
@@ -1523,7 +1527,7 @@ function evaluationBlock(c) {
   const f = c.feedback || {};
   const axes = f.axes;
   return html`<div class="stack">
-    <div class="row"><div class="rating-big">${Number(c.rating).toFixed(1)}</div><div>${starsRow(c.rating)}${c.xp ? html`<span class="xp-pill small">${ic("zap")} +${c.xp} XP</span>` : ""}</div></div>
+    <div class="row"><div class="rating-big">${Number(c.rating).toFixed(1).replace(".", ",")}</div><div>${starsRow(c.rating)}${c.xp ? html`<span class="xp-pill small">${ic("zap")} +${c.xp} XP</span>` : ""}</div></div>
     ${axes ? html`<div class="stack-sm">
       ${[["Диагностика", axes.diagnosis], ["Общение", axes.communication], ["Лечение", axes.treatment]].map(([k, v]) => html`<div class="axis"><span>${k}</span><span class="bar"><i style="width:${(v / 5) * 100}%"></i></span><b>${v}</b></div>`)}
     </div>` : ""}
@@ -3628,7 +3632,6 @@ function viewStats() {
   const st = p.stats || {};
   const rated = st.ratings_count || 0;
   const avg = rated ? st.avg_rating : 0;
-  const quality = !rated ? "" : avg >= 4.5 ? "отлично — так держать" : avg >= 4 ? "хорошо, есть что подтянуть" : avg >= 3 ? "средне — смотрите советы ниже" : "ниже среднего — начните с советов ниже";
   // Итог разборов одним блоком: 3 пробела, свежий совет, 2 сильные стороны
   const weak = meaningful(p.weaknesses).slice(0, 3);
   const strong = meaningful(p.strengths).slice(0, 2);
@@ -3649,7 +3652,7 @@ function viewStats() {
 
     ${rated ? html`<div class="section-title">Качество приёмов</div>
     <div class="card stack">
-      <div class="row"><div class="rating-big">${avg.toFixed(1).replace(".", ",")}</div><div class="grow">${starsRow(avg)}<div class="small muted">средняя оценка за ${rated} ${plural(rated, "приём", "приёма", "приёмов")} · ${quality}</div></div></div>
+      <div class="row"><div class="rating-big">${avg.toFixed(1).replace(".", ",")}</div>${starsRow(avg)}</div>
       <div class="stat-rows">
         ${statRow("checkCircle", "Верных диагнозов подряд", st.correct_diagnoses_streak || 0, "сбрасывается при неверном диагнозе")}
         ${statRow("quiz", "Тестов по ошибкам пройдено", st.quizzes_done || 0, "закрепляют пробелы конкретного приёма")}
