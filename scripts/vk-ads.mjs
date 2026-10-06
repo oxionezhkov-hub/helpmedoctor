@@ -1,5 +1,5 @@
 // Реклама в VK Рекламе: 10 объявлений — картинки 1:1 (1080×1080) и 4:5 (1080×1350) и сводка текстов для кабинета.
-// Данные — content/ads/vk-10/ads.mjs, результат — content/ads/vk-10/img/<ключ>-1x1.jpg, <ключ>-4x5.jpg и content/ads/vk-10/README.md.
+// Данные — content/ads/vk-10/ads.mjs, результат — content/ads/vk-10/img/<ключ>-1x1.jpg, <ключ>-4x5.jpg, README.md и index.html (та же сводка с кнопками «Копировать»).
 // Запуск: node scripts/vk-ads.mjs [ключ…]  (без ключей — все). Нужен Playwright, браузер — /opt/pw-browsers.
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -192,6 +192,111 @@ ${row("Текст рядом с кнопкой", a.near, LIMITS.near)}
 `).join("\n")}`;
 }
 
+// ---------- Та же сводка страницей: открыть index.html из папки и копировать поля кнопками ----------
+function sheet() {
+  const field = (label, text, lim, multi) => `<div class="f">
+    <div class="fh"><span class="fl">${label}</span>${lim ? `<span class="cnt">${text.length} / ${lim}</span>` : ""}<button class="cp" type="button">Копировать</button></div>
+    <div class="fv${multi ? " multi" : ""}">${esc(text)}</div></div>`;
+  const pic = (a, suf, label) => `<figure><a href="img/${a.key}-${suf}.jpg" target="_blank"><img src="img/${a.key}-${suf}.jpg" alt="${esc(a.name)}, ${label}" loading="lazy"></a>
+    <figcaption>${label} · <a href="img/${a.key}-${suf}.jpg" download>скачать</a> · <code>${a.key}-${suf}.jpg</code></figcaption></figure>`;
+  const goals = [["onboarding_done", "зарегистрировался и заполнил анкету — главная цель для оптимизации"], ["login_ok", "вошёл через Яндекс или Google"], ["pay_click", "нажал «оплатить» в тарифах"], ["promo_ok", "применил промокод"]];
+  return `<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VK Реклама: 10 объявлений</title>
+<style>
+:root { --bg: #f5f2e9; --card: #fffdf8; --ink: #1b1f1d; --ink2: #3a403d; --muted: #6a716d; --green: #0d5c55; --gsoft: #dceae5; --red: #b3391f; --rule: #dcd6c6; --field: #f7f5ef; --ok: #15803d; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121514; --card: #1b201e; --ink: #e9eeec; --ink2: #c3cbc8; --muted: #8f9995; --green: #2dd4bf; --gsoft: #173a36; --red: #f08a6c; --rule: #2c3431; --field: #232927; --ok: #4ade80; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 80px; }
+h1 { font: 800 32px/1.15 Georgia, "Times New Roman", serif; margin: 8px 0 6px; }
+h2 { font: 800 24px/1.2 Georgia, serif; margin: 0; }
+h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 10px; }
+.lead { color: var(--ink2); margin: 0 0 18px; }
+nav { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0; display: flex; gap: 8px; overflow-x: auto; border-bottom: 1px solid var(--rule); margin-bottom: 20px; }
+nav a { flex: none; text-decoration: none; color: var(--ink); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+nav a:hover { border-color: var(--green); }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 22px; margin-bottom: 22px; scroll-margin-top: 64px; }
+.info ul, .info ol { margin: 6px 0 0; padding-left: 20px; } .info li { margin: 4px 0; }
+.info p { margin: 8px 0; }
+.ttl { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.key { font: 700 13px ui-monospace, Menlo, monospace; color: #fff; background: var(--red); border-radius: 999px; padding: 3px 10px; }
+.grid { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 24px; margin-top: 16px; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+.pics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+figure { margin: 0; } figure img { width: 100%; display: block; border-radius: 10px; border: 1px solid var(--rule); }
+figcaption { font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.4; } figcaption a { color: var(--green); }
+.f { margin-bottom: 12px; }
+.fh { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.fl { font-weight: 700; font-size: 14px; }
+.cnt { font: 12px ui-monospace, Menlo, monospace; color: var(--muted); }
+.cp { margin-left: auto; font: 600 13px system-ui, sans-serif; color: var(--green); background: var(--gsoft); border: 0; border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+.cp:hover { filter: brightness(.95); } .cp.done { color: #fff; background: var(--ok); }
+.fv { background: var(--field); border: 1px solid var(--rule); border-radius: 10px; padding: 9px 12px; overflow-wrap: anywhere; user-select: all; }
+.fv.multi { font-size: 14.5px; color: var(--ink2); }
+code { font: 13px ui-monospace, Menlo, monospace; background: var(--field); border-radius: 5px; padding: 1px 5px; }
+</style></head>
+<body><div class="wrap">
+<h1>VK Реклама: 10 объявлений</h1>
+<p class="lead">Help me, Doctor · универсальное объявление, цель «Сайт». У каждого поля кнопка «Копировать», картинки открываются по клику.</p>
+<nav><a href="#info">Как запускать</a>${ADS.map((a) => `<a href="#${a.key}">${a.key.slice(1).replace(/^0/, "")}. ${esc(a.name)}</a>`).join("")}</nav>
+
+<section class="card info" id="info">
+  <h2>Как запускать</h2>
+  <ul>
+    <li><b>Картинки:</b> к каждому объявлению загружайте обе, 1:1 (1080×1080) и 4:5 (1080×1350), кабинет сам подберёт под площадку.</li>
+    <li><b>Ссылка:</b> у каждого объявления своя метка <code>from=vk_a01</code>…<code>vk_a10</code>, переходы и регистрации видны в админке → «Источники».</li>
+    <li><b>Лимиты полей:</b> заголовок 40, короткое описание 90, длинное 220, текст рядом с кнопкой 30 символов. Счётчик стоит у каждого поля.</li>
+    <li><b>Тест:</b> все 10 с одинаковым бюджетом на 2–3 дня, затем отключите те, где регистрация в 1,5 раза дороже средней, и переложите бюджет в 2–3 лучших.</li>
+    <li><b>Модерация:</b> не добавляйте «лучший / №1» (по закону о рекламе это нужно подтверждать) и упоминания Минздрава. Если модератор спросит — это образовательный тренажёр для студентов, не медицинская услуга.</li>
+  </ul>
+  <h3>Пиксель и конверсии</h3>
+  <p>Пиксель 3799574 стоит на сайте и в приложении (заработает после деплоя). В кабинете:</p>
+  <ol>
+    <li>«Пиксели» → «Диагностика сайта»: проверьте, что пиксель на helpmedoctor.ru виден.</li>
+    <li>«События» → создать событие → «JS-событие», по одному на каждое имя:</li>
+  </ol>
+  ${goals.map(([g, t]) => field(`${g} <span class="cnt">— ${t}</span>`, g, 0)).join("")}
+  <ol start="3"><li>В кампании цель «Конверсии на сайте» → событие <code>onboarding_done</code>. Пока событий меньше 10–20 в неделю, можно начать с оптимизации на клики.</li></ol>
+  <h3>Промпты для ChatGPT</h3>
+  <p>Вставляйте как есть. В большинстве промптов текста на картинке нет: так модель не ошибётся в русских буквах. Нужна надпись — допишите: «Сверху крупная надпись на русском: "…", шрифт с засечками, проверь орфографию». Текст на картинке держите в пределах ~20% площади.</p>
+</section>
+
+${ADS.map((a) => `<section class="card" id="${a.key}">
+  <div class="ttl"><span class="key">${a.key}</span><h2>${esc(a.name)}</h2></div>
+  <div class="grid">
+    <div class="pics">${pic(a, "1x1", "1:1")}${pic(a, "4x5", "4:5")}</div>
+    <div>
+      ${field("Заголовок", a.title, LIMITS.title)}
+      ${field("Короткое описание", a.short, LIMITS.short)}
+      ${field("Длинное описание", a.long, LIMITS.long, true)}
+      ${field("Текст рядом с кнопкой", a.near, LIMITS.near)}
+      ${field("Кнопка", a.button, 0)}
+      ${field("Ссылка", LINK(a.key), 0)}
+    </div>
+  </div>
+  <h3>Промпт для ChatGPT</h3>
+  ${field("Промпт", a.prompt, 0, true)}
+</section>`).join("\n")}
+</div>
+<script>
+function copy(t) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+  var ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } finally { ta.remove(); }
+  return Promise.resolve();
+}
+document.addEventListener("click", function (e) {
+  var b = e.target.closest(".cp"); if (!b) return;
+  var v = b.closest(".f").querySelector(".fv").textContent;
+  copy(v).then(function () { b.textContent = "Скопировано"; b.classList.add("done");
+    setTimeout(function () { b.textContent = "Копировать"; b.classList.remove("done"); }, 1400); });
+});
+</script>
+</body></html>
+`;
+}
+
 const want = new Set(process.argv.slice(2));
 const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined }).catch(() => chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" }));
 const tmp = join(OUT, ".tmp.html");
@@ -218,3 +323,4 @@ for (const a of ADS) {
 await browser.close();
 rmSync(tmp, { force: true });
 writeFileSync(join(DIR, "README.md"), readme());
+writeFileSync(join(DIR, "index.html"), sheet());
