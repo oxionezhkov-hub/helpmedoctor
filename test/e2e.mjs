@@ -1057,6 +1057,26 @@ assert.equal(pre.headers.get("access-control-allow-origin"), null, "чужому
 assert.equal((await fetch(`${BASE}/app.js`, { headers: { Origin: SITE } })).headers.get("access-control-allow-origin"), SITE, "код приложения грузится с запасного адреса");
 step("«Кто круче?»: QR и ссылка, подключение, выбор профессии вычёркиванием и сложности, один пациент на двоих, итог, реванш, вызов через бота, короткие уведомления; CORS запасного пути");
 
+// ---------------------------------------------------------------- лента RSS для группы ВК
+{
+  const { execFileSync } = await import("node:child_process");
+  const dir = ".wrangler/vk-e2e"; fs.mkdirSync(dir, { recursive: true });
+  const f = `${dir}/2026-10-07-e2e-test.json`;
+  fs.writeFileSync(f, JSON.stringify({ title: "Как читать ОАК за минуту", text: "Сначала гемоглобин, потом лейкоциты & формула.\n\nВторой абзац.", image: "public/icon-192.png" }));
+  const env = { ...process.env, SESSION_SECRET: "test-secret", VK_FEED_URL: `${BASE}/feed/vk/push` };
+  execFileSync("node", ["scripts/vk-feed.mjs", f], { env, stdio: "pipe" });
+  const rss = await (await fetch(`${BASE}/vk/rss.xml`)).text();
+  assert.ok(rss.includes("<rss") && rss.includes("Как читать ОАК за минуту") && rss.includes("лейкоциты &amp; формула") === false && rss.includes("лейкоциты & формула"), "запись в ленте, текст в CDATA");
+  assert.ok(rss.includes('<enclosure url="http://localhost:8787/vk/img/2026-10-07-e2e-test.jpg"') && !rss.includes("<link>http://localhost:8787/vk"), "картинка записи, без ссылки у обычного поста");
+  const img = await fetch(`${BASE}/vk/img/2026-10-07-e2e-test.jpg`);
+  assert.equal(img.status, 200); assert.equal(img.headers.get("content-type"), "image/png");
+  const forged = await fetch(`${BASE}/feed/vk/push`, { method: "POST", body: JSON.stringify({ id: "hack-1", text: "x", ts: Date.now() }), headers: { "X-Feed-Sig": "00".repeat(32) } });
+  assert.equal(forged.status, 403, "без подписи запись не принимается");
+  fs.writeFileSync(f.replace("e2e-test", "e2e-bad"), JSON.stringify({ title: "Т", text: "<b>жирный</b>" }));
+  assert.throws(() => execFileSync("node", ["scripts/vk-feed.mjs", f.replace("e2e-test", "e2e-bad"), "--dry"], { env, stdio: "pipe" }), "HTML в посте ВК не пропускаем");
+  step("лента ВК: запись с картинкой по подписи, RSS, чужая запись отклонена");
+}
+
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");
