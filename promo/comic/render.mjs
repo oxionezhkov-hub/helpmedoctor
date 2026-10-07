@@ -4,19 +4,19 @@ const { chromium } = require('playwright');
 import { spawn } from 'child_process';
 import fs from 'fs';
 const dir = process.cwd();
-const tl = JSON.parse(fs.readFileSync('timeline.json','utf8'));
+const tl = JSON.parse(fs.readFileSync(process.env.TL || 'timeline.json','utf8'));
 const mode = process.argv[2] || 'shots';
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport:{width:1080,height:1920}, deviceScaleFactor:1 });
 page.on('pageerror', e=>console.error('PAGEERR', e.message));
-await page.goto('file://'+dir+'/comic.html');
+await page.goto('file://'+dir+'/'+(process.env.PAGE || 'comic.html'));
 await page.evaluate(()=>document.fonts.ready);
-await page.evaluate((tl) => window.init(tl), tl);
-fs.writeFileSync('events.json', JSON.stringify(await page.evaluate(() => window.events())));
+await page.evaluate(([tl, dir]) => window.init(tl, dir), [tl, process.env.DIR || '.']);
+fs.writeFileSync(process.env.EVENTS || 'events.json', JSON.stringify(await page.evaluate(() => window.events())));
 if (mode==='shots') {
   const ts = process.argv.slice(3).map(Number);
-  fs.mkdirSync('frames',{recursive:true});
-  for (const t of ts) { await page.evaluate(t=>window.seek(t), t); await page.screenshot({path:`frames/t${t.toFixed(2)}.jpg`, type:'jpeg', quality:80}); }
+  const FR = process.env.FRAMES || 'frames'; fs.mkdirSync(FR,{recursive:true});
+  for (const t of ts) { await page.evaluate(t=>window.seek(t), t); await page.screenshot({path:`${FR}/t${t.toFixed(2)}.jpg`, type:'jpeg', quality:80}); }
 } else {
   // video [from to out.mp4] — диапазон кадров, чтобы рендерить в несколько процессов
   const fps=30, N=Math.round(tl.total*fps);

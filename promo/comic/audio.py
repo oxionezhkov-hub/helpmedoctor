@@ -1,9 +1,9 @@
 # Музыка и звуки для комичного приёма: «ситкомный» пиццикато-бас и маримба 116 BPM (F–C–Dm–Bb),
 # удар в хуке, «бульк» сообщений, щелчки, вжухи шторок, драматичное «дан-дан-дааан» на плохих новостях
 # (музыка замирает), «дзынь» на «поесть», арфа на «обниму», рим-шот в конце.
-import json, numpy as np, wave
-SR = 48000; tl = json.load(open('timeline.json')); T = tl['total']; N = int(T * SR)
-ev = json.load(open('events.json'))
+import json, os, numpy as np, wave
+SR = 48000; tl = json.load(open(os.environ.get('TL', 'timeline.json'))); T = tl['total']; N = int(T * SR)
+ev = json.load(open(os.environ.get('EVENTS', 'events.json')))
 rng = np.random.default_rng(7)
 mus = np.zeros(N); sfx = np.zeros(N)
 def add(buf, t, sig, g=1.0):
@@ -21,10 +21,13 @@ def lp(x, a):
     return y
 def ev_t(kind, default=None):
     xs = [e['t'] for e in ev if e['type'] == kind]; return xs[0] if xs else default
-t_drama, t_ding, t_end = ev_t('drama'), ev_t('ding'), ev_t('rimshot', T - 1.5)
+t_drama, t_end = ev_t('drama'), ev_t('rimshot', T - 1.5)
+# музыка молчит от «драмы» до «дзынь» (или до конца драматичной паузы)
+t_ding = min([e['t'] for e in ev if e['type'] in ('ding', 'drama_end') and t_drama is not None and e['t'] > t_drama] or [T])
+MUS = tl.get('meta', {}).get('music', {})
 # --- музыка ---
-beat = 60 / 116; bar = 4 * beat
-chords = [[53, 57, 60], [48, 52, 55], [50, 53, 57], [46, 50, 53]]
+beat = 60 / MUS.get('bpm', 116); bar = 4 * beat
+chords = [[n + MUS.get('shift', 0) for n in c] for c in [[53, 57, 60], [48, 52, 55], [50, 53, 57], [46, 50, 53]]]
 mel = [0, 2, 1, 2, -1, 2, 1, 0]  # индексы нот аккорда (−1 — пауза) для маримбы
 def marimba(f): return tone(f, .5, dec=.13, harm=(1, 0, .25, 0, .08), a=.002)
 def pizz(f): return tone(f, .4, dec=.11, harm=(1, .6, .3, .15), a=.003)
@@ -105,4 +108,4 @@ for e in ev:
     elif k == 'rimshot': add(sfx, t, rimshot(), .7)
 def save(fn, x):
     x = np.clip(x, -1, 1); w = wave.open(fn, 'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x * 32767).astype('<i2').tobytes()); w.close()
-save('music.wav', mus / np.max(np.abs(mus)) * .8); save('sfx.wav', sfx / max(1e-9, np.max(np.abs(sfx))) * .8); print('ok', len(ev), 'events')
+P = os.environ.get('PREFIX', ''); save(P + 'music.wav', mus / np.max(np.abs(mus)) * .8); save(P + 'sfx.wav', sfx / max(1e-9, np.max(np.abs(sfx))) * .8); print('ok', len(ev), 'events')
