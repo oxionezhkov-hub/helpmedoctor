@@ -1077,7 +1077,9 @@ step("«Кто круче?»: QR и ссылка, подключение, выб
   assert.ok(hits.some((h) => h.ua.includes("vkShare")), "видно, кто забирал ленту");
   assert.ok(rss.includes('<enclosure url="http://localhost:8787/vk/img/2026-10-07-e2e-test.jpg"') && rss.includes("<link>http://localhost:8787/vk/p/2026-10-07-e2e-test</link>"), "картинка записи и ссылка на её страницу");
   const page = await fetch(`${BASE}/vk/p/2026-10-07-e2e-test`);
-  assert.equal(page.status, 200); assert.ok((await page.text()).includes("Второй абзац"), "страница записи");
+  assert.equal(page.status, 200);
+  const pageHtml = await page.text();
+  assert.ok(pageHtml.includes("Второй абзац") && pageHtml.includes('<meta property="og:image" content="http://localhost:8787/vk/img/2026-10-07-e2e-test.jpg">') && pageHtml.includes('og:title" content="Как читать ОАК за минуту"'), "страница записи с Open Graph для сниппета ВК");
   const img = await fetch(`${BASE}/vk/img/2026-10-07-e2e-test.jpg`);
   assert.equal(img.status, 200); assert.equal(img.headers.get("content-type"), "image/png");
   const forged = await fetch(`${BASE}/feed/vk/push`, { method: "POST", body: JSON.stringify({ id: "hack-1", text: "x", ts: Date.now() }), headers: { "X-Feed-Sig": "00".repeat(32) } });
