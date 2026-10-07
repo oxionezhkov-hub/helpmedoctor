@@ -68,8 +68,8 @@ function load(hub, id) {
 
 function userName(hub, uid) {
   if (!uid) return null;
-  const u = hub.one("SELECT name, username FROM users WHERE uid = ?", String(uid));
-  return { uid: String(uid), name: u?.name || "Врач", username: u?.username || "" };
+  const u = hub.one("SELECT name, username, avatar FROM users WHERE uid = ?", String(uid));
+  return { uid: String(uid), name: u?.name || "Врач", username: u?.username || "", avatar: u?.avatar || null };
 }
 
 /** Победитель по двум результатам: оценка выше; при равной — кто быстрее; иначе ничья */

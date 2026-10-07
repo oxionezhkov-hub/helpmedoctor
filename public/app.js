@@ -124,6 +124,7 @@ const ICONS = {
   party: '<path d="M4 20 9 7l8 8Z"/><path d="M14 4v2M19 9h2M17 3l-1 2M20 6l-2 1"/>',
   sad: '<circle cx="12" cy="12" r="9"/><path d="M8 16a5 5 0 0 1 8 0M9 9.5h.01M15 9.5h.01"/>',
   trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+  pencil: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
   external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4Z"/><circle cx="12" cy="13" r="3.5"/>',
   chart: '<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
@@ -134,6 +135,8 @@ const BRAND = {
   google: '<svg class="i brand" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
   yandex: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#FC3F1D"/><path fill="#fff" d="M13.32 7.666h-.924c-1.694 0-2.585.858-2.585 2.123 0 1.43.616 2.1 1.881 2.959l1.045.704-3.003 4.487H7.49l2.695-4.014c-1.55-1.111-2.42-2.19-2.42-4.015 0-2.288 1.595-3.85 4.62-3.85h3.003v11.868H13.32V7.666z"/></svg>',
   telegram: '<svg class="i brand" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="120" fill="#2AABEE"/><path fill="#fff" d="M54.3 118.8c35-15.2 58.3-25.3 70-30.2 33.3-13.9 40.3-16.3 44.8-16.4 1 0 3.2.2 4.7 1.4 1.2 1 1.5 2.3 1.7 3.3s.4 3.1.2 4.7c-1.8 19-9.6 65.1-13.6 86.3-1.7 9-5 12-8.2 12.3-7 .6-12.3-4.6-19-9-10.6-6.9-16.5-11.2-26.8-18-11.9-7.8-4.2-12.1 2.6-19.1 1.8-1.8 32.5-29.8 33.1-32.3.1-.3.1-1.5-.6-2.1-.7-.6-1.7-.4-2.5-.2-1.1.2-17.9 11.4-50.6 33.5-4.8 3.3-9.1 4.9-13 4.8-4.3-.1-12.5-2.4-18.7-4.4-7.5-2.4-13.5-3.7-13-7.9.3-2.2 3.3-4.4 8.9-6.7z"/></svg>',
+  vk: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#0077FF"/><path fill="#fff" d="M19.376 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4.03 8.57 4.03 8.096c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.677.863 2.49 2.303 4.675 2.896 4.675.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.204.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.254-1.406 2.151-3.574 2.151-3.574.119-.254.322-.491.763-.491h1.744c.525 0 .644.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.779 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.744-.576.744z"/></svg>',
+  instagram: '<svg class="i brand" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="ig-grad" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#FDF497"/><stop offset=".05" stop-color="#FDF497"/><stop offset=".45" stop-color="#FD5949"/><stop offset=".6" stop-color="#D6249F"/><stop offset=".9" stop-color="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#ig-grad)"/><rect x="5.5" y="5.5" width="13" height="13" rx="4" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="15.9" cy="8.1" r="1" fill="#fff"/></svg>',
 };
 const PROVIDER_LABEL = { google: "Google", yandex: "Яндекс ID", telegram: "Telegram" };
 const brand = (name) => raw(BRAND[name] || "");
@@ -165,9 +168,13 @@ function limited(key, items, render) {
   return html`${items.slice(0, LIST_LIMIT).map(render)}<button class="btn ghost block more-btn" data-more="${key}">Показать все · ${items.length}</button>`;
 }
 
+/** Звёзды с половинками: 2,5 — две полные и половина третьей */
 function starsRow(n) {
-  const r = Math.round(n);
-  return html`<span class="stars">${[0, 1, 2, 3, 4].map((i) => ic("star", i < r ? "on" : ""))}</span>`;
+  const r = Math.round(Number(n) * 2) / 2;
+  return html`<span class="stars" role="img" aria-label="${String(r).replace(".", ",")} из 5">${[0, 1, 2, 3, 4].map((i) => {
+    const fill = Math.max(0, Math.min(1, r - i));
+    return html`<span class="star">${ic("star")}${fill ? html`<span class="star-fill" style="width:${fill * 100}%">${ic("star", "on")}</span>` : ""}</span>`;
+  })}</span>`;
 }
 
 // ---------- Ожидание с оценкой времени ----------
@@ -1225,7 +1232,7 @@ function onboardingCard() {
   } else if (o.step === 2) {
     const custom = o.profession === "__custom";
     body = html`<h3>Какая специальность вам интересна?</h3><p class="small muted">Пациенты будут из этой области.</p>
-      <div class="row wrap" style="gap:6px">${Object.keys(cfg.specializations).map((x) => html`<button class="chip ${o.profession === x ? "on" : ""}" data-onb-prof="${x}">${x}</button>`)}<button class="chip ${custom ? "on" : ""}" data-onb-prof="__custom">Другая…</button></div>
+      <div class="field">${professionSelect("onb-prof", o.profession)}</div>
       ${custom ? html`<input class="input" id="onb-custom" value="${o.custom}" placeholder="Например: эндокринолог" maxlength="40">` : ""}`;
     next = html`<button class="btn" id="onb-next" ${o.profession && (!custom || o.custom.length >= 3) ? "" : "disabled"}>${o.suggesting ? html`<span class="spin"></span>` : ""}<span>Далее</span></button>`;
   } else if (o.step === 3) {
@@ -1286,12 +1293,13 @@ function bindOnboarding() {
   const back = $("#onb-back");
   if (back) back.onclick = () => { o.step -= 1; redraw(); };
   root.querySelectorAll("[data-onb-level]").forEach((b) => (b.onclick = () => { o.level = b.dataset.onbLevel; o.difficulty = null; o.step = 2; haptic(); redraw(); }));
-  root.querySelectorAll("[data-onb-prof]").forEach((b) => (b.onclick = () => {
-    o.profession = b.dataset.onbProf;
+  const op = $("#onb-prof");
+  if (op) op.onchange = () => {
+    o.profession = op.value;
     if (o.profession !== "__custom") { o.custom = ""; o.options = [...cfg.specializations[o.profession]]; o.specs = new Set(); o.step = 3; }
     redraw();
     if (o.profession === "__custom") $("#onb-custom")?.focus();
-  }));
+  };
   const ci = $("#onb-custom");
   if (ci) ci.oninput = () => { o.custom = ci.value.trim(); const n = $("#onb-next"); if (n) n.disabled = o.custom.length < 3; };
   root.querySelectorAll("[data-onb-spec]").forEach((b) => (b.onclick = () => {
@@ -1519,7 +1527,7 @@ function evaluationBlock(c) {
   const f = c.feedback || {};
   const axes = f.axes;
   return html`<div class="stack">
-    <div class="row"><div class="rating-big">${Number(c.rating).toFixed(1)}</div><div>${starsRow(c.rating)}${c.xp ? html`<span class="xp-pill small">${ic("zap")} +${c.xp} XP</span>` : ""}</div></div>
+    <div class="row"><div class="rating-big">${Number(c.rating).toFixed(1).replace(".", ",")}</div><div>${starsRow(c.rating)}${c.xp ? html`<span class="xp-pill small">${ic("zap")} +${c.xp} XP</span>` : ""}</div></div>
     ${axes ? html`<div class="stack-sm">
       ${[["Диагностика", axes.diagnosis], ["Общение", axes.communication], ["Лечение", axes.treatment]].map(([k, v]) => html`<div class="axis"><span>${k}</span><span class="bar"><i style="width:${(v / 5) * 100}%"></i></span><b>${v}</b></div>`)}
     </div>` : ""}
@@ -2116,7 +2124,7 @@ function sheetTests(p) {
   });
 }
 
-const EXAMS = ["Аускультация лёгких", "Аускультация сердца", "Пальпация живота", "Перкуссия грудной клетки", "Осмотр кожи", "Измерить давление и пульс", "Неврологический осмотр", "Осмотр зева"];
+const EXAMS = ["Аускультация лёгких", "Аускультация сердца", "Пальпация живота", "Перкуссия грудной клетки", "Осмотр кожи", "Измерить давление и пульс", "Неврологический осмотр", "Осмотр зева", "Измерить температуру", "Сатурация и ЧДД", "Пальпация лимфоузлов", "Осмотр позвоночника и суставов"];
 function sheetExam(p) {
   const done = new Set(p.current?.physicals || []);
   const exams = S.me.config.exams || EXAMS;
@@ -2616,6 +2624,38 @@ async function suggestSections(profession) {
   }
 }
 
+/** Ползунок по шагам: метки-точки на дорожке, подпись текущего выбора — под ним */
+function stepSlider(id, items, idx) {
+  const max = items.length - 1;
+  return html`<div class="steps" style="--f:${idx / max}">
+      <input type="range" id="${id}" min="0" max="${max}" step="1" value="${idx}" aria-valuetext="${items[idx].label}">
+      <div class="steps-ticks">${items.map((_, i) => html`<i class="${i < idx ? "on" : i === idx ? "cur" : ""}" style="--t:${i / max}"></i>`)}</div>
+    </div>
+    <div class="steps-cap" id="${id}-cap">${stepCap(items[idx])}</div>`;
+}
+const stepCap = (it) => html`<b>${it.label}</b><span class="small muted">${it.hint || ""}</span>`;
+/** Пока тянут — меняем только подпись и заливку; выбор фиксируем, когда отпустили */
+function bindStepSlider(id, items, onPick) {
+  const el = $(`#${id}`);
+  const box = el.parentElement;
+  const max = items.length - 1;
+  const paint = () => {
+    const i = Number(el.value);
+    box.style.setProperty("--f", i / max);
+    box.querySelectorAll(".steps-ticks i").forEach((t, j) => (t.className = j < i ? "on" : j === i ? "cur" : ""));
+    $(`#${id}-cap`).innerHTML = stepCap(items[i])[RAW];
+    el.setAttribute("aria-valuetext", items[i].label);
+  };
+  el.oninput = () => { paint(); haptic(); };
+  el.onchange = () => onPick(Number(el.value));
+}
+
+/** Специальность выпадающим списком: по алфавиту, «Другая…» — в конце */
+function professionSelect(id, value) {
+  const names = Object.keys(S.me.config.specializations).sort((a, b) => a.localeCompare(b, "ru"));
+  return html`<select id="${id}">${value ? "" : html`<option value="" selected disabled>Выберите специальность</option>`}${names.map((x) => html`<option value="${x}" ${value === x ? "selected" : ""}>${x}</option>`)}<option value="__custom" ${value === "__custom" ? "selected" : ""}>Другая…</option></select>`;
+}
+
 function pickProfession(name) {
   const cfg = S.me.config;
   pf.profession = name;
@@ -2630,36 +2670,31 @@ function viewSettings(fresh) {
   const p = S.me.profile;
   const cfg = S.me.config;
   if (fresh || !pf) pf = profileDraft(p, cfg);
-  const professions = Object.keys(cfg.specializations);
   const custom = pf.profession === "__custom";
+  // Ползунки «Кто вы» и «Сложность»: подпись текущего выбора — под ползунком
+  const diffLabel = (key) => cfg.difficulties.find((d) => d.key === key)?.label || "";
+  const levelItems = cfg.levels.map((l) => ({ label: l.label, hint: `по умолчанию сложность «${diffLabel(l.complexity)}» · опыт ×${String(l.xpMult).replace(".", ",")}` }));
+  const levelIdx = Math.max(0, cfg.levels.findIndex((l) => l.key === pf.level));
+  const diffItems = [
+    { label: "По уровню", hint: `сейчас «${diffLabel(cfg.levels[levelIdx]?.complexity)}» — меняется вместе с «Кто вы»` },
+    ...cfg.difficulties.map((d) => ({ label: `${d.emoji} ${d.label}`, hint: d.key === "hard" && !p.premium ? `${d.hint} · в премиуме` : d.hint })),
+  ];
+  const diffIdx = pf.difficulty ? cfg.difficulties.findIndex((d) => d.key === pf.difficulty) + 1 : 0;
 
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Настройки</h2></div>
 
-    <div class="card stack">
-      <h3>Фото профиля</h3>
-      <div class="row">
-        ${userAvatar(p, "xl")}
-        <div class="stack-sm grow">
-          <label class="btn sm ghost file-btn">${ic("camera")}<span>Загрузить фото</span><input type="file" accept="image/*" id="av-file" hidden></label>
-          <div class="row" style="gap:6px">
-            <button class="btn sm ghost grow" id="av-tg">${ic("telegram")}<span>Из Telegram</span></button>
-            ${p.avatar ? html`<button class="btn sm ghost" id="av-del" aria-label="Убрать фото">${ic("trash")}</button>` : ""}
-          </div>
-        </div>
-      </div>
+    <div class="card row-c pf-head">
+      <button class="pf-ava" id="av-edit" type="button" aria-label="Изменить фото">${userAvatar(p, "xl")}<span class="pf-ava-pen">${ic("pencil")}</span></button>
+      <div class="field grow"><label for="pf-name">Имя</label><input class="input" id="pf-name" value="${pf.name}" maxlength="40" autocomplete="given-name"></div>
     </div>
 
+    <div class="section-title">Настройка тренажёра</div>
     <div class="card stack" id="profile-form">
-      <h3>Профиль врача</h3>
-      <div class="field"><label>Имя</label><input class="input" id="pf-name" value="${pf.name}" maxlength="40"></div>
-      <div class="field"><label>Кто вы</label>
-        <div class="row wrap" style="gap:6px">${cfg.levels.map((l) => html`<button class="chip ${pf.level === l.key ? "on" : ""}" data-level="${l.key}">${l.label}</button>`)}</div></div>
-      <div class="field"><label>Сложность пациентов</label>
-        <div class="row wrap" style="gap:6px"><button class="chip ${!pf.difficulty ? "on" : ""}" data-diff="">По уровню</button>${cfg.difficulties.map((d) => html`<button class="chip ${pf.difficulty === d.key ? "on" : ""}" data-diff="${d.key}">${d.emoji} ${d.label}${d.key === "hard" && !p.premium ? html` ${ic("gem")}` : ""}</button>`)}</div>
-        <span class="tiny muted">${(cfg.difficulties.find((d) => d.key === (pf.difficulty || cfg.levels.find((l) => l.key === pf.level)?.complexity)) || {}).hint || ""}</span></div>
-      <div class="field"><label>Специальность</label>
-        <div class="row wrap" style="gap:6px">${professions.map((x) => html`<button class="chip ${pf.profession === x ? "on" : ""}" data-prof="${x}">${x}</button>`)}<button class="chip ${custom ? "on" : ""}" data-prof="__custom">Другая…</button></div>
+      <div class="field"><label>Кто вы</label>${stepSlider("pf-level", levelItems, levelIdx)}</div>
+      <div class="field"><label>Сложность пациентов</label>${stepSlider("pf-diff", diffItems, diffIdx)}</div>
+      <div class="field"><label for="pf-prof">Специальность</label>
+        ${professionSelect("pf-prof", pf.profession)}
         <input class="input ${custom ? "" : "hidden"}" id="pf-prof-custom" value="${pf.custom}" placeholder="Ваша специальность, например: неонатолог" maxlength="40"></div>
       <div class="field"><label>Разделы, из которых приходят пациенты${custom ? "" : ` · ${pf.profession}`}</label>
         ${pf.suggesting ? html`<div class="small muted row-c"><span class="spin"></span>Подбираем разделы для «${pf.custom}»…</div>` : ""}
@@ -2667,30 +2702,34 @@ function viewSettings(fresh) {
         ${!pf.suggesting && !pf.options.length ? html`<div class="small muted">${custom ? (pf.custom ? "Добавьте разделы ниже — или сохраните без них: пациенты будут по всей специальности." : "Введите специальность — разделы подберутся автоматически.") : "Добавьте хотя бы один раздел."}</div>` : ""}
         ${inlineForm("pf-spec-add", "Свой раздел, например: желтуха новорождённых", 60, ic("plus"), "btn ghost")}
       </div>
-      <label class="row" style="justify-content:space-between"><span>Напоминания о серии (Telegram и браузер)</span><input type="checkbox" id="pf-notify" ${p.notifications === false ? "" : "checked"} style="width:22px;height:22px;accent-color:var(--accent)"></label>
-      <button class="btn block" id="pf-save">Сохранить</button>
     </div>
+    <button class="btn block" id="pf-save">Сохранить</button>
 
   </div>`);
 
   $("#pf-name").oninput = (e) => { pf.name = e.target.value; };
-  root.querySelectorAll("[data-level]").forEach((b) => (b.onclick = () => { pf.level = b.dataset.level; viewSettings(); }));
-  root.querySelectorAll("[data-diff]").forEach((b) => (b.onclick = () => {
-    if (b.dataset.diff === "hard" && !p.premium) { toast("«Очень сложные» случаи — в премиуме"); return go("/plans"); }
-    pf.difficulty = b.dataset.diff;
-    viewSettings();
-  }));
-  root.querySelectorAll("[data-prof]").forEach((b) => (b.onclick = () => {
-    if (b.dataset.prof !== "__custom") return pickProfession(b.dataset.prof);
-    if (custom) return;
+  // «По уровню» зависит от «Кто вы» — после выбора уровня перерисовываем
+  bindStepSlider("pf-level", levelItems, (i) => { pf.level = cfg.levels[i].key; viewSettings(); });
+  bindStepSlider("pf-diff", diffItems, (i) => {
+    const d = cfg.difficulties[i - 1];
+    if (d?.key === "hard" && !p.premium) { toast("«Очень сложные» случаи — в премиуме"); return go("/plans"); }
+    pf.difficulty = d?.key || "";
+  });
+  $("#av-edit").onclick = () => openSheet(html`<h2>Фото профиля</h2>
+    <div class="stack-sm" style="margin-top:12px">
+      <label class="btn ghost block file-btn">${ic("camera")}<span>Загрузить фото</span><input type="file" accept="image/*" id="av-file" hidden></label>
+      <button class="btn ghost block" id="av-tg" type="button">${ic("telegram")}<span>Взять из Telegram</span></button>
+      ${p.avatar ? html`<button class="btn danger block" id="av-del" type="button">${ic("trash")}<span>Убрать фото</span></button>` : ""}
+    </div>`, bindAvatar);
+  $("#pf-prof").onchange = (e) => {
+    if (e.target.value !== "__custom") return pickProfession(e.target.value);
     pf.profession = "__custom";
     pf.options = [];
     pf.specs = new Set();
     viewSettings();
-    const inp = $("#pf-prof-custom");
-    inp.focus();
+    $("#pf-prof-custom").focus();
     if (pf.custom) suggestSections(pf.custom);
-  }));
+  };
   const customInput = $("#pf-prof-custom");
   customInput.oninput = () => {
     pf.custom = customInput.value.trim();
@@ -2733,7 +2772,7 @@ function viewSettings(fresh) {
     btnBusy(btn);
     try {
       const { profile } = await api("PATCH", "/profile", {
-        name: pf.name, level: pf.level, difficulty: pf.difficulty, profession, specializations: specs, notifications: $("#pf-notify").checked,
+        name: pf.name, level: pf.level, difficulty: pf.difficulty, profession, specializations: specs,
       });
       S.me.profile = profile;
       pf = null;
@@ -2745,7 +2784,6 @@ function viewSettings(fresh) {
       btnBusy(btn, false);
     }
   };
-  bindAvatar();
 }
 
 /** Фото профиля: своё (сжимаем в браузере до 320 px), из Telegram или без фото */
@@ -2765,6 +2803,7 @@ function bindAvatar() {
       S.me.profile = data.profile;
       haptic("success");
       toast("Фото обновлено", "ok");
+      closeSheet();
       viewSettings();
     } catch (e) {
       toast(e.message, "error");
@@ -2778,6 +2817,7 @@ function bindAvatar() {
       const { profile } = await api("POST", "/avatar/telegram");
       S.me.profile = profile;
       toast("Фото из Telegram", "ok");
+      closeSheet();
       viewSettings();
     } catch (e) {
       toast(e.message, "error");
@@ -2790,6 +2830,7 @@ function bindAvatar() {
     try {
       const { profile } = await api("DELETE", "/avatar");
       S.me.profile = profile;
+      closeSheet();
       viewSettings();
     } catch (e) {
       toast(e.message, "error");
@@ -2836,13 +2877,11 @@ function viewProfile() {
   const item = (attrs, tile, icon, title, sub2, extra = "") => html`<${attrs.tag || "a"} class="menu-item${attrs.cls ? " " + attrs.cls : ""}" ${raw(attrs.a || "")}>
     <div class="tile ${tile}">${ic(icon)}</div><div class="grow"><b>${title}</b>${sub2 ? html`<div class="small muted ellipsis">${sub2}</div>` : ""}</div>${extra || ic("chevron", "c-muted")}</${attrs.tag || "a"}>`;
   renderShell(html`<div class="page">
-    <div class="hello">${userAvatar(p, "lg")}<div class="grow"><h1 class="ellipsis">Врач ${p.name}</h1><div class="small muted">${p.username ? "@" + p.username : /^\d+$/.test(p.uid) ? "Telegram ID " + p.uid : "Аккаунт сайта"}</div>
-      <div class="small muted">${p.level_label} · ${p.profession} · уровень ${p.level_info.level}</div></div></div>
     <div class="menu card">
       ${item({ a: 'href="#/plans"' }, "accent", "gem", sub ? "Подписка" : "Премиум", sub ? `Активна ${sub}` : p.trial_available ? "7 дней за 1 ₽" : "Безлимит и разбор по КР")}
       ${item({ a: 'href="#/profile/stats"' }, "ok", "chart", "Статистика", `${p.stats.consultations_total || 0} ${plural(p.stats.consultations_total || 0, "приём", "приёма", "приёмов")}${p.stats.ratings_count ? ` · ★ ${dec(p.stats.avg_rating.toFixed(1))}` : ""}`)}
       ${item({ a: 'href="#/battles"' }, "warn", "swords", "Кто круче?", "Битва с другом на одном пациенте")}
-      ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Профиль и сложность")}
+      ${item({ a: 'href="#/profile/settings"' }, "", "settings", "Настройки", "Фото, имя, специальность и сложность")}
       ${item({ a: 'href="#/partner"' }, "ok", "handshake", "Партнёрская программа", p.partner ? "50% с оплат приглашённых" : "До 30% с оплат друзей")}
       ${item({ a: 'href="#/profile/app"' }, "accent", "phone", "Приложение на телефон", IN_TG ? "iPhone и Android" : pushLabel(true))}
       ${item({ a: 'href="#/profile/accounts"' }, "", "key", "Способы входа", /^\d+$/.test(p.uid) ? "Telegram, Яндекс, Google" : "Привязать Telegram")}
@@ -3141,7 +3180,7 @@ async function viewBattle(fresh) {
   const versus = html`<div class="vs">
     <div class="vs-side">${userAvatar(S.me.profile)}<b class="ellipsis">Вы</b></div>
     <div class="vs-mid">${ic("swords")}</div>
-    <div class="vs-side">${op && (b.status !== "waiting" || !isOwner) ? html`<div class="avatar">${initials(op.name)}</div><b class="ellipsis">${op.name}</b>` : html`<div class="avatar vs-wait">?</div><b class="muted">ждём</b>`}</div>
+    <div class="vs-side">${op && (b.status !== "waiting" || !isOwner) ? html`${userAvatar({ name: op.name, avatar: op.avatar ? { id: op.avatar } : null })}<b class="ellipsis">${op.name}</b>` : html`<div class="avatar vs-wait">?</div><b class="muted">ждём</b>`}</div>
   </div>`;
   let body = "";
   if (b.status === "waiting" && isOwner) {
@@ -3191,7 +3230,7 @@ async function viewBattle(fresh) {
     const myDone = !!me.result || mp?.status === "closed";
     body = myDone
       ? html`<div class="card stack center battle-waiting">
-          <div class="battle-waiting-ic">${ic("swords")}</div>
+          <div class="battle-waiting-ic">${ic("clock")}</div>
           <h2>${op?.done ? "Подводим итог…" : "Ждём соперника"}</h2>
           <p class="small muted">${op?.done ? "Оба закончили — сравниваем результаты" : `Ваш приём завершён. Итог откроется, когда ${opName} закончит.`}</p>
           <div class="row-c small muted" style="justify-content:center"><span class="pulse"></span>${op?.done ? "Эксперт сверяет приёмы" : `${opName} ещё на приёме`}</div>
@@ -3209,11 +3248,11 @@ async function viewBattle(fresh) {
     const cmp = (a, c, higher = true) => (a == null || c == null || a === c ? null : (higher ? a > c : a < c) ? "me" : "op");
     const corr = (r) => (!r ? "—" : r.correct === "yes" ? "верный" : r.correct === "partial" ? "частично" : r.correct === "none" ? "нет" : "неверный");
     body = html`<div class="card stack center battle-result ${b.winner}">
-        <div class="tile ${b.winner === "me" ? "ok" : b.winner === "draw" ? "accent" : "danger"} lg">${ic(b.winner === "me" ? "trophy" : b.winner === "draw" ? "handshake" : "swords")}</div>
+        <div class="tile ${b.winner === "me" ? "ok" : b.winner === "draw" ? "accent" : "danger"} lg">${ic(b.winner === "me" ? "trophy" : b.winner === "draw" ? "handshake" : "flag")}</div>
         <h2>${b.winner === "me" ? "Вы победили!" : b.winner === "draw" ? "Ничья!" : "Победа за соперником"}</h2>
         <div class="battle-score-big">${mr ? dec(Number(mr.rating).toFixed(1)) : "—"} <span class="muted">:</span> ${orr ? dec(Number(orr.rating).toFixed(1)) : "—"}</div>
         <p class="small muted">Диагноз: <b>${b.patient?.true_diagnosis || "—"}</b></p>
-        ${b.next_id && !b.next_mine ? html`<div class="badge warn">${ic("swords")} ${opName} зовёт на реванш</div>` : ""}
+        ${b.next_id && !b.next_mine ? html`<div class="badge warn">${ic("repeat")} ${opName} зовёт на реванш</div>` : ""}
       </div>
       <div class="card"><table class="battle-table">
         <thead><tr><th></th><th>Вы</th><th class="ellipsis">${opName}</th></tr></thead>
@@ -3227,7 +3266,7 @@ async function viewBattle(fresh) {
         </tbody></table></div>
       <div class="grid-2">
         <button class="btn" id="battle-rematch">${ic("repeat")}<span>${!b.next_id ? "Реванш" : b.next_mine ? "К реваншу" : "Принять реванш"}</span></button>
-        <button class="btn ghost" id="battle-new">${ic("swords")}<span>Новая битва</span></button>
+        <button class="btn ghost" id="battle-new">${ic("plus")}<span>Новая битва</span></button>
       </div>
       ${me.patient_id ? html`<a class="card tap row" href="#/patient/${me.patient_id}" style="text-decoration:none;color:inherit">
         <div class="tile accent">${ic("card")}</div><div class="grow"><b>Мой разбор от эксперта</b><div class="small muted">Оценка по шагам, КР Минздрава, чат с экспертом</div></div>${ic("chevron", "c-muted")}</a>` : ""}`;
@@ -3296,12 +3335,25 @@ async function viewPartner(fresh) {
   const link = IN_TG ? d.links.bot : d.links.site;
   const b = d.balance;
   const shareText = "Тренажёр врача: ИИ-пациенты, анализы, диагноз и разбор по клиническим рекомендациям Минздрава. Попробуй:";
+  // У Instagram нет ссылки «поделиться» — кнопка копирует текст со ссылкой и открывает приложение
   const shareLinks = [
     ["telegram", "Telegram", `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`],
-    ["external", "ВКонтакте", `https://vk.com/share.php?url=${encodeURIComponent(link)}`],
-    ["chat", "WhatsApp", `https://wa.me/?text=${encodeURIComponent(`${shareText} ${link}`)}`],
+    ["vk", "ВКонтакте", `https://vk.com/share.php?url=${encodeURIComponent(link)}`],
+    ["instagram", "Instagram", "https://www.instagram.com/", 'id="ref-ig"'],
   ];
   const canWithdraw = b.available >= d.min_payout && !b.requested;
+  // Пока никого не пригласили: вместо нулевой статистики — советы сразу под балансом, предложение стать партнёром — в самом низу
+  const noRefs = !d.counts.invited;
+  const hasStats = d.counts.invited || d.counts.active || d.counts.paying || b.earned;
+  const partner = partnerBlock(d);
+  const tips = html`<div class="card stack-sm">
+      <b class="row-c">${ic("bulb", "c-warn")}Как приглашать, чтобы работало</b>
+      <div class="small fact">${ic("check", "c-ok")}<span>Сначала примите 2–3 пациентов сами — рассказывать своими словами проще и честнее.</span></div>
+      <div class="small fact">${ic("check", "c-ok")}<span>Лучшие места: чат группы и потока, сторис, староста; лучшее время — перед сессией, аккредитацией и практикой.</span></div>
+      <div class="small fact">${ic("check", "c-ok")}<span>Показывайте, а не рекламируйте: скриншот своего разбора с оценкой работает лучше любого текста.</span></div>
+      <div class="small fact">${ic("xCircle", "c-danger")}<span>Без спама в чужих чатах, обещаний «сдашь аккредитацию» и регистрации самого себя — начисления за такое аннулируются.</span></div>
+      <a class="more-link" href="/partneram/" target="_blank" rel="noopener">Все подсказки и правила ${ic("chevron")}</a>
+    </div>`;
   renderShell(html`<div class="page">
     ${head}
 
@@ -3316,30 +3368,25 @@ async function viewPartner(fresh) {
       <div class="ref-link"><span class="ellipsis">${link.replace(/^https?:\/\//, "")}</span><button class="btn sm" data-copy="${link}">${ic("copy")}<span>Копировать</span></button></div>
       <div class="ref-share">
         ${navigator.share ? html`<button class="btn ghost sm" id="ref-native">${ic("share")}<span>Поделиться</span></button>` : ""}
-        ${shareLinks.map(([i, t, u]) => html`<a class="btn ghost sm" href="${u}" target="_blank" rel="noopener">${ic(i)}<span>${t}</span></a>`)}
+        ${shareLinks.map(([i, t, u, attr]) => html`<a class="btn ghost sm" href="${u}" target="_blank" rel="noopener" ${raw(attr || "")}>${brand(i)}<span>${t}</span></a>`)}
       </div>
     </div>
 
     <div class="card stack">
       <div class="row between"><b class="row-c">${ic("wallet", "c-accent")}Баланс</b><span class="tiny muted">вывод от ${rub(d.min_payout)} ₽</span></div>
-      <div class="bal-main"><b>${rub(b.available)} ₽</b><span class="small muted">доступно к выводу</span></div>
-      <div class="bal-grid">
-        <div><b>${rub(b.hold)} ₽</b><span>в ожидании ${d.hold_days} дней</span></div>
-        <div><b>${rub(b.requested)} ₽</b><span>выводится</span></div>
-        <div><b>${rub(b.paid)} ₽</b><span>выплачено</span></div>
-      </div>
+      <div class="bal-main"><b>${rub(b.available)} ₽</b><span class="small muted">${["доступно к выводу", b.hold && `ещё ${rub(b.hold)} ₽ в ожидании ${d.hold_days} дней`, b.requested && `${rub(b.requested)} ₽ выводится`].filter(Boolean).join(" · ")}</span></div>
       <button class="btn block" id="payout-open" ${canWithdraw ? "" : "disabled"}>${ic("wallet")}<span>${b.requested ? "Выплата в работе" : "Вывести на карту или по СБП"}</span></button>
-      <p class="tiny muted">${b.requested ? "Мы переведём деньги в течение нескольких рабочих дней и напишем в Telegram."
-        : b.available < d.min_payout ? `Вывести можно, когда на балансе будет от ${rub(d.min_payout)} ₽. Новые начисления доступны через ${d.hold_days} дней — на случай возврата оплаты.`
-        : "Реквизиты спросим на следующем шаге."}</p>
+      <a class="small center" href="https://t.me/oleg_ezhkov" target="_blank" rel="noopener">Написать в поддержку</a>
     </div>
 
-    <div class="ref-kpis">
+    ${noRefs ? tips : ""}
+
+    ${hasStats ? html`<div class="ref-kpis">
       <div><b>${d.counts.invited}</b><span>${plural(d.counts.invited, "приглашён", "приглашено", "приглашено")}</span></div>
       <div><b>${d.counts.active}</b><span>принимают пациентов</span></div>
       <div><b>${d.counts.paying}</b><span>${plural(d.counts.paying, "оплатил", "оплатили", "оплатили")}</span></div>
       <div><b>${rub(b.earned)} ₽</b><span>заработано всего</span></div>
-    </div>
+    </div>` : ""}
 
     <div class="section-title">Приглашённые</div>
     ${d.referrals.length ? html`<div class="card ref-list">${d.referrals.map((r) => html`<div class="ref-row">
@@ -3356,23 +3403,19 @@ async function viewPartner(fresh) {
     <div class="card ref-list">${d.payouts.map((p) => html`<div class="ref-row"><div class="grow"><b>${rub(p.amount)} ₽</b><div class="tiny muted">${dateText(p.created_at)} · ${p.method === "sbp" ? "СБП" : "карта"}${p.note ? ` · ${p.note}` : ""}</div></div>
       <span class="badge ${p.status === "paid" ? "ok" : p.status === "rejected" ? "danger" : "warn"}">${p.status === "paid" ? "Выплачено" : p.status === "rejected" ? "Отклонено" : "В работе"}</span></div>`)}</div>` : ""}
 
-    ${partnerBlock(d)}
+    ${noRefs ? "" : partner}
 
     <div class="section-title">Готовые тексты</div>
     <div class="stack-sm">${inviteTexts(link).map(([t, text], i) => html`<div class="card stack-sm ref-tpl"><div class="row between"><b class="small">${t}</b><button class="btn ghost sm" data-copy-tpl="${i}">${ic("copy")}<span>Скопировать</span></button></div><p class="small muted">${text}</p></div>`)}</div>
 
-    <div class="card stack-sm">
-      <b class="row-c">${ic("bulb", "c-warn")}Как приглашать, чтобы работало</b>
-      <div class="small fact">${ic("check", "c-ok")}<span>Сначала примите 2–3 пациентов сами — рассказывать своими словами проще и честнее.</span></div>
-      <div class="small fact">${ic("check", "c-ok")}<span>Лучшие места: чат группы и потока, сторис, староста; лучшее время — перед сессией, аккредитацией и практикой.</span></div>
-      <div class="small fact">${ic("check", "c-ok")}<span>Показывайте, а не рекламируйте: скриншот своего разбора с оценкой работает лучше любого текста.</span></div>
-      <div class="small fact">${ic("xCircle", "c-danger")}<span>Без спама в чужих чатах, обещаний «сдашь аккредитацию» и регистрации самого себя — начисления за такое аннулируются.</span></div>
-      <a class="more-link" href="/partneram/" target="_blank" rel="noopener">Все подсказки и правила ${ic("chevron")}</a>
-    </div>
+    ${noRefs ? partner : tips}
+
     <p class="tiny muted center">Участвуя, вы принимаете <a href="/partner-oferta/" target="_blank" rel="noopener">партнёрское соглашение</a>. Налоги с вознаграждения уплачиваете самостоятельно.</p>
   </div>`);
   document.querySelectorAll("[data-copy]").forEach((el) => { el.onclick = () => { copyText(el.dataset.copy, "Ссылка скопирована"); goal("ref_copy"); }; });
   document.querySelectorAll("[data-copy-tpl]").forEach((el) => { el.onclick = () => { copyText(inviteTexts(link)[Number(el.dataset.copyTpl)][1], "Текст со ссылкой скопирован"); goal("ref_copy_tpl"); }; });
+  const ig = $("#ref-ig");
+  if (ig) ig.onclick = () => { copyText(`${shareText} ${link}`, "Текст со ссылкой скопирован — вставьте в сторис или директ"); goal("ref_share_ig"); };
   const nat = $("#ref-native");
   if (nat) nat.onclick = () => { navigator.share({ title: "Help me, Doctor", text: shareText, url: link }).catch(() => {}); goal("ref_share"); };
   const po = $("#payout-open");
@@ -3502,15 +3545,16 @@ async function viewAccounts(fresh) {
   const p = S.me.profile;
   const ids = Object.fromEntries(a.identities.map((i) => [i.provider, i]));
   const total = (a.telegram ? 1 : 0) + a.identities.length;
+  // Единый вид строк: галочка у названия = привязан, справа — только действие одного размера
   const row = (key, linked, sub, action) => html`<div class="menu-item acc-row"><div class="tile plain">${brand(key)}</div>
-    <div class="grow"><b>${PROVIDER_LABEL[key]}</b><div class="small muted ellipsis">${sub}</div></div>${action}</div>`;
+    <div class="grow"><b class="acc-name">${PROVIDER_LABEL[key]}${linked ? html`<span class="acc-ok" aria-label="привязан">${ic("check")}</span>` : ""}</b><div class="small muted ellipsis">${sub}</div></div>${action}</div>`;
   const tgRow = row("telegram", a.telegram, a.telegram ? (p.username ? "@" + p.username : "Привязан") : "Приёмы в чате с ботом, напоминания и стрики",
-    a.telegram ? html`<span class="badge ok">привязан</span>` : html`<button class="btn sm" id="link-tg" type="button">Привязать</button>`);
+    a.telegram ? "" : html`<button class="btn sm outline acc-btn" id="link-tg" type="button">Привязать</button>`);
   const provRows = a.providers.map((key) => {
     const i = ids[key];
-    if (i) return row(key, true, i.email || i.name || "Привязан", total > 1 ? html`<button class="btn sm ghost" data-unlink="${key}" type="button">Отвязать</button>` : html`<span class="badge ok">привязан</span>`);
+    if (i) return row(key, true, i.email || i.name || "Привязан", total > 1 ? html`<button class="btn sm ghost acc-btn" data-unlink="${key}" type="button">Отвязать</button>` : "");
     if (IN_TG) return row(key, false, "Привязывается в веб-версии", "");
-    return row(key, false, "Входить без Telegram", html`<button class="btn sm outline" data-link="${key}" type="button">Привязать</button>`);
+    return row(key, false, "Вход без Telegram", html`<button class="btn sm outline acc-btn" data-link="${key}" type="button">Привязать</button>`);
   });
   renderShell(html`<div class="page">${head}
     <div class="menu card">${tgRow}${provRows}</div>
@@ -3549,7 +3593,7 @@ async function linkTelegram(btn) {
     return btnBusy(btn, false);
   }
   btnBusy(btn, false);
-  btn.outerHTML = html`<a class="btn sm" href="${r.tg || r.url}" id="link-tg-open">${ic("clock")}Ждём…</a>`[RAW];
+  btn.outerHTML = html`<a class="btn sm outline acc-btn" href="${r.tg || r.url}" id="link-tg-open">${ic("clock")}Ждём…</a>`[RAW];
   const hint = $("#link-tg-hint");
   if (hint) hint.innerHTML = html`<div class="card small">В Telegram нажмите «Запустить», затем «✅ Привязать» — эта страница обновится сама.<br>Telegram не открылся? <a href="${r.url}" target="_blank" rel="noopener">Открыть бота в браузере</a></div>`[RAW];
   location.href = r.tg || r.url;
@@ -3588,11 +3632,14 @@ function viewStats() {
   const st = p.stats || {};
   const rated = st.ratings_count || 0;
   const avg = rated ? st.avg_rating : 0;
-  const quality = !rated ? "" : avg >= 4.5 ? "отлично — так держать" : avg >= 4 ? "хорошо, есть что подтянуть" : avg >= 3 ? "средне — смотрите советы ниже" : "ниже среднего — начните с советов ниже";
+  // Итог разборов одним блоком: 3 пробела, свежий совет, 2 сильные стороны
+  const weak = meaningful(p.weaknesses).slice(0, 3);
+  const strong = meaningful(p.strengths).slice(0, 2);
+  const tip = (p.recommendations || [])[0];
   // Что сделать дальше: одна понятная подсказка из того, что уже известно
   const next = !rated ? ["steth", "Примите первого пациента", "После разбора здесь появятся ваши оценки, сильные стороны и пробелы."]
     : !p.streak ? ["flame", "Начните серию заново", "Один приём в день — и серия дней растёт, а вместе с ней бонус к опыту."]
-    : meaningful(p.weaknesses).length ? ["target", `Подтяните: ${meaningful(p.weaknesses)[0]}`, "Это чаще всего встречается в ваших разборах. Обратите внимание на следующем приёме."]
+    : weak.length ? null // пробелы и совет — в блоке «Над чем поработать» ниже, здесь не повторяем
     : ["trophy", "Попробуйте сложнее", "Оценки высокие — поднимите сложность в настройках, чтобы расти дальше."];
   renderShell(html`<div class="page">
     <div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button><h2 class="grow">Статистика</h2></div>
@@ -3600,12 +3647,12 @@ function viewStats() {
     <div class="card lvl-card">${levelHead(p)}${kpis(p, true)}</div>
     ${consultCalendar(p)}
 
-    <div class="card next-step"><div class="tile accent">${ic(next[0])}</div><div class="grow"><div class="tiny muted">ЧТО ДЕЛАТЬ ДАЛЬШЕ</div><b>${next[1]}</b><div class="small muted">${next[2]}</div></div></div>
+    ${next ? html`<div class="card next-step"><div class="tile accent">${ic(next[0])}</div><div class="grow"><div class="tiny muted">ЧТО ДЕЛАТЬ ДАЛЬШЕ</div><b>${next[1]}</b><div class="small muted">${next[2]}</div></div></div>` : ""}
     ${rated || !p.onboarding_done ? "" : html`<button class="btn block" data-go="/">${ic("plus")}<span>Принять пациента</span></button>`}
 
     ${rated ? html`<div class="section-title">Качество приёмов</div>
     <div class="card stack">
-      <div class="row"><div class="rating-big">${avg.toFixed(1).replace(".", ",")}</div><div class="grow">${starsRow(avg)}<div class="small muted">средняя оценка за ${rated} ${plural(rated, "приём", "приёма", "приёмов")} · ${quality}</div></div></div>
+      <div class="row"><div class="rating-big">${avg.toFixed(1).replace(".", ",")}</div>${starsRow(avg)}</div>
       <div class="stat-rows">
         ${statRow("checkCircle", "Верных диагнозов подряд", st.correct_diagnoses_streak || 0, "сбрасывается при неверном диагнозе")}
         ${statRow("quiz", "Тестов по ошибкам пройдено", st.quizzes_done || 0, "закрепляют пробелы конкретного приёма")}
@@ -3613,14 +3660,12 @@ function viewStats() {
       </div>
     </div>` : ""}
 
-    ${meaningful(p.strengths).length || meaningful(p.weaknesses).length ? html`<div class="section-title">Сильные стороны и пробелы</div>
-    <div class="card stack">
-      ${meaningful(p.strengths).length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("checkCircle", "c-ok")} ПОЛУЧАЕТСЯ</div><div class="row wrap" style="gap:6px">${meaningful(p.strengths).slice(0, 6).map((x) => html`<span class="badge ok multi">${x}</span>`)}</div></div>` : ""}
-      ${meaningful(p.weaknesses).length ? html`<div class="stack-sm"><div class="tiny muted row-c">${ic("target", "c-warn")} ПОДТЯНУТЬ</div><div class="row wrap" style="gap:6px">${meaningful(p.weaknesses).slice(0, 6).map((x) => html`<span class="badge warn multi">${x}</span>`)}</div></div>` : ""}
+    ${weak.length || tip || strong.length ? html`<div class="section-title">Над чем поработать</div>
+    <div class="card stack-sm">
+      ${weak.map((x) => html`<div class="small fact">${ic("target", "c-warn")}<span>${x}</span></div>`)}
+      ${tip ? html`<div class="small fact">${ic("bulb", "c-accent")}<span><b>Совет:</b> ${tip}</span></div>` : ""}
+      ${strong.length ? html`<div class="small fact muted">${ic("checkCircle", "c-ok")}<span>Получается: ${strong.join("; ")}</span></div>` : ""}
     </div>` : ""}
-
-    ${p.recommendations?.length ? html`<div class="section-title">Советы из разборов</div>
-    <div class="card stack-sm">${p.recommendations.slice(0, 3).map((r) => html`<div class="small fact">${ic("bulb", "c-warn")}<span>${r}</span></div>`)}</div>` : ""}
   </div>`);
 }
 // Календарь приёмов за 30 дней (даты МСК, как на сервере): без чисел — только дни с приёмами и без
@@ -3753,6 +3798,8 @@ function viewPlans(fresh) {
   // Подписка с автопродлением (месяц, студенческий, пробный) — апгрейд только на год; подарок и разовые без продления — можно продлить любым тарифом
   const upgradeOnly = p.has_sub && ap?.status === "active";
   const order = (p.has_sub ? (maxed ? [] : upgradeOnly ? ["year"] : ["month", "year"]) : ["month", "year"]).filter((k) => o.plans[k]);
+  // Разовые покупки на этой странице: предзаказ комьюнити и пациенты (без подписки). Заморозка — из стрика по ссылке ?buy=freeze
+  const packs = Object.entries(o.packs || {}).filter(([k]) => k !== "freeze" && !(p.has_sub && k === "patients3"));
   const PLAN_NAMES = { trial: "пробный период", month: "1 месяц", year: "1 год", student: "студенческий", week: "1 неделя", quarter: "3 месяца", gift: "подарок", forever: "навсегда" };
   if (fresh && S.route.q.paid && !S.paidToastAt) { toast("Проверяем оплату…"); watchPayment(); }
   if (fresh) api("POST", "/event", { type: "plans_open" }).catch(() => {});
@@ -3799,13 +3846,11 @@ function viewPlans(fresh) {
 
     ${consentBox()}
 
-    ${Object.keys(o.packs || {}).length ? html`<div class="section-title">Разовые покупки</div>
-      <div class="card packs">${Object.entries(o.packs).filter(([k]) => !(p.has_sub && k === "patients3")).map(([k, x]) => html`<div class="pack-row">
-        <div class="tile ${k === "freeze" ? "accent" : "warn"}">${ic(k === "freeze" ? "flame" : "users")}</div>
-        <div class="grow"><b>${x.label}</b><div class="small muted">${k === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}`}</div></div>
-        <button class="btn sm" data-plan="${k}">${rub(x.price)} ₽</button></div>`)}</div>` : ""}
-
-    <p class="tiny muted center">Карта или СБП. Доступ включается сразу — и в боте, и на сайте.<br>${docLink("offer", "Оферта")} · ${docLink("privacy", "Политика конфиденциальности")}</p>
+    ${packs.length ? html`<div class="section-title">Разовые покупки</div>
+      <div class="card packs">${packs.map(([k, x]) => { const m = packMeta(k, p); return html`<div class="pack-row">
+        <div class="tile ${m.tile}">${ic(m.icon)}</div>
+        <div class="grow"><b>${x.label}</b><div class="small muted">${m.sub}</div></div>
+        ${k === "community" && p.community_preorder ? html`<span class="badge ok">${ic("check")} оформлен</span>` : html`<button class="btn sm" data-plan="${k}">${rub(x.price)} ₽</button>`}</div>`; })}</div>` : ""}
   </div>`);
   bindConsent(root);
   root.querySelectorAll("[data-plan]").forEach((b) => (b.onclick = () => payFor(b.dataset.plan, b, root)));
@@ -3911,6 +3956,13 @@ async function payFor(key, b, scope) {
   btnBusy(b, false);
 }
 
+/** Разовая покупка: плитка, иконка и пояснение */
+function packMeta(key, p) {
+  if (key === "freeze") return { tile: "accent", icon: "flame", sub: `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` };
+  if (key === "community") return { tile: "ok", icon: "users", sub: p.community_preorder ? "Напишем, как только откроем, — вы попадёте первыми" : "Закрытое сообщество врачей и студентов. Откроем скоро — участники предзаказа попадут первыми" };
+  return { tile: "warn", icon: "users", sub: `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}` };
+}
+
 /** Покупка на месте: лист с одним товаром (пробный период или разовая покупка) без перехода к тарифам */
 function checkout(key) {
   const p = S.me.profile;
@@ -3923,8 +3975,8 @@ function checkout(key) {
     ? html`<h2>Премиум 7 дней за ${rub(trial.price)} ₽</h2>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div>
       <p class="tiny muted">Через 7 дней — ${rub(trial.then_price)} ₽ в месяц автоматически. Отключить можно в любой момент в профиле, до конца пробного периода — бесплатно.</p>`
-    : html`<div class="row-c"><div class="tile ${key === "freeze" ? "accent" : "warn"}">${ic(key === "freeze" ? "flame" : "users")}</div>
-        <div class="grow"><h2>${pack.label}</h2><div class="small muted">${key === "freeze" ? `Пропуск дня не сожжёт стрик${p.streak_freezes ? ` · у вас: ${p.streak_freezes}` : ""}` : `Сверх бесплатного лимита, не сгорают${p.patient_credits ? ` · у вас: ${p.patient_credits}` : ""}`}</div></div></div>`;
+    : html`<div class="row-c"><div class="tile ${packMeta(key, p).tile}">${ic(packMeta(key, p).icon)}</div>
+        <div class="grow"><h2>${pack.label}</h2><div class="small muted">${packMeta(key, p).sub}</div></div></div>`;
   const price = trial ? trial.price : pack.price;
   openSheet(html`<div class="stack checkout">${body}
     <button class="btn lg block" data-buy="${key}">Оплатить ${rub(price)} ₽</button>

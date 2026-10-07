@@ -688,6 +688,7 @@ export class UserDO extends DurableObject {
     prof.avatar_off = true;
     await this.ctx.storage.put(PROFILE, prof);
     if (old) await this.env.HELPMEDOCTOR?.delete(`avatar:${old}`).catch(() => {});
+    await this.track("avatar", { src: "off" }); // сводка в HubDO — чтобы соперник в битве не видел удалённое фото
     this.broadcast("profile");
     return { profile: publicProfile(prof) };
   }
@@ -1375,17 +1376,19 @@ export class UserDO extends DurableObject {
     prof.payments = prof.payments.slice(-20);
     const bot = tg(this.env);
 
-    // Разовые покупки: пациенты сверх лимита и заморозки стрика
+    // Разовые покупки: пациенты сверх лимита, заморозки стрика, предзаказ комьюнити
     if (PACKS[planKey]) {
       const pack = PACKS[planKey];
       if (pack.patients) prof.patient_credits = (prof.patient_credits || 0) + pack.patients;
       if (pack.freezes) prof.streak_freezes = (prof.streak_freezes || 0) + pack.freezes;
+      if (pack.preorder) prof.community_preorder = { ts: Date.now(), op: operationId, amount: price };
       await this.ctx.storage.put(PROFILE, prof);
       this.broadcast("profile", { paid: planKey });
       await this.track("paid", { plan: planKey, op: operationId }, { val: price });
       await this.referralAccrue(operationId, price, planKey);
       await bot.send(prof.uid, pack.patients
         ? `✅ <b>+${pack.patients} пациента</b> — можно принимать сверх бесплатного лимита в любой день.`
+        : pack.preorder ? `🤝 <b>Предзаказ доступа к комьюнити оформлен.</b> Напишем, как только откроем, — вы попадёте первыми.`
         : `❄️ <b>Заморозка стрика</b> добавлена. Если пропустите день, серия не сгорит.`, [[{ text: "➕ Принять пациента", callback_data: "new" }]]);
       return publicProfile(prof);
     }
@@ -1484,6 +1487,7 @@ export class UserDO extends DurableObject {
     if ((key === TRIAL.key || PLANS[key]?.recurring) && prof.autopay?.status === "active") {
       throw new UserError("Подписка с автопродлением уже оформлена — она продлится сама", "autopay_active");
     }
+    if (PACKS[key]?.preorder && prof.community_preorder) throw new UserError("Предзаказ уже оформлен — напишем, как только откроем", "preordered");
     if (prof.sub_until === -1 && !PACKS[key]) throw new UserError("У вас бессрочный доступ — докупать ничего не нужно", "forever");
     if (PLANS[key]?.student && prof.student?.status !== "approved") {
       throw new UserError("Студенческий тариф — после проверки студенческого билета. Загрузите фото в «Тарифах».", "student");
@@ -1952,6 +1956,7 @@ export class UserDO extends DurableObject {
       src_channel: prof.src?.channel || (prof.ref?.startsWith("r_") ? "Партнёрская ссылка" : null), src_host: prof.src?.host || null,
       src_land: prof.src?.land || null, src_last: prof.src?.last || null, src_utm: prof.src?.utm || null, src_cid: prof.src?.cid || null,
       extra_today: prof.extra_patients?.date === today ? prof.extra_patients.n : 0,
+      avatar: prof.avatar?.id || "",
     };
   }
 

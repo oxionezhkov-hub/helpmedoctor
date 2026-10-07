@@ -31,7 +31,7 @@ const USER_COLS = {
   avg_rating: "REAL DEFAULT 0", ratings_count: "INTEGER DEFAULT 0", correct_streak: "INTEGER DEFAULT 0",
   sub_until: "INTEGER DEFAULT 0", sub_plan: "TEXT", onboarding_done: "INTEGER DEFAULT 1", about: "TEXT", expectations: "TEXT",
   notifications: "INTEGER DEFAULT 1", feedback_count: "INTEGER DEFAULT 0", blocked: "INTEGER DEFAULT 0", bot_blocked: "INTEGER DEFAULT 0",
-  ref: "TEXT", last_source: "TEXT", extra_today: "INTEGER DEFAULT 0",
+  ref: "TEXT", last_source: "TEXT", extra_today: "INTEGER DEFAULT 0", avatar: "TEXT",
   src_channel: "TEXT", src_host: "TEXT", src_land: "TEXT", src_last: "TEXT", src_utm: "TEXT", src_cid: "TEXT",
 };
 const SUMMARY_KEYS = Object.keys(USER_COLS).filter((k) => k !== "registered_at");
