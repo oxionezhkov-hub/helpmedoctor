@@ -110,14 +110,21 @@ export async function vkFeedRss(env, origin, request = null, ctx = null) {
 }
 
 /** Страница записи: ссылка нужна каждой записи RSS (импорт ВК без неё пропускает запись); в группе её скрывает настройка «Не указывать ссылку» */
-export async function vkFeedPage(env, id) {
+export async function vkFeedPage(env, id, origin = "") {
   const items = (await env.HELPMEDOCTOR.get(ITEMS, "json")) || [];
   const it = items.find((x) => x.id === id);
   if (!it) return new Response("not found", { status: 404 });
-  const a = articleHtml(it, "");
+  const site = String(origin).replace(/\/$/, "");
+  const a = articleHtml(it, site);
+  const img = it.img ? `${site}/vk/img/${it.id}.jpg` : "";
+  // Open Graph — из него ВК собирает сниппет записи при импорте RSS
+  const og = `<meta property="og:type" content="article"><meta property="og:site_name" content="Для будущих врачей">
+<meta property="og:title" content="${xml(it.title)}"><meta property="og:description" content="${xml(a.lead.slice(0, 300))}">
+<meta property="og:url" content="${xml(`${site}/vk/p/${it.id}`)}">${img ? `<meta property="og:image" content="${xml(img)}">` : ""}`;
   const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>${xml(it.title)} — Для будущих врачей</title><style>body{font:17px/1.55 system-ui,sans-serif;max-width:680px;margin:0 auto;padding:24px 16px;background:#f5f2e9;color:#1b1f1d}img{max-width:100%;border-radius:12px}</style></head>
-<body><h1>${xml(it.title)}</h1>${a.html}</body></html>`;
+<title>${xml(it.title)} — Для будущих врачей</title><meta name="description" content="${xml(a.lead.slice(0, 300))}">${og}
+<style>body{font:17px/1.55 system-ui,sans-serif;max-width:680px;margin:0 auto;padding:24px 16px;background:#f5f2e9;color:#1b1f1d}img{max-width:100%;border-radius:12px}</style></head>
+<body><article><h1>${xml(it.title)}</h1>${a.html}</article></body></html>`;
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex" } });
 }
 
