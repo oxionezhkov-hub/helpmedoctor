@@ -46,6 +46,9 @@
   // Не секретные настройки. Секреты — через `wrangler secret put` (см. README)
   "vars": {
     "PUBLIC_URL": "https://helpmedoctor.ru",
+    // Мини-приложение в Telegram открываем с workers.dev: helpmedoctor.ru (прокси на VPS) не открывается с VPN,
+    // а workers.dev доступен и из России, и через VPN. Сайт, письма и вебхук остаются на PUBLIC_URL
+    "APP_URL": "https://helpmedoctor.oxion-ezhkov.workers.dev",
     "BOT_USERNAME": "helpmedoctor_aibot",
     "ADMIN_ID": "1326867567,1062804986",
     "TOCHKA_MERCHANT": "200000000029805",

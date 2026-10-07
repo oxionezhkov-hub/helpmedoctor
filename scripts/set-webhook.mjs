@@ -5,6 +5,8 @@
 const token = process.env.TELEGRAM_TOKEN;
 const secret = process.env.WEBHOOK_SECRET;
 const base = (process.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "");
+// Мини-приложение — с workers.dev: helpmedoctor.ru не открывается с VPN (см. APP_URL в wrangler.jsonc)
+const appBase = (process.env.APP_URL || "https://helpmedoctor.oxion-ezhkov.workers.dev").replace(/\/$/, "");
 if (!token) {
   console.error("Укажите TELEGRAM_TOKEN");
   process.exit(1);
@@ -23,7 +25,7 @@ if (!menuOnly) await call("setWebhook", {
   drop_pending_updates: false,
   ...(secret ? { secret_token: secret } : {}),
 });
-await call("setChatMenuButton", { menu_button: { type: "web_app", text: "Приложение", web_app: { url: `${base}/app` } } });
+await call("setChatMenuButton", { menu_button: { type: "web_app", text: "Приложение", web_app: { url: `${appBase}/app` } } });
 const userCommands = [
     { command: "new", description: "Принять нового пациента" },
     { command: "patients", description: "Мои пациенты" },

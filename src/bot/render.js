@@ -1,10 +1,11 @@
 // Тексты и клавиатуры бота
-import { BONUS_RATING, DIFFICULTIES, HINTS_PER_PATIENT, HINT_RATING_PENALTY, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
+import { BONUS_RATING, DIFFICULTIES, HINTS_PER_PATIENT, HINT_RATING_PENALTY, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES, miniAppBase } from "../config.js";
 import { declDays, esc, firstName } from "../lib/util.js";
 import { appBtn, btn } from "../lib/telegram.js";
 
+/** Ссылка в мини-приложение (кнопки web_app в боте) */
 export function appUrl(env, path = "") {
-  const base = (env.PUBLIC_URL || "").replace(/\/$/, "");
+  const base = miniAppBase(env);
   // Путь передаём в query: Telegram дописывает свои параметры в hash
   return `${base}/app${path ? `?go=${encodeURIComponent(path)}` : ""}`;
 }

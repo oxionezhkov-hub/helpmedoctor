@@ -2,7 +2,7 @@
 // Telegram-бот: разбор апдейтов и отрисовка ответов.
 // Вся логика и данные — в UserDO (общие с сайтом), здесь только интерфейс.
 // =====================================================
-import { ADMIN_NAMES, adminIds, HINTS_PER_PATIENT, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES } from "../config.js";
+import { ADMIN_NAMES, adminIds, HINTS_PER_PATIENT, PHYSICAL_EXAMPLES, SPECIALIZATIONS, TEST_TYPES, miniAppBase } from "../config.js";
 import * as G from "../lib/game.js";
 import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
 import { appBtn, btn, tg, urlBtn } from "../lib/telegram.js";
@@ -757,5 +757,5 @@ async function admin(ctx) {
     `🏆 <b>Топ-5</b>\n${(s.top || []).map((u, i) => `${i + 1}. ${esc(u.name || "—")}${u.username ? " @" + esc(u.username) : ""} — ${u.cons} приёмов`).join("\n") || "—"}\n\n` +
     `🔽 <b>Воронка</b> (данные по ${f.known || 0} активным после обновления)\n≥1 пациента: ${f.p1 || 0} (${pct(f.p1)}%)\n≥3 пациентов: ${f.p3 || 0} (${pct(f.p3)}%)\nС подпиской: ${f.paid || 0} (${pct(f.paid)}%)\n\n` +
     `Подробная аналитика, пользователи, рассылки и задачи — в админке.`,
-    [[appBtn("🛠 Открыть админку", `${(env.PUBLIC_URL || "").replace(/\/$/, "")}/admin`)]]);
+    [[appBtn("🛠 Открыть админку", `${miniAppBase(env)}/admin`)]]);
 }
