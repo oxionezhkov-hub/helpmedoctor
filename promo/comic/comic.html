@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Приём: голодная злость</title>
+<link rel="stylesheet" href="../reel/fonts.css">
+<style>
+:root{--paper:#f6f4ee;--card:#fffdf8;--ink:#191c1b;--ink2:#353a38;--muted:#6b726e;--rule:#e2ddd0;--green:#0d5c55;--green-l:#5cc0b0;--soft:#dceae5;--red:#b3391f;--warn:#fbefd9;--sans:"Manrope",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+#world{position:absolute;inset:0}
+.sbar{position:absolute;left:0;right:0;top:0;height:86px;display:flex;align-items:center;justify-content:space-between;padding:10px 64px 0 70px;font:700 34px var(--sans);z-index:6}
+.sbar i{display:inline-block;width:56px;height:26px;border-radius:8px;border:3px solid var(--ink);position:relative;vertical-align:-4px}
+.sbar i::after{content:"";position:absolute;left:4px;top:4px;bottom:4px;width:60%;border-radius:3px;background:var(--ink)}
+.head{position:absolute;left:24px;right:24px;top:96px;height:170px;border-radius:44px;background:var(--card);box-shadow:0 10px 30px -18px rgba(0,0,0,.25);display:flex;align-items:center;gap:26px;padding:0 34px;z-index:6}
+.back{font:400 64px var(--sans);color:var(--ink2);margin-top:-8px}
+.ava{position:relative;width:128px;height:128px;border-radius:50%;background:#f3dccb;overflow:hidden;flex:none}
+.ava img{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+.nm{font:800 46px var(--sans)} .sub{font:600 30px var(--sans);color:var(--muted);margin-top:4px}
+.mood{margin-left:auto;padding:10px 22px;border-radius:999px;font:800 28px var(--sans);background:#fde4dd;color:var(--red);white-space:nowrap}
+#msgs{position:absolute;left:0;right:0;top:280px;bottom:330px;padding:0 34px 16px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.m{flex:none;overflow:hidden}
+.row{display:flex;align-items:flex-end;gap:16px;margin-top:22px}
+.row.dr{justify-content:flex-end}
+.row .fa{width:88px;height:88px;border-radius:50%;background:#f3dccb;overflow:hidden;flex:none;position:relative}
+.row .fa img{position:absolute;inset:0;width:100%;height:100%}
+.bub{max-width:76%;padding:26px 34px 28px;border-radius:40px;font:600 42px/1.32 var(--sans);transform-origin:0 100%}
+.pt .bub{background:#fff;border-bottom-left-radius:12px;box-shadow:0 6px 18px -12px rgba(0,0,0,.3)}
+.dr .bub{background:var(--green);color:#fbfaf6;border-bottom-right-radius:12px;transform-origin:100% 100%}
+.bub.angry{background:#fff3ef;border:3px solid #f2b8a8}
+.ev{margin-top:24px;border-radius:34px;background:#fff;padding:26px 30px;box-shadow:0 6px 18px -12px rgba(0,0,0,.3)}
+.ev h4{font:800 34px var(--sans);display:flex;align-items:center;gap:14px}
+.ev h4 small{font:600 26px var(--sans);color:var(--muted)}
+.ev .r{display:flex;justify-content:space-between;align-items:baseline;padding:14px 18px;border-radius:16px;margin-top:10px;font:600 32px var(--sans)}
+.ev .r.bad{background:var(--warn)} .ev .r b{color:var(--red);font-weight:800} .ev .r i{font-style:normal;color:var(--muted);font-size:24px;display:block;text-align:right}
+.ev .note{margin-top:12px;font:600 30px/1.35 var(--sans);color:var(--ink2)}
+.acts{position:absolute;left:24px;right:24px;bottom:206px;display:flex;gap:16px;z-index:5}
+.chip{flex:1;height:96px;border-radius:30px;background:#fff;display:flex;align-items:center;justify-content:center;gap:12px;font:700 34px var(--sans);color:var(--ink2);box-shadow:0 6px 16px -12px rgba(0,0,0,.3)}
+.inp{position:absolute;left:24px;right:24px;bottom:70px;height:116px;border-radius:58px;background:#fff;border:3px solid var(--rule);display:flex;align-items:center;padding:0 40px;font:600 36px var(--sans);color:#9aa19d;z-index:5}
+/* thoughts */
+.th{position:absolute;left:40px;right:40px;top:300px;z-index:20;opacity:0;display:flex;gap:26px;align-items:center;padding:30px 36px;border-radius:44px;background:rgba(25,28,27,.93);color:#fff;box-shadow:0 30px 70px -20px rgba(0,0,0,.5)}
+.th .df{width:130px;height:130px;border-radius:50%;background:#bfe6dd;overflow:hidden;flex:none;position:relative}
+.th .df img{position:absolute;inset:0;width:100%;height:100%}
+.th .lb{font:800 26px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--green-l);margin-bottom:8px}
+.th .tx{font:700 44px/1.25 var(--sans);font-style:italic}
+.th::after{content:"";position:absolute;left:120px;bottom:-34px;width:34px;height:34px;border-radius:50%;background:rgba(25,28,27,.93)}
+/* sheets */
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:15;border-radius:56px 56px 0 0;background:#fff;padding:40px 40px 120px;box-shadow:0 -30px 80px -30px rgba(0,0,0,.4);transform:translateY(110%)}
+.sheet h3{font:800 46px var(--sans);margin-bottom:30px;display:flex;align-items:center;gap:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.opt{height:118px;border-radius:30px;background:#f1efe8;display:flex;align-items:center;padding:0 30px;font:700 36px var(--sans);border:4px solid transparent}
+.opt.on{border-color:var(--green);background:var(--soft)}
+.fld{border:3px solid var(--rule);border-radius:28px;padding:22px 28px;font:600 38px/1.3 var(--sans);min-height:100px;margin-bottom:24px}
+.fld.dx{border-color:var(--green)}
+.lbl{font:700 28px var(--sans);color:var(--muted);margin:0 0 10px 6px}
+.go{height:116px;border-radius:30px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font:800 40px var(--sans)}
+.stamp{position:absolute;right:60px;top:40px;padding:10px 30px 14px;border:8px solid var(--green);border-radius:20px;color:var(--green);font:800 56px var(--sans);transform:rotate(-10deg);opacity:0;background:rgba(220,234,229,.7)}
+#dim{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 40%,rgba(0,0,0,.55));opacity:0;z-index:12;pointer-events:none}
+#rage{position:absolute;inset:0;box-shadow:inset 0 0 0 0 rgba(220,40,20,.0);z-index:30;pointer-events:none}
+.tap{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;opacity:0;z-index:40}
+.tap i{position:absolute;inset:26px;border-radius:50%;background:rgba(13,92,85,.35);border:5px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.tap s{position:absolute;inset:0;border-radius:50%;border:6px solid rgba(13,92,85,.55)}
+.meme{position:absolute;left:50%;top:300px;z-index:35;transform:translateX(-50%);padding:18px 36px 22px;border-radius:24px;background:#fff;font:800 50px/1.15 var(--sans);text-align:center;box-shadow:0 20px 50px -18px rgba(0,0,0,.45);opacity:0;white-space:nowrap}
+.emo{position:absolute;width:200px;height:200px;z-index:36;opacity:0}
+.emo img{width:100%;height:100%}
+#hearts i{position:absolute;width:90px;height:90px;z-index:36;opacity:0;background:url(emoji/2764.svg) center/contain no-repeat}
+.typing{display:inline-flex;gap:12px;padding:30px 34px}
+.typing i{width:20px;height:20px;border-radius:50%;background:#9aa19d}
+.ej{width:1.05em;height:1.05em;vertical-align:-0.15em;display:inline-block}
+</style></head>
+<body>
+<div id="stage"><div id="world">
+  <div class="sbar"><span>9:41</span><span>5G <i></i></span></div>
+  <div class="head"><div class="back">‹</div>
+    <div class="ava" id="ava"></div>
+    <div><div class="nm">Анжела, 29 лет</div><div class="sub">Приём №1 · бухгалтер</div></div>
+    <div class="mood" id="mood">злится</div></div>
+  <div id="msgs"></div>
+  <div class="acts"><div class="chip" id="c-tests"><img class="ej" src="emoji/1f9ea.svg"> Анализы</div><div class="chip" id="c-exam"><img class="ej" src="emoji/1fa7a.svg"> Осмотр</div><div class="chip" id="c-fin"><img class="ej" src="emoji/1f3c1.svg"> Завершить</div></div>
+  <div class="inp">Спросите пациента…</div>
+  <div id="dim"></div>
+  <div class="sheet" id="sh-tests"><h3><img class="ej" src="emoji/1f9ea.svg"> Назначить обследование</h3><div class="grid">
+    <div class="opt" id="o-blood">Анализ крови</div><div class="opt" id="o-ecg">ЭКГ</div><div class="opt">УЗИ</div><div class="opt">КТ</div><div class="opt">МРТ</div><div class="opt">Эхо-КГ</div></div></div>
+  <div class="sheet" id="sh-exam"><h3><img class="ej" src="emoji/1fa7a.svg"> Физический осмотр</h3><div class="grid">
+    <div class="opt">Аускультация лёгких</div><div class="opt">Аускультация сердца</div><div class="opt">Пальпация живота</div><div class="opt" id="o-bp">Давление и пульс</div><div class="opt">Осмотр кожи</div><div class="opt">Осмотр зева</div></div></div>
+  <div class="sheet" id="sh-fin"><h3><img class="ej" src="emoji/1f3c1.svg"> Завершить приём</h3>
+    <div class="lbl">Диагноз</div><div class="fld dx" id="f-dx"></div>
+    <div class="lbl">Лечение</div><div class="fld" id="f-tx"></div>
+    <div class="go">Поставить диагноз и завершить</div><div class="stamp" id="stamp">ВЕРНО ✓</div></div>
+</div>
+  <div id="thoughts"></div>
+  <div id="taps"></div>
+  <div class="meme" id="meme1">POV: ты только сел за стол</div>
+  <div class="meme" id="meme2" style="top:640px;font-size:62px">Диагноз: голодная злость</div>
+  <div class="emo" id="e-rage" style="left:780px;top:520px"><img src="emoji/1f621.svg"></div>
+  <div class="emo" id="e-eat" style="left:760px;top:900px"><img src="emoji/1f96a.svg"></div>
+  <div id="hearts"></div>
+  <div id="rage"></div>
+</div>
+<script>
+let TL; const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)); const eout = (x) => 1 - Math.pow(1 - x, 3); const ease = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const FACES = ['rage','veryAngry','suspicious','smile','fear','awe','lovingGrin1','calm'];
+const MOOD = { rage: ['в ярости', '#fde4dd', '#b3391f'], veryAngry: ['злится', '#fde4dd', '#b3391f'], suspicious: ['подозревает', '#fbefd9', '#92400e'], smile: ['гордится', '#dceae5', '#0d5c55'], fear: ['в панике', '#fbefd9', '#92400e'], awe: ['в шоке', '#e9e4f7', '#5b3fb0'], lovingGrin1: ['влюблена', '#fde4ee', '#b3245c'] };
+const ITEMS = []; let L;
+function el(html) { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+function init(tl) {
+  TL = tl; L = tl.lines;
+  const ava = document.getElementById('ava');
+  FACES.forEach((f) => { const im = document.createElement('img'); im.src = 'faces/' + f + '.svg'; im.dataset.f = f; ava.appendChild(im); });
+  const msgs = document.getElementById('msgs');
+  let face = 'rage', lastBub = null;
+  L.forEach((l, i) => {
+    if (l.who === 't') return;
+    if (l.face) face = l.face;
+    if (l.cont) { lastBub.extra = { at: l.start, text: ' ' + l.text }; return; }
+    if (l.who === 'p') {
+      const ty = el(`<div class="m"><div class="row pt"><div class="fa"><img src="faces/${face}.svg"></div><div class="bub typing"><i></i><i></i><i></i></div></div></div>`);
+      msgs.appendChild(ty); ITEMS.push({ node: ty, a: Math.max(0, l.start - 0.55), b: l.start, typing: true });
+    }
+    const node = el(l.who === 'p'
+      ? `<div class="m"><div class="row pt"><div class="fa"><img src="faces/${face}.svg"></div><div class="bub ${i < 3 ? 'angry' : ''}">${l.text}</div></div></div>`
+      : `<div class="m"><div class="row dr"><div class="bub">${l.text}<span class="x"></span></div></div></div>`);
+    msgs.appendChild(node); const it = { node, a: l.start - 0.05 }; ITEMS.push(it); lastBub = it;
+    // карточки результатов — перед мыслями врача
+    if (i === 9) { const c = el(`<div class="m"><div class="ev"><h4><img class="ej" src="emoji/1f9ea.svg"> Анализ крови <small>· результат</small></h4>
+      <div class="r bad"><span>Глюкоза</span><span><b>3,1 ммоль/л ↓</b><i>норма 4,1–5,9</i></span></div>
+      <div class="r"><span>Гемоглобин</span><span>128 г/л<i>норма 120–150</i></span></div>
+      <h4 style="margin-top:20px"><img class="ej" src="emoji/2764.svg"> ЭКГ</h4><div class="r bad"><span>Синусовая тахикардия</span><b>ЧСС 118</b></div></div></div>`);
+      msgs.appendChild(c); ITEMS.push({ node: c, a: L[10].start - 0.35 }); }
+    if (i === 12) { const c = el(`<div class="m"><div class="ev"><h4><img class="ej" src="emoji/1fa7a.svg"> Осмотр: давление и пульс</h4>
+      <div class="r bad"><span>Давление</span><b>100/60 ↓</b></div><div class="r bad"><span>Пульс</span><b>118 ↑</b></div>
+      <div class="note">Ладони влажные, лёгкий тремор рук.</div></div></div>`);
+      msgs.appendChild(c); ITEMS.push({ node: c, a: L[13].start - 0.35 }); }
+  });
+  // мысли
+  const th = document.getElementById('thoughts');
+  L.forEach((l) => { if (l.who !== 't') return; const n = el(`<div class="th"><div class="df"><img src="faces/doc-suspicious.svg"></div><div><div class="lb"><img class="ej" src="emoji/1f4ad.svg"> мысли врача</div><div class="tx">${l.text}</div></div></div>`); th.appendChild(n); l.node = n; });
+  // тапы
+  const T = (id) => { const r = document.getElementById(id).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+  window.TAPS = [];
+  const add = (id, t) => { const n = el('<div class="tap"><s></s><i></i></div>'); document.getElementById('taps').appendChild(n); TAPS.push({ n, p: T(id), t }); };
+  add('c-tests', L[8].start + 0.1); add('o-blood', L[8].start + 0.75); add('o-ecg', L[8].start + 1.3);
+  add('c-exam', L[11].start + 0.05); add('o-bp', L[11].start + 0.7);
+  const fin = L.findIndex((l) => l.text.startsWith('Бутерброд')); window.FIN = fin; add('c-fin', L[fin].start - 0.2);
+  // сердечки
+  const H = document.getElementById('hearts'); window.HEARTS = [];
+  for (let k = 0; k < 14; k++) { const n = document.createElement('i'); H.appendChild(n); HEARTS.push({ n, x: 120 + (k * 137) % 840, d: (k % 5) * 0.12, s: 0.7 + (k % 3) * 0.25 }); }
+  return Promise.all([...document.images].map((im) => im.decode().catch(() => {})));
+}
+function seek(t) {
+  // сообщения: вырастают снизу
+  ITEMS.forEach((it) => {
+    const k = it.typing ? (t >= it.a && t < it.b ? 1 : 0) : eout(clamp((t - it.a) / 0.35));
+    it.node.style.maxHeight = it.typing ? (k ? '200px' : '0px') : (k * 900) + 'px';
+    it.node.style.opacity = it.typing ? k : clamp((t - it.a) / 0.2);
+    const bub = it.node.querySelector('.bub'); if (bub && !it.typing) bub.style.transform = `scale(${0.85 + 0.15 * eout(clamp((t - it.a) / 0.3))})`;
+    if (it.extra) { const x = it.node.querySelector('.x'); x.textContent = t >= it.extra.at ? it.extra.text : ''; }
+  });
+  // лицо и настроение
+  let face = 'rage'; L.forEach((l) => { if (l.face && t >= l.start - 0.1) face = l.face; });
+  document.querySelectorAll('#ava img').forEach((im) => (im.style.opacity = im.dataset.f === face ? 1 : 0));
+  const md = MOOD[face] || MOOD.rage, mood = document.getElementById('mood'); mood.textContent = md[0]; mood.style.background = md[1]; mood.style.color = md[2];
+  // мысли
+  L.forEach((l) => { if (!l.node) return; const k = eout(clamp((t - l.start + 0.25) / 0.35)), out = clamp((l.end + 0.5 - t) / 0.3);
+    const o = t < l.start - 0.25 ? 0 : k * (l === L[L.length - 1] ? 1 : out); l.node.style.opacity = o; l.node.style.transform = `translateY(${(1 - k) * -30}px) scale(${0.95 + 0.05 * k})`; });
+  // шторки
+  const sheet = (id, a, b) => { const k = ease(clamp((t - a) / 0.35)) * (1 - ease(clamp((t - b) / 0.35))); document.getElementById(id).style.transform = `translateY(${(1 - k) * 110}%)`; return k; };
+  sheet('sh-tests', L[8].start + 0.3, L[9].start + 0.2);
+  sheet('sh-exam', L[11].start + 0.25, L[12].start + 0.25);
+  sheet('sh-fin', L[FIN].start, L[FIN + 1].start + 0.4);
+  document.getElementById('o-blood').classList.toggle('on', t > L[8].start + 0.85);
+  document.getElementById('o-ecg').classList.toggle('on', t > L[8].start + 1.4);
+  document.getElementById('o-bp').classList.toggle('on', t > L[11].start + 0.8);
+  const typ = (s, a, b) => s.slice(0, Math.round(s.length * clamp((t - a) / (b - a))));
+  const fa = L[FIN].start + 0.3, fb = L[FIN].end;
+  document.getElementById('f-dx').textContent = typ('Гипогликемия на фоне кофейной диеты', fa, fa + 1.4);
+  document.getElementById('f-tx').textContent = typ('Бутерброд ×2. Кофе — не больше двух чашек в день.', fa + 1.4, fb);
+  const sk = clamp((t - fb) / 0.25), st = document.getElementById('stamp'); st.style.opacity = sk; st.style.transform = `rotate(-10deg) scale(${2 - sk})`;
+  // тапы
+  TAPS.forEach((tp) => { const d = t - tp.t + 0.35; if (d < 0 || d > 0.8) { tp.n.style.opacity = 0; return; }
+    tp.n.style.left = tp.p.x + 'px'; tp.n.style.top = tp.p.y + 'px'; tp.n.style.opacity = clamp(d / 0.15) * clamp((0.8 - d) / 0.2);
+    const press = clamp((d - 0.25) / 0.12) * (1 - clamp((d - 0.42) / 0.12)); tp.n.querySelector('i').style.transform = `scale(${1 - press * .25})`;
+    const r = clamp((d - 0.3) / 0.45); tp.n.querySelector('s').style.transform = `scale(${0.6 + r})`; tp.n.querySelector('s').style.opacity = d > .3 ? 1 - r : 0; });
+  // хук: тряска и красная вспышка
+  let sx = 0, sy = 0; const shake = (t0, A) => { const d = t - t0; if (d >= 0 && d < 0.5) { const k = A * Math.exp(-d / 0.12); sx += k * Math.sin(d * 85); sy += k * Math.cos(d * 70); } };
+  shake(0.25, 22); shake(1.4, 14); shake(L[2].start, 14); shake(L[15].start, 10);
+  const bad = L.findIndex((l) => l.text.startsWith('У меня для вас'));
+  const dk = clamp((t - L[bad].start) / 0.4) * (1 - clamp((t - L[bad + 3].start - 0.1) / 0.25));
+  document.getElementById('dim').style.opacity = Math.max(dk, 0.8 * clamp((t - L[L.length - 1].end) / 0.3));
+  const zoom = 1 + 0.06 * dk;
+  document.getElementById('world').style.transform = `translate(${sx}px,${sy}px) scale(${zoom})`;
+  const rg = Math.max(0, 1 - t / 1.6); document.getElementById('rage').style.boxShadow = `inset 0 0 ${120 * rg}px ${40 * rg}px rgba(220,40,20,${0.45 * rg})`;
+  // мемы и эмодзи
+  const m1 = document.getElementById('meme1'); const k1 = clamp(t / 0.25) * clamp((3.2 - t) / 0.3); m1.style.opacity = k1; m1.style.transform = `translateX(-50%) rotate(-2deg) scale(${0.9 + 0.1 * k1})`;
+  const last = L[L.length - 1]; const m2 = document.getElementById('meme2'); const k2 = eout(clamp((t - last.end - 0.05) / 0.3)); m2.style.opacity = k2; m2.style.transform = `translateX(-50%) rotate(-3deg) scale(${1.3 - 0.3 * k2})`;
+  const er = document.getElementById('e-rage'); const ke = clamp((t - 0.3) / 0.25) * clamp((3 - t) / 0.3); er.style.opacity = ke; er.style.transform = `scale(${0.5 + 0.5 * eout(clamp((t - 0.3) / 0.3))}) rotate(${Math.sin(t * 12) * 8}deg)`;
+  const eat = L.findIndex((l) => l.text === 'поесть.'); const ee = document.getElementById('e-eat'); const kk = eout(clamp((t - L[eat].start) / 0.3)) * clamp((L[eat + 1].end + 1 - t) / 0.3); ee.style.opacity = kk; ee.style.transform = `scale(${0.4 + 0.6 * kk}) rotate(${-10 + Math.sin(t * 8) * 6}deg)`;
+  // сердечки на «обниму»
+  const hug = L.findIndex((l) => l.text.includes('обниму'));
+  HEARTS.forEach((h) => { const d = t - L[hug].start - h.d; if (d < 0) { h.n.style.opacity = 0; return; }
+    const y = 1500 - d * 520, o = clamp(d / 0.2) * clamp((3.2 - d) / 0.6); h.n.style.opacity = o; h.n.style.transform = `translate(${h.x + Math.sin(d * 3 + h.x) * 30}px,${y}px) scale(${h.s})`; });
+}
+window.init = init; window.seek = seek;
+window.events = () => {
+  const ev = []; L.forEach((l, i) => { if (l.who !== 't' && !l.cont) ev.push({ t: l.start - 0.05, type: l.who === 'p' ? 'pop_p' : 'pop_d' }); if (l.who === 't') ev.push({ t: l.start - 0.25, type: 'think' }); });
+  TAPS.forEach((tp) => ev.push({ t: tp.t, type: 'tap' }));
+  [[L[8].start + 0.3, 'sheet'], [L[11].start + 0.25, 'sheet'], [L[FIN].start, 'sheet'], [L[FIN].end, 'stamp'], [0.2, 'boom'], [L[10].start - 0.35, 'card'], [L[13].start - 0.35, 'card']].forEach(([t, type]) => ev.push({ t, type }));
+  const bad = L.findIndex((l) => l.text.startsWith('У меня для вас')); ev.push({ t: L[bad].start, type: 'drama' });
+  const eat = L.findIndex((l) => l.text === 'поесть.'); ev.push({ t: L[eat].start, type: 'ding' });
+  const hug = L.findIndex((l) => l.text.includes('обниму')); ev.push({ t: L[hug].start, type: 'love' });
+  ev.push({ t: L[L.length - 1].end + 0.05, type: 'rimshot' });
+  return ev.sort((a, b) => a.t - b.t);
+};
+</script>
+</body></html>

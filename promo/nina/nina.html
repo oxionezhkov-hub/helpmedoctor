@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Нина × Help me, Doctor</title>
+<link rel="stylesheet" href="../reel/fonts.css">
+<style>
+:root{
+  --ink:#191c1b; --paper:#f6f4ee; --card:#fffdf8; --green:#0d5c55; --green-l:#5cc0b0; --green-soft:#dceae5;
+  --red:#b3391f; --red-l:#f08a6f; --mark:#f4e4a1; --yel:#ffd84d; --pink:#ff7aa8;
+  --sans:"Manrope",system-ui,sans-serif; --serif:"Literata",Georgia,serif;
+  --ease:cubic-bezier(.2,.8,.2,1); --back:cubic-bezier(.3,1.6,.5,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000}
+body{font-family:var(--sans);color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#111}
+#world{position:absolute;inset:0}
+
+/* anim utilities: seeked by JS */
+.pp,.fi,.slam,.sd,.su,.wob{animation-fill-mode:both;animation-delay:calc(var(--at,0)*1s)}
+.pp{animation-name:pp;animation-duration:.45s;animation-timing-function:var(--back)}
+@keyframes pp{from{opacity:0;transform:scale(.2) rotate(var(--r0,-12deg))}to{opacity:1;transform:scale(1) rotate(var(--r,0deg))}}
+.fi{animation-name:fi;animation-duration:.3s} @keyframes fi{from{opacity:0}to{opacity:1}}
+.slam{animation-name:slam;animation-duration:.32s;animation-timing-function:cubic-bezier(.6,0,.7,1.3)}
+@keyframes slam{from{opacity:0;transform:scale(3.2) rotate(var(--r,0deg))}to{opacity:1;transform:scale(1) rotate(var(--r,0deg))}}
+.sd{animation-name:sd;animation-duration:.4s;animation-timing-function:var(--back)}
+@keyframes sd{from{opacity:0;transform:translateY(-160px) rotate(var(--r,0deg))}to{opacity:1;transform:rotate(var(--r,0deg))}}
+.su{animation-name:su;animation-duration:.4s;animation-timing-function:var(--back)}
+@keyframes su{from{opacity:0;transform:translateY(200px) rotate(var(--r,0deg))}to{opacity:1;transform:rotate(var(--r,0deg))}}
+.wob{animation:wob .9s ease-in-out 0s infinite alternate}
+@keyframes wob{from{transform:rotate(-6deg) scale(1)}to{transform:rotate(6deg) scale(1.08)}}
+
+/* scenes: each one whips in over the previous */
+.scene{position:absolute;inset:0;overflow:hidden;animation:whip .24s cubic-bezier(.2,.9,.2,1) calc(var(--in)*1s) both,gone .01s linear calc(var(--out)*1s) forwards}
+@keyframes whip{from{transform:translateX(105%) skewX(-8deg);filter:blur(24px)}to{transform:none;filter:none}}
+@keyframes gone{to{visibility:hidden}}
+.cam{position:absolute;inset:0;animation:bump .46875s cubic-bezier(.1,.7,.3,1) 0s infinite}
+@keyframes bump{from{transform:scale(1.035)}to{transform:scale(1)}}
+.photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:kb 4s linear calc(var(--in)*1s) both}
+@keyframes kb{from{transform:scale(1.18)}to{transform:scale(1.04)}}
+.shade{position:absolute;left:0;right:0;bottom:0;height:900px;background:linear-gradient(transparent,rgba(0,0,0,.72))}
+.shade.top{top:0;bottom:auto;height:600px;background:linear-gradient(rgba(0,0,0,.5),transparent)}
+
+/* stickers */
+.stk{position:absolute;display:inline-block;padding:14px 34px 18px;border-radius:26px;background:#fff;color:var(--ink);font:800 64px/1.05 var(--sans);box-shadow:0 10px 0 rgba(0,0,0,.25),0 20px 50px rgba(0,0,0,.35);white-space:nowrap}
+.stk.y{background:var(--yel)} .stk.g{background:var(--green-l)} .stk.p{background:var(--pink)} .stk.k{background:var(--ink);color:#fff}
+.stk small{display:block;font-size:30px;font-weight:700;opacity:.65;margin-bottom:2px}
+.huge{position:absolute;font:800 150px/0.95 var(--sans);color:#fff;-webkit-text-stroke:10px var(--ink);paint-order:stroke fill;text-shadow:0 12px 0 rgba(0,0,0,.35);letter-spacing:-.02em}
+.emo{position:absolute;width:var(--s,140px);height:var(--s,140px)}
+.emo img{width:100%;height:100%;filter:drop-shadow(0 10px 18px rgba(0,0,0,.35))}
+.arrow{position:absolute}
+.arrow path{fill:none;stroke:#fff;stroke-width:12;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:600;stroke-dashoffset:600;animation:draw .35s ease-out calc(var(--at)*1s) both;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+@keyframes draw{to{stroke-dashoffset:0}}
+.heart{position:absolute;width:80px;height:80px;animation:rise 2.2s ease-out calc(var(--at)*1s) both}
+.heart img{width:100%;height:100%}
+@keyframes rise{0%{opacity:0;transform:translateY(60px) scale(.3)}15%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-520px) translateX(var(--dx,40px)) scale(.8) rotate(20deg)}}
+
+/* "but": record stop */
+.gray{filter:grayscale(1) contrast(1.1) brightness(.85)}
+.dzoom{animation:dz 2.1s cubic-bezier(.6,0,.4,1) calc(var(--in)*1s) both}
+@keyframes dz{from{transform:scale(1.05)}to{transform:scale(1.75)}}
+.bars{position:absolute;left:0;right:0;height:150px;background:#000;z-index:3}
+.bars.t{top:0;animation:bt .3s ease calc(var(--in)*1s) both} .bars.b{bottom:0;animation:bb .3s ease calc(var(--in)*1s) both}
+@keyframes bt{from{transform:translateY(-100%)}to{transform:none}} @keyframes bb{from{transform:translateY(100%)}to{transform:none}}
+.rec{position:absolute;left:60px;top:190px;z-index:4;font:800 44px var(--sans);color:#fff;letter-spacing:.06em;display:flex;align-items:center;gap:16px}
+.rec i{width:30px;height:30px;border-radius:50%;background:#ff3b30;animation:blink .5s steps(1) 0s infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* app scene */
+.rays{position:absolute;left:50%;top:45%;width:3200px;height:3200px;margin:-1600px 0 0 -1600px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.12) 0 10deg,transparent 10deg 20deg);animation:spin 12s linear 0s infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.appbg{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,#7fd8c9,#0d5c55 75%)}
+.brand{position:absolute;left:0;right:0;top:190px;display:flex;align-items:center;justify-content:center;gap:26px;--r:-3deg}
+.logo{width:150px;height:150px;border-radius:30px;background:var(--card);border:9px solid var(--ink);display:flex;align-items:center;justify-content:center;flex:none}
+.logo svg{width:118px;height:118px}
+.logo path{fill:none;stroke:var(--red);stroke-width:26;stroke-linecap:round;stroke-linejoin:round}
+.brand .nm{font:700 92px/1 var(--serif);color:#fff;-webkit-text-stroke:8px var(--ink);paint-order:stroke fill;letter-spacing:-.02em}
+.phone{position:absolute;left:90px;right:90px;top:430px;height:800px;border-radius:54px;background:var(--paper);color:var(--ink);border:10px solid var(--ink);box-shadow:0 30px 0 rgba(0,0,0,.25);overflow:hidden;--r:-2.5deg}
+.ph-h{height:120px;background:var(--card);border-bottom:3px solid #dcd7ca;display:flex;align-items:center;gap:20px;padding:0 34px}
+.ava{width:76px;height:76px;border-radius:50%;background:var(--green-soft);color:var(--green);font:800 30px var(--sans);display:flex;align-items:center;justify-content:center}
+.ph-h b{font:800 34px var(--sans)} .ph-h span{display:block;font:600 24px var(--sans);color:#5f6662}
+.ph-b{padding:26px 28px;display:flex;flex-direction:column;gap:22px}
+.bub{max-width:90%;padding:20px 28px 22px;border-radius:30px;font:700 40px/1.28 var(--sans)}
+.bub.pt{background:var(--card);border:3px solid #dcd7ca;border-bottom-left-radius:8px;align-self:flex-start;transform-origin:0 100%}
+.bub.dr{background:var(--green);color:#fff;border-bottom-right-radius:8px;align-self:flex-end;transform-origin:100% 100%}
+.chips{display:flex;gap:14px;flex-wrap:wrap}
+.chip{padding:12px 24px;border-radius:999px;background:var(--green-soft);color:var(--green);font:800 36px var(--sans);border:3px solid var(--green)}
+.dx{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-radius:24px;background:var(--card);border:3px dashed #c7c0ae;font:700 44px var(--serif)}
+.dx .ok{padding:4px 16px;border:6px solid var(--green);border-radius:12px;color:var(--green);font:800 34px var(--sans);--r:-10deg}
+.rv{position:absolute;left:130px;right:130px;top:760px;border-radius:40px;background:var(--ink);color:#fff;padding:30px 38px;border:6px solid var(--yel);box-shadow:0 30px 60px rgba(0,0,0,.45);--r:3deg}
+.rv .lb{font:800 26px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--yel)}
+.rv .row{display:grid;grid-template-columns:230px 1fr;gap:16px;align-items:center;margin-top:16px;font:700 28px var(--sans)}
+.rv .tr{height:18px;border-radius:9px;background:#333;overflow:hidden}
+.rv .fl{height:100%;background:var(--green-l);transform-origin:0 50%;animation:fill .6s var(--ease) calc(var(--at)*1s) both}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(var(--w))}}
+.boom{position:absolute;left:50%;top:50%;width:900px;height:900px;margin:-450px 0 0 -450px;z-index:5;--r:-8deg}
+.boom svg{position:absolute;inset:0}
+.boom b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 230px var(--sans);color:#fff;-webkit-text-stroke:14px var(--ink);paint-order:stroke fill;letter-spacing:-.03em}
+.boomwrap{position:absolute;inset:0;z-index:5;animation:boomout .25s ease calc((var(--at) + .55)*1s) forwards}
+@keyframes boomout{to{opacity:0;transform:scale(1.4)}}
+
+/* score */
+.score{position:absolute;left:0;right:0;top:250px;text-align:center;font:800 330px/0.9 var(--sans);color:var(--yel);-webkit-text-stroke:16px var(--ink);paint-order:stroke fill;text-shadow:0 18px 0 rgba(0,0,0,.35);letter-spacing:-.04em;--r:-5deg}
+.score small{font-size:140px;color:#fff}
+
+/* cta */
+.cta{position:absolute;left:0;right:0;top:1130px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.cta .l1{font:800 84px/1.05 var(--sans);color:#fff;text-shadow:0 6px 24px rgba(0,0,0,.6)}
+.cta .free{margin-top:26px;font:800 130px/1 var(--sans);background:var(--yel);color:var(--ink);padding:14px 44px 26px;border-radius:30px;box-shadow:0 14px 0 rgba(0,0,0,.3);--r:-4deg}
+
+.grpA{display:flex;flex-direction:column;align-items:center;animation:outUp .3s cubic-bezier(.6,0,.8,.4) calc(var(--at)*1s) forwards}
+@keyframes outUp{to{opacity:0;transform:translateY(-260px) scale(.7)}}
+.grpB{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center}
+.cmt{margin-top:0;width:930px;border-radius:44px;background:#fff;color:var(--ink);padding:28px 32px 32px;text-align:left;border:8px solid var(--ink);box-shadow:0 14px 0 var(--ink);--r:-2deg}
+.cmt-h{display:flex;align-items:center;gap:14px;font:800 44px var(--sans)}
+.cmt-row{display:flex;align-items:center;gap:18px;margin-top:18px}
+.cmt-in{flex:1;height:130px;border-radius:65px;background:#f1efe8;border:4px solid var(--ink);display:flex;align-items:center;padding:0 40px;font:800 88px var(--sans);letter-spacing:.04em;color:var(--green)}
+.kc{display:inline-block;width:7px;height:84px;background:var(--green);margin-left:8px}
+.send{width:130px;height:130px;border-radius:50%;background:var(--green-l);border:6px solid var(--ink);display:flex;align-items:center;justify-content:center;flex:none}
+/* fx */
+#flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:20;pointer-events:none}
+#confetti{position:absolute;inset:0;z-index:15;pointer-events:none}
+#confetti i{position:absolute;left:0;top:0;width:22px;height:34px;border-radius:4px}
+#cap{position:absolute;left:50px;right:50px;top:1330px;height:200px;display:flex;align-items:center;justify-content:center;text-align:center;z-index:12}
+#cap .ln{font:800 76px/1.1 var(--sans);color:#fff;-webkit-text-stroke:12px var(--ink);paint-order:stroke fill;letter-spacing:-.01em}
+#cap .w{display:inline-block;margin:0 .2em}
+#cap .w.on{color:var(--yel);transform:scale(1.12) rotate(-2deg)}
+</style></head>
+<body>
+<div id="stage"><div id="world">
+
+  <!-- 1. hi: sunglasses -->
+  <section class="scene" data-scene="hi" style="z-index:1">
+    <div class="cam">
+      <img class="photo" src="../../content/telegram-channel/img/nina/auditoriya-ochki.jpg" style="object-position:58% 50%">
+      <div class="shade top"></div><div class="shade"></div>
+      <div class="stk k pp" data-at="0.1" style="left:70px;top:210px;--r:-4deg;font-size:52px">POV:</div>
+      <div class="huge slam" data-at="hi:Нина" data-dt="-0.05" style="left:70px;top:300px;--r:-4deg">Я НИНА</div>
+      <div class="stk y pp" data-at="hi:четвёртый" style="left:110px;top:500px;--r:3deg">4 курс · лечфак</div>
+      <div class="emo pp" data-at="hi:Привет" data-dt="0.15" style="left:820px;top:200px;--s:170px;--r:12deg"><div class="wob"><img src="emoji/1f60e.svg"></div></div>
+      <div class="emo pp" data-at="hi:курс" style="left:860px;top:560px;--s:110px"><div class="wob"><img src="emoji/2728.svg"></div></div>
+    </div>
+  </section>
+
+  <!-- 2. skeleton hug -->
+  <section class="scene" data-scene="skel" style="z-index:2">
+    <div class="cam">
+      <img class="photo" src="../../content/telegram-channel/img/nina/skelet-obnimaet.jpg" style="object-position:76% 50%">
+      <div class="shade top"></div><div class="shade"></div>
+      <div class="stk p pp" data-at="skel:Скелет" style="left:60px;top:230px;--r:-6deg"><small>знакомьтесь:</small>лучший друг</div>
+      <svg class="arrow" data-at="skel:Скелет" data-dt="0.2" style="left:120px;top:400px;--at:0" width="260" height="300" viewBox="0 0 260 300"><path data-at="skel:Скелет" data-dt="0.2" d="M60 10C20 90 40 180 150 260M150 260l-70-10M150 260l-10-70"/></svg>
+      <div class="emo pp" data-at="skel:Скелет" data-dt="0.25" style="left:520px;top:180px;--s:130px;--r:-10deg"><div class="wob"><img src="emoji/1f480.svg"></div></div>
+      <div class="stk g slam" data-at="skel:теорию" style="left:90px;top:1080px;--r:-5deg;font-size:80px">теория ✓</div>
+      <div class="heart" data-at="skel:обняла" style="left:620px;top:900px;--dx:-60px"><img src="emoji/2764.svg"></div>
+      <div class="heart" data-at="skel:обняла" data-dt="0.25" style="left:760px;top:980px;--dx:50px"><img src="emoji/2764.svg"></div>
+      <div class="heart" data-at="skel:обняла" data-dt="0.5" style="left:540px;top:1040px;--dx:-20px"><img src="emoji/2764.svg"></div>
+      <div class="heart" data-at="skel:теорию" data-dt="0.1" style="left:840px;top:880px;--dx:30px"><img src="emoji/2764.svg"></div>
+    </div>
+  </section>
+
+  <!-- 3. but: record stops -->
+  <section class="scene" data-scene="but" style="z-index:3">
+    <img class="photo gray dzoom" src="../../content/telegram-channel/img/nina/skelet-za-ruku.jpg" style="object-position:66% 50%;transform-origin:76% 30%">
+    <div class="bars t"></div><div class="bars b"></div>
+    <div class="rec fi" data-at="but"><i></i>пауза</div>
+    <div class="stk k slam" data-at="but:вести" style="left:70px;top:330px;--r:-3deg;font-size:58px">вести пациента?</div>
+    <div class="emo pp" data-at="but:редко" data-dt="-0.1" style="left:760px;top:250px;--s:200px;--r:-8deg"><img src="emoji/1f972.svg"></div>
+  </section>
+
+  <!-- 4. app montage -->
+  <section class="scene" data-scene="app" style="z-index:4">
+    <div class="appbg"></div><div class="rays"></div>
+    <div class="cam">
+      <div class="brand slam" data-at="app:Хэлп" data-dt="-0.05">
+        <div class="logo"><svg viewBox="96 96 320 320"><path d="M136 270h66l29-66 47 132 31-66h75"/></svg></div>
+        <div class="nm">Help me, Doctor</div>
+      </div>
+      <div class="phone su" data-at="app" data-dt="0.05">
+        <div class="ph-h"><div class="ava">МЛ</div><div><b>Мирон Л., 47 лет</b><span>ИИ-пациент · боль в животе</span></div></div>
+        <div class="ph-b">
+          <div class="bub pt pp" data-at="app:тренируюсь" style="--r0:0deg">Доктор, жжёт под ложечкой третью неделю…</div>
+          <div class="bub dr pp" data-at="app:спросила" style="--r0:0deg">Натощак или после еды? Лекарства?</div>
+          <div class="chips">
+            <span class="chip pp" data-at="app:назначила">ФГДС ✓</span>
+            <span class="chip pp" data-at="app:назначила" data-dt="0.1">ОАК ✓</span>
+            <span class="chip pp" data-at="app:назначила" data-dt="0.2">H. pylori ✓</span>
+          </div>
+          <div class="dx pp" data-at="app:диагноз" data-dt="-0.1" style="--r0:0deg">Язва ДПК от НПВП <span class="ok slam" data-at="app:диагноз" data-dt="0.15">ВЕРНО</span></div>
+        </div>
+      </div>
+      <div class="rv su" data-at="app:разбор" data-dt="-0.1">
+        <div class="lb">ИИ-разбор приёма</div>
+        <div class="row"><span>Диагностика</span><div class="tr"><div class="fl" style="--w:.9" data-at="app:разбор"></div></div></div>
+        <div class="row"><span>Коммуникация</span><div class="tr"><div class="fl" style="--w:1" data-at="app:разбор" data-dt="0.1"></div></div></div>
+        <div class="row"><span>Лечение</span><div class="tr"><div class="fl" style="--w:.8" data-at="app:разбор" data-dt="0.2"></div></div></div>
+      </div>
+      <div class="emo pp" data-at="app:спросила" style="left:880px;top:420px;--s:120px"><div class="wob"><img src="emoji/1f913.svg"></div></div>
+      <div class="emo pp" data-at="app:назначила" style="left:40px;top:1000px;--s:120px"><div class="wob"><img src="emoji/1fa7a.svg"></div></div>
+    </div>
+    <div class="boomwrap" data-at="app:бац"><div class="boom slam" data-at="app:бац" data-dt="-0.04">
+      <svg viewBox="0 0 900 900"><polygon id="burst" fill="#ffd84d" stroke="#191c1b" stroke-width="16" stroke-linejoin="round"/></svg>
+      <b>БАЦ!</b></div></div>
+  </section>
+
+  <!-- 5. score -->
+  <section class="scene" data-scene="score" style="z-index:5">
+    <div class="cam">
+      <img class="photo" src="../../content/telegram-channel/img/nina/koridor-zachetka.jpg" style="object-position:0% 50%">
+      <div class="shade top"></div>
+      <div class="score slam" data-at="score" data-dt="-0.05"><span id="sc">4,5</span><small>/5</small></div>
+      <div class="emo pp" data-at="score:половиной" style="left:70px;top:560px;--s:150px;--r:-12deg"><div class="wob"><img src="emoji/1f525.svg"></div></div>
+      <div class="emo pp" data-at="score:половиной" data-dt="0.1" style="left:850px;top:600px;--s:150px;--r:12deg"><div class="wob"><img src="emoji/1f4af.svg"></div></div>
+      <div class="stk y pp" data-at="score:с" style="left:560px;top:1180px;--r:6deg">зачёт ✓</div>
+    </div>
+  </section>
+
+  <!-- 6. cta -->
+  <section class="scene" data-scene="cta" style="z-index:6">
+    <div class="cam">
+      <img class="photo" src="../../content/telegram-channel/img/nina/yagody-podmigivaet.jpg" style="object-position:50% 30%;top:-300px;height:calc(100% + 300px)">
+      <div class="shade" style="height:1200px"></div>
+      <div class="emo pp" data-at="cta" data-dt="0.1" style="left:880px;top:170px;--s:140px;--r:10deg"><div class="wob"><img src="emoji/1f352.svg"></div></div>
+      <div class="cta">
+        <div class="grpA" data-at="cta:Пиши" data-dt="-0.15"><div class="l1 su" data-at="cta:Два">2 пациента в&nbsp;день</div>
+        <div class="free slam" data-at="cta:бесплатно" data-dt="-0.05">БЕСПЛАТНО</div></div>
+        <div class="grpB">
+        <div class="cmt su" data-at="cta:Пиши" data-dt="-0.1">
+          <div class="cmt-h"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#191c1b" stroke-width="2.4" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>пиши в комменты</div>
+          <div class="cmt-row"><div class="cmt-in"><span id="kw"></span><span class="kc" id="kwCur"></span></div>
+            <div class="send slam" data-at="cta:приём" data-dt="0.3"><svg width="54" height="54" viewBox="0 0 24 24" fill="#06211d"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg></div></div>
+        </div>
+        <div class="stk g pp" data-at="cta:скину" data-dt="-0.05" style="position:relative;margin-top:40px;--r:3deg">скину ссылку <img src="emoji/1f609.svg" style="width:62px;height:62px;vertical-align:-10px"></div>
+        </div>
+      </div>
+      <div class="emo pp" data-at="cta:приём" data-dt="0.35" style="left:40px;top:1060px;--s:130px;--r:-10deg"><div class="wob"><img src="emoji/1f389.svg"></div></div>
+    </div>
+  </section>
+</div>
+  <div id="confetti"></div>
+  <div id="cap"></div>
+  <div id="flash"></div>
+</div>
+
+<script>
+let TL=null, CH=[], CONF=[];
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const eout=x=>1-Math.pow(1-x,3);
+const L=k=>TL.lines.find(l=>l.key===k);
+const norm=s=>s.toLowerCase().replace(/[^а-яёa-z]/g,'');
+function resolve(spec){
+  if(!isNaN(+spec)) return +spec;
+  const [k,w]=spec.split(':'); const l=L(k);
+  if(!w) return l.start;
+  const h=l.words.find(x=>norm(x[2])===norm(w)); if(!h) throw new Error('no word '+spec); return h[0];
+}
+let rnd=1; const R=()=>{rnd=(rnd*16807)%2147483647;return rnd/2147483647};
+let SHAKES=[], FLASHES=[], BURSTS=[];
+function init(tl){
+  TL=tl; const keys=TL.lines.map(l=>l.key);
+  const ins=keys.map((k,i)=>i===0?0:L(k).start-0.12);
+  document.querySelectorAll('.scene').forEach(s=>{
+    const i=keys.indexOf(s.dataset.scene);
+    s.style.setProperty('--in',ins[i]);
+    s.style.setProperty('--out',i+1<keys.length?ins[i+1]+0.3:999);
+  });
+  document.querySelectorAll('[data-at]').forEach(e=>e.style.setProperty('--at',resolve(e.dataset.at)+(+e.dataset.dt||0)));
+  // comic burst polygon
+  const pts=[]; for(let i=0;i<28;i++){const a=i/28*Math.PI*2, r=(i%2?300:440)*(0.9+0.2*R()); pts.push((450+Math.cos(a)*r).toFixed(1)+','+(450+Math.sin(a)*r).toFixed(1))}
+  document.getElementById('burst').setAttribute('points',pts.join(' '));
+  SHAKES=[[resolve('hi:Нина'),18],[resolve('skel:теорию'),12],[resolve('but:вести'),10],[resolve('app:Хэлп'),14],[resolve('app:бац'),34],[resolve('score')-0.05,26],[resolve('cta:бесплатно'),16],[resolve('cta:приём')+0.3,16]];
+  FLASHES=[[L('app').start-0.12,.7],[resolve('app:бац')-0.03,.95],[L('score').start-0.12,.8]];
+  BURSTS=[[resolve('app:бац'),540,900,70],[resolve('score')+0.05,540,520,110],[resolve('cta:приём')+0.3,540,1250,80]];
+  const box=document.getElementById('confetti'); const cols=['#ffd84d','#5cc0b0','#ff7aa8','#f08a6f','#ffffff','#7c5cff'];
+  BURSTS.forEach(([t0,x,y,n])=>{for(let i=0;i<n;i++){const el=document.createElement('i');el.style.background=cols[i%cols.length];box.appendChild(el);
+    const a=-Math.PI/2+(R()-.5)*Math.PI*1.5, v=900+R()*1500;
+    CONF.push({el,t0,x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,rot:R()*360,vr:(R()-.5)*1400,s:.6+R()*.8})}});
+  // captions for first scenes only
+  for(const k of ['hi','skel','but','app']){
+    const ws=L(k).words; let cur=[];
+    ws.forEach((w,i)=>{cur.push(w);const gap=i+1<ws.length?ws[i+1][0]-(w[0]+w[1]):9;
+      if(k==='app') w[2]={'Хэлп':'Help','ми':'me,','Доктор':'Doctor'}[w[2]]||w[2];
+      if(cur.length>=2||gap>0.2||i===ws.length-1){CH.push({words:cur,start:cur[0][0],end:i+1<ws.length?Math.min(ws[i+1][0],w[0]+w[1]+0.5):w[0]+w[1]+0.35});cur=[]}});
+  }
+  window.ready=true;
+}
+function seek(t){
+  for(const a of document.getAnimations()){a.pause();a.currentTime=t*1000}
+  // the "but" scene and the score hold have no beat bump; music drops there
+  // camera shake
+  let sx=0,sy=0,sr=0;
+  for(const [t0,A] of SHAKES){const d=t-t0; if(d>=0&&d<.35){const k=A*Math.exp(-d/.09); sx+=k*Math.sin(d*90); sy+=k*Math.cos(d*77); sr+=k*.04*Math.sin(d*60)}}
+  document.getElementById('world').style.transform=`translate(${sx}px,${sy}px) rotate(${sr}deg)`;
+  let f=0; for(const [t0,A] of FLASHES){const d=t-t0; if(d>=0&&d<.25) f=Math.max(f,A*(1-d/.25))}
+  document.getElementById('flash').style.opacity=f;
+  for(const c of CONF){const d=t-c.t0; if(d<0||d>2.2){c.el.style.opacity=0;continue}
+    const x=c.x+c.vx*d*Math.exp(-d*1.2), y=c.y+c.vy*d*Math.exp(-d*1.2)+900*d*d;
+    c.el.style.opacity=1-clamp((d-1.6)/.6);
+    c.el.style.transform=`translate(${x}px,${y}px) rotate(${c.rot+c.vr*d}deg) scale(${c.s},${c.s*Math.abs(Math.cos(d*9+c.rot))})`}
+  // keyword typed into the comment
+  const k0=resolve('cta:комментах')+0.1, k1=resolve('cta:приём')+0.35, KW='ПРИЁМ';
+  document.getElementById('kw').textContent=KW.slice(0,Math.round(KW.length*clamp((t-k0)/(k1-k0))));
+  document.getElementById('kwCur').style.opacity=(t<k1||Math.floor(t*2.5)%2===0)?1:0;
+  // score count-up
+  const s0=resolve('score'); document.getElementById('sc').textContent=(4.5*eout(clamp((t-s0)/.45))).toFixed(1).replace('.',',');
+  // captions
+  const cap=document.getElementById('cap'); const ch=CH.find(c=>t>=c.start-0.04&&t<c.end);
+  if(!ch){cap.innerHTML='';return}
+  const p=eout(clamp((t-ch.start+0.04)/.12));
+  cap.innerHTML='<div class="ln" style="transform:scale('+(0.6+0.4*p)+') rotate('+((CH.indexOf(ch)%2?2:-2)*(1-p))+'deg)">'+ch.words.map(w=>`<span class="w${t>=w[0]-0.03&&t<w[0]+Math.max(w[1],.2)?' on':''}">${w[2]}</span>`).join('')+'</div>';
+}
+window.init=init; window.seek=seek;
+if(location.search.includes('play')){fetch('timeline.json').then(r=>r.json()).then(tl=>{init(tl);const t0=performance.now();const loop=()=>{seek((performance.now()-t0)/1000%TL.total);requestAnimationFrame(loop)};loop()})}
+</script>
+</body></html>
