@@ -4,6 +4,37 @@
 const steps = (items, cls = "") => `<ol class="fig-steps ${cls}">${items.map(([t, d], i) => `<li><span class="n">${i + 1}</span><b>${t}</b>${d ? `<span>${d}</span>` : ""}</li>`).join("")}</ol>`;
 const fig = (body, caption) => `<figure class="fig">${body}<figcaption>${caption}</figcaption></figure>`;
 
+
+// Схематичные ЭКГ-полоски: 100 px = 1 с, 1 клетка сетки = 20 px (0,2 с). Кривые считаются из формул, это учебная схема, а не запись пациента.
+const g = (x, c, a, w) => a * Math.exp(-((x - c) ** 2) / (2 * w * w));
+const ecgStrip = (label, fn, { w = 600, h = 96, base = 58 } = {}) => {
+  const pts = [];
+  for (let x = 0; x <= w; x += 0.5) pts.push(`${x.toFixed(1)},${(base - fn(x)).toFixed(1)}`);
+  const grid = [];
+  for (let x = 0; x <= w; x += 20) grid.push(`<line x1="${x}" y1="0" x2="${x}" y2="${h}"/>`);
+  for (let y = 0; y <= h; y += 20) grid.push(`<line x1="0" y1="${y}" x2="${w}" y2="${y}"/>`);
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${label}"><g stroke="currentColor" stroke-opacity=".13" stroke-width="1">${grid.join("")}</g><polyline fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" points="${pts.join(" ")}"/></svg>`;
+};
+const qrs = (x, c, amp, wide = 1.2) => g(x, c - 3 * wide, -amp * 0.12, wide) + g(x, c, amp, wide) + g(x, c + 3 * wide, -amp * 0.22, wide);
+const rep = (period, from, to) => { const out = []; for (let c = from; c < to; c += period) out.push(c); return out; };
+const flutter = (x) => {
+  const f = (((x % 20) + 20) % 20) / 20; // 5 волн F в секунду = 300 в минуту
+  let y = f < 0.78 ? 7 - 14 * (f / 0.78) : -7 + 14 * ((f - 0.78) / 0.22);
+  for (const c of rep(40, 14, 640)) y += qrs(x, c, 36);
+  return y;
+};
+const avBlock = (x) => {
+  let y = 0;
+  for (const c of rep(66.7, 20, 640)) y += g(x, c, 8, 4); // зубцы P: около 90 в минуту
+  for (const c of rep(166.7, 70, 640)) y += qrs(x, c, 30, 2.4) + g(x, c + 34, 9, 8); // QRS: 36 в минуту, шире
+  return y;
+};
+const hyperK = (x) => {
+  let y = 0;
+  for (const c of rep(80, 30, 640)) y += qrs(x, c, 26, 2.6) + g(x, c + 38, 34, 6.5); // узкий высокий симметричный T
+  return y;
+};
+
 export const FIGURES = {
   "anamnez-steps": fig(steps([
     ["Контакт", "имя, роль, цель"],
@@ -221,6 +252,12 @@ export const FIGURES = {
     <div class="col"><h4>Почки или обезвоживание</h4><p class="k">Креатинин рядом с мочевиной</p><ul><li>Растут вместе: думаем о почках</li><li>Мочевина обгоняет: объём, кровотечение, белок в диете</li><li>Креатинин держим против мышечной массы</li></ul></div>
     <div class="col"><h4>Повреждение или функция</h4><p class="k">Ферменты против синтеза</p><ul><li>АЛТ и АСТ говорят, что клетки повреждены</li><li>Альбумин и билирубин говорят, что печень не справляется</li><li>Нормальный фермент при циррозе не успокаивает</li></ul></div>
   </div>`, "Три пары показателей, которые читают вместе: одно число из бланка почти ничего не решает"),
+
+  "ekg-tri-poloski": fig(`<div class="fig-grid">
+    <div><p class="k"><b>Задача 1.</b> <span>Регулярный ритм около 150, пилообразная линия между комплексами</span></p>${ecgStrip("Схема: трепетание предсердий с проведением 2:1", flutter)}</div>
+    <div><p class="k"><b>Задача 2.</b> <span>Зубцы P идут своим темпом, комплексы QRS своим, редкие и широкие</span></p>${ecgStrip("Схема: полная атриовентрикулярная блокада", avBlock)}</div>
+    <div><p class="k"><b>Задача 3.</b> <span>Высокие узкие симметричные T, P почти не видно, QRS широковат</span></p>${ecgStrip("Схема: гиперкалиемия", hyperK)}</div>
+  </div>`, "Три учебные схемы к задачам ниже: нарисованы по формулам, не снимок пациента. Крупная клетка сетки равна 0,2 с"),
 
   calgary: fig(steps([
     ["Начало консультации", ""],
