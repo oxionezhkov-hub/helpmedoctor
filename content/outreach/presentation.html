@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Help me, Doctor — тренажёр врача с ИИ-пациентами</title>
+<meta name="author" content="Help me, Doctor — helpmedoctor.ru">
+<meta name="description" content="Презентация тренажёра для организаторов мероприятий, редакций и сообществ студентов-медиков">
+<style>
+  /* Презентация для рассылки партнёрам. Стиль — как у PDF-материалов (content/telegram-channel/pdf/_brand.css), но альбомный A4.
+     Сборка: node content/outreach/build.mjs */
+  @font-face { font-family: "Literata"; font-weight: 600; src: url(../../public/fonts/literata-600.woff2) format("woff2"); }
+  @font-face { font-family: "Literata"; font-weight: 700 800; src: url(../../public/fonts/literata-700.woff2) format("woff2"); }
+  @font-face { font-family: "Literata"; font-style: italic; font-weight: 400 700; src: url(../../public/fonts/literata-italic-500.woff2) format("woff2"); }
+  @page { size: 297mm 210mm; margin: 0; }
+  :root {
+    --paper: #f6f4ee; --paper-2: #eeebe2; --card: #fffdf8; --ink: #191c1b; --ink-2: #353a38; --muted: #5f6662;
+    --rule: #dcd7ca; --rule-2: #c7c0ae; --green: #0d5c55; --green-soft: #dceae5; --red: #b3391f; --mark: #f4e4a1;
+    --serif: "Literata", Georgia, serif; --sans: "DejaVu Sans", "Segoe UI", Roboto, Arial, sans-serif; --mono: "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font: 11pt/1.45 var(--sans); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  a { color: var(--green); }
+  .slide { width: 297mm; height: 210mm; padding: 13mm 16mm 11mm; background: var(--paper); position: relative; overflow: hidden; page-break-after: always; display: flex; flex-direction: column; }
+  .slide:last-child { page-break-after: auto; }
+  .top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1.4pt solid var(--ink); padding-bottom: 3mm; margin-bottom: 7mm; font: 8pt var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .brand { display: flex; align-items: center; gap: 2.4mm; font: 700 12.5pt var(--serif); letter-spacing: 0; text-transform: none; color: var(--ink); }
+  .brand svg { width: 7mm; height: 7mm; }
+  h1 { font: 700 34pt/1.06 var(--serif); letter-spacing: -.015em; margin: 0 0 5mm; }
+  h2 { font: 700 25pt/1.1 var(--serif); letter-spacing: -.01em; margin: 0 0 4mm; }
+  h3 { font: 700 13pt/1.25 var(--serif); margin: 0 0 1.5mm; }
+  p { margin: 0 0 2.5mm; }
+  .lead { font-size: 13pt; color: var(--ink-2); max-width: 175mm; }
+  .kicker { font: 8.5pt var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--red); margin-bottom: 3mm; }
+  .mark { background: linear-gradient(transparent 55%, var(--mark) 55%); }
+  .box { background: var(--card); border: .8pt solid var(--rule-2); border-radius: 2.5mm; padding: 5mm; }
+  .shot { display: block; width: 100%; border: .8pt solid var(--rule-2); border-radius: 2.5mm; box-shadow: 0 2mm 6mm rgba(25,28,27,.08); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 9mm; flex: 1; min-height: 0; }
+  .cols.wide { grid-template-columns: 92mm 1fr; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4.5mm; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4.5mm; }
+  .n { font: 700 24pt/1 var(--serif); color: var(--green); display: block; margin-bottom: 2.5mm; }
+  ul { margin: 0; padding-left: 5mm; }
+  li { margin-bottom: 1.6mm; }
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  .vs .box h3 { font-size: 12pt; }
+  .vs .bad li::marker { content: "✕  "; color: var(--red); }
+  .vs .good { background: var(--green-soft); border-color: #b5d3ca; }
+  .vs .good li::marker { content: "✓  "; color: var(--green); font-weight: 700; }
+  .foot { margin-top: auto; padding-top: 3mm; border-top: .8pt solid var(--rule-2); display: flex; justify-content: space-between; font: 8pt var(--mono); letter-spacing: .04em; color: var(--muted); }
+  .foot a { color: var(--muted); text-decoration: none; }
+  .btn { display: inline-block; white-space: nowrap; background: var(--green); color: #fff; text-decoration: none; font: 700 10.5pt var(--sans); padding: 3mm 4.5mm; border-radius: 2mm; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1pt solid var(--ink-2); }
+  .links { display: flex; gap: 3mm; flex-wrap: nowrap; margin-top: 6mm; }
+  .qr { width: 34mm; height: 34mm; background: var(--card); padding: 2.5mm; border: .8pt solid var(--rule-2); border-radius: 2mm; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .tag { display: inline-block; font: 8pt var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--green); background: var(--green-soft); padding: 1mm 2.4mm; border-radius: 1mm; margin: 0 1.5mm 1.5mm 0; }
+  .card-ill { position: relative; }
+  .stamp { position: absolute; right: -4mm; bottom: -6mm; width: 30mm; height: 30mm; border: 1.6pt solid var(--red); border-radius: 50%; display: grid; place-items: center; text-align: center; color: var(--red); font: 7pt var(--mono); letter-spacing: .06em; text-transform: uppercase; background: rgba(255,253,248,.92); transform: rotate(-8deg); box-shadow: inset 0 0 0 1.6mm rgba(255,253,248,.92), inset 0 0 0 2.2mm var(--red); }
+  .stamp b { display: block; font: 700 17pt/1 var(--serif); letter-spacing: 0; }
+  .price { font: 700 22pt/1 var(--serif); color: var(--green); display: block; margin: 1mm 0 2mm; }
+  .note { font-size: 9pt; color: var(--muted); }
+  .offer li { margin-bottom: 2.4mm; }
+  .offer b { color: var(--ink); }
+  dl.contacts { display: grid; grid-template-columns: 34mm 1fr; gap: 2.4mm 4mm; margin: 0; font-size: 12pt; }
+  dl.contacts dt { font: 8.5pt var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding-top: 1.2mm; }
+  dl.contacts dd { margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- 1. Обложка -->
+<section class="slide">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>helpmedoctor.ru · презентация проекта</span></div>
+  <div class="cols" style="align-items:center; grid-template-columns: 1fr 1.12fr">
+    <div>
+      <p class="kicker">Проект студентов-медиков</p>
+      <h1>Тренажёр врача <span style="white-space:nowrap">с&nbsp;ИИ&#8209;пациентами</span></h1>
+      <p class="lead">Приём от жалобы до диагноза за 10 минут: студент расспрашивает пациента текстом или голосом, назначает обследования, ставит диагноз — и сразу получает разбор по клиническим рекомендациям Минздрава России.</p>
+      <div class="links">
+        <a class="btn" href="https://helpmedoctor.ru/app?from=partner_deck">Открыть тренажёр →</a>
+        <a class="btn ghost" href="https://helpmedoctor.ru/?utm_source=partner_deck#demo">Демо без регистрации</a>
+      </div>
+    </div>
+    <div class="card-ill">
+      <img class="shot" src="img/demo-chat.jpg" alt="Расспрос пациента в тренажёре">
+      <div class="stamp"><div>приём<b>10</b>минут</div></div>
+    </div>
+  </div>
+  <div class="foot"><span>Работает в браузере и в Telegram · без установки</span><a href="https://helpmedoctor.ru/?utm_source=partner_deck">helpmedoctor.ru</a></div>
+</section>
+
+<!-- 2. Проблема -->
+<section class="slide">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Зачем это нужно · 2</span></div>
+  <p class="kicker">Почему мы это сделали</p>
+  <h2>Знать болезнь и узнать её у&nbsp;пациента — <span class="mark">разные навыки</span></h2>
+  <p class="lead" style="margin-bottom:7mm">На экзамене, на аккредитации и в клинике спросят не «что такое язва», а «что с этим пациентом». Второму учит только практика с обратной связью — а живых пациентов, с которыми можно спокойно поговорить от начала до конца, у студента мало.</p>
+  <div class="vs">
+    <div class="box bad"><h3>Как обычно учатся</h3><ul>
+      <li>ситуационные задачи, где все данные уже собраны за вас</li>
+      <li>на обходе — два-три вопроса пациенту, остальное слушаете</li>
+      <li>ошибку в расспросе никто не показывает — она всплывает на экзамене</li>
+      <li>учебник читается подряд, а не по вашим пробелам</li></ul></div>
+    <div class="box good"><h3>Как в тренажёре</h3><ul>
+      <li>пациент говорит только то, о чём спросили, — данные собираете сами</li>
+      <li>полный приём от жалобы до лечения за 10–15 минут</li>
+      <li>разбор по клиническим рекомендациям: что обязательно, что пропущено, препараты и дозы</li>
+      <li>короткий тест по ошибкам именно этого приёма</li></ul></div>
+  </div>
+  <div class="foot"><span>Мы сами студенты и сделали инструмент, которого не хватало нам</span><a href="https://helpmedoctor.ru/?utm_source=partner_deck">helpmedoctor.ru</a></div>
+</section>
+
+<!-- 3. Как работает -->
+<section class="slide">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Как это работает · 3</span></div>
+  <p class="kicker">Приём от жалобы до разбора</p>
+  <h2>Как на настоящем приёме — только без риска для пациента</h2>
+  <div class="grid4" style="margin:3mm 0 6mm">
+    <div class="box"><span class="n">1</span><h3>Пациент с жалобой</h3><p>ИИ создаёт новый случай под специальность, разделы и сложность. У каждого пациента свой характер и манера речи.</p></div>
+    <div class="box"><span class="n">2</span><h3>Расспрос и осмотр</h3><p>Вопросы текстом или голосом. Пациент отвечает только на заданное и может что-то забыть или скрыть.</p></div>
+    <div class="box"><span class="n">3</span><h3>Обследования</h3><p>Анализы, УЗИ, КТ, ЭКГ, эндоскопия — результаты соответствуют методу и скрытому диагнозу.</p></div>
+    <div class="box"><span class="n">4</span><h3>Диагноз и разбор</h3><p>ИИ-«профессор» разбирает решение и рассказывает, что стало с пациентом при выбранной тактике.</p></div>
+  </div>
+  <img class="shot" src="img/demo-tests.jpg" alt="Назначение обследований" style="height:68mm; object-fit:cover; object-position:top">
+  <div class="foot"><span>Скриншот демо-приёма с сайта — пройти его можно без регистрации</span><a href="https://helpmedoctor.ru/?utm_source=partner_deck#demo">helpmedoctor.ru/#demo</a></div>
+</section>
+
+<!-- 4. Разбор -->
+<section class="slide">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Обратная связь · 4</span></div>
+  <div class="cols wide">
+    <div>
+      <p class="kicker">После каждого приёма</p>
+      <h2>Разбор по клиническим рекомендациям Минздрава РФ</h2>
+      <p>Не просто «верно / неверно»: оценка по разделам, чек-лист обязательных шагов, как надо было распознать диагноз, лучшая диагностика и схема лечения с дозами.</p>
+      <ul>
+        <li>опора на действующие КР из рубрикатора <b>cr.minzdrav.gov.ru</b>, а не на зарубежные гайдлайны;</li>
+        <li>цитаты из вашего диалога и пропущенные вопросы;</li>
+        <li>«что было дальше» с пациентом при вашей тактике;</li>
+        <li>тест по ошибкам и подсказка наставника, если зашли в тупик.</li>
+      </ul>
+    </div>
+    <img class="shot" src="img/demo-result.jpg" alt="Разбор приёма" style="height:146mm; object-fit:cover; object-position:top">
+  </div>
+  <div class="foot"><span>Учебный тренажёр: пациенты вымышлены, сервис не консультирует реальных людей</span><a href="https://helpmedoctor.ru/o-proekte/?utm_source=partner_deck">helpmedoctor.ru/o-proekte</a></div>
+</section>
+
+<!-- 5. Для кого -->
+<section class="slide">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Для кого · 5</span></div>
+  <p class="kicker">Сложность подстраивается под пользователя</p>
+  <h2>Для всех, кто учится лечить</h2>
+  <div class="grid2" style="margin-top:3mm">
+    <div class="box"><h3>Студентам-медикам 3–6 курса</h3><p>Лёгкие случаи с типичной картиной для младших курсов, проверка схемы анамнеза на живом диалоге, подготовка к ОСКЭ, ситуационным задачам и первичной аккредитации. 10 минут в день — между парами или в дороге.</p></div>
+    <div class="box"><h3>Ординаторам</h3><p>Кейсы по своей специальности и смежным областям, сложные и атипичные пациенты, тесты по лечению и дозам по клиническим рекомендациям.</p></div>
+    <div class="box"><h3>Практикующим врачам</h3><p>Сложные случаи и «соседние» специальности, чтобы держать клиническое мышление в тонусе.</p></div>
+    <div class="box"><h3>Преподавателям</h3><p>Домашняя практика для группы между занятиями: студенты приходят на пару, уже «приняв» пациентов, а разбор показывает их типичные ошибки.</p></div>
+  </div>
+  <p style="margin-top:6mm"><span class="tag">24 специальности</span><span class="tag">терапия</span><span class="tag">кардиология</span><span class="tag">хирургия</span><span class="tag">педиатрия</span><span class="tag">неврология</span><span class="tag">акушерство и гинекология</span><span class="tag">скорая помощь</span><span class="tag">и другие</span></p>
+  <div class="foot"><span>Уровни, стрики и задания дня держат в ритме</span><a href="https://helpmedoctor.ru/dlya-studentov/?utm_source=partner_deck">helpmedoctor.ru/dlya-studentov</a></div>
+</section>
+
+<!-- 6. Доступ -->
+<section class="slide">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Доступ · 6</span></div>
+  <p class="kicker">Попробовать можно за минуту</p>
+  <h2>Бесплатно — каждый день</h2>
+  <div class="grid3" style="margin-top:3mm">
+    <div class="box"><h3>Бесплатно</h3><span class="price">2 пациента в день</span><p>С оценкой и кратким ИИ-разбором. Без карты. За отличный приём — бонусный пациент.</p></div>
+    <div class="box"><h3>Премиум</h3><span class="price">7 дней за 1 ₽</span><p>Безлимит пациентов и полный разбор. Дальше — 200 ₽ в месяц или 1000 ₽ в год, отключить можно в любой момент.</p></div>
+    <div class="box" style="background:var(--green-soft); border-color:#b5d3ca"><h3>Студентам</h3><span class="price">100 ₽ в месяц</span><p>Студенческий тариф после проверки студенческого билета.</p></div>
+  </div>
+  <div class="grid3" style="margin-top:6mm">
+    <div><h3>В браузере</h3><p>На телефоне и компьютере: <a href="https://helpmedoctor.ru/app?from=partner_deck">helpmedoctor.ru/app</a>. Вход через Telegram, Яндекс ID или Google.</p></div>
+    <div><h3>В Telegram</h3><p>Бот <a href="https://t.me/helpmedoctor_aibot">@helpmedoctor_aibot</a> и мини-приложение. Начали в боте — продолжили на сайте.</p></div>
+    <div><h3>Без установки</h3><p>Ничего не нужно скачивать. Голосовые вопросы работают и в браузере, и в Telegram.</p></div>
+  </div>
+  <div class="foot"><span>Цены — на октябрь 2026</span><a href="https://helpmedoctor.ru/?utm_source=partner_deck#pricing">helpmedoctor.ru/#pricing</a></div>
+</section>
+
+<!-- 7. Предложение -->
+<section class="slide">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Чем можем быть полезны · 7</span></div>
+  <p class="kicker">Для организаторов, редакций и сообществ</p>
+  <h2>Что мы можем сделать вместе</h2>
+  <div class="grid2" style="margin-top:2mm">
+    <div class="box offer"><h3>Для мероприятий</h3><ul>
+      <li><b>Подарок участникам</b> — промокод на премиум для всех участников конференции, олимпиады или форума.</li>
+      <li><b>Мастер-класс или доклад</b> «Клиническое мышление и ИИ-пациенты» — офлайн или онлайн.</li>
+      <li><b>Отборочный этап или разминка</b> — кейс-челлендж на виртуальных пациентах перед олимпиадой.</li>
+      <li><b>Стенд или демо-зона</b> в разделе студенческих проектов.</li></ul></div>
+    <div class="box offer"><h3>Для СМИ и сообществ</h3><ul>
+      <li><b>История проекта</b> — как студенты-медики сделали тренажёр, интервью, колонка, новость.</li>
+      <li><b>Полезный контент</b> — чек-листы в PDF (сбор анамнеза, ЭКГ), разборы клинических случаев, подборки к аккредитации.</li>
+      <li><b>Спецпредложение</b> для ваших читателей и подписчиков.</li>
+      <li><b>Партнёрская программа</b> — 50% с оплат приглашённых пользователей.</li></ul></div>
+  </div>
+  <p class="lead" style="margin-top:5mm">Нам важно, чтобы тренажёр дошёл до студентов, которым он нужен. Если у вас есть идея формата — напишите, обсудим.</p>
+  <div class="foot"><span>Условия партнёрской программы</span><a href="https://helpmedoctor.ru/partneram/?utm_source=partner_deck">helpmedoctor.ru/partneram</a></div>
+</section>
+
+<!-- 8. Контакты -->
+<section class="slide">
+  <div class="top"><span class="brand">{{LOGO}}Help me, Doctor</span><span>Контакты · 8</span></div>
+  <div class="cols" style="align-items:center">
+    <div>
+      <p class="kicker">Попробуйте сами</p>
+      <h2>Примите первого пациента — это займёт 10&nbsp;минут</h2>
+      <dl class="contacts" style="margin-top:6mm">
+        <dt>Тренажёр</dt><dd><a href="https://helpmedoctor.ru/app?from=partner_deck">helpmedoctor.ru/app</a></dd>
+        <dt>Демо</dt><dd><a href="https://helpmedoctor.ru/?utm_source=partner_deck#demo">helpmedoctor.ru/#demo</a> — без регистрации</dd>
+        <dt>Telegram-бот</dt><dd><a href="https://t.me/helpmedoctor_aibot">@helpmedoctor_aibot</a></dd>
+        <dt>Почта</dt><dd><a href="mailto:oxion.ezhkov@gmail.com">oxion.ezhkov@gmail.com</a></dd>
+        <dt>Telegram</dt><dd><a href="https://t.me/oleg_ezhkov">@oleg_ezhkov</a> — сотрудничество</dd>
+      </dl>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4mm">
+      <div class="qr" style="width:64mm; height:64mm; padding:4mm">{{QR}}</div>
+      <p class="mono" style="font: 9pt var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--muted)">Наведите камеру — откроется тренажёр</p>
+    </div>
+  </div>
+  <div class="foot"><span>ИП Ежков Олег Михайлович · ИНН 780454134703</span><a href="https://helpmedoctor.ru/?utm_source=partner_deck">helpmedoctor.ru</a></div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,1575 @@
+[
+ {
+  "name": "Медвуза",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа для студентов медвузов (анатомия, гистология, биохимия и др.); можно предложить их ученикам тренажёр клинических случаев как следующий шаг после фундаментальных дисциплин и обменяться постами/промокодами.",
+  "url": "https://medvuza.ru/",
+  "emails": [
+   "support@medvuza.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/med_medvuza"
+  ],
+  "contact_person": "",
+  "audience": "студенты 1–6 курсов медвузов",
+  "priority": "A",
+  "source": "https://medvuza.ru/"
+ },
+ {
+  "name": "Christmedschool",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа будущих врачей с курсами по анатомии, биохимии, неврологии и др.; взаимная реклама: их курсы теории + наш тренажёр практики сбора анамнеза.",
+  "url": "https://christmedschool.com/",
+  "emails": [
+   "info@christmedschool.com",
+   "support@christmedschool.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/christmedschool"
+  ],
+  "contact_person": "",
+  "audience": "студенты медвузов",
+  "priority": "A",
+  "source": "https://christmedschool.com/"
+ },
+ {
+  "name": "Universkill (SechenovUniverskill)",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Онлайн-курсы для студентов-медиков и абитуриентов медвузов (9000+ обученных) и интерактивная платформа «Школа Сеченова» (31 предмет, мини-тесты); подходит для совместных эфиров и рекомендации тренажёра как практики клинических навыков.",
+  "url": "https://sechenovuniverskill.com/",
+  "emails": [
+   "sechenovuniverskill@yandex.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/universkill",
+   "https://t.me/sechenovs",
+   "https://rutube.ru/channel/24141995/",
+   "https://dzen.ru/sechenov",
+   "https://t.me/sechenov_school_bot"
+  ],
+  "contact_person": "",
+  "audience": "студенты медвузов и абитуриенты; 9000+ учеников",
+  "priority": "A",
+  "source": "https://sechenovuniverskill.com/"
+ },
+ {
+  "name": "Med.Studio",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Портал медицинского онлайн-образования (ООО «Мед.Студио») с вебинарами и курсами для врачей; возможна взаимная рассылка и спецпредложение для молодых врачей/ординаторов.",
+  "url": "https://med.studio/",
+  "emails": [
+   "info@med.studio"
+  ],
+  "phones": [
+   "+7 800 500-26-92",
+   "+7 495 120-36-92"
+  ],
+  "socials": [
+   "https://vk.com/med.studio.official",
+   "https://t.me/medstudi0"
+  ],
+  "contact_person": "",
+  "audience": "врачи, ординаторы",
+  "priority": "B",
+  "source": "https://med.studio/"
+ },
+ {
+  "name": "MD School",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа медицины для врачей на принципах доказательной медицины; кросс-промо для молодых врачей и ординаторов (их курсы + наш тренажёр клинических разборов).",
+  "url": "https://md.school/",
+  "emails": [
+   "info@md.school"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/md.school",
+   "https://t.me/medicina_discendi",
+   "https://t.me/MDschool_supportbot"
+  ],
+  "contact_person": "",
+  "audience": "врачи, ординаторы",
+  "priority": "B",
+  "source": "https://md.school/"
+ },
+ {
+  "name": "Школа терапии Dr.Tamuna",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа терапии для студентов-медиков и врачей (госы, аккредитация, клиническое мышление) врача-терапевта Тамары Ткебучавы; близкая аудитория — можно предложить совместный эфир/разбор кейса на нашем ИИ-пациенте.",
+  "url": "https://school-drtamuna.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/schooltherapy"
+  ],
+  "contact_person": "Тамара Ткебучава (основатель)",
+  "audience": "студенты старших курсов, ординаторы",
+  "priority": "A",
+  "source": "https://school-drtamuna.ru/"
+ },
+ {
+  "name": "MEDintellect (Dr.Olim)",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицинская образовательная онлайн-академия Dr.Olim для студентов и врачей (YouTube-канал 130 000+ подписчиков); интересна интеграция/обзор тренажёра в видео.",
+  "url": "https://medintellect.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты и врачи; YouTube 130k+",
+  "priority": "B",
+  "source": "https://medintellect.ru/contacts"
+ },
+ {
+  "name": "MedExam — Аккредитация тесты",
+  "category": "Приложение / сервис",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Приложение и сайт для подготовки к аккредитации (тесты, задания); наш тренажёр закрывает практическую часть (станции, сбор анамнеза), что дополняет их тестовую базу — кросс-промо в каналах.",
+  "url": "https://med-exam.ru/",
+  "emails": [
+   "support@medexam.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/med_exam",
+   "https://t.me/medexam_akkred",
+   "https://ok.ru/group/70000039529886"
+  ],
+  "contact_person": "",
+  "audience": "выпускники медвузов и колледжей",
+  "priority": "A",
+  "source": "https://med-exam.ru/"
+ },
+ {
+  "name": "MedIQ",
+  "category": "Приложение / сервис",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Платформа подготовки к аккредитации с тестами, ситуационными задачами и интервальным повторением; дополняющий продукт — можно обменяться рекомендациями для выпускников.",
+  "url": "https://mediqpro.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "выпускники (лечебное дело, педиатрия, стоматология, фармация)",
+  "priority": "B",
+  "source": "https://mediqpro.ru/"
+ },
+ {
+  "name": "МедикТест",
+  "category": "Приложение / сервис",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Приложение для подготовки к медицинской аккредитации (тесты и задачи всех специальностей, офлайн-режим); взаимная реклама в Telegram/VK — тесты у них, клинические кейсы у нас.",
+  "url": "https://mediktest.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/Mediktest0",
+   "https://vk.com/mediktest"
+  ],
+  "contact_person": "",
+  "audience": "выпускники медвузов",
+  "priority": "B",
+  "source": "https://mediktest.ru/"
+ },
+ {
+  "name": "Академия Anatomy Education (Эдгар Кафаров)",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-академия анатомии Эдгара Кафарова для студентов-медиков и специалистов; большая аудитория младших курсов — совместные розыгрыши и посты.",
+  "url": "https://anatomy-education.ru/",
+  "emails": [
+   "academofanatomy@gmail.com",
+   "support@anatomykf.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/edgarkafarov",
+   "https://vk.com/public212280554"
+  ],
+  "contact_person": "Эдгар Кафаров (основатель)",
+  "audience": "студенты 1–3 курсов",
+  "priority": "B",
+  "source": "https://anatomy-education.ru/"
+ },
+ {
+  "name": "Медицинская академия Татьяны Хитровой",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-академия (анатомия человека и др. курсы с 3D-атласом) для студентов и врачей; возможна взаимная рекомендация в рассылках.",
+  "url": "https://khitrovamed.com/",
+  "emails": [
+   "academy@khitrovamed.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/khitrovamed"
+  ],
+  "contact_person": "Татьяна Хитрова",
+  "audience": "студенты, врачи",
+  "priority": "C",
+  "source": "https://khitrovamed.com/"
+ },
+ {
+  "name": "Athenium — академия подготовки к медвузам",
+  "category": "Онлайн-школа (ЕГЭ для будущих медиков)",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа для будущих врачей (химия, биология, русский для 8–11 классов); можно дать их выпускникам бесплатный пробный доступ к тренажёру как «первый опыт врача», а у них — анонс для абитуриентов.",
+  "url": "https://athenium.academy/",
+  "emails": [
+   "athenium@mail.ru"
+  ],
+  "phones": [
+   "+7 905 323-48-88"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "школьники 8–11 классов, поступающие в медвуз",
+  "priority": "B",
+  "source": "https://athenium.academy/"
+ },
+ {
+  "name": "КурсНаМед — школа будущих врачей",
+  "category": "Онлайн-школа (ЕГЭ для будущих медиков)",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Школа подготовки к ЕГЭ по химии и биологии для поступления в медвуз (медкружки, лагерь, практикумы); совместные профориентационные активности и спецпредложение для их выпускников-первокурсников.",
+  "url": "https://kursnamed.ru/",
+  "emails": [
+   "info@kursnamed.ru"
+  ],
+  "phones": [
+   "+7 499 455-90-69"
+  ],
+  "socials": [
+   "https://vk.com/kursnamed",
+   "https://t.me/KursNaMedTG_bot"
+  ],
+  "contact_person": "",
+  "audience": "школьники 5–11 классов",
+  "priority": "B",
+  "source": "https://kursnamed.ru/"
+ },
+ {
+  "name": "Корифей Онлайн — медицинский класс",
+  "category": "Онлайн-школа (ЕГЭ для будущих медиков)",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн медицинский класс для 8–10 классов (углублённая химия/биология, встречи с врачами, профориентация); наш тренажёр подходит как интерактивная «встреча с пациентом» в их программу.",
+  "url": "https://koriphey.online/classes/med/",
+  "emails": [
+   "info@koriphey.online"
+  ],
+  "phones": [
+   "+7 800 100-50-39",
+   "+7 930 600-30-35"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "школьники 8–10 классов",
+  "priority": "B",
+  "source": "https://koriphey.online/classes/med/"
+ },
+ {
+  "name": "Умскул",
+  "category": "Онлайн-школа (ЕГЭ для будущих медиков)",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Крупная онлайн-школа подготовки к ЕГЭ/ОГЭ с сильными направлениями биологии и химии; через PR-отдел можно предложить спецпроект «Попробуй себя врачом» для поступающих в медвуз.",
+  "url": "https://umschool.net/",
+  "emails": [
+   "pr@umschool.ru",
+   "umschool@umschool.ru"
+  ],
+  "phones": [
+   "+7 800 300-63-24",
+   "+7 495 487-63-24"
+  ],
+  "socials": [
+   "https://vk.com/umsch_ru"
+  ],
+  "contact_person": "",
+  "audience": "школьники 9–11 классов (сотни тысяч учеников)",
+  "priority": "A",
+  "source": "https://umschool.net/"
+ },
+ {
+  "name": "Вебиум",
+  "category": "Онлайн-школа (ЕГЭ для будущих медиков)",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа ОГЭ/ЕГЭ (биология, химия); есть PR-почта и канал для инфлюенсер-партнёрств — спецпроект для будущих медиков.",
+  "url": "https://webium.ru/",
+  "emails": [
+   "pr@webium.ru",
+   "info@webium.ru"
+  ],
+  "phones": [
+   "+7 800 350-60-87"
+  ],
+  "socials": [
+   "https://vk.com/webium_ege",
+   "https://t.me/webium_school",
+   "https://t.me/webium_influence"
+  ],
+  "contact_person": "",
+  "audience": "школьники 9–11 классов",
+  "priority": "A",
+  "source": "https://webium.ru/"
+ },
+ {
+  "name": "100балльный репетитор",
+  "category": "Онлайн-школа (ЕГЭ для будущих медиков)",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа подготовки к ЕГЭ с отдельными преподавателями-блогерами по биологии и химии; коллаборация с их био/хим-каналами для аудитории будущих медиков.",
+  "url": "https://100points.ru/",
+  "emails": [],
+  "phones": [
+   "+7 495 104-96-46"
+  ],
+  "socials": [
+   "https://t.me/biowithbear",
+   "https://t.me/chemist_msu"
+  ],
+  "contact_person": "",
+  "audience": "школьники 10–11 классов",
+  "priority": "B",
+  "source": "https://100points.ru/"
+ },
+ {
+  "name": "Сотка",
+  "category": "Онлайн-школа (ЕГЭ для будущих медиков)",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-платформа подготовки к ЕГЭ/ОГЭ; возможна интеграция для учеников био-хим потока, планирующих медвуз.",
+  "url": "https://sotkaonline.ru/",
+  "emails": [
+   "sotkaschoolonline@gmail.com"
+  ],
+  "phones": [
+   "+7 800 333-00-56"
+  ],
+  "socials": [
+   "https://vk.com/schoolsotka",
+   "https://t.me/sotkaonline"
+  ],
+  "contact_person": "",
+  "audience": "школьники 9–11 классов",
+  "priority": "C",
+  "source": "https://sotkaonline.ru/"
+ },
+ {
+  "name": "Медач (Medical Channel)",
+  "category": "Профсообщество онлайн / медиа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Независимый портал и медиа для молодых врачей и студентов-медиков (статьи, переводы, подкаст, проект Medacademic); идеален для нативного материала о тренажёре и совместных разборов кейсов.",
+  "url": "https://medach.pro/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/medach",
+   "https://vk.com/medach"
+  ],
+  "contact_person": "",
+  "audience": "студенты-медики и молодые врачи",
+  "priority": "A",
+  "source": "https://medach.pro/"
+ },
+ {
+  "name": "Справочник врача (Medsolutions / МИР)",
+  "category": "Приложение / сервис",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Мобильный «Справочник врача: МКБ-10, РЛС» (640 тыс.+ пользователей) от ООО «Медицинские информационные решения»; партнёрство — взаимные упоминания и баннеры для студентов.",
+  "url": "https://medsolutions.ru/",
+  "emails": [
+   "info@medsolutions.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "врачи и студенты-медики; 640 тыс.+",
+  "priority": "A",
+  "source": "https://apps.apple.com/ru/app/id662302890"
+ },
+ {
+  "name": "МедЭлемент (MedElement)",
+  "category": "Приложение / сервис",
+  "format": "Онлайн",
+  "city": "Москва (представительство РФ)",
+  "dates": "",
+  "description": "Медицинская платформа и приложения-справочники (клинические протоколы, «Справочник терапевта») для врачей и студентов; возможен обмен контентом и рекламой.",
+  "url": "https://medelement.com/",
+  "emails": [
+   "rf@medelement.com",
+   "office@medelement.com"
+  ],
+  "phones": [
+   "+7 499 213-34-24"
+  ],
+  "socials": [
+   "https://t.me/medelementcom"
+  ],
+  "contact_person": "",
+  "audience": "врачи и студенты РФ и Казахстана",
+  "priority": "B",
+  "source": "https://medelement.com/page/kontakty"
+ },
+ {
+  "name": "Справочник Видаль (Vidal.ru)",
+  "category": "Приложение / сервис",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Справочник лекарственных препаратов АО «Видаль Рус» с разделом «Размещение рекламы»; партнёрство — спецпроект для студентов (фармакология + клинические кейсы).",
+  "url": "https://www.vidal.ru/",
+  "emails": [
+   "vidal@vidal.ru",
+   "m.vlasenko@vidal.ru"
+  ],
+  "phones": [
+   "+7 499 975-12-53"
+  ],
+  "socials": [
+   "https://vk.com/vidalru"
+  ],
+  "contact_person": "",
+  "audience": "врачи, фармацевты, студенты",
+  "priority": "B",
+  "source": "https://www.vidal.ru/about/kontakty"
+ },
+ {
+  "name": "РЛС — Энциклопедия лекарств (rlsnet.ru)",
+  "category": "Приложение / сервис",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Энциклопедия лекарственных препаратов РЛС с PR-контактом; возможен обмен публикациями и совместный контент для студентов.",
+  "url": "https://www.rlsnet.ru/",
+  "emails": [
+   "pr@rlsnet.ru"
+  ],
+  "phones": [
+   "+7 499 281-91-91"
+  ],
+  "socials": [
+   "https://t.me/rlsdigest",
+   "https://vk.com/rlsdigest"
+  ],
+  "contact_person": "",
+  "audience": "врачи, провизоры, студенты",
+  "priority": "B",
+  "source": "https://www.rlsnet.ru/"
+ },
+ {
+  "name": "ГЭОТАР-Медиа",
+  "category": "Издательство / ЭБС",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Крупнейшее медицинское издательство (учебники для медвузов, ЭБС «Консультант студента» и «Консультант врача»); партнёрство — подборки литературы к нашим кейсам и совместные акции для студентов.",
+  "url": "https://www.geotar.ru/",
+  "emails": [
+   "info@geotar.ru"
+  ],
+  "phones": [
+   "+7 495 921-39-07"
+  ],
+  "socials": [
+   "https://vk.com/geotarmedia",
+   "https://dzen.ru/geotar",
+   "https://rutube.ru/channel/24688147"
+  ],
+  "contact_person": "",
+  "audience": "студенты и преподаватели медвузов, врачи",
+  "priority": "A",
+  "source": "https://www.geotar.ru/contacts"
+ },
+ {
+  "name": "ЭБС «Консультант студента» / «Консультант врача» (ГЭОТАР)",
+  "category": "Издательство / ЭБС",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Электронные медицинские библиотеки ГЭОТАР, подключённые в большинстве медвузов; можно предложить ссылки «читать в Консультанте» из профессорского разбора и взаимное продвижение.",
+  "url": "https://www.rosmedlib.ru/",
+  "emails": [
+   "info@rosmedlib.ru",
+   "sale@rosmedlib.ru"
+  ],
+  "phones": [
+   "+7 800 234-13-74",
+   "+7 800 555-99-92"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты медвузов, ординаторы, врачи",
+  "priority": "A",
+  "source": "https://www.rosmedlib.ru/"
+ },
+ {
+  "name": "Издательство «Практическая медицина»",
+  "category": "Издательство / ЭБС",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Медицинское издательство (учебная и практическая литература); возможны совместные розыгрыши книг среди пользователей тренажёра.",
+  "url": "https://www.medprint.ru/",
+  "emails": [],
+  "phones": [
+   "+7 916 412-90-30"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "врачи, студенты",
+  "priority": "C",
+  "source": "https://www.medprint.ru/"
+ },
+ {
+  "name": "Издательство «СпецЛит»",
+  "category": "Издательство / ЭБС",
+  "format": "Гибрид",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Издательство и интернет-магазин медицинской литературы; партнёрство — промокоды на учебники для наших пользователей и розыгрыши.",
+  "url": "https://www.speclit.su/",
+  "emails": [],
+  "phones": [
+   "+7 812 495-36-09",
+   "+7 812 495-36-12"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты, врачи",
+  "priority": "C",
+  "source": "https://www.speclit.su/"
+ },
+ {
+  "name": "ЭБС BookUp (Букап)",
+  "category": "Издательство / ЭБС",
+  "format": "Онлайн",
+  "city": "Томск",
+  "dates": "",
+  "description": "Электронная библиотека медицинских учебников для вузов; возможна взаимная реклама и рекомендации литературы к кейсам.",
+  "url": "https://www.books-up.ru/",
+  "emails": [
+   "mail@books-up.ru"
+  ],
+  "phones": [
+   "+7 3822 23-10-73",
+   "+7 909 543-10-73"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты медвузов",
+  "priority": "B",
+  "source": "https://www.books-up.ru/ru/contact/"
+ },
+ {
+  "name": "Образовательная платформа «Юрайт»",
+  "category": "Издательство / ЭБС",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "ЭБС и издательство для вузов (есть медицинские дисциплины) с PR-отделом; возможны совместные вебинары/подборки для студентов-медиков.",
+  "url": "https://urait.ru/",
+  "emails": [
+   "pr@urait.ru",
+   "vuz@urait.ru"
+  ],
+  "phones": [
+   "+7 495 744-00-12"
+  ],
+  "socials": [
+   "https://vk.com/iurait",
+   "https://t.me/urait_academy"
+  ],
+  "contact_person": "",
+  "audience": "студенты вузов и ссузов",
+  "priority": "C",
+  "source": "https://urait.ru/info/contacts"
+ },
+ {
+  "name": "Издательство «Медиа Сфера»",
+  "category": "Издательство / ЭБС",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Издательство медицинских журналов и организатор образовательных мероприятий для врачей; партнёрство — информационная поддержка в журналах/каналах для молодых врачей.",
+  "url": "https://www.mediasphera.ru/",
+  "emails": [
+   "info@mediasphera.ru"
+  ],
+  "phones": [
+   "+7 495 482-43-29"
+  ],
+  "socials": [
+   "https://t.me/mediasphera",
+   "https://vk.com/mediaspheraru"
+  ],
+  "contact_person": "",
+  "audience": "врачи, ординаторы",
+  "priority": "C",
+  "source": "https://www.mediasphera.ru/"
+ },
+ {
+  "name": "Врачи РФ (vrachirf.ru)",
+  "category": "Профсообщество онлайн",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Крупнейшая социальная сеть врачей России (98% участников с высшим медобразованием), есть отдельный контакт для некоммерческого сотрудничества — публикация о тренажёре для ординаторов и молодых врачей.",
+  "url": "https://vrachirf.ru/",
+  "emails": [
+   "info@vrachirf.ru",
+   "sales@vrachirf.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/club30242917",
+   "https://ok.ru/vrachirf"
+  ],
+  "contact_person": "",
+  "audience": "практикующие врачи (средний возраст 41), ординаторы",
+  "priority": "A",
+  "source": "https://vrachirf.ru/for-partners"
+ },
+ {
+  "name": "Доктор на работе",
+  "category": "Профсообщество онлайн",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Профессиональная соцсеть для врачей (виртуальные консультации, сообщество); канал для анонса тренажёра среди молодых врачей — контакт через сайт/форму.",
+  "url": "https://doktornarabote.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "врачи РФ (по данным компании — более половины врачей страны)",
+  "priority": "B",
+  "source": "https://doktornarabote.ru/"
+ },
+ {
+  "name": "Высшая школа онкологии (фонд «Не напрасно»)",
+  "category": "Онлайн-школа / образовательная программа",
+  "format": "Гибрид",
+  "city": "Санкт-Петербург / Москва",
+  "dates": "",
+  "description": "Бесплатная двухлетняя программа для выпускников медвузов и ординаторов-онкологов от фонда «Не напрасно»; общая аудитория мотивированных выпускников — совместный контент о клиническом мышлении и анонс отбора.",
+  "url": "https://hso.nenaprasno.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "выпускники медвузов, ординаторы",
+  "priority": "B",
+  "source": "https://www.fontanka.ru/2026/06/15/76479104/"
+ },
+ {
+  "name": "MedicalService",
+  "category": "Магазин медодежды",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Производитель и интернет-магазин медодежды с разделом «Студентам»; взаимная реклама: промокод на форму для пользователей тренажёра ↔ пробный доступ для их покупателей-студентов.",
+  "url": "https://www.medicalserviceplus.ru/",
+  "emails": [
+   "info@medicalservice.ru"
+  ],
+  "phones": [
+   "+7 800 555-87-76",
+   "+7 499 271-38-22"
+  ],
+  "socials": [
+   "https://vk.com/medicalservicevk",
+   "https://t.me/medicalserviceRUS"
+  ],
+  "contact_person": "",
+  "audience": "студенты-медики, врачи",
+  "priority": "A",
+  "source": "https://www.medicalserviceplus.ru/"
+ },
+ {
+  "name": "Lancet Uniform",
+  "category": "Магазин медодежды",
+  "format": "Гибрид",
+  "city": "Санкт-Петербург / Москва",
+  "dates": "",
+  "description": "Российский бренд медодежды с отдельным студенческим каталогом и шоурумами в СПб и Москве; совместный розыгрыш формы + премиум-доступ к тренажёру.",
+  "url": "https://lancetuniform.ru/",
+  "emails": [
+   "lancetuniformcorporate@mail.ru",
+   "support@lancetuniform.ru"
+  ],
+  "phones": [
+   "+7 812 507-36-80"
+  ],
+  "socials": [
+   "https://vk.com/lancet.uniform",
+   "https://t.me/lancetuniform"
+  ],
+  "contact_person": "",
+  "audience": "студентки-медики и врачи",
+  "priority": "A",
+  "source": "https://lancetuniform.ru/"
+ },
+ {
+  "name": "RED+ (медицинская одежда)",
+  "category": "Магазин медодежды",
+  "format": "Гибрид",
+  "city": "Москва, СПб, Казань, Краснодар",
+  "dates": "",
+  "description": "Сеть магазинов медодежды с PR-контактом и Telegram-каналами в нескольких городах; коллаборация (розыгрыши, промокоды) для студентов и ординаторов.",
+  "url": "https://www.redplus.store/",
+  "emails": [
+   "pr@redplus.store"
+  ],
+  "phones": [
+   "+7 499 229-95-90"
+  ],
+  "socials": [
+   "https://vk.com/redplus.store",
+   "https://t.me/redplus_msk",
+   "https://t.me/redplus_spb",
+   "https://t.me/redplus_kzn",
+   "https://t.me/redplus_krd"
+  ],
+  "contact_person": "",
+  "audience": "медработники, студенты",
+  "priority": "A",
+  "source": "https://www.redplus.store/"
+ },
+ {
+  "name": "ArtLine (Medpodium)",
+  "category": "Магазин медодежды",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Производитель премиальной медодежды для врачей, стоматологов и косметологов; партнёрство — подарочные сертификаты для победителей конкурсов клинических кейсов.",
+  "url": "https://www.medpodium.ru/",
+  "emails": [
+   "sale@medpodium.ru",
+   "support@medpodium.ru"
+  ],
+  "phones": [
+   "+7 495 215-55-24"
+  ],
+  "socials": [
+   "https://vk.com/artline_shop",
+   "https://t.me/medpodium"
+  ],
+  "contact_person": "",
+  "audience": "врачи, стоматологи",
+  "priority": "C",
+  "source": "https://www.medpodium.ru/"
+ },
+ {
+  "name": "NINE ELEVEEN (медицинская одежда)",
+  "category": "Магазин медодежды",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Молодёжный бренд медицинской одежды с активными VK и Telegram; подходит для совместных розыгрышей в студенческой аудитории.",
+  "url": "https://nine-eleveen.com/",
+  "emails": [
+   "nine.eleveen.corp@gmail.com"
+  ],
+  "phones": [
+   "+7 912 246-87-75"
+  ],
+  "socials": [
+   "https://vk.com/nine.eleveen",
+   "https://t.me/nineeleveen"
+  ],
+  "contact_person": "",
+  "audience": "молодые медики",
+  "priority": "B",
+  "source": "https://nine-eleveen.com/"
+ },
+ {
+  "name": "CAMEO (Камэо)",
+  "category": "Магазин медодежды",
+  "format": "Гибрид",
+  "city": "Екатеринбург (сеть салонов в регионах)",
+  "dates": "",
+  "description": "Сеть салонов медицинской одежды в регионах (Екатеринбург, Уфа, Оренбург, Омск, Новосибирск, Иркутск); региональные коллаборации со студентами местных медвузов.",
+  "url": "https://www.kamey.ru/",
+  "emails": [
+   "office@kamey.ru"
+  ],
+  "phones": [
+   "+7 343 253-22-33"
+  ],
+  "socials": [
+   "https://vk.com/cameorussia"
+  ],
+  "contact_person": "",
+  "audience": "медработники, студенты",
+  "priority": "C",
+  "source": "https://www.kamey.ru/"
+ },
+ {
+  "name": "Clinic Style",
+  "category": "Магазин медодежды",
+  "format": "Онлайн",
+  "city": "Москва / СПб",
+  "dates": "",
+  "description": "Интернет-магазин американской медодежды (scrubs); розыгрыши и промокоды для студентов-медиков.",
+  "url": "https://clinic-style.ru/",
+  "emails": [
+   "manager@clinic-style.ru"
+  ],
+  "phones": [
+   "+7 800 775-64-26",
+   "+7 499 754-58-26",
+   "+7 812 500-25-26"
+  ],
+  "socials": [
+   "https://vk.com/clinicstyle"
+  ],
+  "contact_person": "",
+  "audience": "медработники",
+  "priority": "C",
+  "source": "https://clinic-style.ru/"
+ },
+ {
+  "name": "Русский Доктор (russiandoc.ru)",
+  "category": "Магазин медодежды",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Магазин медодежды и фонендоскопов Littmann со студенческой скидкой по студбилету; совместная акция «первый фонендоскоп + тренажёр аускультации/анамнеза».",
+  "url": "https://russiandoc.ru/",
+  "emails": [
+   "shop@russiandoc.ru"
+  ],
+  "phones": [
+   "+7 495 212-07-07",
+   "+7 800 333-62-64"
+  ],
+  "socials": [
+   "https://vk.com/russian_doc",
+   "https://t.me/russiandoc_ru"
+  ],
+  "contact_person": "",
+  "audience": "студенты-медики, врачи",
+  "priority": "A",
+  "source": "https://russiandoc.ru/"
+ },
+ {
+  "name": "TWEED — медицинская одежда",
+  "category": "Магазин медодежды",
+  "format": "Онлайн",
+  "city": "Воронеж",
+  "dates": "",
+  "description": "Премиальный бренд медформы, созданный врачом-ортодонтом, позиционируется для молодых врачей; коллаборация с ординаторами и молодыми врачами.",
+  "url": "https://tweedbrand.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "молодые врачи",
+  "priority": "C",
+  "source": "https://tweedbrand.ru/meditsinskaya-odezhda/voronezh"
+ },
+ {
+  "name": "Стетоскоп-Литтманн (stetoskop-littmann.ru)",
+  "category": "Магазин медтоваров",
+  "format": "Онлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Специализированный магазин стетоскопов Littmann; совместные розыгрыши фонендоскопов среди студентов-пользователей тренажёра.",
+  "url": "https://stetoskop-littmann.ru/",
+  "emails": [],
+  "phones": [
+   "+7 800 700-48-74"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты-медики, врачи",
+  "priority": "C",
+  "source": "https://stetoskop-littmann.ru/"
+ },
+ {
+  "name": "Dealmed",
+  "category": "Магазин медтоваров",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Магазин медтехники (в т.ч. стетоскопы Littmann) с Telegram и Rutube; возможна взаимная реклама для студентов и молодых врачей.",
+  "url": "https://www.dealmed.ru/",
+  "emails": [
+   "info@dealmed.ru"
+  ],
+  "phones": [
+   "+7 495 545-41-40",
+   "+7 800 555-57-88"
+  ],
+  "socials": [
+   "https://t.me/dealmed",
+   "https://vk.com/club44034092",
+   "https://rutube.ru/channel/29617090/"
+  ],
+  "contact_person": "",
+  "audience": "врачи, клиники, студенты",
+  "priority": "C",
+  "source": "https://www.dealmed.ru/"
+ },
+ {
+  "name": "3M Shop (3m-shop.su)",
+  "category": "Магазин медтоваров",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Интернет-магазин продукции 3M, включая стетоскопы Littmann; партнёрство — промокод для пользователей тренажёра.",
+  "url": "https://3m-shop.su/",
+  "emails": [
+   "service@3m-shop.su"
+  ],
+  "phones": [
+   "+7 495 789-39-29"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "медработники",
+  "priority": "C",
+  "source": "https://3m-shop.su/"
+ },
+ {
+  "name": "Фонд содействия инновациям — «Студенческий стартап»",
+  "category": "Грант / программа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "ежегодный конкурс; приём заявок обычно весной",
+  "description": "Грант 1 млн ₽ для студенческих технологических проектов (2250 победителей в 2026 году; по данным vc.ru допускаются и ординаторы); источник финансирования и инфоповод для команды Help me, Doctor.",
+  "url": "https://fasie.ru/programs/programma-studstartup/",
+  "emails": [
+   "info@fasie.ru"
+  ],
+  "phones": [
+   "+7 495 249-249-2"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты, аспиранты, ординаторы-основатели",
+  "priority": "A",
+  "source": "https://xn--90aivcdt6dxbc.xn--p1ai/articles/news/na-konkurs-studencheskiy-startap-v-2026-godu-zayavki-podali-uchashchiesya-pochti-440-vuzov/"
+ },
+ {
+  "name": "ФРИИ — Фонд развития интернет-инициатив",
+  "category": "Грант / программа",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Венчурный фонд и акселератор для интернет-стартапов (есть отдельные почты для акселератора и партнёров); возможен вход в акселератор и PR через их каналы.",
+  "url": "https://iidf.ru/",
+  "emails": [
+   "accelerator@iidf.ru",
+   "partners@iidf.ru",
+   "pr@iidf.ru"
+  ],
+  "phones": [
+   "+7 495 258-88-77"
+  ],
+  "socials": [
+   "https://vk.com/friifond"
+  ],
+  "contact_person": "",
+  "audience": "стартапы",
+  "priority": "B",
+  "source": "https://iidf.ru/"
+ },
+ {
+  "name": "Фонд «Сколково» (биомедицинский кластер)",
+  "category": "Грант / программа",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Инновационный центр с биомед-кластером, грантами и статусом участника для медтех-стартапов; потенциальная поддержка и инфоповоды.",
+  "url": "https://sk.ru/",
+  "emails": [],
+  "phones": [
+   "+7 495 956-00-33",
+   "+7 800 250-09-21"
+  ],
+  "socials": [
+   "https://vk.com/fondskolkovo",
+   "https://t.me/skolkovolive"
+  ],
+  "contact_person": "",
+  "audience": "технологические стартапы",
+  "priority": "B",
+  "source": "https://sk.ru/"
+ },
+ {
+  "name": "Московский инновационный кластер (i.moscow)",
+  "category": "Грант / программа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Платформа инновационного кластера Москвы с программами поддержки, грантами и пилотированием, включая медтех; можно подать проект на пилот в городских клиниках/вузах.",
+  "url": "https://i.moscow/",
+  "emails": [],
+  "phones": [
+   "+7 495 870-45-55"
+  ],
+  "socials": [
+   "https://t.me/innocluster",
+   "https://vk.com/innocluster"
+  ],
+  "contact_person": "",
+  "audience": "стартапы и технологические компании Москвы",
+  "priority": "B",
+  "source": "https://i.moscow/"
+ },
+ {
+  "name": "Иннопрактика",
+  "category": "Грант / программа",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Компания по внедрению российских разработок в промышленность и образование (есть молодёжные и университетские программы); возможна поддержка студенческого медтех-проекта.",
+  "url": "https://innopraktika.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/innopraktika",
+   "http://vk.com/company_innopraktika",
+   "https://rutube.ru/channel/25104682/"
+  ],
+  "contact_person": "",
+  "audience": "университеты, молодые исследователи",
+  "priority": "C",
+  "source": "https://innopraktika.ru/"
+ },
+ {
+  "name": "Институт МедСкиллс (подготовка к ординатуре)",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Колледж и институт ДПО с дистанционным подготовительным курсом для поступления в ординатуру (разбор теста, пробные тесты); наш тренажёр — практическая часть для их абитуриентов ординатуры.",
+  "url": "https://med-skills.ru/",
+  "emails": [
+   "info@med-skills.ru"
+  ],
+  "phones": [
+   "+7 800 100-59-38"
+  ],
+  "socials": [
+   "https://vk.com/med_skills_edu",
+   "https://t.me/medskills_college"
+  ],
+  "contact_person": "",
+  "audience": "выпускники медвузов, поступающие в ординатуру",
+  "priority": "A",
+  "source": "https://med-skills.ru/"
+ },
+ {
+  "name": "Докстарклаб (Академия) & АНО «Созвездие»",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Академия для врачей, ординаторов и студентов по кардиологии и функциональной диагностике; совместные эфиры «ЭКГ + сбор анамнеза» на ИИ-пациенте.",
+  "url": "https://docstarclub.ru/",
+  "emails": [],
+  "phones": [
+   "+7 939 555-06-17"
+  ],
+  "socials": [
+   "https://t.me/sozvezdie_centre",
+   "https://vk.ru/sozvezdie_center"
+  ],
+  "contact_person": "",
+  "audience": "ординаторы, врачи, студенты старших курсов",
+  "priority": "B",
+  "source": "https://docstarclub.ru/"
+ },
+ {
+  "name": "Учебный центр НПКЦ ДиТ (edu.telemedai.ru)",
+  "category": "Онлайн-школа / образовательная программа",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Курсы для врачей и ординаторов по рентгенологии, УЗИ, КТ, МРТ при московском НПКЦ диагностики и телемедицины (лидер ИИ в медицине); партнёрство по ИИ в медобразовании.",
+  "url": "https://edu.telemedai.ru/",
+  "emails": [],
+  "phones": [
+   "+7 495 276-04-36"
+  ],
+  "socials": [
+   "https://t.me/edu_npcmr",
+   "https://vk.com/npcmr"
+  ],
+  "contact_person": "",
+  "audience": "врачи-рентгенологи, ординаторы",
+  "priority": "B",
+  "source": "https://edu.telemedai.ru/"
+ },
+ {
+  "name": "МедЗнания (medq.ru)",
+  "category": "Приложение / сервис (НМО)",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Портал НМО с бесплатными вебинарами, школами и конференциями для врачей; взаимная реклама среди молодых врачей и ординаторов, возможен совместный вебинар об ИИ-тренажёрах.",
+  "url": "https://medq.ru/",
+  "emails": [
+   "info@medq.ru"
+  ],
+  "phones": [
+   "+7 495 116-03-77"
+  ],
+  "socials": [
+   "https://vk.com/medqru",
+   "https://ok.ru/group/55529756819475"
+  ],
+  "contact_person": "",
+  "audience": "практикующие врачи",
+  "priority": "B",
+  "source": "https://medq.ru/"
+ },
+ {
+  "name": "Medznanie.ru",
+  "category": "Приложение / сервис (НМО)",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Дистанционное повышение квалификации и бесплатные вебинары с баллами НМО; возможен обмен рекламой для молодых специалистов.",
+  "url": "https://medznanie.ru/",
+  "emails": [
+   "info@medznanie.ru"
+  ],
+  "phones": [
+   "+7 499 213-05-00"
+  ],
+  "socials": [
+   "https://vk.com/medznanie_ru"
+  ],
+  "contact_person": "",
+  "audience": "врачи и медработники",
+  "priority": "C",
+  "source": "https://medznanie.ru/"
+ },
+ {
+  "name": "Medpoint.pro",
+  "category": "Приложение / сервис (НМО)",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Платформа бесплатных НМО-вебинаров для врачей; совместный вебинар/анонс тренажёра для ординаторов.",
+  "url": "https://medpoint.pro/",
+  "emails": [
+   "info@medpoint.pro"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/medpointpro",
+   "https://vk.com/club206931593",
+   "https://dzen.ru/medpointpro"
+  ],
+  "contact_person": "",
+  "audience": "врачи",
+  "priority": "C",
+  "source": "https://medpoint.pro/"
+ },
+ {
+  "name": "АМО — Академия Медицинского Образования",
+  "category": "Онлайн-школа (НМО/ДПО)",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Центр последипломного образования с вебинарами НМО и курсами ДПО; кросс-промо тренажёра для молодых врачей.",
+  "url": "https://medobr.com/",
+  "emails": [
+   "info@medobr.com"
+  ],
+  "phones": [
+   "+7 495 419-24-81"
+  ],
+  "socials": [
+   "https://t.me/amo_medicine",
+   "https://vk.com/amo_medicine",
+   "https://dzen.ru/medobr"
+  ],
+  "contact_person": "",
+  "audience": "врачи и медработники",
+  "priority": "C",
+  "source": "https://medobr.com/"
+ },
+ {
+  "name": "Medznat (medznat.ru)",
+  "category": "Профсообщество онлайн",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Информационно-образовательный портал для врачей (статьи, вебинары); возможна публикация материала о студенческом ИИ-тренажёре.",
+  "url": "https://www.medznat.ru/",
+  "emails": [
+   "support@medznat.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "врачи",
+  "priority": "C",
+  "source": "https://www.medznat.ru/"
+ },
+ {
+  "name": "МЦ МФО (kursmedik.ru)",
+  "category": "Онлайн-школа (аккредитация/ДПО)",
+  "format": "Гибрид",
+  "city": "",
+  "dates": "",
+  "description": "Учебный центр с онлайн-тренингом подготовки к первичной и первичной специализированной аккредитации и симуляционными станциями; кросс-промо: наш тренажёр анамнеза как домашняя практика к их тренингам.",
+  "url": "https://kursmedik.ru/",
+  "emails": [
+   "info@kursmedik.ru"
+  ],
+  "phones": [
+   "+7 800 444-10-82"
+  ],
+  "socials": [
+   "https://t.me/nmo_kurs",
+   "https://vk.com/nmo_kurs"
+  ],
+  "contact_person": "",
+  "audience": "выпускники, медработники",
+  "priority": "B",
+  "source": "https://kursmedik.ru/"
+ },
+ {
+  "name": "Медик Обучение (Школа Медика)",
+  "category": "Онлайн-школа (аккредитация/ДПО)",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-курсы НМО и подготовка к аккредитации (тесты и ОСКЭ); возможна взаимная рекомендация для выпускников.",
+  "url": "https://medic-obuchenie.ru/",
+  "emails": [
+   "medic-obuchenie@yandex.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/obuchenie_medikov",
+   "https://dzen.ru/obuchenie_medikov"
+  ],
+  "contact_person": "",
+  "audience": "медработники, выпускники",
+  "priority": "C",
+  "source": "https://medic-obuchenie.ru/"
+ },
+ {
+  "name": "Свободный Медицинский Университет SYNAPSE (Синапс)",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-экосистема для студентов, ординаторов и врачей (курсы, база статей, банк клинических задач, подготовка к USMLE, ИИ-ассистент Neuron-AI); частично пересекается, поэтому формат — обмен контентом/совместные разборы, а не реклама «в лоб».",
+  "url": "https://synapse-med.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/synapse_med",
+   "https://vk.com/basesynapse",
+   "https://t.me/joinchat/SdPP18VCyZOES-4B"
+  ],
+  "contact_person": "",
+  "audience": "студенты, ординаторы, врачи",
+  "priority": "B",
+  "source": "https://synapse-med.ru/"
+ },
+ {
+  "name": "Лекториум — проект MedSchool",
+  "category": "Онлайн-школа",
+  "format": "Онлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Медицинский раздел образовательной платформы Лекториум с разбором клинических случаев по темам; совместный открытый урок «клинический кейс + ИИ-пациент».",
+  "url": "https://project.lektorium.tv/medschool",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/medicine_lektorium",
+   "https://vk.com/openlektorium"
+  ],
+  "contact_person": "",
+  "audience": "студенты-медики",
+  "priority": "C",
+  "source": "https://project.lektorium.tv/medschool"
+ },
+ {
+  "name": "WETLAB — хирургические тренажёры",
+  "category": "Магазин медтоваров",
+  "format": "Гибрид",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Российский производитель хирургических тренажёров и наборов для отработки швов (SuturePad, наборы инструментов) для студентов; совместные розыгрыши «руки + голова»: тренажёр швов + доступ к ИИ-пациенту.",
+  "url": "https://www.wetlab-medical.ru/",
+  "emails": [
+   "info@wetlab.spb.ru"
+  ],
+  "phones": [
+   "+7 800 200-21-10"
+  ],
+  "socials": [
+   "https://vk.com/wetlab"
+  ],
+  "contact_person": "",
+  "audience": "студенты-медики, ординаторы-хирурги",
+  "priority": "A",
+  "source": "https://www.wetlab-medical.ru/ru"
+ },
+ {
+  "name": "Гэотар-Мед (манекены и симуляторы)",
+  "category": "Магазин медтоваров",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Поставщик медицинских манекенов, симуляторов и тренажёров для вузов и аккредитационных центров; партнёрство — комплексные решения для симуляционных центров (железо + наш ИИ-тренажёр анамнеза).",
+  "url": "https://www.geotar-med.ru/",
+  "emails": [
+   "info@geotar-med.ru"
+  ],
+  "phones": [
+   "+7 499 825-98-00"
+  ],
+  "socials": [
+   "https://vk.com/geotarmed"
+  ],
+  "contact_person": "",
+  "audience": "медвузы, симуляционные центры",
+  "priority": "A",
+  "source": "https://www.geotar-med.ru/"
+ },
+ {
+  "name": "Медтехно (medtehno.ru)",
+  "category": "Магазин медтоваров",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Магазин медтоваров с тренажёрами для наложения швов и инструментами для студентов; совместные акции для студентов-медиков.",
+  "url": "https://www.medtehno.ru/",
+  "emails": [
+   "zakaz@medtehno.ru"
+  ],
+  "phones": [
+   "+7 495 255-78-00"
+  ],
+  "socials": [
+   "https://vk.com/medtehno",
+   "https://rutube.ru/channel/44206216/"
+  ],
+  "contact_person": "",
+  "audience": "студенты, медработники",
+  "priority": "C",
+  "source": "https://www.medtehno.ru/"
+ },
+ {
+  "name": "ELIT Маркет (медицинская одежда и обувь)",
+  "category": "Магазин медодежды",
+  "format": "Гибрид",
+  "city": "",
+  "dates": "",
+  "description": "Магазин медодежды, обуви и тренажёров с блогом для врачей и студентов (обзоры приложений для медиков); можно предложить статью/обзор тренажёра в их блоге и розыгрыш.",
+  "url": "https://tdelit.ru/",
+  "emails": [],
+  "phones": [
+   "+7 800 500-08-20"
+  ],
+  "socials": [
+   "https://vk.com/td.elit",
+   "https://t.me/medodezhda_elit"
+  ],
+  "contact_person": "",
+  "audience": "медработники, студенты",
+  "priority": "B",
+  "source": "https://tdelit.ru/"
+ },
+ {
+  "name": "Издательство «Лань» / ЭБС Лань (медицина)",
+  "category": "Издательство / ЭБС",
+  "format": "Гибрид",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Издательство и ЭБС для вузов с редакцией литературы по медицине; совместные подборки учебников к нашим клиническим кейсам и анонсы в рассылках.",
+  "url": "https://lanbook.com/",
+  "emails": [
+   "med@lanbook.ru",
+   "lan@lanbook.ru"
+  ],
+  "phones": [
+   "+7 800 700-40-71"
+  ],
+  "socials": [],
+  "contact_person": "Таравская Владлена Михайловна — заведующая редакцией литературы по медицине",
+  "audience": "студенты и преподаватели вузов",
+  "priority": "B",
+  "source": "https://lanbook.com/contacts/"
+ },
+ {
+  "name": "МЕДПРОФ (Эксмо) — медицинская литература",
+  "category": "Издательство / ЭБС",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Медицинская профессиональная линейка издательства Эксмо (атласы, книги для врачей); PR-коллаборации и розыгрыши книг среди студентов и ординаторов.",
+  "url": "https://eksmo.ru/medprof/",
+  "emails": [
+   "pr1@eksmo.ru",
+   "info@eksmo.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/eksmo",
+   "https://vk.ru/eksmo"
+  ],
+  "contact_person": "",
+  "audience": "врачи, студенты",
+  "priority": "B",
+  "source": "https://eksmo.ru/medprof/"
+ },
+ {
+  "name": "МИА — Медицинское информационное агентство (Medkniga.ru)",
+  "category": "Издательство / ЭБС",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Медицинское издательство МИА и интернет-магазин медицинской литературы; промокоды на книги для пользователей тренажёра и взаимные анонсы.",
+  "url": "https://medkniga.ru/",
+  "emails": [
+   "shop@medbook.ru"
+  ],
+  "phones": [
+   "+7 499 245-45-55",
+   "+7 499 245-49-33"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты, врачи",
+  "priority": "C",
+  "source": "https://medkniga.ru/kontakty/"
+ },
+ {
+  "name": "MedRocket",
+  "category": "Приложение / сервис",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медтех-платформа с академией (курсы и вебинары для врачей и медмаркетологов) и конференциями; возможен совместный вебинар о применении ИИ в медобразовании.",
+  "url": "https://medrocket.me/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/medroket/",
+   "https://vk.com/medrocket/",
+   "https://rutube.ru/channel/24959079/videos/"
+  ],
+  "contact_person": "",
+  "audience": "врачи, медмаркетологи",
+  "priority": "C",
+  "source": "https://medrocket.me/"
+ },
+ {
+  "name": "Росмолодёжь.Гранты",
+  "category": "Грант / программа",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "конкурсы несколько раз в год",
+  "description": "Грантовые конкурсы Росмолодёжи для молодёжных проектов (в т.ч. студентов вузов, до 35 лет) через платформу «Молодёжь России»; возможное финансирование бесплатного доступа к тренажёру для студентов регионов.",
+  "url": "https://grants.myrosmol.ru/",
+  "emails": [
+   "zabota@myrosmol.ru"
+  ],
+  "phones": [
+   "+7 800 222-44-89"
+  ],
+  "socials": [
+   "https://vk.com/rosmolodez",
+   "https://t.me/rosmolodez"
+  ],
+  "contact_person": "",
+  "audience": "молодёжь 14–35 лет, студенческие команды",
+  "priority": "B",
+  "source": "https://fadm.gov.ru/"
+ },
+ {
+  "name": "Платформа университетского технологического предпринимательства",
+  "category": "Грант / программа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Федеральная платформа (нацпроект) для студенческих стартапов: акселераторы, стартап-студии, «Стартап как диплом»; канал к университетским акселераторам медвузов.",
+  "url": "https://univertechpred.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты-основатели стартапов",
+  "priority": "B",
+  "source": "https://univertechpred.ru/"
+ },
+ {
+  "name": "Издательство «МЕДпресс-информ»",
+  "category": "Издательство / ЭБС",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Издательство медицинской литературы (учебники, руководства для врачей); совместные розыгрыши книг и рекомендации литературы к кейсам. Контакты на сайте не удалось получить автоматически — проверить вручную.",
+  "url": "https://medpress.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты, врачи",
+  "priority": "C",
+  "source": "https://medpress.ru/"
+ }
+]
