@@ -581,6 +581,15 @@ test("осмотр: у каждого приёма своя область, бе
   assert.match(examScope("Пальпация щитовидной железы").scope, /этого приёма/);
 });
 
+test("мини-приложение открывается с APP_URL, сайт — с PUBLIC_URL", async () => {
+  const { miniAppBase } = await import("../src/config.js");
+  const { appUrl } = await import("../src/bot/render.js");
+  const env = { PUBLIC_URL: "https://helpmedoctor.ru", APP_URL: "https://helpmedoctor.oxion-ezhkov.workers.dev/" };
+  assert.equal(miniAppBase(env), "https://helpmedoctor.oxion-ezhkov.workers.dev");
+  assert.equal(appUrl(env, "/plans"), "https://helpmedoctor.oxion-ezhkov.workers.dev/app?go=%2Fplans");
+  assert.equal(miniAppBase({ PUBLIC_URL: "https://helpmedoctor.ru/" }), "https://helpmedoctor.ru");
+});
+
 test("документы админки: заголовок из .md и идея в раздел «Идеи»", async () => {
   const { splitTitle, appendIdea } = await import("../src/lib/docs.js");
   assert.deepEqual(splitTitle("# Стратегия\n\nТекст"), { title: "Стратегия", body: "Текст" });

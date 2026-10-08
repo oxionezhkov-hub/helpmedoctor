@@ -51,6 +51,11 @@ export const PACKS = {
 // Сколько раз пробуем списать продление, прежде чем отключить автоплатёж
 export const AUTOPAY_MAX_FAILS = 3;
 
+/** Адрес мини-приложения Telegram (кнопки web_app): APP_URL, если задан, иначе адрес сайта */
+export function miniAppBase(env) {
+  return String(env.APP_URL || env.PUBLIC_URL || "").replace(/\/$/, "");
+}
+
 /** Цена тарифа на момент покупки */
 export function planPrice(key) {
   if (key === TRIAL.key) return TRIAL.price;

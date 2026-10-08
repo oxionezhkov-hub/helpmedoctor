@@ -1534,7 +1534,7 @@ export class UserDO extends DurableObject {
       ? `🎓 <b>Статус студента подтверждён!</b>\n\nВам доступен студенческий премиум — ${price} ₽ в месяц. Оформить можно в «Тарифах».`
       : "🎓 Не получилось подтвердить студенческий по фото. Попробуйте загрузить другое фото — чтобы были видны ФИО, вуз и срок действия.";
     if (/^\d+$/.test(String(prof.uid))) {
-      await tg(this.env, { kind: "system" }).send(prof.uid, text, [[{ text: "💎 Тарифы", web_app: { url: `${(this.env.PUBLIC_URL || "").replace(/\/$/, "")}/app?go=/plans` } }]]).catch(() => {});
+      await tg(this.env, { kind: "system" }).send(prof.uid, text, [[{ text: "💎 Тарифы", web_app: { url: R.appUrl(this.env, "/plans") } }]]).catch(() => {});
     }
     await this.pushNotify({ title: ok ? "🎓 Студенческий подтверждён" : "🎓 Студенческий не подтверждён", body: ok ? `Премиум за ${price} ₽ в месяц — в «Тарифах»` : "Загрузите другое фото в «Тарифах»", url: "/app#/plans", tag: "student" }).catch(() => {});
     return { status: prof.student.status, changed: true };

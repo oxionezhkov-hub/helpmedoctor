@@ -4,7 +4,7 @@
 // платежи, коды входа, задачи, рассылки и настройки админки. Хранилище — SQLite Durable Object.
 // =====================================================
 import { DurableObject } from "cloudflare:workers";
-import { adminIds, REFERRAL, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel, renewPrice } from "../config.js";
+import { adminIds, REFERRAL, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AUTOPAY_MAX_FAILS, PLANS, planPrice, productLabel, renewPrice, miniAppBase } from "../config.js";
 import { cancelSubscription, chargeSubscription } from "../lib/tochka.js";
 import { confirmPayment, PAY_POLL } from "../lib/payments.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
@@ -548,7 +548,7 @@ export class HubDO extends DurableObject {
     const pct = Math.round(r.rate * 100);
     await tg(this.env, { kind: "system" }).send(r.referrer,
       `💸 <b>+${fmtRub(r.reward)} ₽</b> — партнёрское вознаграждение\n${esc(who)} оплатил(а) ${fmtRub(amount)} ₽, ваша доля ${pct}%.\n\nБаланс и вывод — в приложении: Профиль → «Партнёрская программа».`,
-      [[{ text: "💰 Мой баланс", web_app: { url: `${(this.env.PUBLIC_URL || "").replace(/\/$/, "")}/app?go=/partner` } }]]).catch(() => {});
+      [[{ text: "💰 Мой баланс", web_app: { url: this.appUrl("/partner") } }]]).catch(() => {});
     await this.env.USER.get(this.env.USER.idFromName(r.referrer)).partnerEvent({ reward: r.reward }).catch(() => {});
     return r;
   }
@@ -649,7 +649,7 @@ export class HubDO extends DurableObject {
       await sendEmail(this.env, { to: this.userEmails(r.uid), subject: `Пробный премиум заканчивается ${when}`, html: emailHtml({
         title: `Пробный премиум заканчивается ${when}`,
         paragraphs: [`Дальше подписка продлится автоматически: ${fmtRub(renewPrice(r.plan, r.price))} ₽ в месяц.`, "Отключить автопродление можно в любой момент в профиле → «Подписка»."],
-        button: { text: "Управлять подпиской", url: this.appUrl("/plans") },
+        button: { text: "Управлять подпиской", url: `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/app?go=${encodeURIComponent("/plans")}` },
       }) });
     }
     let charged = 0;
@@ -801,9 +801,9 @@ export class HubDO extends DurableObject {
   // ---------------------------------------------------
   // Уведомления админам
   // ---------------------------------------------------
-  /** Ссылка на экран приложения (в Telegram открывается как мини-приложение) */
+  /** Ссылка на экран мини-приложения (кнопки web_app в Telegram) */
   appUrl(path = "") {
-    const base = (this.env.PUBLIC_URL || "").replace(/\/$/, "");
+    const base = miniAppBase(this.env);
     return `${base}/app${path ? `?go=${encodeURIComponent(path)}` : ""}`;
   }
 
@@ -1291,7 +1291,7 @@ const PARTNER_OPS = {
       const { granted } = await user.partnerAccess(true);
       if (granted) h.sql.exec("UPDATE partners SET granted = 1 WHERE uid = ?", uid);
       if (row?.status !== "active") {
-        await bot.send(uid, PARTNER_WELCOME(h.env, rate), [[{ text: "🤝 Партнёрский раздел", web_app: { url: `${(h.env.PUBLIC_URL || "").replace(/\/$/, "")}/app?go=/partner` } }]]).catch(() => {});
+        await bot.send(uid, PARTNER_WELCOME(h.env, rate), [[{ text: "🤝 Партнёрский раздел", web_app: { url: `${miniAppBase(h.env)}/app?go=${encodeURIComponent("/partner")}` } }]]).catch(() => {});
       }
     } else {
       if (row?.granted) {
@@ -1364,7 +1364,7 @@ function photoUrl(url) {
 }
 
 export function buildKeyboard(env, buttons, bid = 0) {
-  const base = (env.PUBLIC_URL || "").replace(/\/$/, "");
+  const base = miniAppBase(env);
   const rows = [];
   for (const b of buttons || []) {
     const text = String(b.text || "").slice(0, 60);
