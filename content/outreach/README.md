@@ -27,3 +27,15 @@ node content/outreach/build.mjs              # presentation.html → help-me-doc
 ```
 
 Скриншоты в `img/` сняты с демо-приёма на главной странице сайта. QR в `img/qr-app.svg` ведёт на `https://helpmedoctor.ru/app?from=partner_deck`.
+
+## Автоматическая рассылка по почте
+
+Скрипт `scripts/outreach-mail.mjs` и расписание `.github/workflows/outreach-mail.yml`: по будням в 09:20 МСК отправляют 10 писем с ящика из секрета `SMTP_USER`, с паузой 2,5–5,5 минуты между письмами.
+
+- **Письма.** `mailing/letters.json` — тема и первый абзац у каждого адресата свои, общая часть в `mailing/templates.mjs`. Письма идут простым текстом, без вложений, на один адрес — одно письмо. Подпись и лимиты задаются в `mailing/config.json`.
+- **Напоминания и ответы.** Через 6 рабочих дней скрипт отправляет одно напоминание в той же переписке. Ответы и отказы доставки он находит в ящике по IMAP, и таким адресатам больше не пишет.
+- **Где смотреть, кому ушло.** Ветка `outreach-state`, файл `status.csv`. Сводка приходит в Telegram, если задана переменная `OUTREACH_TG_CHAT`.
+- **Включение.** `"enabled": true` в `mailing/config.json`. Пока там `false`, по расписанию ничего не отправляется.
+- **Тест.** Actions → «Рассылка партнёрам» → Run workflow → в поле `test_to` укажите свой адрес. Придут 3 первых письма с пометкой [ТЕСТ], базу и состояние тест не трогает.
+- **Прочитать все письма заранее.** `node scripts/outreach-mail.mjs --preview letters.md`.
+- **Секреты.** `SMTP_USER` — адрес Gmail, `SMTP_PASS` — пароль приложения. Для Яндекса поменяйте `smtp` и `imap` в config на `smtp.yandex.ru` и `imap.yandex.ru`.

@@ -5,6 +5,7 @@
 contact_person, audience, priority (A/B/C), source. Сегмент берётся из имени файла (SEGMENTS).
 """
 import csv
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -103,6 +104,7 @@ def load():
     rows.sort(key=lambda r: (order[r["segment"]], r["priority"], r["name"].lower()))
     for i, r in enumerate(rows, 1):
         r["n"] = i
+        r["id"] = hashlib.sha1(r["name"].encode()).hexdigest()[:8]  # стабильный ключ для рассылки (mailing/letters.json)
         r.setdefault("status", "Не начато")
     return rows
 
@@ -173,9 +175,19 @@ def build(rows):
             w.writerow([cell_value(r, k).replace("\n", "; ") if isinstance(cell_value(r, k), str) else cell_value(r, k) for k in keys])
 
 
+def export_recipients(rows):
+    """Адресаты рассылки — все, у кого есть email. Тексты писем к ним лежат в mailing/letters.json."""
+    keep = ("id", "segment", "category", "name", "description", "url", "emails", "contact_person", "city", "dates", "priority")
+    out = [{k: r.get(k, "") for k in keep} for r in rows if r["emails"]]
+    (DIR / "mailing").mkdir(exist_ok=True)
+    (DIR / "mailing" / "recipients.json").write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n", "utf-8")
+    return out
+
+
 if __name__ == "__main__":
     rows = load()
     build(rows)
+    print(f"✓ mailing/recipients.json: {len(export_recipients(rows))} адресатов с email")
     by = {}
     for r in rows:
         by[r["segment"]] = by.get(r["segment"], 0) + 1
