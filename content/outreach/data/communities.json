@@ -1435,5 +1435,790 @@
   "audience": "24 тыс. подписчиков",
   "priority": "C",
   "source": "https://tgstat.ru/channel/0i8ClA1mX1piZWIy"
+ },
+ {
+  "name": "Медач | Medical Channel (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "VK-сообщество медицинского портала Medach: авторские статьи и переводы по доказательной медицине, ядро — студенты-медики и молодые врачи.",
+  "url": "https://vk.com/medach",
+  "emails": [
+   "sales@medach.pro",
+   "admin@medach.pro"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/medach_sales",
+   "https://vk.com/id248088279 (основатель, реклама и сотрудничество)",
+   "https://medach.pro"
+  ],
+  "contact_person": "",
+  "audience": "158 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://vk.com/medach"
+ },
+ {
+  "name": "Студент-медик (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Крупнейшее VK-сообщество для медиков и студентов: полезная информация по разделам медицины, медицинский юмор, жизнь студентов.",
+  "url": "https://vk.com/studentmedic",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "studentmedic.ru",
+   "«Предложить новость» в паблике"
+  ],
+  "contact_person": "контакт — через «Предложить новость»/сообщения сообщества",
+  "audience": "397 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://vk.com/studentmedic"
+ },
+ {
+  "name": "Аккредитация врачей | Ординатура (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "VK-сообщество в помощь выпускникам медвузов: аккредитация, ординатура, переподготовка, кадровая политика.",
+  "url": "https://vk.com/credit_med",
+  "emails": [
+   "creditmed@ya.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/id289448560 (контакт сообщества)",
+   "https://t.me/credit_med"
+  ],
+  "contact_person": "",
+  "audience": "166 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://vk.com/credit_med"
+ },
+ {
+  "name": "Ordinatura.org | Медицинское образование (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "VK-сообщество проекта Ordinatura.org — поступление в ординатуру, отзывы, медобразование.",
+  "url": "https://vk.com/ordinatura_org",
+  "emails": [
+   "ledov@ordinatura-org.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/id45965617 (co-founder, сотрудничество)",
+   "@ordinatura_orc"
+  ],
+  "contact_person": "co-founder (VK id45965617)",
+  "audience": "52 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://vk.com/ordinatura_org"
+ },
+ {
+  "name": "Медвуза — школа медицины (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа медицины для студентов-медиков, 72 курса по базовым и клиническим дисциплинам.",
+  "url": "https://vk.com/med_medvuza",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://medvuza.ru",
+   "https://t.me/med_medvuza"
+  ],
+  "contact_person": "",
+  "audience": "137 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://vk.com/med_medvuza"
+ },
+ {
+  "name": "Медицина (VK, medobrazovanye)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Образовательное медицинское сообщество, реклама через каталог VK AdBlogger.",
+  "url": "https://vk.com/medobrazovanye",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://adblogger.vk.ru/app/communities-catalog/901947",
+   "https://t.me/rek_web"
+  ],
+  "contact_person": "",
+  "audience": "28 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://vk.com/medobrazovanye"
+ },
+ {
+  "name": "Анатомия и физиология человека (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Крупное образовательное сообщество по анатомии и физиологии, реклама через VK AdBlogger.",
+  "url": "https://vk.com/anatomy_cheloveka",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://adblogger.vk.ru/app/communities-catalog/901942",
+   "https://t.me/rek_web"
+  ],
+  "contact_person": "",
+  "audience": "229 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://vk.com/anatomy_cheloveka"
+ },
+ {
+  "name": "Гистология | Патан | Патфиз | Репетитор (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Сообщество репетитора по гистологии, патанатомии и патфизиологии для студентов-медиков.",
+  "url": "https://vk.com/histologytutor",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/id97685276 (главный администратор)",
+   "https://histologytutor.ru"
+  ],
+  "contact_person": "Александр (репетитор)",
+  "audience": "27 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://vk.com/histologytutor"
+ },
+ {
+  "name": "KaplanMed | Образование и медицина (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Сообщество для студентов-медиков: разборы тем, материалы, советы по учебе.",
+  "url": "https://vk.com/kaplanmed",
+  "emails": [
+   "kaplan.graphit@yandex.ru"
+  ],
+  "phones": [
+   "+7 915 231-56-31"
+  ],
+  "socials": [
+   "https://vk.com/id98353474 (администратор)",
+   "@kaplaninnokenty"
+  ],
+  "contact_person": "",
+  "audience": "7,6 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://vk.com/kaplanmed"
+ },
+ {
+  "name": "MedUniver.com — Всё по медицине (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Сообщество сайта MedUniver для бесплатного самостоятельного изучения медицины студентами и врачами.",
+  "url": "https://vk.com/meduniver",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://meduniver.com/"
+  ],
+  "contact_person": "",
+  "audience": "35 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://vk.com/meduniver"
+ },
+ {
+  "name": "Мед Альбом (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "VK-версия «Мед альбома»: материалы с медконференций, ведёт врач-кардиолог.",
+  "url": "https://vk.com/medalbum",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/medalbum",
+   "@roseviolet"
+  ],
+  "contact_person": "",
+  "audience": "15 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://vk.com/medalbum"
+ },
+ {
+  "name": "ЭКГ и ХМ (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Сообщество по ЭКГ и холтеровскому мониторированию с клиническими случаями и беседой.",
+  "url": "https://vk.com/xmekg",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/id2321906 (создатель группы)",
+   "@roseviolet"
+  ],
+  "contact_person": "",
+  "audience": "12 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://vk.com/xmekg"
+ },
+ {
+  "name": "Интерны, ординаторы и аспиранты медвузов России (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Сообщество взаимопомощи и новостей о послевузовском медобразовании.",
+  "url": "https://vk.com/ordinatura",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/id2509365 (контакт)"
+  ],
+  "contact_person": "",
+  "audience": "2 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://vk.com/ordinatura"
+ },
+ {
+  "name": "Волонтеры-медики (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Всероссийское движение «Волонтеры-медики» — 200 тыс.+ участников, много студентов-медиков; партнёрство через пресс-службу.",
+  "url": "https://vk.com/volmedic",
+  "emails": [
+   "info@volmedic.com",
+   "pressa@volmedic.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/volmedic"
+  ],
+  "contact_person": "",
+  "audience": "57 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://vk.com/volmedic"
+ },
+ {
+  "name": "Доктор на работе | Клинические публикации (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "VK-сообщество крупнейшей русскоязычной платформы для общения врачей «Доктор на работе».",
+  "url": "https://vk.com/medcampus",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://doktornarabote.ru/"
+  ],
+  "contact_person": "",
+  "audience": "203 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://vk.com/medcampus"
+ },
+ {
+  "name": "Подслушано СамГМУ (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Подслушано студентов Самарского медуниверситета.",
+  "url": "https://vk.com/podslushano_samgmu",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/id45903229 (связь/реклама)"
+  ],
+  "contact_person": "",
+  "audience": "8,7 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://vk.com/podslushano_samgmu"
+ },
+ {
+  "name": "Подслушано РосУниМед | МГМСУ (VK)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Неофициальное студенческое сообщество Российского университета медицины.",
+  "url": "https://vk.com/rosunimed",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/rosunimed_podslushka",
+   "@rek_podslushka"
+  ],
+  "contact_person": "",
+  "audience": "1,6 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://vk.com/rosunimed"
+ },
+ {
+  "name": "Медицинские мемы (VK, medmem)",
+  "category": "VK-группа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Паблик медицинских мемов.",
+  "url": "https://vk.com/medmem",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "2,4 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://vk.com/medmem"
+ },
+ {
+  "name": "Волонтеры-медики (Telegram)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Официальный канал движения «Волонтеры-медики».",
+  "url": "https://t.me/volmedic",
+  "emails": [
+   "pressa@volmedic.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/volmedic"
+  ],
+  "contact_person": "",
+  "audience": "4,9 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/volmedic"
+ },
+ {
+  "name": "Орди (проект ЕАТ для молодых врачей)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Пространство для молодых врачей: разбор клинических случаев, сложные вопросы практики — идеальный партнёр для ИИ-тренажёра.",
+  "url": "https://t.me/ordi_euat",
+  "emails": [
+   "ordi@euat.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "ordi.euat.ru",
+   "https://t.me/euatofficial"
+  ],
+  "contact_person": "",
+  "audience": "2 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/ordi_euat"
+ },
+ {
+  "name": "Записки Хирурга (zapiskivrachh)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Хирургия без купюр — авторский канал хирурга.",
+  "url": "https://t.me/zapiskivrachh",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/maxwbface"
+  ],
+  "contact_person": "",
+  "audience": "9 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/zapiskivrachh"
+ },
+ {
+  "name": "Записки Хирурга (крупный приватный)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Авторский блог хирурга о реальной медицине (сетка Social Energy).",
+  "url": "https://t.me/+bJ-QJntxCHJiMDU6",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@zasada95",
+   "@LunaticTG",
+   "@Social_Energy"
+  ],
+  "contact_person": "",
+  "audience": "39 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://tgstat.ru/channel/zcvj3oO1PoZlMzVi"
+ },
+ {
+  "name": "med_chayka (Александра Аксёнова)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог медика: стажировки, медицинский английский/USMLE, бесплатные материалы — аудитория студентов.",
+  "url": "https://t.me/med_chayka",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@chayka_sm"
+  ],
+  "contact_person": "Александра Аксёнова (Чайка)",
+  "audience": "12 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/med_chayka"
+ },
+ {
+  "name": "Медицинские книги для студентов (tgmubooks)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "10 000+ медицинских книг, атласов и тестов для студентов 1–6 курса.",
+  "url": "https://t.me/tgmubooks",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@atsmuchat"
+  ],
+  "contact_person": "",
+  "audience": "7,4 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/tgmubooks"
+ },
+ {
+  "name": "Будни медика в РУДН",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог студента РУДН о буднях медика.",
+  "url": "https://t.me/Dacry0philia",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@fevalaaa"
+  ],
+  "contact_person": "",
+  "audience": "3,6 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/Dacry0philia"
+ },
+ {
+  "name": "Meduk [медик]",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицинские будни медбрата отделения АиР.",
+  "url": "https://t.me/meduk_medicine",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/+y2ZmkP7_nagyMmMy"
+  ],
+  "contact_person": "Тимофей Луконин",
+  "audience": "3,1 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/meduk_medicine"
+ },
+ {
+  "name": "Медицинский английский для врачей | MD.school",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицинский английский и карьера для врачей и студентов.",
+  "url": "https://t.me/Englishfor_doctors",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "4,7 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/Englishfor_doctors"
+ },
+ {
+  "name": "Эдгар Кафаров (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Самый популярный русскоязычный YouTube по анатомии для студентов медвузов от д.м.н., профессора кафедры анатомии.",
+  "url": "https://www.youtube.com/@Kafarovanatom",
+  "emails": [
+   "support@anatomykf.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/edgarkafarov",
+   "https://t.me/Zabota_Kafarov",
+   "vk.com/public212280554"
+  ],
+  "contact_person": "Эдгар Кафаров",
+  "audience": "366 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://www.youtube.com/@Kafarovanatom"
+ },
+ {
+  "name": "I am your beasty в медицинском (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог Алёны, выпускницы педиатрического факультета, — гид по учебе в медвузе для студентов и абитуриентов.",
+  "url": "https://www.youtube.com/@Iamyourbeasty",
+  "emails": [
+   "alla07420@gmail.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/yourbeastyslife",
+   "instagram.com/iamyourbeasty"
+  ],
+  "contact_person": "Алёна",
+  "audience": "251 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://www.youtube.com/@Iamyourbeasty/about"
+ },
+ {
+  "name": "Умный Медик / smart_medic (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицинский проект с видеолекциями по сложным темам простым языком для студентов-медиков.",
+  "url": "https://www.youtube.com/@smart_medic",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "контакт не опубликован на странице — писать через YouTube/«Об авторе»",
+  "audience": "296 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://www.youtube.com/@smart_medic"
+ },
+ {
+  "name": "SciDrugs — фармакология (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Лекции по базисной фармакологии от преподавателя Никиты Кудряшова для студентов-медиков.",
+  "url": "https://www.youtube.com/@SciDrugs",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/scidrugs"
+  ],
+  "contact_person": "Никита Викторович Кудряшов",
+  "audience": "166 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://www.youtube.com/@SciDrugs"
+ },
+ {
+  "name": "SciDrugs (Telegram)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Telegram-канал преподавателя фармакологии Никиты Кудряшова (YouTube SciDrugs).",
+  "url": "https://t.me/scidrugs",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://www.youtube.com/@SciDrugs"
+  ],
+  "contact_person": "Никита Кудряшов",
+  "audience": "8 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/scidrugs"
+ },
+ {
+  "name": "LANCETMED — курсы для студентов (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Курсы и разборы фармакологии и других предметов 3 курса медвуза.",
+  "url": "https://www.youtube.com/@LANCETMED-",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "Ашраф",
+  "audience": "36 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://www.youtube.com/@LANCETMED-"
+ },
+ {
+  "name": "Podalirium Channel (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Образовательный канал для врачей, студентов медвузов и колледжей.",
+  "url": "https://www.youtube.com/@podaliriumchannel6486",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/+1vDTZulsEM1lNmRi",
+   "vk.com/club226700077"
+  ],
+  "contact_person": "",
+  "audience": "34 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://www.youtube.com/@podaliriumchannel6486"
+ },
+ {
+  "name": "Михаил Вобликов. Лекции для студентов медвузов (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Лекции для студентов медицинских вузов.",
+  "url": "https://www.youtube.com/@МихаилВобликов.Лекциидлястуден",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "Михаил Вобликов",
+  "audience": "18 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://www.youtube.com/@МихаилВобликов.Лекциидлястуден"
+ },
+ {
+  "name": "Аккредитационно-симуляционный центр СамГМУ (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Видео по станциям ОСКЭ/аккредитации и симуляционному обучению — профильная аудитория готовящихся к аккредитации.",
+  "url": "https://www.youtube.com/@Аккредитационно-симуляционныйц",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "18 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://www.youtube.com/@Аккредитационно-симуляционныйц"
+ },
+ {
+  "name": "Аккредитация врачей (YouTube)",
+  "category": "YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "YouTube-канал проекта «Аккредитация врачей | Ординатура».",
+  "url": "https://www.youtube.com/@credit_med",
+  "emails": [
+   "creditmed@ya.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/credit_med"
+  ],
+  "contact_person": "",
+  "audience": "1,2 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://www.youtube.com/@credit_med"
+ },
+ {
+  "name": "Пикабу — сообщество «Все о медицине»",
+  "category": "Форум",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Сообщество Пикабу о медицине (15 тыс. постов) — можно разместить авторский пост о проекте.",
+  "url": "https://pikabu.ru/community/medic",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://pikabu.ru/@nikitazv (администратор)",
+   "https://pikabu.ru/@magryba (модератор)"
+  ],
+  "contact_person": "nikitazv (админ)",
+  "audience": "42 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://pikabu.ru/community/medic"
+ },
+ {
+  "name": "Дискуссионный клуб Русского медицинского сервера",
+  "category": "Форум",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Старейший русскоязычный медицинский форум врачей и студентов (2,8 млн сообщений).",
+  "url": "https://forums.rusmedserv.com/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://forums.rusmedserv.com/misc.php?do=contactus (форма обратной связи)"
+  ],
+  "contact_person": "",
+  "audience": "344 тыс. зарегистрированных пользователей",
+  "priority": "B",
+  "source": "https://forums.rusmedserv.com/"
+ },
+ {
+  "name": "Врачи РФ",
+  "category": "Форум",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Крупнейшая соцсеть для врачей России: доказательная медицина, общение и образование — площадка для публикации/партнёрства.",
+  "url": "https://vrachirf.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "https://vrachirf.ru/"
+ },
+ {
+  "name": "Доктор на работе",
+  "category": "Форум",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Крупнейшая русскоязычная платформа для общения врачей с клиническими публикациями.",
+  "url": "https://doktornarabote.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/medcampus"
+  ],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "https://doktornarabote.ru/"
+ },
+ {
+  "name": "Зараза",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал на стыке инфекционных болезней, чёрного юмора и медицинской реальности.",
+  "url": "https://t.me/dr_zaraza",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "15 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/dr_zaraza"
  }
 ]

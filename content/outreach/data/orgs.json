@@ -15,7 +15,8 @@
   ],
   "socials": [
    "https://vk.com/volmedic",
-   "https://www.ok.ru/volmedic"
+   "https://www.ok.ru/volmedic",
+   "https://t.me/volmedic"
   ],
   "contact_person": "Председатель — Анна Бабкина",
   "audience": "89 региональных отделений, ~133 000 волонтёров (2023)",
@@ -155,7 +156,7 @@
   "socials": [
    "https://vk.com/sovetsno1med"
   ],
-  "contact_person": "Научный руководитель — проф. Гавришева Наталья Алексеевна",
+  "contact_person": "Председатель — Кац Леонид Кириллович; науч. руководитель — проф. Гавришева Наталья Алексеевна",
   "audience": "",
   "priority": "A",
   "source": "https://www.1spbgmu.ru/obschestvennaya-zhizn/studencheskij-sovet/sovet-sno-so"
@@ -620,5 +621,1209 @@
   "audience": "16 секций",
   "priority": "C",
   "source": "https://mir.ismu.baikal.ru/sveden/employees/"
+ },
+ {
+  "name": "СНО ВГМУ им. Н. Н. Бурденко",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Воронеж",
+  "dates": "",
+  "description": "Студенческое научное объединение Воронежского медуниверситета, организатор Всероссийской Бурденковской конференции.",
+  "url": "https://vrngmu.ru/academy/structure/studencheskoe-nauchnoe-obshchestvo/",
+  "emails": [
+   "sno@vrngmu.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/snovsmu"
+  ],
+  "contact_person": "Председатель Совета СНО — Иконников Виталий Максимович; науч. руководитель — проф. Глухов Александр Анатольевич",
+  "audience": "",
+  "priority": "A",
+  "source": "https://vrngmu.ru/academy/structure/studencheskoe-nauchnoe-obshchestvo/3330/"
+ },
+ {
+  "name": "Совет СНО Курского ГМУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Курск",
+  "dates": "",
+  "description": "Совет студенческого научного общества КГМУ (вкл. совет СНО медико-фармацевтического колледжа).",
+  "url": "https://kurskmed.com/",
+  "emails": [
+   "kurskmed@mail.ru"
+  ],
+  "phones": [
+   "+7 (4712) 58-81-37"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "https://confs.kurskmed.com/blocks/867/download/0"
+ },
+ {
+  "name": "СНО Рязанского ГМУ им. акад. И. П. Павлова",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Рязань",
+  "dates": "",
+  "description": "Студенческое научное общество РязГМУ, проводит всероссийскую студенческую конференцию.",
+  "url": "https://rzgmu.ru/activities/scientific_activity/sno/",
+  "emails": [
+   "snorzgmu@mail.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/snorzgmu"
+  ],
+  "contact_person": "Председатель — Федоськина Александра Константиновна; науч. руководитель — проф. Меринов Алексей Владимирович",
+  "audience": "",
+  "priority": "B",
+  "source": "https://rzgmu.ru/activities/scientific_activity/sno/"
+ },
+ {
+  "name": "СНО Ярославского ГМУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Ярославль",
+  "dates": "",
+  "description": "Студенческое научное общество ЯГМУ.",
+  "url": "https://ysmu.ru/nauka/studencheskoe-nauchnoe-obshchestvo/",
+  "emails": [
+   "onid.mu.ysmu@yandex.ru"
+  ],
+  "phones": [
+   "+7 (4852) 72-91-42"
+  ],
+  "socials": [
+   "https://vk.com/sno_ysmu"
+  ],
+  "contact_person": "Руководитель — проф. Порсева Валентина Вячеславовна",
+  "audience": "",
+  "priority": "B",
+  "source": "https://ysmu.ru/nauka/studencheskoe-nauchnoe-obshchestvo/"
+ },
+ {
+  "name": "НОСМУ Ивановской ГМА (Научное общество студентов и молодых учёных)",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Иваново",
+  "dates": "",
+  "description": "Научное общество студентов и молодых учёных ИвГМА.",
+  "url": "https://www.isma.ivanovo.ru/",
+  "emails": [],
+  "phones": [
+   "+7 (4932) 30-17-66"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "C",
+  "source": "https://www.isma.ivanovo.ru/articles/482"
+ },
+ {
+  "name": "Совет НОМУС Пермского ГМУ им. акад. Е. А. Вагнера",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Пермь",
+  "dates": "",
+  "description": "Научное общество молодых учёных и студентов ПГМУ, совет ежегодно избирается из студентов.",
+  "url": "https://www.psma.ru/studentam/sovet-sno.html",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "https://www.psma.ru/studentam/sovet-sno.html"
+ },
+ {
+  "name": "НОМУС Кировского ГМУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Киров",
+  "dates": "",
+  "description": "Научное общество молодых учёных и студентов Кировского ГМУ (включая Совет СНО).",
+  "url": "https://kirovgma.ru/ob-academii/structura/departments/nauchnoe-obshchestvo-molodyh-uchyonyh-i-studentov",
+  "emails": [
+   "nomus@kirovgma.ru",
+   "sofyatoinova@ya.ru"
+  ],
+  "phones": [
+   "+7 (8332) 67-31-83"
+  ],
+  "socials": [
+   "https://vk.com/nomuskgma"
+  ],
+  "contact_person": "Председатель Совета СНО — Тоинова Софья Александровна; науч. руководитель — Шишкина Елена Сергеевна",
+  "audience": "",
+  "priority": "B",
+  "source": "https://kirovgma.ru/ob-academii/structura/departments/nauchnoe-obshchestvo-molodyh-uchyonyh-i-studentov"
+ },
+ {
+  "name": "Совет обучающихся Кировского ГМУ",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Киров",
+  "dates": "",
+  "description": "Студенческое самоуправление Кировского ГМУ.",
+  "url": "https://kirovgma.ru/sveden/struct/",
+  "emails": [
+   "studgma@kirovgma.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/sovetstudmedfarm"
+  ],
+  "contact_person": "",
+  "audience": "",
+  "priority": "C",
+  "source": "https://kirovgma.ru/sveden/struct/"
+ },
+ {
+  "name": "НОМУС Астраханского ГМУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Астрахань",
+  "dates": "",
+  "description": "Научное общество молодых учёных и студентов АГМУ (вкл. СНО), финалист федерального проекта СМУ Минздрава в 2026 г.",
+  "url": "https://astgmu.ru/nauchnoe-obshhestvo-molodyx-uchenyx-i-studentov-nomus/",
+  "emails": [
+   "post@astgmu.ru"
+  ],
+  "phones": [
+   "+7 (8512) 66-94-80"
+  ],
+  "socials": [
+   "https://vk.com/astgmuofficial",
+   "https://t.me/astgmuofficial"
+  ],
+  "contact_person": "Председатель СНО — Грант Мирзоян (2026)",
+  "audience": "",
+  "priority": "B",
+  "source": "https://astgmu.ru/en/2026/09/29/komanda-nomus-astrahanskogo-gmu-predstavila-universitet-v-finale-federalnogo-proekta-smu-minzdrava-rossii/"
+ },
+ {
+  "name": "СНО им. Р. П. Аскерханова Дагестанского ГМУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Махачкала",
+  "dates": "",
+  "description": "Студенческое научное общество ДГМУ, проводит ежегодную всероссийскую конференцию молодых учёных и студентов.",
+  "url": "https://dgmu.ru/nauka/upravlenie-po-nauchnoj-innovatsionnoj-i-organizatsionnoj-deyatelnosti/studencheskoe-nauchnoe-obshhestvo/",
+  "emails": [
+   "sno_dgma@mail.ru",
+   "ne_3iminova@mail.ru"
+  ],
+  "phones": [
+   "+7 928 551-57-11"
+  ],
+  "socials": [
+   "https://t.me/sno_dgmu_gen"
+  ],
+  "contact_person": "Председатель СНО — Иминова Наида Кадиевна",
+  "audience": "",
+  "priority": "B",
+  "source": "https://dgmu.ru/nauka/upravlenie-po-nauchnoj-innovatsionnoj-i-organizatsionnoj-deyatelnosti/studencheskoe-nauchnoe-obshhestvo/"
+ },
+ {
+  "name": "Совет студентов медицинских и фармацевтических вузов Минздрава России",
+  "category": "Ассоциация / движение",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Консультативный орган при Минздраве (приказ №392), по одному представителю студсамоуправления от каждого подведомственного вуза — выход сразу на все медвузы.",
+  "url": "https://www.ksma.ru/en/council-of-students-of-medical-and-pharmaceutical-universities-of-the-ministry-of-health-of-the-russian-federation/",
+  "emails": [
+   "a@antonyukk.ru"
+  ],
+  "phones": [
+   "+7 (903) 411-43-70"
+  ],
+  "socials": [],
+  "contact_person": "Секретарь Совета — Антонюк Артём Григорьевич (также председатель Совета студентов КубГМУ)",
+  "audience": "представители ~50 медвузов Минздрава",
+  "priority": "A",
+  "source": "https://www.ksma.ru/en/council-of-students-of-medical-and-pharmaceutical-universities-of-the-ministry-of-health-of-the-russian-federation/"
+ },
+ {
+  "name": "Российские студенческие отряды (РСО) — медицинские отряды",
+  "category": "Ассоциация / движение",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Молодёжная организация РСО, в медицинских отрядах — 15–16 тыс. студентов медвузов и колледжей каждое лето.",
+  "url": "https://трудкрут.рф/",
+  "emails": [
+   "r.s.o@mail.ru",
+   "media.rso@mail.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/rso_official"
+  ],
+  "contact_person": "",
+  "audience": "15–16 тыс. бойцов медотрядов за сезон",
+  "priority": "B",
+  "source": "https://трудкрут.рф/"
+ },
+ {
+  "name": "Мультипрофильный аккредитационно-симуляционный центр (МАСЦ) РНИМУ им. Пирогова",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Крупнейший вузовский симцентр Москвы, проводит первичную аккредитацию специалистов (ОСКЭ) — целевой партнёр для AI-тренажёра.",
+  "url": "https://rsmu.ru/structure/edu-dept/cais/general",
+  "emails": [
+   "centr@rsmu.ru"
+  ],
+  "phones": [
+   "+7 (495) 434-22-66 доб. 0413 / 0189"
+  ],
+  "socials": [
+   "https://vk.com/caisrsmu"
+  ],
+  "contact_person": "Директор — Гущин Александр Владимирович, к.м.н.",
+  "audience": "",
+  "priority": "A",
+  "source": "https://rsmu.ru/structure/edu-dept/cais/contacts/"
+ },
+ {
+  "name": "Аккредитационно-симуляционный центр Казанского ГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Казань",
+  "dates": "",
+  "description": "Симцентр КГМУ при кафедре симуляционных методов обучения в медицине, готовит к аккредитации/ОСКЭ.",
+  "url": "https://kazangmu.ru/otdely-i-podrazdeleniya/akkreditatsionno-simulyatsionnyj-tsentr/sotrudniki",
+  "emails": [],
+  "phones": [
+   "+7 (843) 236-12-70"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — Орлов Юрий Валерьевич",
+  "audience": "",
+  "priority": "A",
+  "source": "https://kazangmu.ru/otdely-i-podrazdeleniya/akkreditatsionno-simulyatsionnyj-tsentr/sotrudniki"
+ },
+ {
+  "name": "Аккредитационно-симуляционный центр СЗГМУ им. И. И. Мечникова",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Симуляционный центр Института медицинского образования СЗГМУ, площадка аккредитации.",
+  "url": "https://imot.szgmu.ru/podrazdeleniya-instituta/akkreditatsionno-simulyatsionnyy-tsentr/",
+  "emails": [
+   "Viktoriia.Shulga@szgmu.ru",
+   "Olga.Bogdanova@szgmu.ru"
+  ],
+  "phones": [
+   "+7 (812) 303-50-00 доб. 8433"
+  ],
+  "socials": [],
+  "contact_person": "Начальник центра — Шульга Виктория Владимировна; методический АСЦ — Богданова Ольга Геннадьевна",
+  "audience": "",
+  "priority": "A",
+  "source": "https://imot.szgmu.ru/podrazdeleniya-instituta/akkreditatsionno-simulyatsionnyy-tsentr/"
+ },
+ {
+  "name": "Мультипрофильный аккредитационно-симуляционный центр СПбГПМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Симцентр Педиатрического университета для отработки навыков и аккредитации.",
+  "url": "https://gpmu.org/education/training/sc",
+  "emails": [
+   "masc@gpmu.org"
+  ],
+  "phones": [
+   "+7 (812) 333-49-89"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — Миронова Анна Валерьевна, к.м.н.",
+  "audience": "",
+  "priority": "A",
+  "source": "https://gpmu.org/education/training/sc"
+ },
+ {
+  "name": "Центр инновационных образовательных технологий (симцентр ЦИОТ) ПСПбГМУ им. Павлова",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Симуляционный центр Первого Петербургского меда; рядом — Центр аттестации и аккредитации вуза.",
+  "url": "https://www.1spbgmu.ru/nauka/450-glavnaya/obrazovanie/simulyatsionnyj-tsentr/708-simulyatsionnyj-tsentr",
+  "emails": [
+   "ciot@list.ru",
+   "1med.accred@gmail.com"
+  ],
+  "phones": [
+   "+7 (812) 338-63-94",
+   "+7 (812) 338-61-56"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель ЦИОТ — проф. Вахитов Мавлет Шакирович; Центр аккредитации — Зарипова Зульфия Абдулловна",
+  "audience": "",
+  "priority": "A",
+  "source": "https://www.1spbgmu.ru/nauka/450-glavnaya/obrazovanie/simulyatsionnyj-tsentr/708-simulyatsionnyj-tsentr"
+ },
+ {
+  "name": "Мультипрофильный аккредитационно-симуляционный центр (МАСЦ) Уральского ГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Екатеринбург",
+  "dates": "",
+  "description": "Симцентр УГМУ — отработка навыков и первичная аккредитация специалистов.",
+  "url": "https://usma.ru/masc/",
+  "emails": [
+   "unc_praktika@usma.ru"
+  ],
+  "phones": [
+   "+7 (343) 214-86-51"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — Черников Игорь Геннадьевич",
+  "audience": "",
+  "priority": "A",
+  "source": "https://usma.ru/masc/kontakty/"
+ },
+ {
+  "name": "Мультипрофильный симуляционно-аккредитационный центр ПИМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Нижний Новгород",
+  "dates": "",
+  "description": "МАСЦ Приволжского исследовательского медуниверситета, площадка ОСКЭ и аккредитации.",
+  "url": "https://masc.pimunn.ru/",
+  "emails": [
+   "simcentr@pimunn.net",
+   "simcenter@pimunn.ru"
+  ],
+  "phones": [
+   "+7 (831) 422-13-33 доб. 3020",
+   "+7 (831) 422-12-92"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — Горох Ольга Владимировна",
+  "audience": "",
+  "priority": "A",
+  "source": "https://masc.pimunn.ru/contacts"
+ },
+ {
+  "name": "Федеральный аккредитационный центр НГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Новосибирск",
+  "dates": "",
+  "description": "Аккредитационно-симуляционный центр НГМУ, проводит первичную аккредитацию выпускников.",
+  "url": "https://ngmu.ru/department/2860/about",
+  "emails": [
+   "hajtova@mail.ru"
+  ],
+  "phones": [
+   "+7 923 703-87-48"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — проф. Хаятова Зульфия Базарбековна",
+  "audience": "",
+  "priority": "B",
+  "source": "https://ngmu.ru/department/2860/about"
+ },
+ {
+  "name": "Федеральный аккредитационный (симуляционный) центр БГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Уфа",
+  "dates": "",
+  "description": "Мультипрофильный симуляционный и аккредитационный центр Башкирского ГМУ.",
+  "url": "https://bashgmu.ru/education/simulyatsionnyy-tsentr/",
+  "emails": [
+   "mpasc@bashgmu.ru",
+   "simcentbgmu@mail.ru"
+  ],
+  "phones": [
+   "+7 (347) 250-08-30",
+   "+7 (347) 250-08-31"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — Магафуров Рамиль Флюрович, к.м.н.",
+  "audience": "",
+  "priority": "B",
+  "source": "https://bashgmu.ru/education/simulyatsionnyy-tsentr/kontaktnaya-informatsiya.php"
+ },
+ {
+  "name": "Аккредитационно-симуляционный центр ВолгГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Волгоград",
+  "dates": "",
+  "description": "Сеть симуляционных центров ВолгГМУ (эндохирургия, фарм. навыки и др.) для практической подготовки и аккредитации.",
+  "url": "https://www.volgmed.ru/en/university/akkreditatsionno-simulyatsionnyy-tsentr/",
+  "emails": [
+   "post@volgmed.ru"
+  ],
+  "phones": [
+   "+7 (8442) 42-17-39"
+  ],
+  "socials": [],
+  "contact_person": "Рук. центра эндохирургии — Хомочкина Наталия Витальевна",
+  "audience": "",
+  "priority": "C",
+  "source": "https://www.volgmed.ru/en/university/akkreditatsionno-simulyatsionnyy-tsentr/simulyatsionnyy-tsentr-endoskopicheskoy-khirurgii-i-vnutriprosvetnoy-endoskopii/"
+ },
+ {
+  "name": "Федеральный мультипрофильный аккредитационно-симуляционный центр ВГМУ им. Бурденко",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Воронеж",
+  "dates": "",
+  "description": "ФМАСЦ Воронежского медуниверситета — аккредитация специалистов и симуляционное обучение.",
+  "url": "https://vrngmu.ru/academy/structure/tsentr-sertifikatsii-spetsialistov/",
+  "emails": [
+   "fmasc@vrngmu.ru",
+   "podgotovka@vrngmu.ru"
+  ],
+  "phones": [
+   "+7 (473) 264-44-18",
+   "+7 (473) 210-64-09"
+  ],
+  "socials": [],
+  "contact_person": "Начальник центра — Подопригора Анна Владимировна, д.м.н.",
+  "audience": "",
+  "priority": "A",
+  "source": "https://vrngmu.ru/academy/structure/tsentr-sertifikatsii-spetsialistov/"
+ },
+ {
+  "name": "Мультипрофильный аккредитационно-симуляционный центр КубГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Краснодар",
+  "dates": "",
+  "description": "МАСЦ Кубанского ГМУ — отработка навыков и аккредитация.",
+  "url": "https://www.ksma.ru/universitet/struktura-universiteta/mnogoprofilnyj-akkreditacionno-simulyacionnyj-centr/",
+  "emails": [
+   "corpus@ksma.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "Заведующая — Чабанец Елена Алексеевна, к.м.н.",
+  "audience": "",
+  "priority": "B",
+  "source": "https://www.ksma.ru/universitet/struktura-universiteta/mnogoprofilnyj-akkreditacionno-simulyacionnyj-centr/"
+ },
+ {
+  "name": "Мультипрофильный аккредитационно-симуляционный центр СамГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Самара",
+  "dates": "",
+  "description": "Новый МАСЦ СамГМУ (Чапаевская, 87); СамГМУ — лидер цифровых/VR-симуляторов в медобразовании.",
+  "url": "https://clinica.samsmu.ru/news/v-samgmu-otkrylsya-novyj-multiprofilnyj-akkreditacionno-simulyacionnyj-centr/",
+  "emails": [
+   "info@samsmu.ru"
+  ],
+  "phones": [
+   "+7 (846) 374-10-03"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "A",
+  "source": "https://samsmu.ru/contacts/"
+ },
+ {
+  "name": "Студенческое научное общество СамГМУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Самара",
+  "dates": "",
+  "description": "СНО СамГМУ (входит в Совет обучающихся), проводит Всероссийскую итоговую конференцию «Студенческая наука и медицина XXI века» и проект «Научное волонтёрство».",
+  "url": "https://samsmu.ru/news/2022/2508/",
+  "emails": [
+   "info@samsmu.ru"
+  ],
+  "phones": [
+   "+7 (846) 374-10-03"
+  ],
+  "socials": [],
+  "contact_person": "Науч. руководитель СНО и СМУ — Байриков И. М.",
+  "audience": "",
+  "priority": "B",
+  "source": "https://samsmu.ru/files/news/2026/03/05/asp_read_2025.pdf"
+ },
+ {
+  "name": "СНО Тихоокеанского ГМУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Владивосток",
+  "dates": "",
+  "description": "Студенческое научное общество ТГМУ при центре развития молодёжной науки — главный медвуз Приморья.",
+  "url": "https://tgmu.ru/science/studentam-i-molodym-uchenym/",
+  "emails": [
+   "syromyatnikova.os@tgmu.ru",
+   "mol.nauka@tgmu.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/tgmuscience"
+  ],
+  "contact_person": "Председатель СНО — Сыромятникова Ольга Сергеевна; рук. центра молодёжной науки — Бахтина Евгения Владимировна",
+  "audience": "",
+  "priority": "B",
+  "source": "https://tgmu.ru/science/studentam-i-molodym-uchenym/"
+ },
+ {
+  "name": "СНО Ижевской ГМА",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Ижевск",
+  "dates": "",
+  "description": "Студенческое научное общество ИГМА (в составе НОМУС).",
+  "url": "https://www.igma.ru/nauchnaya-deyatelnost/nomus",
+  "emails": [],
+  "phones": [
+   "+7 912 742-26-25",
+   "+7 904 313-65-48"
+  ],
+  "socials": [],
+  "contact_person": "Куратор — Ларионова Мария Аркадьевна; председатель — Каменщикова Ирина Юрьевна",
+  "audience": "",
+  "priority": "C",
+  "source": "https://www.igma.ru/nauchnaya-deyatelnost/nomus"
+ },
+ {
+  "name": "Студенческий совет Алтайского ГМУ",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Барнаул",
+  "dates": "",
+  "description": "Студенческое самоуправление АГМУ — канал рассылки студентам вуза.",
+  "url": "https://asmu.ru/sveden/struct/",
+  "emails": [
+   "studsovet@asmu.ru"
+  ],
+  "phones": [
+   "+7 913 996-93-59"
+  ],
+  "socials": [],
+  "contact_person": "Председатель — Ураков А. К.",
+  "audience": "",
+  "priority": "C",
+  "source": "https://asmu.ru/sveden/struct/"
+ },
+ {
+  "name": "Молодёжное научное общество (МНО) Читинской ГМА",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Чита",
+  "dates": "",
+  "description": "МНО ЧГМА (бывшее СНО, с 2012 г. включает ординаторов и аспирантов), форум «Студенческая наука».",
+  "url": "https://chitgma.ru/academia/history/sno",
+  "emails": [
+   "pochta@chitgma.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/news_chgma",
+   "https://t.me/chgma75"
+  ],
+  "contact_person": "Куратор МНО — доц. Серкин Д. М.",
+  "audience": "",
+  "priority": "C",
+  "source": "https://chitgma.ru/academia/history/sno"
+ },
+ {
+  "name": "СНО Северо-Осетинской ГМА",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Владикавказ",
+  "dates": "",
+  "description": "СНО СОГМА, проводит Всероссийскую итоговую студенческую научную конференцию (65-я — в мае 2026).",
+  "url": "https://sogma.ru/",
+  "emails": [
+   "sogma@minzdrav.alania.gov.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/public215814280"
+  ],
+  "contact_person": "Председатель совета СНО — Хадзиев С. А.; науч. руководитель — Кусова А. Р.",
+  "audience": "",
+  "priority": "C",
+  "source": "https://sogma.ru/"
+ },
+ {
+  "name": "Студенческий комитет Медицинского института РУДН",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Студкомитет МИ РУДН (при нём НСО МИ, волонтёрский центр) — выход на русско- и англоязычных студентов-медиков.",
+  "url": "http://med.rudn.ru/?page_id=582",
+  "emails": [
+   "med@rudn.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/rudn_mi",
+   "https://vk.com/public217372160"
+  ],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "http://med.rudn.ru/?page_id=582"
+ },
+ {
+  "name": "Научное студенческое общество (НСО) РУДН",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Общеуниверситетское НСО РУДН, объединяет и НСО Медицинского института.",
+  "url": "https://www.rudn.ru/science/students-and-research",
+  "emails": [
+   "balev-nn@rudn.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/nsorudn"
+  ],
+  "contact_person": "Председатель Совета НСО (почта balev-nn@rudn.ru)",
+  "audience": "",
+  "priority": "C",
+  "source": "https://www.rudn.ru/science/students-and-research"
+ },
+ {
+  "name": "СНО Медицинского института им. С. И. Георгиевского (КФУ им. Вернадского)",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Симферополь",
+  "dates": "",
+  "description": "СНО крупнейшего медвуза Крыма, проводит ежегодную студенческую конференцию.",
+  "url": "https://ma.cfuv.ru/",
+  "emails": [],
+  "phones": [
+   "+7 (3652) 554-500"
+  ],
+  "socials": [
+   "https://vk.com/sno_ma"
+  ],
+  "contact_person": "Председатель СНО МИ — Иванченко К. С. (2024)",
+  "audience": "",
+  "priority": "B",
+  "source": "https://ma.cfuv.ru/wp-content/uploads/2024/04/Программа_2024-итог.pdf"
+ },
+ {
+  "name": "Совет обучающихся Сеченовского университета",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Центральный орган студсамоуправления Первого МГМУ (включая совет ординаторов и студсоветы институтов) — выход на студентов и ординаторов Сеченовки.",
+  "url": "https://www.sechenov.ru/learners/studencheskie-organizatsii/studsovet/kontakty/",
+  "emails": [
+   "sovet.sechenov@gmail.com"
+  ],
+  "phones": [
+   "+7 (495) 609-14-00 доб. 2104"
+  ],
+  "socials": [
+   "https://vk.com/sovet.sechenov"
+  ],
+  "contact_person": "Председатель — Бучнева Анна Витальевна",
+  "audience": "",
+  "priority": "A",
+  "source": "https://www.sechenov.ru/learners/studencheskie-organizatsii/studsovet/kontakty/"
+ },
+ {
+  "name": "Совет обучающихся Пироговского университета (РНИМУ)",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Студсамоуправление РНИМУ; председатель также руководит волонтёрским центром и представляет вуз в Совете студентов Минздрава.",
+  "url": "https://rsmu.ru/students/vneuchebnaja-dejatelnost/sovet-obuchajushchikhsja-pirogovskogo-universiteta",
+  "emails": [
+   "students@rsmu.ru",
+   "reines_myu@rsmu.ru",
+   "mediarnimu@gmail.com"
+  ],
+  "phones": [
+   "+7 (906) 086-18-78"
+  ],
+  "socials": [
+   "https://vk.com/studentsrnrmu",
+   "https://t.me/pirogovstudnews"
+  ],
+  "contact_person": "Председатель — Рейнс Маргарита Юрьевна",
+  "audience": "",
+  "priority": "A",
+  "source": "https://rsmu.ru/students/vneuchebnaja-dejatelnost/sovet-obuchajushchikhsja-pirogovskogo-universiteta"
+ },
+ {
+  "name": "Профком обучающихся Казанского ГМУ",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Казань",
+  "dates": "",
+  "description": "Первичная профсоюзная организация студентов КГМУ — крупнейшее студобъединение вуза с собственными медиаканалами.",
+  "url": "https://kazangmu.ru/obuchenie/studentam/profkom-obuchayushchikhsya",
+  "emails": [
+   "studmedunion411@yandex.ru"
+  ],
+  "phones": [
+   "+7 (843) 236-06-52"
+  ],
+  "socials": [
+   "https://vk.com/studmedunion",
+   "https://t.me/studmedunion"
+  ],
+  "contact_person": "Председатель — Мулендеева Милена Андреевна",
+  "audience": "",
+  "priority": "B",
+  "source": "https://kazangmu.ru/obuchenie/studentam/profkom-obuchayushchikhsya"
+ },
+ {
+  "name": "Ассоциация «Совет ректоров медицинских и фармацевтических вузов России»",
+  "category": "Ассоциация / движение",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "",
+  "description": "Ассоциация ректоров медвузов (на базе Сеченовского университета) — выход на руководство вузов для институционального внедрения тренажёра.",
+  "url": "http://sovetrektorov.ru/",
+  "emails": [
+   "sovetrektorov@sechenov.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "Председатель — Глыбочко Пётр Витальевич",
+  "audience": "",
+  "priority": "C",
+  "source": "http://sovetrektorov.ru/"
+ },
+ {
+  "name": "Совет обучающихся ПСПбГМУ им. И. П. Павлова",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Студенческое самоуправление Первого Петербургского меда.",
+  "url": "https://www.1spbgmu.ru/obschestvennaya-zhizn/studencheskij-sovet",
+  "emails": [
+   "sovetpspbgmu@gmail.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/studsovet_1spbgmu"
+  ],
+  "contact_person": "Председатель — Кокош Александр Игоревич",
+  "audience": "",
+  "priority": "B",
+  "source": "https://www.1spbgmu.ru/obschestvennaya-zhizn/studencheskij-sovet"
+ },
+ {
+  "name": "Профсоюзное бюро обучающихся ПСПбГМУ",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Студенческий профком ПСПбГМУ, работает в связке с Советом обучающихся.",
+  "url": "https://www.1spbgmu.ru/universitet/241-glavnaya/obshchestvennayazhizn/profsoyuznyj-komitet-studentov/168-profsoyuznyj-komitet-studentov",
+  "emails": [
+   "profcom1spbgmu@yandex.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/profcom1spbgmu"
+  ],
+  "contact_person": "",
+  "audience": "",
+  "priority": "C",
+  "source": "https://www.1spbgmu.ru/universitet/241-glavnaya/obshchestvennayazhizn/profsoyuznyj-komitet-studentov/168-profsoyuznyj-komitet-studentov"
+ },
+ {
+  "name": "Совет обучающихся СЗГМУ им. И. И. Мечникова",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Студсамоуправление СЗГМУ, объединяет молодёжные организации вуза.",
+  "url": "https://szgmu.ru/rus/s/524/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "C",
+  "source": "https://szgmu.ru/rus/s/524/"
+ },
+ {
+  "name": "Студенческий совет ВолгГМУ",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Волгоград",
+  "dates": "",
+  "description": "Студсовет Волгоградского ГМУ (коворкинг LOFT), канал на всех студентов вуза.",
+  "url": "https://www.volgmed.ru/apprentice/student-council/",
+  "emails": [
+   "studmed34@mail.ru"
+  ],
+  "phones": [
+   "+7 (8442) 38-54-92"
+  ],
+  "socials": [
+   "https://vk.com/studsovetvolsmu"
+  ],
+  "contact_person": "Председатель — Головачев Роман Алексеевич",
+  "audience": "",
+  "priority": "B",
+  "source": "https://www.volgmed.ru/apprentice/student-council/obshchaya-informatsiya/"
+ },
+ {
+  "name": "Совет обучающихся СамГМУ",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Самара",
+  "dates": "",
+  "description": "Координирует 12 студенческих организаций СамГМУ, включая СНО и Совет молодых учёных.",
+  "url": "https://samsmu.ru/news/2022/2508/",
+  "emails": [
+   "studsovet@samsmu.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "12 организаций",
+  "priority": "B",
+  "source": "https://samsmu.ru/news/2022/2508/"
+ },
+ {
+  "name": "Объединённый совет обучающихся СибГМУ",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Томск",
+  "dates": "",
+  "description": "Основная организация студсамоуправления Сибирского ГМУ.",
+  "url": "https://ssmu.ru/about/upravlenie-universitetom/council-of-students/",
+  "emails": [
+   "kuznetsovia1@ssmu.ru"
+  ],
+  "phones": [
+   "+7 (3822) 90-11-01 доб. 2182"
+  ],
+  "socials": [
+   "https://vk.com/oso_ssmu"
+  ],
+  "contact_person": "Председатель — Кузнецов Иван Анатольевич",
+  "audience": "",
+  "priority": "B",
+  "source": "https://ssmu.ru/about/upravlenie-universitetom/council-of-students/"
+ },
+ {
+  "name": "Совет обучающихся КрасГМУ им. В. Ф. Войно-Ясенецкого",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Красноярск",
+  "dates": "",
+  "description": "Объединяет 18 студенческих организаций КрасГМУ (с 2013 г.).",
+  "url": "https://krasgmu.ru/index.php?page[self]=sovetob",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "18 студорганизаций",
+  "priority": "C",
+  "source": "https://krasgmu.ru/index.php?page[self]=sovetob"
+ },
+ {
+  "name": "Национальный союз студентов медицины (IFMSA Russia)",
+  "category": "Ассоциация / движение",
+  "format": "Гибрид",
+  "city": "Россия (29 локальных комитетов в 26 городах)",
+  "dates": "",
+  "description": "Российская национальная организация IFMSA (с 1989 г.): студенческие обмены, просветительские проекты; локальные комитеты в медвузах — сеть для распространения.",
+  "url": "https://bashgmu.ru/en/international-cooperation/international-student-exchanges/ifmsa/",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "Президент (по данным НИУ БелГУ, дата не указана) — Михаил Мешков",
+  "audience": "29 локальных комитетов в 26 городах",
+  "priority": "B",
+  "source": "https://bashgmu.ru/en/international-cooperation/international-student-exchanges/ifmsa/"
+ },
+ {
+  "name": "Локальный комитет IFMSA в БГМУ (Уфа)",
+  "category": "Ассоциация / движение",
+  "format": "Офлайн",
+  "city": "Уфа",
+  "dates": "",
+  "description": "Локальный комитет IFMSA Russia при БГМУ: клинические и научные обмены, некоммерческие комитеты.",
+  "url": "https://bashgmu.ru/en/international-cooperation/international-student-exchanges/ifmsa/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/club11805124"
+  ],
+  "contact_person": "",
+  "audience": "500+ участников обменов с 1989 г.",
+  "priority": "C",
+  "source": "https://bashgmu.ru/en/international-cooperation/international-student-exchanges/ifmsa/"
+ },
+ {
+  "name": "Мультипрофильный аккредитационно-симуляционный центр СибГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Томск",
+  "dates": "",
+  "description": "МАСЦ СибГМУ + методический отдел аккредитации специалистов — подготовка к ОСКЭ/аккредитации.",
+  "url": "https://simcenter.ssmu.ru/",
+  "emails": [
+   "simcentr@ssmu.ru",
+   "accred.to@mail.ru"
+  ],
+  "phones": [
+   "+7 (3822) 90-11-01 доб. 1713",
+   "+7 (3822) 90-11-01 доб. 2202"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — Дадэко Сергей Михайлович; метод. отдел аккредитации — Позднякова Татьяна Александровна",
+  "audience": "",
+  "priority": "A",
+  "source": "https://simcenter.ssmu.ru/"
+ },
+ {
+  "name": "Региональный мультипрофильный симуляционно-аккредитационный центр ТюмГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Тюмень",
+  "dates": "",
+  "description": "Симуляционный центр Тюменского ГМУ для практической подготовки и аккредитации.",
+  "url": "https://www.tyumsmu.ru/about/structure/structural-units-subordinate-to-vice-rector-for-regional-development-and-continuing-medical-educatio/regionalnyy-multiprofilnyy-simulyatsionno-akkreditatsionnyy-tsentr/simulation_training_center/",
+  "emails": [
+   "lazarevsd@tyumsmu.ru"
+  ],
+  "phones": [
+   "+7 (3452) 79-68-92"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — Лазарев Семён Дмитриевич",
+  "audience": "",
+  "priority": "B",
+  "source": "https://www.tyumsmu.ru/about/structure/structural-units-subordinate-to-vice-rector-for-regional-development-and-continuing-medical-educatio/regionalnyy-multiprofilnyy-simulyatsionno-akkreditatsionnyy-tsentr/simulation_training_center/"
+ },
+ {
+  "name": "Мультипрофильный аккредитационно-симуляционный центр ОмГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Омск",
+  "dates": "",
+  "description": "МАСЦ ОмГМУ (с 2013 г.) — формирование практических навыков и аккредитация.",
+  "url": "https://omsk-osma.ru/podrazdeleniya/akkreditaciya-specialistov/mul-tiprofil-nyy-akkreditacionno-simulyacionnyy-centr",
+  "emails": [
+   "cav75@list.ru"
+  ],
+  "phones": [
+   "+7 (3812) 33-53-45 доб. 053"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "https://omsk-osma.ru/podrazdeleniya/akkreditaciya-specialistov/mul-tiprofil-nyy-akkreditacionno-simulyacionnyy-centr"
+ },
+ {
+  "name": "Медицинский симуляционный центр «Кусково» (Российский университет медицины / МГМСУ)",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Симуляционный центр университетской клиники МГМСУ (Российский университет медицины).",
+  "url": "https://clinic.msmsu.ru/scf/meditsinskiy-simulyatsionnyy-tsentr-kuskovo/",
+  "emails": [
+   "info@clinic.msmsu.ru"
+  ],
+  "phones": [
+   "+7 (495) 713-90-90"
+  ],
+  "socials": [],
+  "contact_person": "Руководитель — Закондырин Дмитрий Евгеньевич, к.м.н.",
+  "audience": "",
+  "priority": "B",
+  "source": "https://clinic.msmsu.ru/scf/meditsinskiy-simulyatsionnyy-tsentr-kuskovo/"
+ },
+ {
+  "name": "Центр симуляционного обучения (ЦСО) РостГМУ",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Ростов-на-Дону",
+  "dates": "",
+  "description": "ЦСО Ростовского ГМУ — тренинги и подготовка к аккредитации.",
+  "url": "https://rostgmu.ru/образование-2/учебный-центр-имитационной-медицины",
+  "emails": [
+   "okt@rostgmu.ru",
+   "cso.rostgmu@yandex.ru"
+  ],
+  "phones": [
+   "+7 (863) 285-32-13"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "https://rostgmu.ru/образование-2/учебный-центр-имитационной-медицины"
+ },
+ {
+  "name": "Тьюторы аккредитационно-симуляционного центра Сеченовского университета",
+  "category": "Симуляционный центр",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Студенческое тьюторское движение при АСЦ Сеченовки (Нахимовский пр., 49) — студенты, помогающие однокурсникам готовиться к станциям ОСКЭ.",
+  "url": "https://www.sechenov.ru/univers/structure/institute/institut-klinicheskoy-meditsiny/n/important-contacts/",
+  "emails": [
+   "elsatrippel@gmail.com"
+  ],
+  "phones": [
+   "+7 913 633-87-77"
+  ],
+  "socials": [
+   "https://vk.com/club208250868"
+  ],
+  "contact_person": "Контакт — Елизавета Триппель",
+  "audience": "",
+  "priority": "A",
+  "source": "https://www.sechenov.ru/univers/structure/institute/institut-klinicheskoy-meditsiny/n/important-contacts/"
+ },
+ {
+  "name": "Студенческий профком Сеченовского университета",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Первичная профсоюзная организация обучающихся Первого МГМУ — массовый канал на студентов (рассылки, медиа).",
+  "url": "http://profkomsechenov.ru",
+  "emails": [
+   "profkom_1med@bk.ru"
+  ],
+  "phones": [
+   "+7 (495) 609-14-00 доб. 2179"
+  ],
+  "socials": [
+   "https://vk.com/profkom_sechenov"
+  ],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "https://www.sechenov.ru/univers/structure/institute/institut-klinicheskoy-meditsiny/n/important-contacts/"
+ },
+ {
+  "name": "Волонтёрский центр Сеченовского университета",
+  "category": "Ассоциация / движение",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Волонтёрский центр Первого МГМУ (медицинское добровольчество) — активные студенты младших курсов.",
+  "url": "https://www.sechenov.ru/univers/structure/institute/institut-klinicheskoy-meditsiny/n/important-contacts/",
+  "emails": [
+   "volunteer-mgmu@mail.ru"
+  ],
+  "phones": [
+   "+7 925 348-49-09"
+  ],
+  "socials": [
+   "https://vk.com/sechenovvolunteer"
+  ],
+  "contact_person": "Контакт — Екатерина Курдюкова",
+  "audience": "",
+  "priority": "C",
+  "source": "https://www.sechenov.ru/univers/structure/institute/institut-klinicheskoy-meditsiny/n/important-contacts/"
+ },
+ {
+  "name": "СНО факультета фундаментальной медицины МГУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Студенческое научное общество ФФМ МГУ (кружки, секции, конференция «Ломоносов»); при факультете — кафедра клинического моделирования и мануальных навыков.",
+  "url": "http://www.fbm.msu.ru/sci/sno/",
+  "emails": [
+   "info@fbm.msu.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/ffmnews"
+  ],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "http://www.fbm.msu.ru/sci/sno/"
+ },
+ {
+  "name": "Студенческое научное сообщество Медицинского института СПбГУ",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Совет СНО Медицинского института СПбГУ — 28 СНО по направлениям медицины.",
+  "url": "https://med.spbu.ru/studencheskoye-nauchnoye-soobshchestvo",
+  "emails": [
+   "office_med@spbu.ru"
+  ],
+  "phones": [
+   "+7 (812) 363-63-89 доб. 5551"
+  ],
+  "socials": [
+   "https://vk.com/spbumed"
+  ],
+  "contact_person": "Председатель студсовета Медицинского института — Екатерина Павлова",
+  "audience": "28 СНО",
+  "priority": "B",
+  "source": "https://med.spbu.ru/contacts"
+ },
+ {
+  "name": "СНО Северного ГМУ (Архангельск)",
+  "category": "СНО",
+  "format": "Офлайн",
+  "city": "Архангельск",
+  "dates": "",
+  "description": "Студенческое научное общество СГМУ — главный медвуз Арктической зоны.",
+  "url": "https://www.nsmu.ru/science/cno/info/history.php",
+  "emails": [
+   "info@nsmu.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/nsmu29"
+  ],
+  "contact_person": "Председатель Совета СНО — Ализаде Чинара Ровшан кызы (с 2022 г.)",
+  "audience": "",
+  "priority": "C",
+  "source": "https://www.nsmu.ru/science/cno/info/history.php"
+ },
+ {
+  "name": "Совет студентов КубГМУ",
+  "category": "Студсовет / профком",
+  "format": "Офлайн",
+  "city": "Краснодар",
+  "dates": "",
+  "description": "Студсовет КубГМУ; его председатель — секретарь федерального Совета студентов медвузов Минздрава.",
+  "url": "https://www.ksma.ru/en/council-of-students-of-medical-and-pharmaceutical-universities-of-the-ministry-of-health-of-the-russian-federation/",
+  "emails": [
+   "a@antonyukk.ru"
+  ],
+  "phones": [
+   "+7 (903) 411-43-70"
+  ],
+  "socials": [
+   "https://vk.com/kubgmu_official"
+  ],
+  "contact_person": "Председатель — Антонюк Артём Григорьевич",
+  "audience": "",
+  "priority": "B",
+  "source": "https://www.ksma.ru/en/council-of-students-of-medical-and-pharmaceutical-universities-of-the-ministry-of-health-of-the-russian-federation/"
  }
 ]

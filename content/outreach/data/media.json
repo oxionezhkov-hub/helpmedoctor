@@ -115,7 +115,7 @@
    "https://vk.com/doctorpiter",
    "https://ok.ru/group/63143155990704"
   ],
-  "contact_person": "",
+  "contact_person": "Реклама: @Feedbackfontanka (Telegram)",
   "audience": "",
   "priority": "B",
   "source": "https://doctorpiter.ru/"
@@ -136,10 +136,10 @@
    "https://t.me/mediamedics",
    "https://dzen.ru/medrussia"
   ],
-  "contact_person": "",
-  "audience": "",
-  "priority": "C",
-  "source": "https://medrussia.org/o-proekte/"
+  "contact_person": "Реклама/релизы/новости: @Igor_zl (Telegram)",
+  "audience": "врачи и организаторы здравоохранения; Telegram 143 тыс.",
+  "priority": "A",
+  "source": "https://medrussia.org/o-proekte/; https://t.me/mediamedics"
  },
  {
   "name": "Vademecum (vademec.ru)",
@@ -163,7 +163,7 @@
    "https://www.youtube.com/channel/UCBRofVA7-aV8o_4u3PeJp1g"
   ],
   "contact_person": "Дмитрий Кряжев — издатель-главный редактор",
-  "audience": "руководители и инвесторы рынка здравоохранения",
+  "audience": "руководители и инвесторы рынка здравоохранения; Telegram 12,5 тыс.",
   "priority": "A",
   "source": "https://vademec.ru/editors/"
  },
@@ -178,7 +178,8 @@
   "emails": [
    "newsvrach@lvrach.ru",
    "pract@osp.ru",
-   "marketing@lvrach.ru"
+   "marketing@lvrach.ru",
+   "angelina@osp.ru"
   ],
   "phones": [
    "+7 (495) 725-47-80"
@@ -189,9 +190,9 @@
    "https://dzen.ru/lvrachnews"
   ],
   "contact_person": "",
-  "audience": "практикующие врачи",
+  "audience": "практикующие врачи; Telegram 15,7 тыс.",
   "priority": "B",
-  "source": "https://lvrach.ru/contacts"
+  "source": "https://lvrach.ru/contacts; https://t.me/lvrach (сотрудничество: angelina@osp.ru)"
  },
  {
   "name": "Consilium Medicum / con-med.ru",
@@ -299,10 +300,10 @@
    "https://vk.com/medach",
    "https://www.youtube.com/channel/UCPbE0ZLynjRd-FziGZQsgsA"
   ],
-  "contact_person": "",
-  "audience": "студенты-медики и молодые врачи",
+  "contact_person": "Реклама и предложения: @medach_sales (Telegram)",
+  "audience": "Telegram 28 тыс. подписчиков",
   "priority": "A",
-  "source": "https://medach.pro/about-us"
+  "source": "https://medach.pro/about-us; https://t.me/medach"
  },
  {
   "name": "Фармацевтический вестник (pharmvestnik.ru)",
@@ -534,5 +535,953 @@
   "audience": "цифровое образование",
   "priority": "C",
   "source": "https://journals.rudn.ru/informatization-education/about/contact"
+ },
+ {
+  "name": "vc.ru",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Главная платформа о бизнесе и стартапах; можно опубликовать собственный пост-кейс «как студенты сделали ИИ-тренажёр для врачей» и написать в редакцию для новости.",
+  "url": "https://vc.ru/",
+  "emails": [
+   "secret@vc.ru",
+   "sales@cmtt.ru"
+  ],
+  "phones": [
+   "+7 (495) 098-04-08"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "предприниматели, стартапы, IT",
+  "priority": "A",
+  "source": "https://vc.ru/about (Контакты: «Редакция: secret@vc.ru, Реклама: sales@cmtt.ru»)"
+ },
+ {
+  "name": "RB.ru (Rusbase)",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Медиа о стартапах и венчуре; подходит для новости о студенческом стартапе, рубрики про EdTech/HealthTech или подборки стартапов.",
+  "url": "https://rb.ru/",
+  "emails": [
+   "team@rb.ru",
+   "adv@rb.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/rb_ru",
+   "https://vk.com/rb_ru"
+  ],
+  "contact_person": "",
+  "audience": "стартапы, бизнес; Telegram 365 тыс.",
+  "priority": "A",
+  "source": "https://rb.ru/ (подвал сайта); https://t.me/rb_ru (реклама: adv@rb.ru)"
+ },
+ {
+  "name": "EdExpert (журнал об EdTech)",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Журнал-рейтинг об онлайн-образовании и EdTech; можно предложить обзор/интервью о медицинском ИИ-тренажёре и инфопартнёрство.",
+  "url": "https://edexpert.ru/",
+  "emails": [
+   "ed@edexpert.ru",
+   "a.kravchenko@edexpert.ru"
+  ],
+  "phones": [
+   "+7 (915) 218-13-04"
+  ],
+  "socials": [
+   "https://t.me/edexpet",
+   "https://vk.com/edexpert"
+  ],
+  "contact_person": "Денис Кравченко — владелец; Алина Мезина — инфопартнёрство (@alinakrav в Telegram)",
+  "audience": "EdTech-рынок",
+  "priority": "A",
+  "source": "https://edexpert.ru/; https://t.me/edexpet"
+ },
+ {
+  "name": "Smart Ranking / edtechs.ru",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Аналитика и рейтинги EdTech-рынка; можно попросить включить Help me, Doctor в обзор/рейтинг нишевых EdTech-проектов.",
+  "url": "https://edtechs.ru/",
+  "emails": [
+   "daria@smartranking.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/smartranking",
+   "https://vk.com/smartranking"
+  ],
+  "contact_person": "",
+  "audience": "EdTech-рынок, инвесторы",
+  "priority": "B",
+  "source": "https://edtechs.ru/contacts"
+ },
+ {
+  "name": "Код (thecode.media, Яндекс Практикум)",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Медиа о программировании и IT-карьере; можно предложить историю «как студенты-медики собрали ИИ-продукт» или технический разбор.",
+  "url": "https://thecode.media/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/thecodemedia",
+   "https://vk.com/thecode.media",
+   "https://zen.yandex.ru/code"
+  ],
+  "contact_person": "",
+  "audience": "Telegram 49 тыс.",
+  "priority": "C",
+  "source": "https://thecode.media/about/"
+ },
+ {
+  "name": "ПостНаука",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Просветительский проект об науке и образовании; материал/видео о симуляционном обучении врачей и ИИ в медобразовании.",
+  "url": "https://postnauka.org/",
+  "emails": [
+   "hello@postnauka.org"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/postnauka",
+   "https://vk.com/postnauka",
+   "https://www.youtube.com/postnauka"
+  ],
+  "contact_person": "",
+  "audience": "Telegram 22 тыс.",
+  "priority": "C",
+  "source": "https://postnauka.org/about"
+ },
+ {
+  "name": "Мел (mel.fm)",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Медиа об образовании; возможен материал о том, как студенты-медики готовятся к аккредитации с ИИ-пациентами.",
+  "url": "https://mel.fm/",
+  "emails": [
+   "info@mel.fm"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/melfmru",
+   "https://zen.yandex.ru/melfm",
+   "https://ok.ru/mel.proobr"
+  ],
+  "contact_person": "",
+  "audience": "родители, учителя, студенты",
+  "priority": "B",
+  "source": "https://mel.fm/ (infoEmail в коде страницы)"
+ },
+ {
+  "name": "Нож (knife.media)",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Интеллектуальный журнал о науке и культуре; формат — колонка/эссе о том, заменит ли ИИ стандартизированного пациента.",
+  "url": "https://knife.media/",
+  "emails": [
+   "hi@knife.media",
+   "ad@knife.media"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/knifemedia",
+   "https://vk.com/knife.media"
+  ],
+  "contact_person": "",
+  "audience": "Telegram 102 тыс.",
+  "priority": "C",
+  "source": "https://knife.media/"
+ },
+ {
+  "name": "Т—Ж (Тинькофф/ТБанк журнал)",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Массовый журнал с рубриками об образовании и карьере, принимает истории читателей; можно предложить личную историю студента-основателя.",
+  "url": "https://t-j.ru/",
+  "emails": [
+   "support@t-j.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/t_jrnl",
+   "https://ok.ru/tjrnl"
+  ],
+  "contact_person": "",
+  "audience": "массовая",
+  "priority": "C",
+  "source": "https://t-j.ru/about/"
+ },
+ {
+  "name": "Хайтек (hightech.fm)",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Медиа о технологиях и науке; новость/интервью об ИИ-виртуальных пациентах для обучения врачей.",
+  "url": "https://hightech.fm/",
+  "emails": [
+   "editorial@hightech.fm",
+   "adv@hightech.fm"
+  ],
+  "phones": [
+   "+7 (985) 139-49-50"
+  ],
+  "socials": [
+   "https://t.me/hightech_fm_daily",
+   "https://vk.com/hightech_fm",
+   "https://dzen.ru/hightech.fm"
+  ],
+  "contact_person": "Мария Салнис — руководитель проекта (salnis.maria@hightech.fm)",
+  "audience": "технологическая аудитория",
+  "priority": "B",
+  "source": "https://hightech.fm/contacts"
+ },
+ {
+  "name": "РБК Тренды",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Раздел РБК о технологиях и будущем; материал о применении ИИ в обучении врачей.",
+  "url": "https://trends.rbc.ru/",
+  "emails": [
+   "letters@rbc.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/rbc_trends",
+   "https://vk.com/rbc_trends",
+   "https://zen.yandex.ru/rbc_trends"
+  ],
+  "contact_person": "",
+  "audience": "бизнес и технологическая аудитория",
+  "priority": "C",
+  "source": "https://trends.rbc.ru/ (подвал)"
+ },
+ {
+  "name": "Naked Science",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Научно-популярное медиа; новость о студенческой разработке ИИ-тренажёра для медиков.",
+  "url": "https://naked-science.ru/",
+  "emails": [
+   "info@naked-science.ru"
+  ],
+  "phones": [
+   "+7 (958) 464-06-76"
+  ],
+  "socials": [
+   "https://www.vk.com/nakedsci",
+   "https://dzen.ru/nakedscience",
+   "https://www.youtube.com/c/Naked-scienceRu"
+  ],
+  "contact_person": "",
+  "audience": "научпоп",
+  "priority": "C",
+  "source": "https://naked-science.ru/ (подвал)"
+ },
+ {
+  "name": "Учёба.ру",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Крупнейший портал об образовании и поступлении; партнёрский материал/спецпроект для абитуриентов и студентов медвузов.",
+  "url": "https://www.ucheba.ru/",
+  "emails": [
+   "sales@ucheba.ru"
+  ],
+  "phones": [
+   "+7 (495) 961-12-66"
+  ],
+  "socials": [
+   "https://vk.com/ucheba_rus",
+   "https://www.youtube.com/@UchebaRu"
+  ],
+  "contact_person": "",
+  "audience": "абитуриенты и студенты",
+  "priority": "C",
+  "source": "https://www.ucheba.ru/for-clients"
+ },
+ {
+  "name": "Афиша Daily",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Городское медиа с рубриками о карьере и обществе; низкий фит, но возможна история «как студенты-медики сделали ИИ-продукт».",
+  "url": "https://daily.afisha.ru/",
+  "emails": [
+   "news@afisha.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/afishadaily",
+   "https://vk.com/afisha"
+  ],
+  "contact_person": "Трифон Бебутов — главный редактор (tr.bebutov@afisha.ru)",
+  "audience": "городская молодёжь",
+  "priority": "C",
+  "source": "https://daily.afisha.ru/about/"
+ },
+ {
+  "name": "Хабр (корпоративный блог)",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "IT-сообщество; можно завести блог компании/песочницу и опубликовать технический разбор ИИ-пациентов (голос, LLM, оценка) — без редакционного питча.",
+  "url": "https://habr.com/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/habr",
+   "https://dzen.ru/habr",
+   "http://www.youtube.com/@Habr_com"
+  ],
+  "contact_person": "",
+  "audience": "разработчики",
+  "priority": "B",
+  "source": "https://habr.com/ru/feedback/"
+ },
+ {
+  "name": "Ordinatura.org (платформа + подкаст «Ординатура и боль»)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Проект о медицинском образовании: отзывы об ординатуре и поступлении, подкаст и Telegram — идеальная аудитория; предложить интервью/выпуск о подготовке к аккредитации с ИИ-пациентами или кросс-промо.",
+  "url": "https://ordinatura.org/",
+  "emails": [
+   "ledov@ordinatura-org.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/ordinatura_org",
+   "https://vk.com/ordinatura_org",
+   "https://www.youtube.com/@ordinatura_org"
+  ],
+  "contact_person": "Прочие вопросы: @ordinatura_orc (Telegram)",
+  "audience": "выпускники медвузов и ординаторы; Telegram 24 тыс.",
+  "priority": "A",
+  "source": "https://ordinatura.org/ ; RSS подкаста https://cloud.mave.digital/42463 (itunes:email); https://t.me/ordinatura_org"
+ },
+ {
+  "name": "Подкаст «Ординаторская» (ex. Подкаст УГМУ)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "Екатеринбург",
+  "dates": "",
+  "description": "Разговорное медицинское шоу ординаторов УГМУ (клинические нюансы, статьи, мемы); гостевой выпуск о студенческом ИИ-тренажёре.",
+  "url": "https://t.me/ordinator_room",
+  "emails": [
+   "lysenko_iakov@yahoo.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/ordinator_room",
+   "https://vk.com/ordinator_room"
+  ],
+  "contact_person": "Яков Лысенко, Рустем Салихов — ведущие",
+  "audience": "ординаторы и студенты",
+  "priority": "B",
+  "source": "RSS https://cloud.mave.digital/46036 (itunes:email; последний выпуск 2024)"
+ },
+ {
+  "name": "ФММПодкаст (Сеченовский студенческий медиацентр)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Студенческий подкаст Сеченовского университета об учёбе, науке и медицине; выпуск с командой о том, как студенты сделали ИИ-тренажёр.",
+  "url": "https://podcasts.apple.com/ru/podcast/id1537309943",
+  "emails": [
+   "podcastbyfmm@gmail.com"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты Сеченовского университета",
+  "priority": "A",
+  "source": "RSS https://cloud.mave.digital/43007 (itunes:email)"
+ },
+ {
+  "name": "Подкаст «Кот Пирогова» (студия «Островитянова,1», РНИМУ)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Студенческая студия подкастов Пироговского университета; гостевой выпуск о медобразовании и ИИ.",
+  "url": "https://podcasts.apple.com/ru/podcast/id1896884754",
+  "emails": [
+   "podcast.rnimu2022@gmail.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/studio_island",
+   "https://vk.com/kultura_rnimu"
+  ],
+  "contact_person": "",
+  "audience": "студенты РНИМУ им. Пирогова",
+  "priority": "A",
+  "source": "RSS https://cloud.mave.digital/72468 (itunes:email)"
+ },
+ {
+  "name": "Медицинский подкаст: Охотин и Сизов",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Популярный подкаст врачей о российской и зарубежной медицине (в т.ч. о медобразовании); можно предложить тему «ИИ-пациенты и будущее подготовки врачей».",
+  "url": "https://podcasts.apple.com/ru/podcast/id1463290966",
+  "emails": [
+   "dr.okhotin@gmail.com",
+   "sizov1vadim@gmail.com"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "Артемий Охотин, Вадим Сизов — ведущие",
+  "audience": "врачи и студенты-медики",
+  "priority": "A",
+  "source": "RSS http://rss.castbox.fm/everest/4d1a513e97354aab89adc26cf3740f82.xml (itunes:email)"
+ },
+ {
+  "name": "Подкаст «Главный медицинский» (Red Barn)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Подкаст невролога Никиты Жукова о лечебном деле от студии Red Barn; возможен выпуск про обучение врачей и ИИ.",
+  "url": "https://redbarn.ru/",
+  "emails": [
+   "hay@redbarn.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/RedBarn_ru",
+   "https://vk.com/redbarn_ru"
+  ],
+  "contact_person": "",
+  "audience": "широкая + медики",
+  "priority": "C",
+  "source": "https://redbarn.ru/ ; RSS https://redbarn.ru/feed/feed-podcasts/glavnyj-medicinskij/"
+ },
+ {
+  "name": "Подкаст «Почему мы еще живы» (libo/libo)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Подкаст педиатра Фёдора Катасонова об истории медицины (студия libo/libo); низкий фит, возможна спецтема о медобразовании.",
+  "url": "https://podcasts.apple.com/ru/podcast/id1568720773",
+  "emails": [
+   "podcast@libolibo.me"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/libolibostudio",
+   "https://t.me/docdeti_docmed"
+  ],
+  "contact_person": "",
+  "audience": "широкая",
+  "priority": "C",
+  "source": "RSS https://feeds.transistor.fm/e096750c-c57f-489d-8aee-e55a1e835d6e"
+ },
+ {
+  "name": "Подкаст «ВРАЧ БЕЗ белого халата» (Мария Дворянчикова)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Подкаст о карьерных треках врачей вне клиники; выпуск о студентах-медиках, ушедших в EdTech/ИИ-продукт.",
+  "url": "https://cloud.mave.digital/62031",
+  "emails": [
+   "maria.dvoryanchikovaa@yandex.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "Мария Дворянчикова — ведущая",
+  "audience": "врачи и студенты-медики",
+  "priority": "B",
+  "source": "RSS https://cloud.mave.digital/62031 (itunes:email)"
+ },
+ {
+  "name": "Подкаст «КритМышь» (Александр Головин)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Авторский подкаст для анестезиологов-реаниматологов; выпуск об ИИ-симуляциях клинических случаев для ординаторов.",
+  "url": "https://t.me/critmouse_podcast",
+  "emails": [
+   "podcast@critmouse.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/critmouse_podcast"
+  ],
+  "contact_person": "Александр Головин",
+  "audience": "анестезиологи-реаниматологи, ординаторы",
+  "priority": "C",
+  "source": "RSS https://feeds.blubrry.com/feeds/critmouse.xml (itunes:email)"
+ },
+ {
+  "name": "«ЗаМЕДчательная наука» (видеоподкаст ВолгГМУ)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "Волгоград",
+  "dates": "",
+  "description": "Научно-популярный видеоподкаст Волгоградского медуниверситета; возможен выпуск об ИИ в обучении (активность с 2024 г. не подтверждена).",
+  "url": "https://podcasts.apple.com/ru/podcast/id1694007296",
+  "emails": [
+   "zamednauka@yandex.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты и широкая аудитория",
+  "priority": "C",
+  "source": "RSS https://cdn-st.zvuk.com/r/0a75aea0-5f0c-4da3-a7c1-a30cced096ec/rss.xml"
+ },
+ {
+  "name": "«Журнал телемедицины и электронного здравоохранения» (ИД «УроМедиа»)",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Научный журнал о цифровом здравоохранении и ИИ (гл. ред. А.В. Владзимирский); статья о ИИ-виртуальных пациентах для обучения.",
+  "url": "https://jtelemed.ru/",
+  "emails": [
+   "info@uromedia.ru",
+   "viktoriashade1@mail.ru"
+  ],
+  "phones": [
+   "+7 (926) 017-52-14"
+  ],
+  "socials": [
+   "https://t.me/telemedtoday",
+   "https://vk.com/public121087132"
+  ],
+  "contact_person": "А.В. Владзимирский — главный редактор",
+  "audience": "цифровое здравоохранение, ВАК",
+  "priority": "A",
+  "source": "https://jtelemed.ru/sites/default/files/magazine/tech_4_2025.pdf (выходные данные)"
+ },
+ {
+  "name": "Forcipe (студенческий научный журнал СПбГПМУ)",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Рецензируемый журнал для студентов и молодых учёных-медиков; студенты-авторы могут опубликовать статью о разработке и пилоте тренажёра.",
+  "url": "https://ojs3.gpmu.org/index.php/forcipe",
+  "emails": [
+   "forcipe@bk.ru"
+  ],
+  "phones": [
+   "+7 (812) 295-31-55"
+  ],
+  "socials": [],
+  "contact_person": "Е.Н. Комиссарова — главный редактор (по данным 2023)",
+  "audience": "студенты и молодые учёные-медики",
+  "priority": "B",
+  "source": "выходные данные выпуска 2022: https://ojs3.gpmu.org/index.php/forcipe/article/download/6016/5913 (сайт журнала был недоступен при проверке)"
+ },
+ {
+  "name": "Telegram «Студент Медик | Новости» (@medic_stud)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Telegram-канал для студентов-медиков и врачей (11 тыс.); пост/анонс тренажёра для подготовки к ОСКЭ и аккредитации.",
+  "url": "https://t.me/medic_stud",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/medic_stud"
+  ],
+  "contact_person": "Реклама: @dinara_chis (Telegram)",
+  "audience": "11 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medic_stud"
+ },
+ {
+  "name": "Telegram «Голод, холод и покой» (@Caduceusmed)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Telegram-канал новостей здравоохранения с экспертными комментариями; новость о студенческом ИИ-стартапе.",
+  "url": "https://t.me/Caduceusmed",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/Caduceusmed"
+  ],
+  "contact_person": "",
+  "audience": "5,5 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/Caduceusmed"
+ },
+ {
+  "name": "Telegram «Медтех» (@medtechnews)",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал о digital в медицине и ИИ; новость/упоминание об ИИ-тренажёре для медиков.",
+  "url": "https://t.me/medtechnews",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/medtechnews"
+  ],
+  "contact_person": "По всем вопросам: @ndrpshkn (Telegram)",
+  "audience": "2,7 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medtechnews"
+ },
+ {
+  "name": "Telegram «TeleMed Today» (@telemedtoday)",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Канал о цифровой медицине и нейросетях для врачей (связан с «Журналом телемедицины»); пост о проекте.",
+  "url": "https://t.me/telemedtoday",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/telemedtoday"
+  ],
+  "contact_person": "Виктория Шадеркина — сотрудничество (@ViktoriaShaderk)",
+  "audience": "небольшая профильная",
+  "priority": "C",
+  "source": "https://t.me/telemedtoday"
+ },
+ {
+  "name": "Врачи РФ (сообщество и Telegram-канал)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Сообщество врачей России (сайт, Дзен, Telegram); публикация новости о тренажёре для молодых врачей.",
+  "url": "https://vrachirf.ru/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/vrachirf",
+   "https://dzen.ru/vrachi",
+   "https://vk.com/club30242917",
+   "https://ok.ru/vrachirf"
+  ],
+  "contact_person": "Публикации и реклама: @bukanski (Telegram)",
+  "audience": "врачи",
+  "priority": "B",
+  "source": "https://t.me/vrachirf ; https://vrachirf.ru/"
+ },
+ {
+  "name": "Telegram Ebm_base (журнальный клуб по доказательной медицине)",
+  "category": "Подкаст / YouTube",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал и журнальный клуб о доказательной медицине для студентов/молодых врачей; коллаборация или пост об обучении клиническому мышлению.",
+  "url": "https://t.me/ebm_base",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/ebm_base"
+  ],
+  "contact_person": "Автор и организатор: @Nik_Burlov (Telegram)",
+  "audience": "4 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/ebm_base"
+ },
+ {
+  "name": "«Пей таблетки!» / MedIQLab",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медиа о доказательной медицине, авторы — врачи и провизоры; кросс-промо для студенческой аудитории.",
+  "url": "https://mediqlab.com/",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/mediq"
+  ],
+  "contact_person": "Сотрудничество: @mediqlab_admin (Telegram)",
+  "audience": "66 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/mediq"
+ },
+ {
+  "name": "«Доктор.Ру» (научно-практический журнал)",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Рецензируемый журнал для врачей и преподавателей медвузов; статья или новость о применении ИИ-пациентов в обучении.",
+  "url": "https://journaldoctor.ru/",
+  "emails": [
+   "redactor@journaldoctor.ru",
+   "proekt@journaldoctor.ru"
+  ],
+  "phones": [
+   "+7 (968) 873-70-27"
+  ],
+  "socials": [
+   "https://t.me/journaldoctorru",
+   "https://vk.com/journaldoctor_ru"
+  ],
+  "contact_person": "Ольга Елисова — руководитель редакции (proekt@); Елена Антониади — директор журнала",
+  "audience": "врачи, преподаватели медвузов",
+  "priority": "B",
+  "source": "https://journaldoctor.ru/contacts/"
+ },
+ {
+  "name": "MedPulse.ru",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Новостной портал о медицине и фармацевтике; пресс-релиз о студенческом ИИ-тренажёре.",
+  "url": "https://medpulse.ru/",
+  "emails": [
+   "info@medpulse.ru"
+  ],
+  "phones": [
+   "+7 (499) 641-41-69"
+  ],
+  "socials": [
+   "https://vk.com/medpulse"
+  ],
+  "contact_person": "",
+  "audience": "медики, фарма",
+  "priority": "C",
+  "source": "https://medpulse.ru/ (подвал)"
+ },
+ {
+  "name": "«Вести образования» (vogazeta.ru)",
+  "category": "EdTech-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Электронная газета об образовании; колонка/новость о студенческом EdTech в медобразовании.",
+  "url": "https://vogazeta.ru/",
+  "emails": [
+   "vestiobrazovania@yandex.ru"
+  ],
+  "phones": [
+   "+7 (903) 231-25-29"
+  ],
+  "socials": [
+   "https://t.me/vogazeta",
+   "https://vk.com/vogazeta",
+   "https://www.ok.ru/vogazeta"
+  ],
+  "contact_person": "",
+  "audience": "педагоги, руководители образования",
+  "priority": "C",
+  "source": "https://vogazeta.ru/pages/contacts"
+ },
+ {
+  "name": "Росмолодёжь (пресс-служба)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Федеральное агентство по делам молодёжи — медиаканалы и гранты; история студенческого проекта для соцсетей и конкурсов («Росмолодёжь.Гранты», «Твой ход»).",
+  "url": "https://fadm.gov.ru/",
+  "emails": [
+   "op@fadm.gov.ru"
+  ],
+  "phones": [
+   "+7 (495) 668-80-08 доб. 2403"
+  ],
+  "socials": [
+   "https://t.me/rosmolodez",
+   "https://vk.com/rosmolodez",
+   "https://dzen.ru/rosmolodez"
+  ],
+  "contact_person": "Отдел по работе со СМИ (доб. 2403)",
+  "audience": "молодёжь РФ",
+  "priority": "B",
+  "source": "https://fadm.gov.ru/contacts"
+ },
+ {
+  "name": "«Учительская газета»",
+  "category": "EdTech-медиа",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Старейшее издание об образовании; низкий фит (школа), возможна заметка о студенческом EdTech.",
+  "url": "https://ug.ru/",
+  "emails": [
+   "ug@ug.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/ug_ru",
+   "https://vk.com/uchitelskaya_gazeta"
+  ],
+  "contact_person": "",
+  "audience": "педагоги",
+  "priority": "C",
+  "source": "https://www.ug.ru/contacts"
+ },
+ {
+  "name": "Научная Россия (scientificrussia.ru)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Научное медиа (видео, новости), принимает пресс-релизы и анонсы; новость/сюжет о студенческой разработке ИИ-тренажёра для врачей.",
+  "url": "https://scientificrussia.ru/",
+  "emails": [
+   "info@scientificrussia.ru"
+  ],
+  "phones": [
+   "+7 (495) 939-42-66",
+   "+7 (495) 939-23-58"
+  ],
+  "socials": [
+   "https://t.me/scientificrussia",
+   "https://vk.com/scientificrussia",
+   "https://rutube.ru/channel/25268394/"
+  ],
+  "contact_person": "Ксения Иванова — ответственный редактор; Наталья Базанова — директор по связям с общественностью",
+  "audience": "научное сообщество",
+  "priority": "B",
+  "source": "https://scientificrussia.ru/contacts («все свои предложения вы можете отправлять на e-mail» — адрес обфусцирован ROT13 на странице)"
+ },
+ {
+  "name": "Российская газета (rg.ru)",
+  "category": "СМИ / портал",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Федеральная газета с разделами «Здоровье» и «Образование»; новость о студенческом ИИ-тренажёре через общую почту редакции или региональные выпуски.",
+  "url": "https://rg.ru/",
+  "emails": [
+   "mail@rg.ru"
+  ],
+  "phones": [
+   "+7 (495) 775-31-18",
+   "+7 (499) 257-56-50"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "федеральная",
+  "priority": "C",
+  "source": "https://rg.ru/ (подвал); https://rg.ru/pages/kontakty"
+ },
+ {
+  "name": "«Бюллетень медицинских интернет-конференций»",
+  "category": "Журнал (научный)",
+  "format": "Онлайн",
+  "city": "Саратов",
+  "dates": "",
+  "description": "Онлайн-журнал и интернет-конференции, где массово публикуются студенты и молодые учёные медвузов; тезисы/статья о пилоте тренажёра.",
+  "url": "https://medconfer.com/",
+  "emails": [
+   "info@medconfer.com"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "студенты и молодые учёные-медики",
+  "priority": "C",
+  "source": "https://medconfer.com/"
+ },
+ {
+  "name": "Журнал «Аккредитация в образовании»",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Йошкар-Ола",
+  "dates": "",
+  "description": "Журнал о качестве и аккредитации в образовании; статья о цифровых инструментах подготовки к аккредитации специалистов.",
+  "url": "https://akvobr.ru/",
+  "emails": [
+   "dir@akvobr.ru"
+  ],
+  "phones": [
+   "+7 (8362) 72-02-62"
+  ],
+  "socials": [],
+  "contact_person": "Галина Мотова — главный редактор; Екатерина Шигапова — директор",
+  "audience": "руководители вузов, эксперты по качеству образования",
+  "priority": "C",
+  "source": "https://akvobr.ru/"
+ },
+ {
+  "name": "Spark.ru",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Платформа-сообщество стартапов, где можно вести блог проекта; пост-история запуска Help me, Doctor и обратная связь от предпринимателей.",
+  "url": "https://spark.ru/",
+  "emails": [
+   "team@spark.ru",
+   "adv@spark.ru"
+  ],
+  "phones": [
+   "+7 (495) 137-07-07"
+  ],
+  "socials": [
+   "https://vk.com/gospark"
+  ],
+  "contact_person": "",
+  "audience": "основатели стартапов",
+  "priority": "C",
+  "source": "https://spark.ru/"
+ },
+ {
+  "name": "ComNews",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Деловое ИТ-издание (цифровая трансформация, в т.ч. здравоохранения); новостной релиз о проекте.",
+  "url": "https://www.comnews.ru/",
+  "emails": [
+   "info@comnews.ru"
+  ],
+  "phones": [
+   "+7 (495) 933-54-83"
+  ],
+  "socials": [
+   "https://t.me/comnewsgroup",
+   "https://vk.com/comnewsgroup",
+   "https://dzen.ru/comnews.ru"
+  ],
+  "contact_person": "",
+  "audience": "ИТ и телеком",
+  "priority": "C",
+  "source": "https://www.comnews.ru/ (подвал)"
  }
 ]

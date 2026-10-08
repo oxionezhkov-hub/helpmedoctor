@@ -23,6 +23,8 @@ SEGMENTS = {  # файл → сегмент (порядок = порядок в 
     "orgs": "Студенческие организации и вузы",
     "partners": "Партнёры с общей аудиторией",
 }
+MERGED = []  # (оставили, слили) — для проверки
+EVENT_SEGMENTS = {"Конференции и олимпиады", "Форумы, конгрессы, выставки"}
 STATUSES = ["Не начато", "Написали", "Позвонили", "Ответили", "Договорились", "Отказ", "Нет ответа"]
 COLUMNS = [  # заголовок, ключ, ширина
     ("№", "n", 5), ("Название", "name", 34), ("Сегмент", "segment", 20), ("Категория", "category", 18),
@@ -39,6 +41,27 @@ def norm_url(u):
     return u
 
 
+def words(name):
+    return {w for w in re.findall(r"\w+", name.lower()) if len(w) > 2 and w not in {"vk", "telegram", "канал"}}
+
+
+def same(a, b):
+    """Дубль: одно мероприятие с тем же названием в «кавычках», один и тот же проект под тем же именем
+    (Telegram и VK), или одна ссылка при похожих названиях — общая страница вуза сама по себе не повод склеивать."""
+    if (a["segment"] in EVENT_SEGMENTS) != (b["segment"] in EVENT_SEGMENTS) and "Студенческие организации и вузы" in (a["segment"], b["segment"]):
+        return False  # СНО и его конференция — разные поводы написать
+    wa, wb = words(a["name"]), words(b["name"])
+    sim = len(wa & wb) / max(1, min(len(wa), len(wb)))
+    qa, qb = re.findall(r"«([^»]{4,})»", a["name"]), re.findall(r"«([^»]{4,})»", b["name"])
+    if a["segment"] in EVENT_SEGMENTS and b["segment"] in EVENT_SEGMENTS and qa and qb:
+        return re.sub(r"\W", "", qa[0].lower()) == re.sub(r"\W", "", qb[0].lower()) and sim >= 0.4
+    base = lambda r: re.sub(r"\(.*?\)|[^\w]", "", r["name"].lower())
+    if a["segment"] == b["segment"] and base(a) and base(a) == base(b):
+        return True
+    ua, ub = norm_url(a.get("url")), norm_url(b.get("url"))
+    return bool(ua) and ua == ub and sim >= 0.75
+
+
 def clean_list(v):
     if not v:
         return []
@@ -53,7 +76,7 @@ def clean_list(v):
 
 
 def load():
-    rows, seen = [], {}
+    rows = []
     for key, seg in SEGMENTS.items():
         f = DIR / "data" / f"{key}.json"
         if not f.exists():
@@ -68,13 +91,13 @@ def load():
             for k in ("emails", "phones", "socials"):
                 r[k] = clean_list(r.get(k))
             r["priority"] = (r.get("priority") or "C").strip()[:1].upper()
-            ident = norm_url(r.get("url")) or name.lower()
-            if ident in seen:  # дубль из другого сегмента — сливаем контакты в первую запись
-                first = seen[ident]
+            first = next((o for o in rows if same(o, r)), None)
+            if first:  # дубль (часто из соседнего сегмента) — сливаем контакты в первую запись
+                extra = [r["url"]] if norm_url(r.get("url")) not in ("", norm_url(first.get("url"))) else []
                 for k in ("emails", "phones", "socials"):
-                    first[k] = clean_list(first[k] + r[k])
+                    first[k] = clean_list(first[k] + r[k] + (extra if k == "socials" else []))
+                MERGED.append((first["name"], r["name"]))
                 continue
-            seen[ident] = r
             rows.append(r)
     order = {s: i for i, s in enumerate(SEGMENTS.values())}
     rows.sort(key=lambda r: (order[r["segment"]], r["priority"], r["name"].lower()))
@@ -156,4 +179,7 @@ if __name__ == "__main__":
     by = {}
     for r in rows:
         by[r["segment"]] = by.get(r["segment"], 0) + 1
+    if "-v" in __import__("sys").argv:
+        for a, b in MERGED:
+            print(f"  = {a}\n    ← {b}")
     print(f"✓ contacts.xlsx: {len(rows)} записей", by)
