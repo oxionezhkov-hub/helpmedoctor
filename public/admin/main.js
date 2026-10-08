@@ -6,6 +6,7 @@ import { viewUsers, viewUser, viewPatient } from "./views-users.js";
 import { viewPartners } from "./views-partners.js";
 import { viewBloggers } from "./views-bloggers.js";
 import { viewPromos } from "./views-promos.js";
+import { viewDocs } from "./views-docs.js";
 import { viewSubs, viewMessages, viewBroadcast, viewFeedback, viewTasks, viewSettings, quickIdea, openTask } from "./views-ops.js";
 
 const app = $("#app");
@@ -187,6 +188,7 @@ const NAV = [
   ["messages", "/messages", "send", "Сообщения"],
   ["feedback", "/feedback", "star", "Отзывы и анкеты"],
   ["tasks", "/tasks", "tasks", "Задачи"],
+  ["docs", "/docs", "doc", "Документы"],
   ["settings", "/settings", "settings", "Настройки"],
 ];
 
@@ -269,6 +271,7 @@ function parseRoute() {
   if (parts[0] === "feedback") return r("feedback");
   if (parts[0] === "tasks" && parts[1]) return r("tasks", { id: parts[1] });
   if (parts[0] === "tasks") return r("tasks");
+  if (parts[0] === "docs") return r("docs", { id: parts[1] || "" });
   if (parts[0] === "settings") return r("settings");
   return r("dashboard");
 }
@@ -287,6 +290,7 @@ const VIEWS = {
   broadcast: [viewBroadcast, "Рассылка", "messages"],
   feedback: [viewFeedback, "Отзывы и анкеты", "feedback"],
   tasks: [viewTasks, "Задачи", "tasks"],
+  docs: [viewDocs, "Документы", "docs"],
   settings: [viewSettings, "Настройки", "settings"],
 };
 

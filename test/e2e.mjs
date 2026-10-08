@@ -423,6 +423,24 @@ const aq = async (op, args = {}, tok = admTok) => {
 };
 assert.equal((await adm(admTok, "POST", "/q", { op: "set_setting", args: { k: "x", v: 1 } })).status, 400, "внутренние операции закрыты");
 const meAdm = (await adm(admTok, "GET", "/me")).data;
+
+// Документы: импорт .md (название из «# …»), быстрая идея в «## Идеи», защита от одновременной правки, удаление
+{
+  const c = await aq("doc_create", { markdown: "# Стратегия\n\n## Цель\n\nТекст.\n\n## Идеи\n\n- [ ] старая идея\n\n## Дальше\n\nХвост." });
+  let d = (await aq("doc", { id: c.id })).doc;
+  assert.equal(d.title, "Стратегия", "название из первого заголовка");
+  assert.ok(!d.body.startsWith("# Стратегия"), "заголовок не дублируется в тексте");
+  const idea = await aq("doc_idea", { id: c.id, text: "Опрос старост" }, admTok2);
+  assert.match(idea.body, /- \[ \] старая идея\n- \[ \] Опрос старост — Саша, \d\d\.\d\d\n\n## Дальше/, "идея — в конец раздела «Идеи», с именем и датой");
+  const stale = await adm(admTok, "POST", "/q", { op: "doc_save", args: { id: c.id, base: d.updated_at, body: "затираю" } });
+  assert.equal(stale.data.code, "conflict", "правка со старой версии не затирает чужие изменения");
+  d = (await aq("doc", { id: c.id })).doc;
+  await aq("doc_save", { id: c.id, base: d.updated_at, title: "Стратегия 2026" });
+  assert.ok((await aq("docs")).rows.some((x) => x.id === c.id && x.title === "Стратегия 2026"));
+  await aq("doc_delete", { id: c.id });
+  assert.equal((await adm(admTok, "POST", "/q", { op: "doc", args: { id: c.id } })).data.code, "not_found");
+  step("админка: документы — импорт .md, идеи, защита от одновременной правки, удаление");
+}
 assert.equal(meAdm.me.name, "Олег");
 assert.equal(meAdm.admins.length, 2);
 const al = await adm(null, "POST", "/auth/login");
