@@ -1,0 +1,538 @@
+[
+ {
+  "name": "Медвестник (medvestnik.ru)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Крупнейший деловой портал для врачей (Бионика Диджитал); можно предложить новость/кейс «студенты сделали ИИ-тренажёр для подготовки к аккредитации» и инфопартнёрство.",
+  "url": "https://medvestnik.ru/",
+  "emails": [
+   "edition@medvestnik.ru",
+   "info@medvestnik.ru"
+  ],
+  "phones": [
+   "+7 (495) 786-25-57"
+  ],
+  "socials": [
+   "https://t.me/med_vestnik",
+   "https://max.ru/medicinskiyvestnik"
+  ],
+  "contact_person": "",
+  "audience": "врачи, организаторы здравоохранения",
+  "priority": "A",
+  "source": "https://medvestnik.ru/pages/contacts.html (архив web.archive.org 2025: «Редакция портала Medvestnik.ru: edition@medvestnik.ru; По вопросам инфопартнерства: info@medvestnik.ru»)"
+ },
+ {
+  "name": "Медицинская газета",
+  "category": "СМИ / портал",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Старейшая профессиональная газета для врачей; подходит для заметки о студенческом ИИ-тренажёре и интервью с командой в рубрике о медобразовании.",
+  "url": "https://www.mgzt.ru/",
+  "emails": [
+   "mggazeta@mgzt.ru",
+   "inform@mgzt.ru",
+   "rekmedic@mgzt.ru"
+  ],
+  "phones": [
+   "+7 (495) 608-85-44",
+   "+7 (495) 608-86-95"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "врачи, руководители ЛПУ",
+  "priority": "A",
+  "source": "https://www.mgzt.ru/"
+ },
+ {
+  "name": "Ремедиум (remedium.ru)",
+  "category": "СМИ / портал",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Издательство и портал для врачей и фармрынка (журналы «Медицинский совет», «Ремедиум»); новостная заметка о тренажёре или партнёрский материал.",
+  "url": "https://www.remedium.ru/",
+  "emails": [
+   "editor@remedium.ru",
+   "remedium@remedium.ru",
+   "reklama@remedium.ru"
+  ],
+  "phones": [
+   "+7 (495) 780-34-25"
+  ],
+  "socials": [
+   "https://vk.com/remediumru",
+   "https://rutube.ru/channel/28452339/"
+  ],
+  "contact_person": "Ольга Гиляревская — редактор новостей",
+  "audience": "врачи, фармацевты",
+  "priority": "B",
+  "source": "https://www.remedium.ru/contacts/"
+ },
+ {
+  "name": "MedPortal.ru",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Массовый медицинский портал с новостями медицины и науки; можно предложить новость о студенческом ИИ-стартапе для медиков.",
+  "url": "https://medportal.ru/",
+  "emails": [
+   "info@medportal.ru",
+   "pr@medportal.ru",
+   "advert@medportal.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/mednovosti",
+   "https://ok.ru/mednovosti",
+   "https://zen.yandex.ru/medportal.ru",
+   "https://www.youtube.com/channel/UC_uZwe894q9-xC9t13GfVxA"
+  ],
+  "contact_person": "Владимир Мкртчян — шеф-редактор; Юлия Миндер — управляющий (minder@medportal.ru)",
+  "audience": "широкая аудитория + медики",
+  "priority": "B",
+  "source": "https://medportal.ru/about/"
+ },
+ {
+  "name": "Доктор Питер (doctorpiter.ru)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Санкт-Петербург",
+  "dates": "",
+  "description": "Медицинский портал Петербурга (партнёр «Фонтанки»); подходит для истории о петербургских/российских студентах, сделавших ИИ-тренажёр.",
+  "url": "https://doctorpiter.ru/",
+  "emails": [
+   "info@doctorpiter.ru"
+  ],
+  "phones": [
+   "+7 (812) 416-77-70"
+  ],
+  "socials": [
+   "https://t.me/DoctorPiterNews",
+   "https://vk.com/doctorpiter",
+   "https://ok.ru/group/63143155990704"
+  ],
+  "contact_person": "",
+  "audience": "",
+  "priority": "B",
+  "source": "https://doctorpiter.ru/"
+ },
+ {
+  "name": "Медицинская Россия (MedRussia)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-издание о медицине и медработниках; подходит для новости/колонки о цифровом медобразовании.",
+  "url": "https://medrussia.org/",
+  "emails": [
+   "medikrussia@gmail.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/mediamedics",
+   "https://dzen.ru/medrussia"
+  ],
+  "contact_person": "",
+  "audience": "",
+  "priority": "C",
+  "source": "https://medrussia.org/o-proekte/"
+ },
+ {
+  "name": "Vademecum (vademec.ru)",
+  "category": "СМИ / портал",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Деловое издание о рынке здравоохранения и медтехе; интересен материал о стартапе/EdTech в медобразовании.",
+  "url": "https://vademec.ru/",
+  "emails": [
+   "info@vademecummedia.ru",
+   "dmdmkr@idffmedia.ru"
+  ],
+  "phones": [
+   "+7 (495) 755-59-40"
+  ],
+  "socials": [
+   "https://t.me/vademecum_ru",
+   "https://t.me/vademecum_live",
+   "https://vk.com/vademec",
+   "https://www.youtube.com/channel/UCBRofVA7-aV8o_4u3PeJp1g"
+  ],
+  "contact_person": "Дмитрий Кряжев — издатель-главный редактор",
+  "audience": "руководители и инвесторы рынка здравоохранения",
+  "priority": "A",
+  "source": "https://vademec.ru/editors/"
+ },
+ {
+  "name": "Лечащий врач (lvrach.ru)",
+  "category": "СМИ / портал",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Журнал и новостной портал для практикующих врачей (Открытые системы); новость о тренажёре или статья о симуляционном обучении.",
+  "url": "https://www.lvrach.ru/",
+  "emails": [
+   "newsvrach@lvrach.ru",
+   "pract@osp.ru",
+   "marketing@lvrach.ru"
+  ],
+  "phones": [
+   "+7 (495) 725-47-80"
+  ],
+  "socials": [
+   "https://t.me/lvrach",
+   "https://vk.com/lvrach",
+   "https://dzen.ru/lvrachnews"
+  ],
+  "contact_person": "",
+  "audience": "практикующие врачи",
+  "priority": "B",
+  "source": "https://lvrach.ru/contacts"
+ },
+ {
+  "name": "Consilium Medicum / con-med.ru",
+  "category": "СМИ / портал",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Портал и журналы для врачей (Медиа Медика); возможна новость или партнёрство по образовательному контенту.",
+  "url": "https://con-med.ru/",
+  "emails": [
+   "content@con-med.ru",
+   "id@con-med.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/conmedru",
+   "https://vk.com/conmedru"
+  ],
+  "contact_person": "",
+  "audience": "врачи",
+  "priority": "C",
+  "source": "https://con-med.ru/contacts/"
+ },
+ {
+  "name": "Здрав.Эксперт (Zdrav.Expert, TAdviser)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Энциклопедия и новости цифрового здравоохранения от TAdviser; можно добавить карточку продукта и прислать новость о запуске ИИ-тренажёра.",
+  "url": "https://zdrav.expert/",
+  "emails": [
+   "zdrav@tadviser.ru",
+   "news@tadviser.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/zdravexpert",
+   "https://vk.com/zdrav.expert"
+  ],
+  "contact_person": "",
+  "audience": "ИТ в здравоохранении",
+  "priority": "A",
+  "source": "https://zdrav.expert/ (подвал сайта); https://www.tadviser.ru/"
+ },
+ {
+  "name": "Webiomed (блог и медиа)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Петрозаводск/Москва",
+  "dates": "",
+  "description": "Компания-разработчик ИИ в медицине с активным блогом и обзорами рынка медицинского ИИ; возможен гостевой пост или упоминание в обзоре.",
+  "url": "https://webiomed.ru/",
+  "emails": [
+   "info@webiomed.ru"
+  ],
+  "phones": [
+   "+7 (800) 234-05-04"
+  ],
+  "socials": [
+   "https://vk.com/webiomed",
+   "https://www.youtube.com/channel/UCObOwO7A_F_LG-DxcCNNFrg"
+  ],
+  "contact_person": "",
+  "audience": "медицинский ИИ, цифровое здравоохранение",
+  "priority": "B",
+  "source": "https://webiomed.ru/"
+ },
+ {
+  "name": "Национальная база медицинских знаний (НБМЗ)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Ассоциация разработчиков и пользователей ИИ в медицине; медиа-канал «ИИ в медицине» — можно предложить новость, выступление на вебинаре или членство.",
+  "url": "https://www.nbmz.ru/",
+  "emails": [
+   "media@nbmz.ru",
+   "info@nbmz.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/AI_NBMZ",
+   "https://www.youtube.com/@AIinMedicine"
+  ],
+  "contact_person": "",
+  "audience": "разработчики и пользователи ИИ в медицине",
+  "priority": "A",
+  "source": "https://www.nbmz.ru/"
+ },
+ {
+  "name": "Medach (Medical Channel, medach.pro)",
+  "category": "СМИ / портал",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Портал для молодых врачей и студентов-медиков (статьи, переводы, блоги); идеален для гостевой статьи о подготовке к ОСКЭ с ИИ-пациентами.",
+  "url": "https://medach.pro/",
+  "emails": [
+   "medachofficial@gmail.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/medach",
+   "https://vk.com/medach",
+   "https://www.youtube.com/channel/UCPbE0ZLynjRd-FziGZQsgsA"
+  ],
+  "contact_person": "",
+  "audience": "студенты-медики и молодые врачи",
+  "priority": "A",
+  "source": "https://medach.pro/about-us"
+ },
+ {
+  "name": "Фармацевтический вестник (pharmvestnik.ru)",
+  "category": "СМИ / портал",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Деловое издание фармрынка (Бионика Медиа, одна группа с Медвестником); менее профильное, но возможна новость о медицинском EdTech.",
+  "url": "https://pharmvestnik.ru/",
+  "emails": [
+   "edition@pharmvestnik.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/pharmvestnik",
+   "https://vk.com/pharmvestnik"
+  ],
+  "contact_person": "",
+  "audience": "фармотрасль",
+  "priority": "C",
+  "source": "https://pharmvestnik.ru/pages/red.html (архив web.archive.org 2025)"
+ },
+ {
+  "name": "Журнал «Менеджер здравоохранения» (ИД «Менеджер здравоохранения», ЦНИИОИЗ)",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Журнал ВАК К1 об управлении и цифровизации здравоохранения; можно подать статью о цифровых симуляторах в подготовке кадров.",
+  "url": "https://idmz.ru/",
+  "emails": [
+   "idmz@mednet.ru"
+  ],
+  "phones": [
+   "+7 (495) 618-07-92 доб. 115"
+  ],
+  "socials": [
+   "https://vk.com/idmz_group"
+  ],
+  "contact_person": "",
+  "audience": "организаторы здравоохранения, ВАК К1",
+  "priority": "B",
+  "source": "https://idmz.ru/"
+ },
+ {
+  "name": "Журнал «Врач и информационные технологии»",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Профильный журнал по медицинской информатике (тот же издатель, что «Менеджер здравоохранения»); подходит для научной статьи об ИИ-пациентах и оценке навыков сбора анамнеза.",
+  "url": "https://idmz.ru/",
+  "emails": [
+   "idmz@mednet.ru"
+  ],
+  "phones": [
+   "+7 (495) 618-07-92 доб. 115"
+  ],
+  "socials": [
+   "https://vk.com/idmz_group"
+  ],
+  "contact_person": "",
+  "audience": "медицинская информатика, ВАК",
+  "priority": "A",
+  "source": "https://idmz.ru/"
+ },
+ {
+  "name": "CNews (раздел ИТ в здравоохранении)",
+  "category": "Стартап-медиа",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Крупное ИТ-издание с разделом о цифровой медицине и ИИ; новостной релиз о запуске/росте студенческого ИИ-тренажёра.",
+  "url": "https://www.cnews.ru/",
+  "emails": [
+   "news@cnews.ru",
+   "events@cnews.ru",
+   "advert@cnews.ru"
+  ],
+  "phones": [
+   "+7 (495) 363-11-11"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "ИТ-рынок, госсектор",
+  "priority": "C",
+  "source": "https://www.cnews.ru/about/contacts"
+ },
+ {
+  "name": "«Медицинское образование и профессиональное развитие» (ГЭОТАР-Медиа)",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Главный российский журнал по медобразованию (для преподавателей медвузов); статья о применении ИИ-виртуальных пациентов в подготовке к ОСКЭ/аккредитации.",
+  "url": "https://www.medobr.ru/",
+  "emails": [
+   "isaeva@geotar.ru",
+   "myahar@geotar.ru"
+  ],
+  "phones": [
+   "+7 (495) 921-39-07"
+  ],
+  "socials": [],
+  "contact_person": "Анна Исаева — выпускающий редактор",
+  "audience": "преподаватели медвузов и колледжей",
+  "priority": "A",
+  "source": "https://www.medobr.ru/ru/pages/contacts.html"
+ },
+ {
+  "name": "«Виртуальные технологии в медицине» (РОСОМЕД)",
+  "category": "Журнал (научный)",
+  "format": "Онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Журнал Российского общества симуляционного обучения в медицине; лучший адрес для статьи/доклада о виртуальных пациентах и ИИ-дебрифинге, плюс выход на конференцию РОСОМЕД.",
+  "url": "https://www.medsim.ru/jour",
+  "emails": [
+   "gorshkov@rosomed.ru",
+   "post@rosomed.ru"
+  ],
+  "phones": [
+   "+7 (910) 791-79-12"
+  ],
+  "socials": [
+   "https://t.me/rosomed",
+   "https://vk.com/clubrosomed",
+   "https://rutube.ru/channel/24139955/"
+  ],
+  "contact_person": "М.Д. Горшков (контакт редакции, РОСОМЕД)",
+  "audience": "симуляционные центры, преподаватели",
+  "priority": "A",
+  "source": "https://www.medsim.ru/jour ; https://www.rosomed.ru/"
+ },
+ {
+  "name": "«Высшее образование в России»",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Ведущий журнал о высшей школе (Московский Политех); статья об ИИ-тренажёрах как инструменте практико-ориентированного обучения.",
+  "url": "https://vovr.elpub.ru/jour",
+  "emails": [
+   "vovrus@inbox.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "исследователи и руководители вузов",
+  "priority": "B",
+  "source": "https://vovr.elpub.ru/jour"
+ },
+ {
+  "name": "«Сеченовский вестник» (Sechenov Medical Journal)",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Научный журнал Сеченовского университета; есть публикации по медобразованию — возможна оригинальная статья о валидации ИИ-тренажёра.",
+  "url": "https://www.sechenovmedj.com/",
+  "emails": [
+   "sechenovmedj@staff.sechenov.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/sechmedj",
+   "https://vk.com/sechmedj"
+  ],
+  "contact_person": "",
+  "audience": "научное медсообщество",
+  "priority": "B",
+  "source": "https://www.sechenovmedj.com/"
+ },
+ {
+  "name": "«Вопросы образования» (НИУ ВШЭ)",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Топовый журнал об образовании в РФ; подходит для исследовательской статьи об эффективности ИИ-симуляций в обучении.",
+  "url": "https://vo.hse.ru/",
+  "emails": [
+   "edu.journal@hse.ru"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "исследователи образования",
+  "priority": "C",
+  "source": "https://vo.hse.ru/"
+ },
+ {
+  "name": "«Открытое образование» (РЭУ им. Плеханова)",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Журнал об ИТ и e-learning в образовании; статья об архитектуре и результатах ИИ-тренажёра для медиков.",
+  "url": "https://openedu.rea.ru/jour",
+  "emails": [
+   "Egorova.EA@rea.ru"
+  ],
+  "phones": [
+   "+7 (495) 237-83-31 доб. 1803"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "EdTech, e-learning",
+  "priority": "C",
+  "source": "https://openedu.rea.ru/jour"
+ },
+ {
+  "name": "«Вестник РУДН. Серия: Информатизация образования»",
+  "category": "Журнал (научный)",
+  "format": "Печать + онлайн",
+  "city": "Москва",
+  "dates": "",
+  "description": "Журнал о цифровых технологиях в обучении; статья об ИИ-виртуальных пациентах.",
+  "url": "https://journals.rudn.ru/informatization-education",
+  "emails": [
+   "infoeduj@rudn.ru"
+  ],
+  "phones": [
+   "+7 (495) 434-12-12",
+   "+7 (495) 787-38-03 доб. 1656"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "цифровое образование",
+  "priority": "C",
+  "source": "https://journals.rudn.ru/informatization-education/about/contact"
+ }
+]

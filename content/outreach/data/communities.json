@@ -1,0 +1,1439 @@
+[
+ {
+  "name": "Аккредитация врачей | Ординатура",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал о первичной и периодической аккредитации, поступлении в ординатуру и медобразовании для выпускников и молодых врачей.",
+  "url": "https://t.me/credit_med",
+  "emails": [
+   "creditmed@ya.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://telega.in/c/credit_med",
+   "vk.ru/credit_med",
+   "@credit_chat",
+   "@ordinatura_chat"
+  ],
+  "contact_person": "",
+  "audience": "23 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/credit_med"
+ },
+ {
+  "name": "Чат «Аккредитация врачей» (credit_chat)",
+  "category": "Telegram-чат",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Чат для обсуждения аккредитации, медобразования и кадровой политики при канале @credit_med.",
+  "url": "https://t.me/credit_chat",
+  "emails": [
+   "creditmed@ya.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "@credit_med"
+  ],
+  "contact_person": "",
+  "audience": "3,7 тыс. участников",
+  "priority": "B",
+  "source": "https://t.me/credit_chat"
+ },
+ {
+  "name": "Чат «Ординатура — 2026»",
+  "category": "Telegram-чат",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Чат о поступлении в ординатуру при канале «Аккредитация врачей | Ординатура».",
+  "url": "https://t.me/ordinatura_chat",
+  "emails": [
+   "creditmed@ya.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "@credit_med"
+  ],
+  "contact_person": "",
+  "audience": "0,7 тыс. участников",
+  "priority": "B",
+  "source": "https://t.me/ordinatura_chat"
+ },
+ {
+  "name": "Ordinatura.org | Ординатура орг",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медиа о медицинском образовании и база отзывов на ординатуру для выпускников и ординаторов.",
+  "url": "https://t.me/ordinatura_org",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@ordinatura_orc",
+   "https://ordinatura.org"
+  ],
+  "contact_person": "",
+  "audience": "24 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/ordinatura_org"
+ },
+ {
+  "name": "Медач | Medical Channel",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Официальный канал медицинского сообщества Medach: научпоп и профессиональные материалы о медицине с 2013 года, ядро — студенты-медики и врачи.",
+  "url": "https://t.me/medach",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@medach_sales"
+  ],
+  "contact_person": "",
+  "audience": "28 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/medach"
+ },
+ {
+  "name": "Медач (medicinach) — Медицина 18+",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал с медицинскими кейсами и фото 18+ «не для слабонервных», аудитория — медики и интересующиеся (не официальный Medach).",
+  "url": "https://t.me/medicinach",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@mediagrape",
+   "@grapemedia"
+  ],
+  "contact_person": "",
+  "audience": "41 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medicinach"
+ },
+ {
+  "name": "Я СТУДЕНТ МЕДИК",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал для студентов-медиков: учебные материалы, юмор и полезности для учебы в медвузе.",
+  "url": "https://t.me/student_medik",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@Chumnoj_Doktor",
+   "https://telega.in/c/student_medik"
+  ],
+  "contact_person": "",
+  "audience": "23 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/student_medik"
+ },
+ {
+  "name": "ТВОЙ МЕД | всё для студентов-медиков",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Методички, ответы и материалы к экзаменам для студентов лечфака и стомфака.",
+  "url": "https://t.me/tvoymed",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@medpost2024",
+   "@tvoymedchats"
+  ],
+  "contact_person": "",
+  "audience": "19 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/tvoymed"
+ },
+ {
+  "name": "Студенты - Медики",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал для студентов медвузов с учебными материалами и новостями.",
+  "url": "https://t.me/studmediki",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@dr_bogdana"
+  ],
+  "contact_person": "",
+  "audience": "18 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/studmediki"
+ },
+ {
+  "name": "Закладки медика",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Библиотека студента-медика: учебники, методички, материалы по предметам.",
+  "url": "https://t.me/medmateriali",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@z_medika"
+  ],
+  "contact_person": "",
+  "audience": "24 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/medmateriali"
+ },
+ {
+  "name": "Помощник педиатра | МедикУм",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Справочный канал онлайн-школы МедикУм для педиатров и студентов педиатрического факультета.",
+  "url": "https://t.me/pomoshnik_pediatra",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://medicum-school.ru"
+  ],
+  "contact_person": "",
+  "audience": "24 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/pomoshnik_pediatra"
+ },
+ {
+  "name": "Помощник терапевта | МедикУм",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Справочный канал онлайн-школы МедикУм для терапевтов и студентов лечебного факультета.",
+  "url": "https://t.me/pomoshnik_terapevta",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://medicum-school.ru"
+  ],
+  "contact_person": "",
+  "audience": "18 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/pomoshnik_terapevta"
+ },
+ {
+  "name": "AnatomiX",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал для медиков и студентов: анатомия, клинические факты, учебные материалы.",
+  "url": "https://t.me/AnatomiiX",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/medicine_1111"
+  ],
+  "contact_person": "",
+  "audience": "17 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/AnatomiiX"
+ },
+ {
+  "name": "medjam / рай для медиков",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал студентки Сеченовского университета с лучшими материалами для студентов-медиков.",
+  "url": "https://t.me/med_jam",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/yunyy_medik"
+  ],
+  "contact_person": "",
+  "audience": "15 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/med_jam"
+ },
+ {
+  "name": "Учусь на врача",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Сообщество взаимопомощи студентов-медиков: материалы, стажировки, вакансии, юмор.",
+  "url": "https://t.me/uchusnavracha",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@KoMarNik"
+  ],
+  "contact_person": "@KoMarNik (будущий врач-онколог), взаимопиар",
+  "audience": "11 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/uchusnavracha"
+ },
+ {
+  "name": "МЕДВУЗА | Школа медицины",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-школа медицины (72 курса) для студентов-медиков — возможна коллаборация/взаимопиар.",
+  "url": "https://t.me/med_medvuza",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://vk.com/med_medvuza",
+   "https://medvuza.ru"
+  ],
+  "contact_person": "",
+  "audience": "11 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/med_medvuza"
+ },
+ {
+  "name": "КИНДЕРЫ-МЕДИКИ",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал «всё для студентов-медиков»: учебные материалы и сетка дочерних каналов (гистология и др.).",
+  "url": "https://t.me/mediki_kinder",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@maryam_medic"
+  ],
+  "contact_person": "",
+  "audience": "9 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/mediki_kinder"
+ },
+ {
+  "name": "Анатомия | Гистология",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Материалы по анатомии и гистологии для студентов-медиков и биологов, при канале есть чат.",
+  "url": "https://t.me/anatomy_gistology",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@stma39",
+   "https://telega.in/c/anatomy_gistology",
+   "@medical_chat_anat"
+  ],
+  "contact_person": "",
+  "audience": "8 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/anatomy_gistology"
+ },
+ {
+  "name": "Библиотека Умного Медика",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Полезные ресурсы и литература для медиков всех специальностей и студентов.",
+  "url": "https://t.me/smart_medics",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@reklamamed"
+  ],
+  "contact_person": "",
+  "audience": "20 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/smart_medics"
+ },
+ {
+  "name": "Медики | Анатомия",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал для врачей и медиков: интересные факты и клинические случаи из практики.",
+  "url": "https://t.me/khirurg_vrachi",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@nadywe"
+  ],
+  "contact_person": "",
+  "audience": "51 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/khirurg_vrachi"
+ },
+ {
+  "name": "М Е Д И Ц И Н А (medicina_channel)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Анатомия, клинические случаи и новости медицины для медиков и широкой аудитории.",
+  "url": "https://t.me/medicina_channel",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@Stinng",
+   "@Handlerr",
+   "@Semaa1234"
+  ],
+  "contact_person": "",
+  "audience": "62 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medicina_channel"
+ },
+ {
+  "name": "Заметки медика",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Авторский блог фельдшера реанимационной бригады — истории и клинические ситуации.",
+  "url": "https://t.me/medika_zametki",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@topdocmedia",
+   "@ibragimgb"
+  ],
+  "contact_person": "",
+  "audience": "31 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medika_zametki"
+ },
+ {
+  "name": "Будущий врач",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал для студентов и молодых врачей: кейсы, шпаргалки, лайфхаки.",
+  "url": "https://t.me/budushiy_vrachh",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@dr_khushnud"
+  ],
+  "contact_person": "",
+  "audience": "9 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/budushiy_vrachh"
+ },
+ {
+  "name": "MedBooks",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицинские книги и учебники для студентов, интернов и врачей (тот же админ, что у «Будущий врач»).",
+  "url": "https://t.me/medicinebooksss",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@dr_khushnud"
+  ],
+  "contact_person": "",
+  "audience": "8 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medicinebooksss"
+ },
+ {
+  "name": "Ординаторская (педиатрия)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал по педиатрии для студентов, ординаторов и молодых врачей.",
+  "url": "https://t.me/drbryk",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@bryklina"
+  ],
+  "contact_person": "",
+  "audience": "3,7 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/drbryk"
+ },
+ {
+  "name": "Медицинский юмор",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Крупнейший паблик медицинского юмора, аудитория — медики и студенты.",
+  "url": "https://t.me/med_humor",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@SamantaDarko",
+   "telega.in/channels/+I7x0bo4DaBljOWEy/card"
+  ],
+  "contact_person": "",
+  "audience": "92 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/med_humor"
+ },
+ {
+  "name": "Сомнительные медицинские мемы",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал ординатора Склифа с историями московских суток на СМП и мемами.",
+  "url": "https://t.me/som_memes",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@yummy_butterbrod"
+  ],
+  "contact_person": "",
+  "audience": "11 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/som_memes"
+ },
+ {
+  "name": "Первый медицинский (pervyimed)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Факты, медицинский юмор, операции и истории из медицины.",
+  "url": "https://t.me/pervyimed",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@reklamamed"
+  ],
+  "contact_person": "",
+  "audience": "5 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/pervyimed"
+ },
+ {
+  "name": "FOR DOCTORS",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог для будущих врачей обо всём в медицине, с активным чатом.",
+  "url": "https://t.me/for_doctors",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/for_doctorss",
+   "https://t.me/chat_fordoctors"
+  ],
+  "contact_person": "",
+  "audience": "33 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/for_doctors"
+ },
+ {
+  "name": "Чат FOR DOCTORS",
+  "category": "Telegram-чат",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Чат канала FOR DOCTORS: вопросы, обмен знаниями и книгами для будущих врачей.",
+  "url": "https://t.me/chat_fordoctors",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/for_doctorss"
+  ],
+  "contact_person": "",
+  "audience": "5,4 тыс. участников",
+  "priority": "B",
+  "source": "https://t.me/chat_fordoctors"
+ },
+ {
+  "name": "Блог анестезиолога",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Личный блог врача анестезиолога-реаниматолога.",
+  "url": "https://t.me/anesthesiologists_blog",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@addo_ere_3",
+   "@anesthetistLive_bot",
+   "@real_anesthetist"
+  ],
+  "contact_person": "",
+  "audience": "22 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/anesthesiologists_blog"
+ },
+ {
+  "name": "Мед альбом",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицинское слайдовое агентство — свежие материалы с медконференций, ведёт кардиолог.",
+  "url": "https://t.me/medalbum",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@roseviolet",
+   "vk.com/medalbum",
+   "@medicalphotochat"
+  ],
+  "contact_person": "@roseviolet",
+  "audience": "15 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medalbum"
+ },
+ {
+  "name": "ЭКГ электрокардиография",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Задачи и случаи по ЭКГ и холтеру для врачей и студентов.",
+  "url": "https://t.me/medecg",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@roseviolet",
+   "https://vk.com/xmekg"
+  ],
+  "contact_person": "@roseviolet",
+  "audience": "15 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medecg"
+ },
+ {
+  "name": "monster_ECG",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Репетитор по ЭКГ онлайн — много ЭКГ-задач для студентов и врачей.",
+  "url": "https://t.me/monster_ECG",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@dyadyaturik"
+  ],
+  "contact_person": "",
+  "audience": "13 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/monster_ECG"
+ },
+ {
+  "name": "ЭКГ С НУЛЯ",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Разборы, шпаргалки и памятки по ЭКГ, жизнь врача без фильтров.",
+  "url": "https://t.me/v_ritme_doc",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@v_ritme_doc8"
+  ],
+  "contact_person": "",
+  "audience": "9 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/v_ritme_doc"
+ },
+ {
+  "name": "Плёночка неспокойная",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Одна ЭКГ в день с разбором от кардиореаниматологов Чазовского центра (авторы курса ЕАТ).",
+  "url": "https://t.me/restless_ecg",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@avetisyan_erik",
+   "@merkulova_ia"
+  ],
+  "contact_person": "Эрик Аветисян, Ирина Меркулова",
+  "audience": "9 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/restless_ecg"
+ },
+ {
+  "name": "Жизнь кардиолога",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал кардиолога Дарьи Югай: чек-листы ЭКГ, разборы статей, клинические задачи.",
+  "url": "https://t.me/magiccardiology",
+  "emails": [
+   "dariaiugaipr@gmail.com"
+  ],
+  "phones": [],
+  "socials": [
+   "https://dzen.ru/dariaiugai",
+   "youtube.com/@dariaiugai"
+  ],
+  "contact_person": "Дарья Югай",
+  "audience": "10 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/magiccardiology"
+ },
+ {
+  "name": "Медицинский блог Сеченова (medblognomer1)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицинский блог с аудиторией студентов-медиков (неофиц.).",
+  "url": "https://t.me/medblognomer1",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@msksech",
+   "https://telega.in/c/medblognomer1"
+  ],
+  "contact_person": "",
+  "audience": "24 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medblognomer1"
+ },
+ {
+  "name": "Подслушано МГМУ Сеченова",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Подслушано Сеченовского университета: новости, приколы, цитаты преподавателей.",
+  "url": "https://t.me/MGMUslushaet",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@MGMU_predloga_bot"
+  ],
+  "contact_person": "",
+  "audience": "6 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/MGMUslushaet"
+ },
+ {
+  "name": "третьеши сеченова",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Неофициальный канал студентов курса Сеченовского университета.",
+  "url": "https://t.me/pervashi_sechenova",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@yunyy_medik"
+  ],
+  "contact_person": "",
+  "audience": "7 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/pervashi_sechenova"
+ },
+ {
+  "name": "Пироговский университет (официальный)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Официальный канал РНИМУ им. Пирогова — для партнёрства через пресс-службу.",
+  "url": "https://t.me/daily_2med",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://max.ru/rnimu"
+  ],
+  "contact_person": "",
+  "audience": "23 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/daily_2med"
+ },
+ {
+  "name": "Подслушано СЗГМУ им. Мечникова",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Слухи и приколы студентов СЗГМУ им. Мечникова.",
+  "url": "https://t.me/szgmushka",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@szgmushka_bot"
+  ],
+  "contact_person": "",
+  "audience": "3,6 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/szgmushka"
+ },
+ {
+  "name": "Подслушано РосУниМед (МГМСУ)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Подслушано Российского университета медицины (МГМСУ).",
+  "url": "https://t.me/rosunimed_podslushka",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@rek_podslushka",
+   "@rumpred_bot",
+   "https://vk.com/rosunimed"
+  ],
+  "contact_person": "",
+  "audience": "8 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/rosunimed_podslushka"
+ },
+ {
+  "name": "Подслушано Первый мед ПСПбГМУ",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Слухи и новости студентов ПСПбГМУ им. Павлова.",
+  "url": "https://t.me/pervomedik",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@pervomedik_bot",
+   "@MEDCITATI"
+  ],
+  "contact_person": "",
+  "audience": "4,6 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/pervomedik"
+ },
+ {
+  "name": "Подслушано СамГМУ",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Подслушано студентов Самарского медуниверситета.",
+  "url": "https://t.me/samsmuu",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@samsmuu_bot"
+  ],
+  "contact_person": "",
+  "audience": "2,5 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/samsmuu"
+ },
+ {
+  "name": "Подслушано РостГМУ",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Подслушано студентов Ростовского медуниверситета.",
+  "url": "https://t.me/rostsmuu",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@rostsmuu_bot"
+  ],
+  "contact_person": "",
+  "audience": "3,8 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/rostsmuu"
+ },
+ {
+  "name": "Нейросети для врачей | MD.school",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал о применении нейросетей в работе врача — близкая тема к ИИ-тренажёру.",
+  "url": "https://t.me/mdai_dima",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/mdai_dima/1529"
+  ],
+  "contact_person": "",
+  "audience": "14 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/mdai_dima"
+ },
+ {
+  "name": "Медицина (medobrazovanye)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Образовательное медицинское сообщество (TG/VK/MAX), сеть каналов с единым рекламным контактом.",
+  "url": "https://t.me/medobrazovanye",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/rek_web",
+   "https://vk.com/medobrazovanye"
+  ],
+  "contact_person": "",
+  "audience": "11 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medobrazovanye"
+ },
+ {
+  "name": "Кардиология & ФД. Академия Докстарклаб",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал для врачей, ординаторов и студентов по кардиологии и функциональной диагностике.",
+  "url": "https://t.me/cardio_fd_dsc",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://docstarclub.ru/courses-dsc"
+  ],
+  "contact_person": "",
+  "audience": "15 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/cardio_fd_dsc"
+ },
+ {
+  "name": "Анестезиология-реаниматология. Ординаторы Asia+",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал по медицине критических состояний для ординаторов и интернов (русскоязычный, Азия).",
+  "url": "https://t.me/orda_air",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@lisa_lm"
+  ],
+  "contact_person": "менеджер @lisa_lm (канал заявлен как «не продаётся»)",
+  "audience": "20 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/orda_air"
+ },
+ {
+  "name": "Профессия – хирург",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Доказательная медицина, исследования и клинические случаи для хирургов.",
+  "url": "https://t.me/profsurgeon",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "13 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/profsurgeon"
+ },
+ {
+  "name": "Гистология by SkillMed",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Репетитор-врач по анатомии, гистологии, физиологии и патофизиологии для студентов.",
+  "url": "https://t.me/gista_skillmed",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@edi_ai",
+   "https://t.me/fiza_skillmed"
+  ],
+  "contact_person": "",
+  "audience": "8 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/gista_skillmed"
+ },
+ {
+  "name": "ExpertПатофизиология (SmartLearn)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Онлайн-курсы по патофизиологии для студентов-медиков.",
+  "url": "https://t.me/smart_pathphiz",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://smartlearn.best/"
+  ],
+  "contact_person": "",
+  "audience": "5 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/smart_pathphiz"
+ },
+ {
+  "name": "Эдгар Кафаров — Анатомия человека",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Анатомия просто и понятно от популярного преподавателя-блогера, большая аудитория студентов-медиков.",
+  "url": "https://t.me/edgarkafarov",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/Zabota_Kafarov",
+   "https://t.me/KafarovAcademy_bot"
+  ],
+  "contact_person": "Эдгар Кафаров",
+  "audience": "25 тыс. подписчиков",
+  "priority": "A",
+  "source": "https://t.me/edgarkafarov"
+ },
+ {
+  "name": "Анатомия в Кармане",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Популярный канал об анатомии и физиологии человека.",
+  "url": "https://t.me/vrachi_mediki",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@biologads"
+  ],
+  "contact_person": "",
+  "audience": "20 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/vrachi_mediki"
+ },
+ {
+  "name": "Анатомия и физиология человека",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Образовательное сообщество по анатомии (TG/VK/MAX), реклама через сеть rek_web.",
+  "url": "https://t.me/anatomy_cheloveka",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/rek_web",
+   "https://vk.com/anatomy_cheloveka"
+  ],
+  "contact_person": "",
+  "audience": "21 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/anatomy_cheloveka"
+ },
+ {
+  "name": "Смотровая Военврача (Алексей Водовозов)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог врача и научного журналиста Алексея Водовозова о доказательной медицине.",
+  "url": "https://t.me/dr_voenvrach",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/dr_voenvrach/866"
+  ],
+  "contact_person": "Алексей Водовозов",
+  "audience": "44 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/dr_voenvrach"
+ },
+ {
+  "name": "KaplanMed | Образование и медицина",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал для студентов-медиков: гистология, патанатомия, патофизиология.",
+  "url": "https://t.me/kaplanmedschool",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@kaplaninnokenty",
+   "https://vk.com/kaplanmed",
+   "https://vk.com/histologytutor"
+  ],
+  "contact_person": "",
+  "audience": "3,9 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/kaplanmedschool"
+ },
+ {
+  "name": "STORYMED (medicalstudentlibrary)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал преподавателя хирургии Scalpel Med с поиском книг для студентов-медиков.",
+  "url": "https://t.me/medicalstudentlibrary",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@RafizGasanov"
+  ],
+  "contact_person": "Рафиз Гасанов",
+  "audience": "5,6 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/medicalstudentlibrary"
+ },
+ {
+  "name": "СТУДЕНТ МЕДИК | Авторские конспекты",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Авторские конспекты для студентов-медиков.",
+  "url": "https://t.me/study_in_med",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@Matoshigi"
+  ],
+  "contact_person": "",
+  "audience": "5,2 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/study_in_med"
+ },
+ {
+  "name": "Леся ~ Студент медик",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог выпускницы-краснодипломницы, ныне ординатора: учеба, ординатура, лайфстайл медика.",
+  "url": "https://t.me/lesyamedd",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@blueberryglobal"
+  ],
+  "contact_person": "",
+  "audience": "6,5 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/lesyamedd"
+ },
+ {
+  "name": "Уголок медика",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Живой дневник студентки-медика: учёба, экзамены, полезные материалы.",
+  "url": "https://t.me/ugolokmedikaa",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@nebieva"
+  ],
+  "contact_person": "",
+  "audience": "7,7 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/ugolokmedikaa"
+ },
+ {
+  "name": "Материалы на миллион",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Полезные материалы для студентов-медиков.",
+  "url": "https://t.me/medmaterials1",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@S011101"
+  ],
+  "contact_person": "",
+  "audience": "8,8 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/medmaterials1"
+ },
+ {
+  "name": "Мед Глэм | УГМУ",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Обзор учебных материалов и курсов по всей программе медвуза от студентки УГМУ.",
+  "url": "https://t.me/myMEDanat",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@totallyspies4"
+  ],
+  "contact_person": "",
+  "audience": "2,6 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/myMEDanat"
+ },
+ {
+  "name": "MeDKiT",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог студентки 4 курса лечфака (Волгоград): жизнь студента-медика и материалы.",
+  "url": "https://t.me/KiTMeDD",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@Xly_p"
+  ],
+  "contact_person": "",
+  "audience": "6,3 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/KiTMeDD"
+ },
+ {
+  "name": "avokos",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог студентки-медика и ветеринара с чатом и YouTube.",
+  "url": "https://t.me/avokos",
+  "emails": [
+   "avokosk@mail.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "@blueberryglobal"
+  ],
+  "contact_person": "",
+  "audience": "7,5 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/avokos"
+ },
+ {
+  "name": "Скорая помощь | Неотложка",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Образовательный канал о неотложной помощи (сеть rek_web).",
+  "url": "https://t.me/skorayia",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/rek_web"
+  ],
+  "contact_person": "",
+  "audience": "11 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/skorayia"
+ },
+ {
+  "name": "Гриша про скорую",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Авторский канал фельдшера скорой помощи из Москвы.",
+  "url": "https://t.me/grisha_medic",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@addo_ere_3"
+  ],
+  "contact_person": "",
+  "audience": "5,2 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/grisha_medic"
+ },
+ {
+  "name": "Школа УЗИ",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Обучение врачей и ординаторов УЗИ-диагностике от к.м.н.",
+  "url": "https://t.me/uzi_obuchenie",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://ultrasoundoc.com"
+  ],
+  "contact_person": "",
+  "audience": "9 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/uzi_obuchenie"
+ },
+ {
+  "name": "Евразийская Ассоциация Терапевтов (ЕАТ)",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал ЕАТ; проект «Орди» для молодых врачей с разбором клинических случаев — потенциальный партнёр.",
+  "url": "https://t.me/euatofficial",
+  "emails": [
+   "info@euat.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "@ordi_euat",
+   "@EATCalcBot"
+  ],
+  "contact_person": "",
+  "audience": "9 тыс. подписчиков",
+  "priority": "B",
+  "source": "https://t.me/euatofficial"
+ },
+ {
+  "name": "Фельдшер +",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Канал для студентов медколледжей, фельдшеров и медсестёр.",
+  "url": "https://t.me/feldsherplus",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@FeldsherAskBot"
+  ],
+  "contact_person": "",
+  "audience": "10 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/feldsherplus"
+ },
+ {
+  "name": "4MEDICS — медицинский портал",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицинские мемы и познавательная информация для медиков.",
+  "url": "https://t.me/formedics",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "https://t.me/maria4medics",
+   "https://tagio.pro/channel/9434/"
+  ],
+  "contact_person": "",
+  "audience": "4,7 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://t.me/formedics"
+ },
+ {
+  "name": "Немедик",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Простым языком о здоровье и медицине — крупный научпоп-канал (широкая аудитория).",
+  "url": "https://t.me/nemedic",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@HannaDemyanchik13",
+   "@nakadm",
+   "@dmastoff",
+   "https://telega.in/c/+N7XfawR8-A8yMDEy"
+  ],
+  "contact_person": "",
+  "audience": "146 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://tgstat.ru/channel/AAAAAFbjgw7AMK2yJlsKhw"
+ },
+ {
+  "name": "Злой Медик",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Медицина без цензуры — истории и кейсы, популярен у медиков.",
+  "url": "https://t.me/+VFxEsw1yKkA5ZmZi",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@Sunnybannynew",
+   "@milkywawe",
+   "@franko_telegram"
+  ],
+  "contact_person": "",
+  "audience": "52 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://tgstat.ru/channel/GXShmWQLoHgyNTU6"
+ },
+ {
+  "name": "Блог на скорой",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Блог врача скорой помощи о буднях.",
+  "url": "https://t.me/+g0QMSPia1_9iOGUy",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@sunnybannynew",
+   "@franko_telegram"
+  ],
+  "contact_person": "",
+  "audience": "17 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://tgstat.ru/channel/3TWwaZu4KKFmODNi"
+ },
+ {
+  "name": "БЛОГ ПАТОЛОГОАНАТОМА",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Записи и факты из жизни врача-патологоанатома.",
+  "url": "https://tgstat.ru/channel/hCjwmAdKMB01M2U6",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@Liza_reklama"
+  ],
+  "contact_person": "",
+  "audience": "16 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://tgstat.ru/channel/hCjwmAdKMB01M2U6"
+ },
+ {
+  "name": "Белый халат",
+  "category": "Telegram-канал",
+  "format": "Онлайн",
+  "city": "",
+  "dates": "",
+  "description": "Авторский блог врача со стажем 20+ лет о здоровье.",
+  "url": "https://t.me/belyy_khalat",
+  "emails": [],
+  "phones": [],
+  "socials": [
+   "@Pabloo0707",
+   "@Reynoldkg"
+  ],
+  "contact_person": "",
+  "audience": "24 тыс. подписчиков",
+  "priority": "C",
+  "source": "https://tgstat.ru/channel/0i8ClA1mX1piZWIy"
+ }
+]

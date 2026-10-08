@@ -1,0 +1,212 @@
+[
+ {
+  "name": "Международная Пироговская научная медицинская конференция студентов и молодых учёных (РНИМУ им. Н.И. Пирогова)",
+  "category": "Конференция",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "март 2027 (ежегодно, традиционно третий четверг марта)",
+  "description": "Крупнейшая в России студенческая медицинская научная конференция, организуемая Советом СНО РНИМУ; тысячи участников-студентов и ординаторов со всей страны — идеальная площадка для анонса тренажёра.",
+  "url": "https://pirogovka.rsmu.ru/",
+  "emails": [
+   "pirogov_conf@rsmu.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.ru/pirogovka2027",
+   "https://vk.com/rnimupirogov"
+  ],
+  "contact_person": "Оргкомитет Пироговской конференции (Совет СНО РНИМУ)",
+  "audience": "несколько тысяч участников ежегодно (междунар. уровень)",
+  "priority": "A",
+  "source": "https://pirogovka.rsmu.ru/pirogovka-contacts"
+ },
+ {
+  "name": "Международный молодёжный научный медицинский форум «Белые цветы» (Казанский ГМУ, СНО им. И.А. Студенцовой)",
+  "category": "Конференция",
+  "format": "Офлайн",
+  "city": "Казань",
+  "dates": "апрель 2027 (ежегодно; в 2026 — 15–17 апреля)",
+  "description": "Трёхдневный международный форум СНО Казанского ГМУ с конференциями и олимпиадами; большая студенческая аудитория и активный студенческий совет, открытый к партнёрствам.",
+  "url": "https://sno.kazangmu.ru/?page_id=822",
+  "emails": [
+   "sno-kgmu@kazangmu.ru"
+  ],
+  "phones": [
+   "+7 (917) 269-54-40"
+  ],
+  "socials": [
+   "https://vk.com/id264037680",
+   "https://vk.com/kazangmu"
+  ],
+  "contact_person": "Терехова Анна Алексеевна, председатель Совета СНО им. И.А. Студенцовой",
+  "audience": "1813 участников (по данным сайта СНО)",
+  "priority": "A",
+  "source": "https://sno.kazangmu.ru/"
+ },
+ {
+  "name": "Итоговая научно-практическая конференция студентов и молодых учёных «Актуальные вопросы экспериментальной и клинической медицины» (ПСПбГМУ им. И.П. Павлова)",
+  "category": "Конференция",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "апрель 2027 (ежегодно, LXXXVII+ конференция)",
+  "description": "Ежегодная итоговая конференция СНО Первого Павловского университета с международным участием; Совет СНО также проводит форум председателей СНО вузов России «Вернадский».",
+  "url": "https://1spbgmu.ru/nauka/sno-i-obshchestvo-molodykh-uchenykh",
+  "emails": [
+   "sovetsno@spb-gmu.ru",
+   "info_sovet_sno@mail.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.ru/sovetsno1med",
+   "https://t.me/PSPbGMUofficial"
+  ],
+  "contact_person": "Совет СНО ПСПбГМУ им. И.П. Павлова",
+  "audience": "СНО на 58 кафедрах; сотни докладчиков",
+  "priority": "A",
+  "source": "https://1spbgmu.ru/nauka/sno-i-obshchestvo-molodykh-uchenykh"
+ },
+ {
+  "name": "Пироговская студенческая научная конференция СНО им. Н.И. Пирогова (СибГМУ)",
+  "category": "Конференция",
+  "format": "Офлайн",
+  "city": "Томск",
+  "dates": "весна 2027 (ежегодно)",
+  "description": "Ежегодная конференция одного из старейших СНО Сибири; председатель СНО указан публично с прямой почтой.",
+  "url": "https://www.ssmu.ru/student/org/pirogov/",
+  "emails": [
+   "zavyalov.av@ssmu.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/sibmed_sno",
+   "https://t.me/ssmutomsk"
+  ],
+  "contact_person": "Завьялов Александр Васильевич, председатель СНО им. Н.И. Пирогова",
+  "audience": "",
+  "priority": "A",
+  "source": "https://www.ssmu.ru/student/org/pirogov/"
+ },
+ {
+  "name": "VI Международная олимпиада по онкологии и ядерной медицине (отборочный этап СФО — СибГМУ)",
+  "category": "Олимпиада",
+  "format": "Гибрид",
+  "city": "Томск (отбор онлайн) / Москва (финал)",
+  "dates": "отбор СФО 26 октября 2026 (онлайн); финал 30 ноября 2026, Москва",
+  "description": "Командная олимпиада с клиническими задачами для студентов-медиков; формат клинических кейсов близок к нашему тренажёру.",
+  "url": "https://media.ssmu.ru/news/sibmed-priglashaet-k-uchastiyu-v-vi-mezhdunarodnoy-olimpiade-po-onkologii-i-yadernoy-meditsine/",
+  "emails": [
+   "sitnikova.ey@ssmu.ru",
+   "pressa@ssmu.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/sibmed",
+   "https://t.me/ssmutomsk"
+  ],
+  "contact_person": "Ситникова Екатерина, ассистент кафедры онкологии СибГМУ",
+  "audience": "команды медвузов СФО",
+  "priority": "B",
+  "source": "https://media.ssmu.ru/news/sibmed-priglashaet-k-uchastiyu-v-vi-mezhdunarodnoy-olimpiade-po-onkologii-i-yadernoy-meditsine/"
+ },
+ {
+  "name": "Всероссийская конференция студентов и молодых учёных «Хирургия – от теории к практике» (ЮУГМУ)",
+  "category": "Конференция",
+  "format": "Гибрид",
+  "city": "Челябинск",
+  "dates": "ежегодно (в 2026 — II конференция, к 216-летию Н.И. Пирогова)",
+  "description": "Всероссийская хирургическая конференция студентов и молодых учёных на базе ЮУГМУ; оргкомитет принимает заявки по почте.",
+  "url": "https://chelsma.ru/science/studencheskoe-nauchnoe-obshchestvo/",
+  "emails": [
+   "fluchi@mail.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://vk.com/fluchi",
+   "https://vk.com/pr.susmu",
+   "https://t.me/pr_susmu"
+  ],
+  "contact_person": "Злобина Екатерина Александровна, ассистент кафедры общей и детской хирургии",
+  "audience": "",
+  "priority": "B",
+  "source": "https://chelsma.ru/science/studencheskoe-nauchnoe-obshchestvo/"
+ },
+ {
+  "name": "Международный молодёжный форум «Медицинская наука без границ» (СтГМУ)",
+  "category": "Конференция",
+  "format": "Гибрид",
+  "city": "Ставрополь",
+  "dates": "11–13 ноября 2026 (ежегодно)",
+  "description": "Международный молодёжный медицинский форум Ставропольского ГМУ с растущей географией; Совет молодых учёных принимает вопросы по почте — удобный вход для партнёрства.",
+  "url": "https://stgmu.ru/science/",
+  "emails": [
+   "smu@stgmu.ru"
+  ],
+  "phones": [],
+  "socials": [
+   "https://t.me/stgmu_minzdrava_ru"
+  ],
+  "contact_person": "Оргкомитет форума (Совет молодых учёных СтГМУ), тема письма «Вопрос по молодежному форуму»",
+  "audience": "",
+  "priority": "A",
+  "source": "https://chitgma.ru/nauka/mno/molodezhnye-nauchnye-konferentsii/mezhdunarodnyj-molodezhnyj-forum-medicinskaja-nauka-bez-granic-11-13-nojabrja-2026-g-g/19249/Информационное письмо_Мед наука - 2026.pdf"
+ },
+ {
+  "name": "VII Всероссийская студенческая олимпиада по педиатрии и неонатологии (ЯГМУ)",
+  "category": "Олимпиада",
+  "format": "Гибрид",
+  "city": "Ярославль",
+  "dates": "26 сентября – 22 октября 2026 (ежегодно)",
+  "description": "Командная всероссийская олимпиада по педиатрии на базе симуляционной клиники ЯГМУ — аудитория студентов старших курсов, мотивированных на практические навыки.",
+  "url": "https://ysmu.ru/",
+  "emails": [
+   "pediat@ysmu.ru",
+   "uglov@ysmu.ru"
+  ],
+  "phones": [
+   "+7 903 821-47-23"
+  ],
+  "socials": [],
+  "contact_person": "Углов Евгений Станиславович (оргкомитет, кафедра педиатрии ЯГМУ)",
+  "audience": "команды по 5 студентов из медвузов РФ",
+  "priority": "B",
+  "source": "https://chitgma.ru/nauka/mno/molodezhnye-nauchnye-konferentsii/vii-vserossijskaja-studencheskaja-olimpiada-po-pediatrii-i-neonatologii-26-sentjabrja-po-22/19137/Информационное письмо 2026.pdf"
+ },
+ {
+  "name": "Всероссийская конференция молодых учёных «Цифровые технологии в современной медицине» (Сеченовский университет)",
+  "category": "Конференция",
+  "format": "Гибрид",
+  "city": "Москва",
+  "dates": "декабрь–октябрь, итоговое заседание 9 октября 2026 (ежегодно, V конференция)",
+  "description": "Конференция молодых учёных о цифровой медицине и ИИ при Сеченовском университете — тематически максимально близка к AI-тренажёру; можно предложить демо или спецноминацию.",
+  "url": "https://itmcongress.ru/sechenov/",
+  "emails": [
+   "med@consef.ru"
+  ],
+  "phones": [
+   "+7 495 978-25-11"
+  ],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "A",
+  "source": "https://itmcongress.ru/sechenov/"
+ },
+ {
+  "name": "Конкурс научных работ молодых учёных «Primum inventa» (конгресс ТЕРМА-2026)",
+  "category": "Конкурс",
+  "format": "Офлайн",
+  "city": "Санкт-Петербург",
+  "dates": "8–19 декабря 2026 (ежегодно в рамках конгресса ТЕРМА)",
+  "description": "Конкурс молодых учёных (научное и клиническое направления) в рамках конгресса терапевтов СЗФО — аудитория ординаторов и молодых терапевтов.",
+  "url": "https://chitgma.ru/nauka/mno/molodezhnye-nauchnye-konferentsii/konkurse-nauchnyh-rabot-molodyh-uchenyh-primum-inventa-8-19-dekabrja-2026-g-g-sankt-peterburg",
+  "emails": [
+   "hrabrovamc@gmail.com"
+  ],
+  "phones": [],
+  "socials": [],
+  "contact_person": "",
+  "audience": "",
+  "priority": "C",
+  "source": "https://chitgma.ru/nauka/mno/molodezhnye-nauchnye-konferentsii/konkurse-nauchnyh-rabot-molodyh-uchenyh-primum-inventa-8-19-dekabrja-2026-g-g-sankt-peterburg/18108/ТЕРМА 2026 -Проведение конкурса молодых ученых.docx"
+ }
+]
