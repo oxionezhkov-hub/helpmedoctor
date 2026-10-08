@@ -580,3 +580,12 @@ test("осмотр: у каждого приёма своя область, бе
   assert.match(examScope("Пальпация живота").scope, /живот/);
   assert.match(examScope("Пальпация щитовидной железы").scope, /этого приёма/);
 });
+
+test("документы админки: заголовок из .md и идея в раздел «Идеи»", async () => {
+  const { splitTitle, appendIdea } = await import("../src/lib/docs.js");
+  assert.deepEqual(splitTitle("# Стратегия\n\nТекст"), { title: "Стратегия", body: "Текст" });
+  assert.equal(splitTitle("Без заголовка").title, "");
+  assert.equal(appendIdea("Текст", "- [ ] идея"), "Текст\n\n## Идеи\n\n- [ ] идея\n");
+  assert.equal(appendIdea("## Идеи\n\n- [ ] а\n\n## Потом\n\nх", "- [ ] б"), "## Идеи\n\n- [ ] а\n- [ ] б\n\n## Потом\n\nх\n");
+});
+
