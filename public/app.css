@@ -831,3 +831,30 @@ details.card.promo-box summary::after { margin-left: auto; }
 .steps-cap { display: flex; flex-direction: column; gap: 2px; }
 .steps-cap b { font-size: 16px; }
 .rating-big + .stars .i { width: 26px; height: 26px; }
+
+/* ---------- Разбор — «распаковка» ---------- */
+.eval-seal {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 22px 16px 16px;
+  border-radius: 18px; background: var(--accent-soft); color: var(--text); cursor: pointer; user-select: none; touch-action: pan-x;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 35%, transparent);
+  animation: seal-hint 2.4s ease-in-out .6s 2; transition: transform .2s ease;
+}
+.eval-seal .tile.lg { margin: 0 0 4px; background: var(--surface); }
+.eval-seal b { font-size: 18px; }
+.seal-pull { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; color: var(--accent); font-weight: 600; }
+.seal-pull .i { width: 18px; height: 18px; animation: seal-arrow 1.2s ease-in-out infinite; }
+.eval-seal.opening { animation: seal-open .38s ease-in forwards; pointer-events: none; }
+@keyframes seal-hint { 0%, 30%, 100% { transform: none; } 10% { transform: translateY(6px); } 20% { transform: translateY(-2px); } }
+@keyframes seal-arrow { 50% { transform: translateY(3px); } }
+@keyframes seal-open { to { transform: translateY(40px) rotate(2deg) scale(.96); opacity: 0; } }
+.eval-reveal { animation: up .45s cubic-bezier(.2, .8, .2, 1); }
+.eval-reveal .stars .star { animation: star-pop .35s cubic-bezier(.3, 1.6, .5, 1) backwards; }
+.eval-reveal .stars .star:nth-child(1) { animation-delay: .15s; }
+.eval-reveal .stars .star:nth-child(2) { animation-delay: .25s; }
+.eval-reveal .stars .star:nth-child(3) { animation-delay: .35s; }
+.eval-reveal .stars .star:nth-child(4) { animation-delay: .45s; }
+.eval-reveal .stars .star:nth-child(5) { animation-delay: .55s; }
+@keyframes star-pop { from { transform: scale(0); } }
+.peak-ask { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: var(--surface-2); }
+.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 200; }
+@media (prefers-reduced-motion: reduce) { .eval-seal, .seal-pull .i, .eval-reveal, .eval-reveal .stars .star { animation: none; } }

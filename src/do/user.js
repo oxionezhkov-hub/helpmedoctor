@@ -1086,7 +1086,8 @@ export class UserDO extends DurableObject {
 
     // Битва: оценку и разбор не присылаем до итога — его пришлёт битва, когда закончат оба
     if (job.origin !== "bot" && !fresh.battle?.id) {
-      await this.pushNotify({ title: `✅ Разбор приёма готов — ${ev.rating}/5`, body: `${fresh.name}: ${fresh.true_diagnosis}. +${earned} XP`, url: `/app#/patient/${job.patId}`, tag: `ev-${job.patId}` }, { away: true });
+      // Оценку не пишем: она раскрывается в приложении — ради неё врач и откроет уведомление
+      await this.pushNotify({ title: "✅ Разбор приёма готов", body: `${fresh.name}: ${fresh.true_diagnosis}. Откройте, чтобы узнать оценку`, url: `/app#/patient/${job.patId}`, tag: `ev-${job.patId}` }, { away: true });
     }
     if (job.origin === "bot" && !fresh.battle?.id) {
       const m = R.evaluation(this.env, result);
