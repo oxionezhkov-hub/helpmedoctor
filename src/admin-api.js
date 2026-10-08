@@ -20,6 +20,7 @@ const HUB_OPS = new Set([
   "partners", "partner_decide", "payout_decide", "earning_cancel",
   "bloggers", "blogger_log", "blogger_save", "blogger_note", "blogger_delete", "bloggers_plan", "bloggers_goal",
   "promos", "promo_create", "promo_toggle", "promo_uses",
+  "docs", "doc", "doc_create", "doc_save", "doc_idea", "doc_delete",
 ]);
 
 

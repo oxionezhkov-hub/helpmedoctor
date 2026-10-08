@@ -45,7 +45,7 @@ export default {
       const vkImg = path.match(/^\/vk\/img\/([a-z0-9-]{3,80})\.jpg$/);
       if (vkImg) return vkFeedImage(env, vkImg[1]);
       const vkPage = path.match(/^\/vk\/p\/([a-z0-9-]{3,80})$/);
-      if (vkPage) return vkFeedPage(env, vkPage[1]);
+      if (vkPage) return vkFeedPage(env, vkPage[1], env.PUBLIC_URL || url.origin);
       if (path.startsWith("/api/admin/")) return adminApi(request, env, url, ctx);
       // Прототип голосового приёма без входа (страница /test362861)
       if (path.startsWith("/api/proto/")) return protoApi(request, env, url);

@@ -453,3 +453,58 @@ table.t { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 
 .guide ol.steps li { margin: 8px 0; }
 .tpl { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; max-height: 320px; overflow-y: auto; }
 @media (max-width: 900px) { .guide-layout { grid-template-columns: 1fr; } .guide-toc { position: static; } }
+
+/* ---------- Документы (страницы в духе Notion) ---------- */
+.docs { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
+.docs-side { position: sticky; top: 72px; display: flex; flex-direction: column; gap: 10px; }
+.btn.block { width: 100%; justify-content: center; }
+.docs-list { display: flex; flex-direction: column; gap: 2px; }
+.docs-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; color: var(--text); font-size: 14px; }
+.docs-item:hover { background: var(--surface-2); text-decoration: none; }
+.docs-item.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.docs-ico { width: 20px; text-align: center; flex: none; }
+.docs-back { display: none; margin-bottom: 8px; color: var(--muted); }
+.doc { max-width: 780px; margin: 0 auto; padding: 8px 4px 40px; }
+.doc-head { margin-bottom: 14px; }
+.doc-icon { font-size: 40px; line-height: 1; background: none; border: 0; padding: 4px; border-radius: 10px; cursor: pointer; }
+.doc-icon:hover { background: var(--surface-2); }
+.doc-title { font-size: 30px; line-height: 1.2; margin: 6px 0 8px; outline: none; border-radius: 6px; }
+.doc-title:focus { background: var(--surface-2); }
+.doc-meta { gap: 6px; flex-wrap: wrap; }
+.doc-body { display: flex; flex-direction: column; gap: 2px; font-size: 15.5px; line-height: 1.6; }
+.doc-block { position: relative; padding: 3px 8px; margin: 0 -8px; border-radius: 6px; cursor: text; }
+.doc-block:hover { background: var(--surface-2); }
+.doc-block.editing { background: none; padding: 0; margin: 2px -8px; }
+.doc-block > :first-child { margin-top: 0; }
+.doc-block > :last-child { margin-bottom: 0; }
+.doc-block p { margin: 6px 0; }
+.doc-block h2 { font-size: 23px; margin: 22px 0 4px; }
+.doc-block h3 { font-size: 18.5px; margin: 16px 0 2px; }
+.doc-block h4 { font-size: 16px; margin: 12px 0 0; }
+.doc-block hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
+.doc-block ul, .doc-block ol { margin: 4px 0; padding-left: 22px; }
+.doc-block li { margin: 2px 0; }
+.doc-block li.todo { list-style: none; margin-left: -22px; display: flex; gap: 8px; align-items: flex-start; }
+.doc-block li.todo input { margin-top: 5px; width: 16px; height: 16px; accent-color: var(--accent); flex: none; cursor: pointer; }
+.doc-block li.todo.done > span { color: var(--muted); text-decoration: line-through; }
+.doc-block blockquote { margin: 6px 0; padding: 4px 14px; border-left: 3px solid var(--accent); color: var(--text-2); }
+.doc-block code { background: var(--surface-3); border-radius: 4px; padding: 1px 5px; font-size: .92em; }
+.doc-table { overflow-x: auto; margin: 6px 0; }
+.doc-table table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.45; }
+.doc-table th, .doc-table td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+.doc-table th { background: var(--surface-2); font-weight: 600; }
+.doc-edit { width: 100%; min-height: 40px; resize: none; border: 1.5px solid var(--accent); border-radius: 8px; padding: 8px 10px; font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface); color: var(--text); outline: none; }
+.doc-add { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 0 -6px; padding: 6px 8px; border: 0; background: none; color: var(--muted); border-radius: 6px; cursor: pointer; font: inherit; font-size: 14px; }
+.doc-add:hover { background: var(--surface-2); color: var(--text); }
+.doc-idea { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding: 10px 12px; border: 1px dashed var(--border); border-radius: 12px; background: var(--surface); }
+.doc-idea .input { flex: 1; min-width: 0; }
+.doc-idea-ico { font-size: 20px; }
+.doc-hint { margin-top: 10px; }
+.doc-raw { width: 100%; min-height: 60vh; font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+@media (max-width: 900px) {
+  .docs { grid-template-columns: minmax(0, 1fr); }
+  .docs-side { position: static; }
+  .docs.has-doc .docs-side { display: none; }
+  .docs.has-doc .docs-back { display: inline-flex; align-items: center; gap: 4px; }
+  .doc-title { font-size: 25px; }
+}

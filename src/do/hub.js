@@ -14,6 +14,7 @@ import * as A from "../lib/analytics.js";
 import * as PT from "../lib/partners.js";
 import * as BL from "../lib/bloggers.js";
 import * as PR from "../lib/promos.js";
+import * as DC from "../lib/docs.js";
 import * as BT from "../lib/battles.js";
 
 const NOTIFY_KINDS = A.NOTIFY_KINDS;
@@ -89,6 +90,7 @@ export class HubDO extends DurableObject {
     BL.initBloggerTables(this.sql);
     BT.initBattleTables(this.sql);
     PR.initPromoTables(this.sql);
+    DC.initDocTables(this.sql);
     // Битва: выбор профессии вычёркиванием и сложности (JSON)
     this.addColumn("battles", "draft", "TEXT");
     // Миграции: новые колонки в старых таблицах
@@ -1222,7 +1224,7 @@ export class HubDO extends DurableObject {
   // API админки: один вход, чтобы не плодить RPC-методы
   // ---------------------------------------------------
   async admin(op, args = {}, adminId = "") {
-    const fn = A.ADMIN_OPS[op] || PARTNER_OPS[op] || BL.BLOGGER_OPS[op] || PR.PROMO_OPS[op];
+    const fn = A.ADMIN_OPS[op] || PARTNER_OPS[op] || BL.BLOGGER_OPS[op] || PR.PROMO_OPS[op] || DC.DOC_OPS[op];
     if (!fn) throw new Error(`unknown admin op ${op}`);
     return fn(this, args, String(adminId));
   }
