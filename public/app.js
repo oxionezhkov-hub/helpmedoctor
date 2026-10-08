@@ -118,6 +118,7 @@ const ICONS = {
   logout: '<path d="M9 21H5V3h4M16 17l5-5-5-5M21 12H9"/>',
   key: '<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.7-8.7M17 6l2.5 2.5M14.5 8.5 17 11"/>',
   back: '<path d="m15 18-6-6 6-6"/>',
+  chevronDown: '<path d="m6 9 6 6 6-6"/>',
   chevron: '<path d="m9 18 6-6-6-6"/>',
   heart: '<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/><path d="M3.5 12h4l2-3 3 6 2-3h6" class="pulse"/>',
   telegram: '<path d="M21 4 3 11l6 2 2 6 3-4 5 4Z"/><path d="m9 13 12-9"/>',
@@ -1485,7 +1486,10 @@ function viewPatient() {
     ${consults.length && !battleLock ? html`<div class="section-title">Приёмы</div>
       ${consults.map((c, i) => html`<div class="card stack">
         <div class="row between"><b>Приём №${consults.length - i}</b><span class="tiny muted">${dateText(c.date)}</span></div>
-        ${c.evaluating ? etaBox("evaluation", c.date) : evaluationBlock(c)}
+        ${c.evaluating ? etaBox("evaluation", c.date)
+          : i === 0 && c.rating != null && Date.now() - c.date < SEAL_TTL && !evalSeen(p.id, consults.length)
+            ? sealedEval(p.id, consults.length, () => evaluationBlock(c, { top: peakAsk(c.rating) }), (box) => afterReveal(box, c.rating))
+            : evaluationBlock(c)}
         ${actionsSummary(c)}
         ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id, p.gift_kr)}</div>${c.rating != null ? expertCta(p) : ""}` : ""}
       </div>`)}` : ""}
@@ -1496,6 +1500,7 @@ function viewPatient() {
     ${!never && !consults.some((c) => c.evaluating) ? html`<button class="btn block ghost c-danger" data-delete-patient="${p.id}">${ic("trash")}<span>Удалить пациента</span></button>` : ""}
   </div>`, true);
   window.scrollTo(0, y);
+  bindSeals(root);
 }
 
 function actionsSummary(c) {
@@ -1522,21 +1527,158 @@ function paragraphs(text) {
   return out;
 }
 
-function evaluationBlock(c) {
+function evaluationBlock(c, { top = "" } = {}) {
   if (c.rating == null) return "";
   const f = c.feedback || {};
   const axes = f.axes;
   return html`<div class="stack">
-    <div class="row"><div class="rating-big">${Number(c.rating).toFixed(1).replace(".", ",")}</div><div>${starsRow(c.rating)}${c.xp ? html`<span class="xp-pill small">${ic("zap")} +${c.xp} XP</span>` : ""}</div></div>
+    <div class="row"><div class="rating-big" data-rating="${c.rating}">${Number(c.rating).toFixed(1).replace(".", ",")}</div><div>${starsRow(c.rating)}${c.xp ? html`<span class="xp-pill small">${ic("zap")} +${c.xp} XP</span>` : ""}</div></div>
     ${axes ? html`<div class="stack-sm">
       ${[["Диагностика", axes.diagnosis], ["Общение", axes.communication], ["Лечение", axes.treatment]].map(([k, v]) => html`<div class="axis"><span>${k}</span><span class="bar"><i style="width:${(v / 5) * 100}%"></i></span><b>${v}</b></div>`)}
     </div>` : ""}
+    ${top}
     ${f.expert_text ? html`<div class="expert-text">${paragraphs(f.expert_text).map((p) => html`<p>${p}</p>`)}</div>` : (f.good || []).map((g) => html`<p>${g}</p>`)}
     ${c.hints ? html`<div class="small fact">${ic("bulb", "c-warn")}<span>Подсказок взято: ${c.hints} — оценка ниже на ${String(Math.round(c.hints * 2) / 10).replace(".", ",")}</span></div>` : ""}
     ${(f.dialog_moments || []).length ? html`<div class="stack-sm"><div class="tiny muted">МОМЕНТЫ ИЗ ДИАЛОГА</div>${f.dialog_moments.map((m) => html`<div class="moment">${m.quote ? html`<div class="quote small">«${m.quote}»</div>` : ""}<div class="small">${m.comment}</div></div>`)}</div>` : ""}
     ${f.recommendation ? html`<div class="small fact">${ic("bulb", "c-warn")}<div><b>Совет:</b> ${f.recommendation}</div></div>` : ""}
     ${c.post_story ? html`<div class="card flat" style="background:var(--surface-2)"><div class="tiny muted row-c">${ic("book")} ЧТО БЫЛО ДАЛЬШЕ</div><div class="small">${c.post_story}</div></div>` : ""}
   </div>`;
+}
+
+// ---------- Разбор — «распаковка» ----------
+// Единственный момент, когда врач сам возвращается в тренажёр, — за оценкой после приёма. Поэтому новый разбор
+// приходит запечатанным: врач открывает его сам (нажатием или потянув вниз), оценка раскрывается с откликом,
+// приём становится записью во врачебной карте, а следующий шаг — следующий пациент — стоит прямо в этом моменте.
+const SEAL_TTL = 3 * 86400000; // старые разборы не запечатываем
+const sealKey = (patId, n) => `hmd_ev_seen_${patId}_${n}`;
+const evalSeen = (patId, n) => store(sealKey(patId, n)) === "1";
+const sealRevealers = new Map();
+
+/** Запечатанный разбор. reveal() возвращает содержимое после вскрытия, after(el) — анимации и обработчики */
+function sealedEval(patId, n, reveal, after) {
+  const key = `${patId}:${n}`;
+  sealRevealers.set(key, { patId, n, reveal, after });
+  return html`<div class="eval-seal" data-seal="${key}" role="button" tabindex="0" aria-label="Открыть разбор приёма">
+    <div class="tile accent lg">${ic("card")}</div>
+    <b>Разбор приёма готов</b>
+    <span class="small muted">Эксперт проверил диагноз, лечение и общение с пациентом</span>
+    <span class="seal-pull small">${ic("chevronDown")}Открыть разбор</span>
+  </div>`;
+}
+
+/** Вскрытие: тянуть вниз или нажать. Срабатывает один раз, отметка «открыт» хранится в браузере */
+function bindSeals(scope = document) {
+  scope.querySelectorAll("[data-seal]").forEach((el) => {
+    if (el.dataset.bound) return;
+    el.dataset.bound = "1";
+    let y0 = null;
+    const open = () => {
+      if (el.classList.contains("opening")) return;
+      const r = sealRevealers.get(el.dataset.seal);
+      if (!r) return;
+      store(sealKey(r.patId, r.n), "1");
+      haptic("medium");
+      el.classList.add("opening");
+      setTimeout(() => {
+        const box = document.createElement("div");
+        box.className = "eval-reveal";
+        box.innerHTML = r.reveal()[RAW];
+        el.replaceWith(box);
+        r.after?.(box);
+      }, 380);
+    };
+    el.onclick = open;
+    el.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+    el.onpointerdown = (e) => { y0 = e.clientY; };
+    el.onpointermove = (e) => {
+      if (y0 == null) return;
+      const dy = Math.max(0, Math.min(90, e.clientY - y0));
+      el.style.transform = dy ? `translateY(${dy * 0.5}px) rotate(${dy * 0.03}deg)` : "";
+      if (dy >= 70) { y0 = null; open(); }
+    };
+    el.onpointerup = el.onpointercancel = () => { y0 = null; if (!el.classList.contains("opening")) el.style.transform = ""; };
+  });
+}
+
+/** После вскрытия: оценка отсчитывается, хорошая — с конфетти; кнопка следующего пациента */
+function afterReveal(box, rating) {
+  const big = box.querySelector(".rating-big");
+  const target = Number(rating) || 0;
+  if (big && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / 700);
+      big.textContent = (target * (1 - Math.pow(1 - k, 3))).toFixed(1).replace(".", ",");
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  if (target >= 4) { confetti(); haptic("success"); } else haptic("light");
+  box.querySelectorAll("[data-next-patient]").forEach((b) => (b.onclick = () => startNextPatient(b)));
+  box.querySelectorAll("[data-close-sheet]").forEach((b) => (b.onclick = () => closeSheet(true)));
+}
+
+/** Пиковый момент — сразу под оценкой: запись во врачебной карте и следующий шаг */
+function peakAsk(rating) {
+  const p = S.me?.profile || {};
+  const total = p.stats?.consultations_total || 0;
+  const streak = p.streak || 0;
+  const line = rating < 3.5 ? "Пробелы сейчас свежие — лучшее время закрепить их на новом пациенте."
+    : streak ? `Серия ${streak} ${plural(streak, "день", "дня", "дней")} — следующий приём её продолжит.`
+    : "Закрепите результат, пока разбор свежий.";
+  return html`<div class="peak-ask">
+    ${total ? html`<div class="tiny muted row-c">${ic("book")}Приём №${total} в вашей врачебной карте</div>` : ""}
+    <div class="small">${line}</div>
+    ${p.can_accept === false ? html`<a class="btn block ghost" href="#/" data-close-sheet>${ic("clock")}<span>Новые пациенты — завтра</span></a>`
+      : html`<button class="btn block" data-next-patient>${ic("plus")}<span>Следующий пациент</span></button>`}
+  </div>`;
+}
+
+async function startNextPatient(btn) {
+  btnBusy(btn);
+  try {
+    S.expectNewPatient = Date.now();
+    await api("POST", "/patients/new");
+    S.me.profile.generating_patient = true;
+    closeSheet(true);
+    go("/");
+  } catch (e) {
+    S.expectNewPatient = 0;
+    btnBusy(btn, false);
+    toast(e.message, "error");
+  }
+}
+
+/** Конфетти без библиотек: короткий залп на холсте поверх страницы */
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cv = document.createElement("canvas");
+  cv.className = "confetti";
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = innerWidth * dpr;
+  cv.height = innerHeight * dpr;
+  document.body.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  ctx.scale(dpr, dpr);
+  const cs = getComputedStyle(document.documentElement);
+  const colors = ["--accent", "--gold", "--ok", "--warn"].map((v) => cs.getPropertyValue(v).trim() || "#0f766e");
+  const parts = Array.from({ length: 90 }, () => ({
+    x: innerWidth / 2 + (Math.random() - 0.5) * 80, y: innerHeight * 0.35,
+    vx: (Math.random() - 0.5) * 9, vy: -Math.random() * 9 - 4, r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
+    w: 5 + Math.random() * 5, h: 8 + Math.random() * 6, c: colors[Math.floor(Math.random() * colors.length)],
+  }));
+  const t0 = performance.now();
+  const frame = (t) => {
+    const k = (t - t0) / 1600;
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (const q of parts) {
+      q.vy += 0.25; q.vx *= 0.99; q.x += q.vx; q.y += q.vy; q.r += q.vr;
+      ctx.save(); ctx.globalAlpha = Math.max(0, 1 - k); ctx.translate(q.x, q.y); ctx.rotate(q.r);
+      ctx.fillStyle = q.c; ctx.fillRect(-q.w / 2, -q.h / 2, q.w, q.h); ctx.restore();
+    }
+    if (k < 1) requestAnimationFrame(frame); else cv.remove();
+  };
+  requestAnimationFrame(frame);
 }
 
 /** Разбор по клиническим рекомендациям Минздрава: как распознать, обязательный минимум, диагностика, лечение с дозами */
@@ -2257,7 +2399,7 @@ function onEvaluation(r) {
   if (S.evalWaiting !== r.patient_id) {
     // В битве оценку не показываем до итога — интрига
     if (r.battle_id) { battleCache.delete(r.battle_id); if (S.route.name === "battle" && S.route.params.id === r.battle_id) viewBattle(true); return; }
-    if (!r.fromPoll) toast(`Разбор приёма готов: ${Number(r.rating).toFixed(1)} из 5`, "ok");
+    if (!r.fromPoll) toast("Разбор приёма готов — откройте карточку пациента", "ok");
     return;
   }
   S.evalWaiting = null;
@@ -2266,20 +2408,20 @@ function onEvaluation(r) {
   const slot = $("#eval-slot");
   if (!slot) return;
   const c = { rating: r.rating, xp: r.xp, hints: r.hints, post_story: r.post_story, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments, recommendation: r.recommendation } };
-  slot.outerHTML = html`<div class="stack" style="margin-top:16px">
-    <h3 class="row-c">${ic("card", "c-accent")}Разбор приёма</h3>
-    ${evaluationBlock(c)}
+  const n = r.consultation_number || 1;
+  const reveal = () => html`<div class="stack">
+    ${evaluationBlock(c, { top: r.battle_id ? "" : peakAsk(c.rating) })}
     ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b>${r.rank_up ? html`<div class="small">Новое звание — «${r.rank_up}»</div>` : ""}</div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
     ${r.bonus_patient ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("party", "c-ok")}Оценка от ${dec(S.me?.profile?.bonus_rating || 4.5)} — ещё один бесплатный пациент сегодня!</span></div>` : ""}
     <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id, r.gift_kr)}</div>
     ${expertCta({ id: r.patient_id })}
     ${r.battle_id ? html`<a class="btn block" href="#/battle/${r.battle_id}">${ic("swords")}<span>Итог битвы «Кто круче?»</span></a>` : ""}
-    <div class="grid-2"><a class="btn ghost" href="#/patient/${r.patient_id}">Карточка</a><button class="btn${r.battle_id ? " ghost" : ""}" id="eval-new">${ic("plus")}<span>Новый пациент</span></button></div>
+    <a class="btn ghost block" href="#/patient/${r.patient_id}">Карточка пациента</a>
     <p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>
-  </div>`[RAW];
-  const nb = $("#eval-new");
-  if (nb) nb.onclick = () => { closeSheet(); go("/"); };
+  </div>`;
+  slot.outerHTML = html`<div style="margin-top:16px">${sealedEval(r.patient_id, n, reveal, (box) => afterReveal(box, r.rating))}</div>`[RAW];
+  bindSeals();
 }
 
 // ---------- Обсуждение разбора с экспертом (премиум) ----------
