@@ -31,5 +31,6 @@ if (process.argv.includes("--png")) {
   for (let i = 0; i < n; i++) await page.locator(".slide").nth(i).screenshot({ path: path.join(DIR, `.slide-${i + 1}.png`) });
 }
 fs.rmSync(tmp);
+fs.copyFileSync(out, path.resolve("public/files/help-me-doctor-presentation.pdf")); // ссылка из писем рассылки
 await browser.close();
 console.log("✓", path.relative(process.cwd(), out));
