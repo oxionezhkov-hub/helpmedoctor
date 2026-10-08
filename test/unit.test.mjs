@@ -329,6 +329,12 @@ test("статьи блога из scripts/site/posts отвечают реда�
       assert.ok(slugs.some((s) => href === `/blog/${s}/`), `${at}: внутренняя ссылка ${href} ведёт на существующую статью`);
     }
     // Правила после аудита блога (новые и обновлённые с 27.09.2026 статьи): против шаблонности и «машинного» почерка
+    // SEO-план 2026–2027: короткие title и description, кластер из плана — для новых статей с 09.10.2026
+    if (a.date >= "2026-10-09") {
+      assert.ok(a.title.length <= 60, `${at}: title до 60 символов по SEO-плану (сейчас ${a.title.length})`);
+      assert.ok(a.description.length <= 160, `${at}: description до 160 символов по SEO-плану (сейчас ${a.description.length})`);
+      assert.ok(["ЗАД", "СИМ", "АНЛ", "АКК", "ОРД", "УЧБ", "НЕО", "EN"].includes(a.cluster), `${at}: cluster — один из кластеров плана (content/blog-plan-2026-2027.md)`);
+    }
     if ((a.updated || a.date) >= "2026-09-27") {
       assert.ok(words.length >= 1400, `${at}: минимум 1400 слов (сейчас ${words.length})`);
       const dashes = (body.match(/—/g) || []).length;
