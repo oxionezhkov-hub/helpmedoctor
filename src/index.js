@@ -10,6 +10,7 @@ import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
 import { createPayment, createSubscription, webhookOperationId } from "./lib/tochka.js";
 import { confirmPayment } from "./lib/payments.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
+import { OUTREACH_CRON, outreachCron } from "./lib/outreach.js";
 import { adminApi } from "./admin-api.js";
 import { faceSvg } from "./lib/face.js";
 import { protoApi } from "./proto.js";
@@ -99,6 +100,8 @@ export default {
   async scheduled(event, env, ctx) {
     // 07:00 UTC = 10:00 МСК — утреннее напоминание; 17:00 UTC = 20:00 МСК — «стрик сгорит»; 18:00 UTC = 21:00 МСК — итоги дня админам
     if (event.cron === "0 18 * * *") return ctx.waitUntil(hubStub(env).dailySummary());
+    // Рассылка партнёрам: 09:20 МСК — отправка, дальше каждый час — проверка почты (GitHub Actions, src/lib/outreach.js)
+    if (event.cron === OUTREACH_CRON) return ctx.waitUntil(outreachCron(env, event.scheduledTime).catch((e) => console.error("outreach cron", e)));
     const kind = event.cron === "0 17 * * *" ? "evening" : "morning";
     ctx.waitUntil(hubStub(env).startCron(kind));
     // Автопродления: 10:00 и 20:00 МСК (неудачное списание повторится на следующий день)
