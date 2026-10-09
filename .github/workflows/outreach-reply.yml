@@ -1,0 +1,53 @@
+name: Рассылка партнёрам — ответ из Telegram
+
+# Админ отвечает в Telegram на карточку «Ответ на рассылку» → бот (src/lib/outreach.js) запускает этот workflow →
+# письмо уходит адресату в ту же переписку от имени отправителя рассылки, подтверждение — в Telegram.
+# Наш ответ записывается отдельным файлом в ветку outreach-state (replies/), state.json не трогаем — без конфликтов с рассылкой.
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: "id адресата (из метки #em_…)"
+        required: true
+      text:
+        description: "Текст ответа"
+        required: true
+      chat:
+        description: "Telegram ID, куда прислать подтверждение"
+        required: false
+
+jobs:
+  reply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Состояние рассылки
+        run: git fetch origin outreach-state:outreach-state && git worktree add .state outreach-state
+      - name: Почтовые пакеты
+        run: npm i --prefix .mail-deps --no-audit --no-fund nodemailer@6 imapflow@1 mailparser@3
+      - name: Ответ
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          OUTREACH_TG_CHAT: ${{ secrets.OUTREACH_TG_CHAT || vars.OUTREACH_TG_CHAT }}
+          REPLY_ID: ${{ github.event.inputs.id }}
+          REPLY_TEXT: ${{ github.event.inputs.text }}
+          REPLY_CHAT: ${{ github.event.inputs.chat }}
+        run: node scripts/outreach-mail.mjs --reply "$REPLY_ID" --state .state/state.json
+      - name: Сохранить
+        run: |
+          cd .state
+          git add -A
+          git diff --cached --quiet && exit 0
+          git -c user.name="outreach-bot" -c user.email="outreach-bot@users.noreply.github.com" commit -q -m "Ответ из Telegram: $REPLY_ID"
+          for i in 1 2 3 4; do git push -q origin outreach-state && exit 0; git pull -q --rebase origin outreach-state; sleep 3; done
+          exit 1
+        env:
+          REPLY_ID: ${{ github.event.inputs.id }}

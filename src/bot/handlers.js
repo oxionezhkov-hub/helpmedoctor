@@ -6,6 +6,7 @@ import { ADMIN_NAMES, adminIds, HINTS_PER_PATIENT, PHYSICAL_EXAMPLES, SPECIALIZA
 import * as G from "../lib/game.js";
 import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
 import { appBtn, btn, tg, urlBtn } from "../lib/telegram.js";
+import { OUTREACH_TAG, dispatchWorkflow } from "../lib/outreach.js";
 import * as R from "./render.js";
 
 /**
@@ -112,6 +113,13 @@ async function onMessage(ctx, msg) {
   if (ctx.adminReply) {
     await hubStub(env).userReplied(uid, text || msg.caption || "(не текст)");
     return bot.send(uid, "🙏 Спасибо! Передали команде — ответим здесь.");
+  }
+
+  // Админ ответил на карточку «Ответ на рассылку» (#em_<id>) — текст уходит письмом адресату в ту же переписку
+  const em = OUTREACH_TAG.exec(msg.reply_to_message?.text || "");
+  if (em && adminIds(env).includes(uid) && text && !text.startsWith("/")) {
+    const ok = await dispatchWorkflow(env, "outreach-reply.yml", { id: em[1], text, chat: uid }).catch((e) => (console.error("outreach reply", e), false));
+    return bot.send(uid, ok ? "📨 Отправляю письмо — подтверждение придёт через 1–2 минуты." : "⚠️ Не получилось запустить отправку (нет GH_DISPATCH_TOKEN или GitHub не ответил). Ответьте из почты.");
   }
 
   if (msg.voice || msg.audio) return onVoice(ctx, msg);

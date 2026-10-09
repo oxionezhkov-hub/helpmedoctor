@@ -7,6 +7,8 @@
 //   node scripts/outreach-mail.mjs --preview out.md      все письма одним файлом — чтобы прочитать перед запуском
 //   node scripts/outreach-mail.mjs --test-to me@mail.ru  3 первых письма себе с пометкой [ТЕСТ] (состояние не меняется)
 //   node scripts/outreach-mail.mjs                       боевой запуск (нужны enabled: true и SMTP_USER / SMTP_PASS)
+//   node scripts/outreach-mail.mjs --inbox               только проверить почту: новые ответы — в Telegram, отказы доставки — в состояние
+//   REPLY_TEXT="…" node scripts/outreach-mail.mjs --reply <id>   ответить адресату в ту же переписку (из Telegram через бота)
 // Ключи: --state <файл> (по умолчанию .state/state.json), --limit <n> — не больше n писем за запуск.
 // Секреты: SMTP_USER (адрес ящика), SMTP_PASS (пароль приложения). Необязательно: TELEGRAM_TOKEN + OUTREACH_TG_CHAT — сводка в Telegram.
 import fs from "node:fs";
@@ -22,6 +24,9 @@ const PREVIEW = opt("--preview");
 const TEST_TO = opt("--test-to");
 const LIMIT = Number(opt("--limit")) || Infinity;
 const STATE_FILE = path.resolve(opt("--state") || ".state/state.json");
+const INBOX = args.includes("--inbox");
+const REPLY = opt("--reply");
+const REPLIES_DIR = path.join(path.dirname(STATE_FILE), "replies"); // наши ответы из Telegram — отдельными файлами, чтобы не конфликтовать с state.json
 
 const cfg = JSON.parse(fs.readFileSync(path.join(DIR, "config.json"), "utf8"));
 const recipients = JSON.parse(fs.readFileSync(path.join(DIR, "recipients.json"), "utf8"));
@@ -102,45 +107,102 @@ function dep(name) {
 }
 
 // --- ответы и отказы по IMAP ---
+/** Наши ответы из Telegram: { id → [{ message_id }] } */
+function ourReplies() {
+  const out = {};
+  if (!fs.existsSync(REPLIES_DIR)) return out;
+  for (const f of fs.readdirSync(REPLIES_DIR)) {
+    try { const r = JSON.parse(fs.readFileSync(path.join(REPLIES_DIR, f), "utf8")); (out[r.id] ||= []).push(r); } catch {}
+  }
+  return out;
+}
+
+/** Текст письма без цитаты нашего письма ниже */
+function cleanBody(text) {
+  const lines = String(text || "").replace(/\r/g, "").split("\n");
+  const cut = lines.findIndex((l) => /^>/.test(l) || /(пишет|wrote|написал[аи]?)\s*:\s*$/i.test(l.trim()) || /^-{2,}\s*(Original|Исходное)/i.test(l.trim()));
+  return (cut >= 0 ? lines.slice(0, cut) : lines).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/**
+ * Новые входящие от адресатов рассылки и отказы доставки. Смотрим письма с последней проверки (с запасом в 2 дня),
+ * сверяем отправителя и In-Reply-To с нашими письмами. Возвращает { news: строки для сводки, replies: новые ответы }.
+ */
 async function syncInbox() {
   const { ImapFlow } = dep("imapflow");
+  const { simpleParser } = dep("mailparser");
   const client = new ImapFlow({ host: cfg.imap.host, port: cfg.imap.port, secure: true, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }, logger: false });
   await client.connect();
-  const news = [];
+  const news = [], replies = [];
+  const contacts = Object.entries(state.contacts);
+  const byAddr = new Map(contacts.map(([id, c]) => [c.to.toLowerCase(), id]));
+  const ours = ourReplies();
+  const byMsgId = new Map();
+  for (const [id, c] of contacts) for (const m of [c.message_id, c.followup_message_id, ...(ours[id] || []).map((r) => r.message_id)]) if (m) byMsgId.set(m, id);
+  const oldest = contacts.reduce((m, [, c]) => Math.min(m, Date.parse(c.sent_at)), Date.now());
+  const since = new Date(Math.max(oldest, Date.parse(state.inbox_checked_at || 0) - 2 * 86400e3));
   try {
     const lock = await client.getMailboxLock("INBOX");
     try {
-      const open = Object.entries(state.contacts).filter(([, c]) => c.status === "sent" || c.status === "followed");
-      for (const [id, c] of open) {
-        const since = new Date(c.sent_at);
-        const byFrom = await client.search({ from: c.to, since });
-        const byRef = c.message_id ? await client.search({ header: { "in-reply-to": c.message_id } }) : [];
-        if (byFrom.length || byRef.length) {
-          c.status = "replied";
-          c.reply_at = new Date().toISOString();
-          news.push(`✉️ Ответ: ${recById.get(id)?.name || c.to} <${c.to}>`);
-        }
+      const uids = (await client.search({ since }, { uid: true })) || [];
+      const hits = [];
+      if (uids.length) for await (const m of client.fetch(uids, { envelope: true }, { uid: true })) {
+        const env = m.envelope || {};
+        const fromAddr = (env.from?.[0]?.address || "").toLowerCase();
+        if (/mailer-daemon|postmaster/.test(fromAddr)) { hits.push({ uid: m.uid, bounce: true }); continue; }
+        const id = byAddr.get(fromAddr) || byMsgId.get(env.inReplyTo);
+        if (id) hits.push({ uid: m.uid, id, env, fromAddr });
       }
-      const oldest = Object.values(state.contacts).reduce((m, c) => Math.min(m, Date.parse(c.sent_at)), Date.now());
-      const bounces = await client.search({ or: [{ from: "mailer-daemon" }, { from: "postmaster" }], since: new Date(oldest) });
-      if (bounces.length) {
-        for await (const msg of client.fetch(bounces, { source: true })) {
+      for (const h of hits) {
+        const msg = await client.fetchOne(String(h.uid), { source: true }, { uid: true });
+        if (h.bounce) {
           const body = msg.source.toString("utf8").toLowerCase();
-          for (const [id, c] of Object.entries(state.contacts)) {
-            if ((c.status === "sent" || c.status === "followed") && body.includes(c.to)) {
+          for (const [id, c] of contacts) {
+            if ((c.status === "sent" || c.status === "followed") && body.includes(c.to.toLowerCase())) {
               c.status = "bounced";
               news.push(`⚠️ Адрес не существует: ${recById.get(id)?.name || c.to} <${c.to}>`);
             }
           }
+          continue;
         }
+        const c = state.contacts[h.id];
+        const msgId = h.env.messageId || `uid-${h.uid}`;
+        c.seen ||= [];
+        if (c.seen.includes(msgId)) continue;
+        c.seen = [...c.seen, msgId].slice(-30);
+        const parsed = await simpleParser(msg.source);
+        const text = cleanBody(parsed.text || "") || "(пустое письмо или только вложения)";
+        Object.assign(c, { last_in_msgid: h.env.messageId || c.last_in_msgid, last_in_subject: h.env.subject || c.subject, last_in_from: h.fromAddr, last_in_at: new Date().toISOString() });
+        if (c.status === "sent" || c.status === "followed") { c.status = "replied"; c.reply_at = new Date().toISOString(); }
+        replies.push({ id: h.id, c, from: h.env.from?.[0], subject: h.env.subject || "", text });
+        news.push(`✉️ Ответ: ${recById.get(h.id)?.name || c.to} <${h.fromAddr}>`);
       }
     } finally { lock.release(); }
   } finally { await client.logout(); }
-  return news;
+  state.inbox_checked_at = new Date().toISOString();
+  return { news, replies };
 }
 
-async function notify(text) {
-  const { TELEGRAM_TOKEN: t, OUTREACH_TG_CHAT: chat } = process.env;
+/** Уведомление об ответе: ответ на это сообщение в Telegram бот отправит письмом в ту же переписку (#em_<id>) */
+function replyCard(r) {
+  const who = [r.from?.name, `<${r.from?.address || r.c.to}>`].filter(Boolean).join(" ");
+  const body = r.text.length > 2500 ? r.text.slice(0, 2500) + "…" : r.text;
+  return [
+    "✉️ Ответ на рассылку",
+    `От: ${who}`,
+    `Кто это: ${recById.get(r.id)?.name || "—"}`,
+    `Тема: ${r.subject}`,
+    "",
+    body,
+    "",
+    `Чтобы ответить от имени ${cfg.sender_name}, ответьте на это сообщение (свайп → «Ответить») — письмо уйдёт в ту же переписку.`,
+    `#em_${r.id}`,
+  ].join("\n");
+}
+
+async function notify(text, chatId) {
+  const { TELEGRAM_TOKEN: t, OUTREACH_TG_CHAT } = process.env;
+  const chat = chatId || OUTREACH_TG_CHAT;
   if (!t || !chat || !text) return;
   await fetch(`https://api.telegram.org/bot${t}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chat, text: text.slice(0, 4000), disable_web_page_preview: true }) }).catch(() => {});
 }
@@ -195,13 +257,57 @@ if (PREVIEW) {
 
 checkConfig();
 const today = mskDate();
+const needMail = () => { if (!process.env.SMTP_USER || !process.env.SMTP_PASS) throw new Error("Нет SMTP_USER / SMTP_PASS"); };
+const mailer = () => dep("nodemailer").createTransport({ host: cfg.smtp.host, port: cfg.smtp.port, secure: cfg.smtp.port === 465, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+const sendReplyCards = async (replies) => { for (const r of replies) await notify(replyCard(r)); };
+
+// Только проверить почту: новые ответы — карточками в Telegram (на них можно ответить), состояние — в файл
+if (INBOX) {
+  needMail();
+  const { news, replies } = await syncInbox();
+  saveState();
+  writeStatusCsv();
+  await sendReplyCards(replies);
+  const bounces = news.filter((n) => n.startsWith("⚠️"));
+  if (bounces.length) await notify(bounces.join("\n"));
+  log(`Почта проверена: новых ответов ${replies.length}, отказов доставки ${bounces.length}`);
+  process.exit(0);
+}
+
+// Ответ адресату из Telegram: текст — REPLY_TEXT, письмо — в ту же переписку, подтверждение — тому, кто ответил (REPLY_CHAT)
+if (REPLY) {
+  needMail();
+  const chat = process.env.REPLY_CHAT;
+  const c = state.contacts[REPLY];
+  const body = String(process.env.REPLY_TEXT || "").trim();
+  if (!c || !body) {
+    await notify(`⚠️ Не отправлено: ${!c ? `адресат #em_${REPLY} не найден в рассылке` : "пустой текст"}`, chat);
+    throw new Error(!c ? `Нет адресата ${REPLY}` : "Пустой REPLY_TEXT");
+  }
+  const subj = c.last_in_subject || c.subject;
+  const text = body.includes(cfg.sender_name) ? body : `${body}\n\n${[cfg.sender_name, ...(cfg.signature || [])].join("\n")}`;
+  const refs = [c.message_id, c.followup_message_id, c.last_in_msgid].filter(Boolean);
+  const to = c.last_in_from || c.to;
+  try {
+    const info = await mailer().sendMail({ from: { name: cfg.from_name, address: process.env.SMTP_USER }, to, subject: /^re:/i.test(subj) ? subj : `Re: ${subj}`, text, inReplyTo: c.last_in_msgid || c.message_id, references: refs });
+    fs.mkdirSync(REPLIES_DIR, { recursive: true });
+    fs.writeFileSync(path.join(REPLIES_DIR, `${Date.now()}-${REPLY}.json`), JSON.stringify({ id: REPLY, to, at: new Date().toISOString(), message_id: info.messageId }) + "\n");
+    await notify(`✅ Ответ отправлен: ${recById.get(REPLY)?.name || to} <${to}>`, chat);
+    log(`✓ ответ → ${to}`);
+  } catch (e) {
+    await notify(`⚠️ Ответ не отправлен (${to}): ${e.message}`, chat);
+    throw e;
+  }
+  process.exit(0);
+}
+
 if (!TEST_TO && !DRY) {
   if (!cfg.enabled) { log("Рассылка выключена (config.json → enabled: false)"); process.exit(0); }
   if (!isWorkday(today)) { log(`${today} — выходной, не отправляем`); process.exit(0); }
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) throw new Error("Нет SMTP_USER / SMTP_PASS");
+  needMail();
 }
 
-const news = !DRY && !TEST_TO ? await syncInbox() : [];
+const { news, replies } = !DRY && !TEST_TO ? await syncInbox() : { news: [], replies: [] };
 const cap = Math.min(capToday(today), LIMIT);
 const followups = dueFollowUps(today);
 const fresh = queue();
@@ -213,8 +319,7 @@ log(`${today}: лимит ${cap}, напоминаний к отправке ${f
 
 let transport;
 if (!DRY) {
-  const nodemailer = dep("nodemailer");
-  transport = nodemailer.createTransport({ host: cfg.smtp.host, port: cfg.smtp.port, secure: cfg.smtp.port === 465, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+  transport = mailer();
   await transport.verify();
 }
 const from = () => ({ name: cfg.from_name, address: process.env.SMTP_USER });
@@ -253,4 +358,7 @@ writeStatusCsv();
 const text = summary([`Сегодня: ${sent} писем`, ...news]);
 log("\n" + text);
 if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, text.replace(/\n/g, "  \n") + "\n");
-if (!DRY && !TEST_TO && (sent || news.length)) await notify(text);
+if (!DRY && !TEST_TO) {
+  await sendReplyCards(replies);
+  if (sent || news.length) await notify(text);
+}

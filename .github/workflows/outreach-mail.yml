@@ -5,7 +5,9 @@ name: Рассылка партнёрам
 # скрипт отправляет не больше дневного лимита за сутки, сколько бы запусков ни было.
 # Ничего не отправляет, пока в content/outreach/mailing/config.json не стоит enabled: true.
 # Состояние (кому и когда написали, кто ответил) хранится в ветке outreach-state: state.json и status.csv.
-# Секреты: SMTP_USER (адрес ящика), SMTP_PASS (пароль приложения). Сводка в Telegram — TELEGRAM_TOKEN и переменная OUTREACH_TG_CHAT.
+# Бот (Cloudflare Worker, cron) сам запускает этот workflow: в 09:20 МСК — отправку, каждый час до 21:20 — проверку почты
+# (mode=inbox): новые ответы приходят в Telegram карточками, на них можно ответить — уйдёт через outreach-reply.yml.
+# Секреты: SMTP_USER (адрес ящика), SMTP_PASS (пароль приложения), TELEGRAM_TOKEN и OUTREACH_TG_CHAT (секрет или переменная).
 on:
   schedule:
     - cron: "20 6 * * 1-5"
@@ -19,6 +21,10 @@ on:
       limit:
         description: "Не больше стольких писем за запуск (пусто — по графику)"
         required: false
+      mode:
+        description: "send — отправка по графику, inbox — только проверить почту и прислать ответы в Telegram"
+        required: false
+        default: send
 
 concurrency: outreach-mail
 
@@ -38,17 +44,19 @@ jobs:
           if git fetch origin outreach-state:outreach-state 2>/dev/null; then git worktree add .state outreach-state
           else git worktree add --orphan -b outreach-state .state; fi
       - name: Почтовые пакеты
-        run: npm i --prefix .mail-deps --no-audit --no-fund nodemailer@6 imapflow@1
+        run: npm i --prefix .mail-deps --no-audit --no-fund nodemailer@6 imapflow@1 mailparser@3
       - name: Отправка
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          OUTREACH_TG_CHAT: ${{ vars.OUTREACH_TG_CHAT }}
+          OUTREACH_TG_CHAT: ${{ secrets.OUTREACH_TG_CHAT || vars.OUTREACH_TG_CHAT }}
           TEST_TO: ${{ github.event.inputs.test_to }}
           LIMIT: ${{ github.event.inputs.limit }}
+          MODE: ${{ github.event.inputs.mode }}
         run: |
           set -- --state .state/state.json
+          [ "$MODE" = "inbox" ] && set -- "$@" --inbox
           [ -n "$TEST_TO" ] && set -- "$@" --test-to "$TEST_TO"
           [ -n "$LIMIT" ] && set -- "$@" --limit "$LIMIT"
           node scripts/outreach-mail.mjs "$@"
@@ -59,4 +67,6 @@ jobs:
           git add -A
           git diff --cached --quiet && exit 0
           git -c user.name="outreach-bot" -c user.email="outreach-bot@users.noreply.github.com" commit -q -m "Рассылка: $(date -u +%F)"
-          git push origin outreach-state
+          # параллельно мог прийти ответ из Telegram (outreach-reply.yml пишет в replies/) — подтягиваем и повторяем
+          for i in 1 2 3 4; do git push -q origin outreach-state && exit 0; git pull -q --rebase origin outreach-state; sleep 3; done
+          exit 1
