@@ -23,10 +23,18 @@
   },
   "28faf661": {
    "to": "viktoriia.shulga@szgmu.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-09T07:08:48.365Z",
    "message_id": "<d2888c19-d68e-1023-aeca-808bd2172396@gmail.com>",
-   "subject": "Станция сбора анамнеза: тренажёр для студентов СЗГМУ"
+   "subject": "Станция сбора анамнеза: тренажёр для студентов СЗГМУ",
+   "seen": [
+    "<13DC9BB6C22C674AB5C6C0B76D46C1A301C7530D42@exchMBX1.szgmu.local>"
+   ],
+   "last_in_msgid": "<13DC9BB6C22C674AB5C6C0B76D46C1A301C7530D42@exchMBX1.szgmu.local>",
+   "last_in_subject": "RE: Станция сбора анамнеза: тренажёр для студентов СЗГМУ",
+   "last_in_from": "viktoriia.shulga@szgmu.ru",
+   "last_in_at": "2026-10-09T11:49:17.357Z",
+   "reply_at": "2026-10-09T11:49:17.357Z"
   },
   "12ce6db3": {
    "to": "alla07420@gmail.com",
@@ -73,5 +81,6 @@
  },
  "days": [
   "2026-10-09"
- ]
+ ],
+ "inbox_checked_at": "2026-10-09T11:49:17.468Z"
 }
