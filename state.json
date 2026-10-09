@@ -1,0 +1,77 @@
+{
+ "contacts": {
+  "4a418bfd": {
+   "to": "lanskaya_ev@almazovcentre.ru",
+   "status": "sent",
+   "sent_at": "2026-10-09T06:59:26.105Z",
+   "message_id": "<8e9fdfed-73e0-ae47-01a3-98db01a400e9@gmail.com>",
+   "subject": "Тренажёр приёма пациента для Алмазовского молодёжного форума"
+  },
+  "b3bae567": {
+   "to": "medlab@sk.ru",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:02:02.789Z",
+   "message_id": "<f549d652-426d-9e0d-c836-acaa2e921e27@gmail.com>",
+   "subject": "ИИ-тренажёр для студентов-медиков и следующий набор MedLab"
+  },
+  "1950aa7d": {
+   "to": "ed@edexpert.ru",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:05:54.496Z",
+   "message_id": "<b61e243c-2d61-1182-de66-b4b805e1bf7d@gmail.com>",
+   "subject": "Для EdExpert: студенты-медики сделали ИИ-тренажёр приёма"
+  },
+  "28faf661": {
+   "to": "viktoriia.shulga@szgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:08:48.365Z",
+   "message_id": "<d2888c19-d68e-1023-aeca-808bd2172396@gmail.com>",
+   "subject": "Станция сбора анамнеза: тренажёр для студентов СЗГМУ"
+  },
+  "12ce6db3": {
+   "to": "alla07420@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:12:51.497Z",
+   "message_id": "<c3a884a2-c39c-ce28-ce2f-77ad548b8023@gmail.com>",
+   "subject": "Размещение на канале «I am your beasty»: практика для медиков"
+  },
+  "0321713c": {
+   "to": "info@christmedschool.com",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:16:34.548Z",
+   "message_id": "<b056b964-e0b2-5419-4408-ae87931c1c49@gmail.com>",
+   "subject": "Christmedschool и практика приёма: предложение о партнёрстве"
+  },
+  "6ee9aec9": {
+   "to": "med@consef.ru",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:20:34.693Z",
+   "message_id": "<29606db4-feff-57ee-9a71-7ff4865ada5b@gmail.com>",
+   "subject": "«Цифровые технологии в современной медицине»: ИИ-пациент в обучении"
+  },
+  "3c835948": {
+   "to": "post@rosomed.ru",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:23:55.333Z",
+   "message_id": "<37e2e376-2b18-350f-c0e9-1ba8bb3271aa@gmail.com>",
+   "subject": "Виртуальные пациенты для «Отечественных инноваций» РОСОМЕД"
+  },
+  "09cf5466": {
+   "to": "medachofficial@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:27:58.795Z",
+   "message_id": "<968cf758-6764-8210-9cec-4b03e841bef0@gmail.com>",
+   "subject": "Идея для Medach: как студенты учатся на ИИ-пациентах"
+  },
+  "49385eb8": {
+   "to": "centr@rsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-09T07:30:45.488Z",
+   "message_id": "<92ef20bf-1cf6-809a-d383-13769b2606e3@gmail.com>",
+   "subject": "Для МАСЦ РНИМУ: виртуальный пациент для отработки анамнеза"
+  }
+ },
+ "days": [
+  "2026-10-09"
+ ]
+}
