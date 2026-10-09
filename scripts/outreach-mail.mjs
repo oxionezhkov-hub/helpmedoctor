@@ -85,9 +85,12 @@ function dueFollowUps(today) {
     .map(([id, c]) => ({ id, c, letter: letters.find((l) => l.id === id) }))
     .filter((x) => x.letter);
 }
-function capToday() {
-  const days = state.days.length + 1;
-  return (cfg.ramp.find(([d]) => days <= d) || cfg.ramp.at(-1))[1];
+/** Сколько ещё можно отправить сегодня: дневной лимит минус уже ушедшее (второй запуск за день не удваивает объём) */
+function capToday(today) {
+  const days = state.days.length + (state.days.includes(today) ? 0 : 1);
+  const limit = (cfg.ramp.find(([d]) => days <= d) || cfg.ramp.at(-1))[1];
+  const sentToday = Object.values(state.contacts).filter((c) => [c.sent_at, c.followup_at].some((t) => t && mskDate(new Date(t)) === today)).length;
+  return Math.max(0, limit - sentToday);
 }
 
 // --- зависимости для почты (в Actions ставятся в .mail-deps, локально — как обычные пакеты) ---
@@ -199,7 +202,7 @@ if (!TEST_TO && !DRY) {
 }
 
 const news = !DRY && !TEST_TO ? await syncInbox() : [];
-const cap = Math.min(capToday(), LIMIT);
+const cap = Math.min(capToday(today), LIMIT);
 const followups = dueFollowUps(today);
 const fresh = queue();
 const plan = [
