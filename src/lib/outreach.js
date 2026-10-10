@@ -5,8 +5,9 @@
 /** Метка адресата в карточке «Ответ на рассылку»: #em_<id> */
 export const OUTREACH_TAG = /#em_([0-9a-f]{8})\b/;
 
-/** Cron воркера для рассылки: каждый час 09:20–21:20 МСК по будням; первый — отправка, остальные — проверка почты */
-export const OUTREACH_CRON = "20 6-18 * * 1-5";
+/** Cron воркера для рассылки: каждый час 09:20–21:20 МСК по будням; первый — отправка, остальные — проверка почты.
+ *  Дни недели — словами: у Cloudflare 1 = воскресенье, и «1-5» означало бы вс–чт. */
+export const OUTREACH_CRON = "20 6-18 * * MON-FRI";
 
 /** Запустить workflow в репозитории (workflow_dispatch). true — GitHub принял запуск */
 export async function dispatchWorkflow(env, file, inputs) {
