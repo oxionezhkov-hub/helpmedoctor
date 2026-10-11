@@ -755,6 +755,20 @@ await api(g1, "POST", "/attribution", { r: "vk.com", l: "/", p: "/", u: "" });
   assert.equal(src.cid, "1759312345678901234");
   const srcRep = await aq("report", { name: "sources", from: Date.now() - 86400000, to: Date.now() + 60000 });
   assert.ok(srcRep.channels.some((c) => c.key === "Поиск: Яндекс") && srcRep.pages.some((p) => p.key === "/blog/troponin/"), JSON.stringify(srcRep));
+  // Способ входа и почта — в карточке, списке и поиске; CJM по каналу — воронка и путь пользователя
+  assert.deepEqual(card.identities.map((i) => [i.provider, i.email]), [["google", "anna@example.com"]]);
+  assert.deepEqual(card.user.logins, [{ provider: "google", email: "anna@example.com" }]);
+  const found = await aq("users", { filter: { q: "anna@example" } });
+  assert.ok(found.rows.some((u) => u.uid === gme.profile.uid && u.email === "anna@example.com"), JSON.stringify(found.rows.map((u) => u.uid)));
+  const tgRow = (await aq("users", { filter: { q: "1326867567" } })).rows[0];
+  assert.equal(tgRow.logins[0].provider, "telegram", "числовой ID — вход через Telegram");
+  const cjm = await aq("report", { name: "cjm", channel: "Поиск: Яндекс", from: Date.now() - 86400000, to: Date.now() + 60000 });
+  assert.equal(cjm.channel, "Поиск: Яндекс");
+  assert.ok(cjm.total >= 1 && cjm.funnel.steps.some((s) => s.key === "pay_click"), JSON.stringify(cjm.funnel));
+  const cu = cjm.users.find((u) => u.uid === gme.profile.uid);
+  assert.ok(cu && cu.land === "/blog/troponin/" && cu.email === "anna@example.com" && Array.isArray(cu.path), JSON.stringify(cu));
+  assert.ok(cjm.channels.some((c) => c.name === "Поиск: Яндекс") && cjm.lands.some((x) => x.k === "/blog/troponin/"));
+  assert.equal((await aq("report", { name: "cjm", from: Date.now() - 86400000, to: Date.now() + 60000 })).channel, "Реклама: Яндекс Директ", "канал по умолчанию — Директ");
 }
 // Студенческий у пользователя с Google: решение админа — окно в приложении и письмо на почту
 {

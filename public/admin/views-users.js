@@ -49,7 +49,7 @@ export async function viewUsers(el, ctx) {
   el.innerHTML = str(html`
     ${funnel ? html`<div class="callout mb row"><span class="grow">${ic("filter", "sm")} ${funnel.label}: ${funnel.uids.length} ${plural(funnel.uids.length, "пользователь", "пользователя", "пользователей")}</span><a class="btn ghost sm" href="#/users">Сбросить</a></div>` : ""}
     <div class="filters">
-      <div class="field q"><label>Поиск</label><input class="input" data-uf="q" value="${UF.q || ""}" placeholder="Имя, @username или Telegram ID" type="search"></div>
+      <div class="field q"><label>Поиск</label><input class="input" data-uf="q" value="${UF.q || ""}" placeholder="Имя, @username, ID или почта" type="search"></div>
       ${sel("active", [["today", "Сегодня"], ["7d", "За 7 дней"], ["sleep7", "Не заходил 7+ дней"], ["sleep14", "Уснул 14+ дней"]], "Активность")}
       ${sel("tariff", [["free", "Бесплатный"], ["paid", "Платный"], ["gift", "Подарок"], ["sub", "Любая подписка"], ["expired", "Истёкшая"]], "Тариф")}
       ${sel("level", Object.entries(LEVELS), "Уровень")}
@@ -81,7 +81,7 @@ export async function viewUsers(el, ctx) {
       <div class="desk-only">${table({
         columns: [
           { key: "sel", label: raw('<label class="check"><input type="checkbox" id="sel-page"></label>'), render: (u) => html`<label class="check" data-stop><input type="checkbox" data-sel="${u.uid}" ${selected.has(u.uid) ? "checked" : ""}></label>` },
-          { key: "name", label: "Пользователь", sort: true, render: (u) => html`<div class="row" style="min-width:180px">${avatar(u.name, u.uid)}<div style="min-width:0"><b class="ellipsis" style="display:block">${u.name || "—"}</b><span class="tiny muted">${u.username ? `@${u.username}` : u.uid}</span></div></div>` },
+          { key: "name", label: "Пользователь", sort: true, render: (u) => html`<div class="row" style="min-width:180px">${avatar(u.name, u.uid)}<div style="min-width:0"><b class="ellipsis" style="display:block">${u.name || "—"}</b><span class="tiny muted">${u.username ? `@${u.username}` : u.uid}</span><div class="tiny muted ellipsis">${loginText(u)}${u.email ? ` · ${u.email}` : ""}</div></div></div>` },
           { key: "registered_at", label: "Регистрация", sort: true, render: (u) => html`<span class="nowrap">${fDate(u.registered_at)}</span>` },
           { key: "last_active", label: "Активность", sort: true, render: (u) => html`<span class="nowrap">${fAgo(u.last_active)}</span>` },
           { key: "lvl", label: "Уровень", sort: true, render: (u) => html`<span class="nowrap">${u.lvl || 1} · <span class="muted">${fNum(u.xp)} XP</span></span>` },
@@ -98,6 +98,7 @@ export async function viewUsers(el, ctx) {
         <label class="check" style="padding-top:8px"><input type="checkbox" data-sel="${u.uid}" ${selected.has(u.uid) ? "checked" : ""}></label>
         <a href="#/users/${u.uid}" class="row grow top" style="color:inherit;text-decoration:none;min-width:0">${avatar(u.name, u.uid)}<div class="grow" style="min-width:0">
           <div class="row between"><b class="ellipsis">${u.name || "—"}</b><span class="tiny muted nowrap">${fAgo(u.last_active)}</span></div>
+          <div class="tiny muted">${loginText(u)}${u.email ? ` · ${u.email}` : ""}</div>
           <div class="tiny muted">${u.username ? `@${u.username} · ` : ""}приёмов ${u.cons || 0}${u.ratings_count ? ` · оценка ${u.avg_rating}` : ""} · ур. ${u.lvl || 1}</div>
           <div class="row wrap mt" style="gap:4px;margin-top:6px">${subBadge(u)}${u.bot_blocked ? html`<span class="badge danger">бот заблокирован</span>` : ""}</div>
         </div></a></div>`) : html`<div class="empty">Никого не нашли</div>`}</div>
@@ -145,7 +146,8 @@ export async function viewUsers(el, ctx) {
   $("#csv").onclick = (e) => withBusy(e.currentTarget, async () => {
     const all = await q("users", { filter, sort: sort.key, dir: sort.dir, limit: 5000 });
     downloadCsv("users", [
-      { key: "uid", label: "Telegram ID" }, { key: "name", label: "Имя" }, { key: "username", label: "Username" },
+      { key: "uid", label: "ID" }, { key: "name", label: "Имя" }, { key: "username", label: "Username" },
+      { label: "Вход", value: (u) => loginText(u) }, { key: "email", label: "Почта" },
       { label: "Регистрация", value: (u) => fDT(u.registered_at) }, { label: "Активность", value: (u) => fDT(u.last_active) },
       { key: "level", label: "Уровень подготовки", value: (u) => LEVELS[u.level] || u.level }, { key: "profession", label: "Специальность" },
       { key: "lvl", label: "Уровень" }, { key: "xp", label: "XP" }, { key: "streak", label: "Стрик" }, { key: "cons", label: "Приёмов" },
@@ -156,6 +158,10 @@ export async function viewUsers(el, ctx) {
     ], all.rows);
   });
 }
+
+// Способ входа: Telegram / Google / Яндекс (+ почта из аккаунта)
+const LOGIN_NAMES = { telegram: "Telegram", google: "Google", yandex: "Яндекс" };
+const loginText = (u) => (u.logins || []).map((l) => LOGIN_NAMES[l.provider] || l.provider).join(" + ") || "—";
 
 // ---------- Карточка пользователя ----------
 /** Письмо «вернись» пишет два события — этап (winback) и отправку (email); в хронологии показываем одной строкой */
@@ -185,6 +191,13 @@ export async function viewUser(el, ctx) {
             ${username ? html`<a href="https://t.me/${username}" target="_blank" rel="noopener">@${username}</a>` : ""}
             <span>ID <span class="kbd" data-copy="${uid}" title="Скопировать">${uid}</span></span>
             <span>с ${fDate(u.registered_at || p.registered_at)}</span><span>активность ${fAgo(u.last_active || p.last_active)}</span>
+          </div>
+          <div class="small row wrap" style="gap:8px;margin-top:4px">
+            <span class="muted">Вход:</span>
+            ${/^\d+$/.test(uid) ? html`<span class="badge">Telegram${username ? ` · @${username}` : ` · ID ${uid}`}</span>` : ""}
+            ${(d.identities || []).map((i) => html`<span class="badge" data-tip="${i.name ? `${i.name} · ` : ""}привязан ${fDT(i.created_at)}">${LOGIN_NAMES[i.provider] || i.provider}${i.email ? html` · <span data-copy="${i.email}" title="Скопировать">${i.email}</span>` : ""}</span>`)}
+            ${!/^\d+$/.test(uid) && !(d.identities || []).length ? html`<span class="muted">нет данных</span>` : ""}
+            ${(d.aliases || []).length ? html`<span class="muted" data-tip="Веб-аккаунты, которые склеили с этим профилем">склеен с ${(d.aliases || []).map((a) => a.from_uid).join(", ")}</span>` : ""}
           </div>
           <div class="row wrap" style="gap:6px;margin-top:8px">
             ${subBadge({ sub_until: p.sub_until ?? u.sub_until, sub_plan: p.sub_plan ?? u.sub_plan })}

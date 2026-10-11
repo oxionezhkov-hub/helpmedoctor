@@ -21,6 +21,7 @@ const EV = {
   feedback: ["star", "Отзыв"], ai_error: ["alert", "Сбой ИИ"], ai_fallback: ["alert", "ИИ отказал, запасной ответ"], stt_error: ["mic", "Не распознан голос"], app_open: ["eye", "Открыл приложение"],
   blocked: ["lock", "Заблокирован админом"], unblocked: ["unlock", "Разблокирован"],
   winback: ["mail", "Письмо «вернись»"], email: ["mail", "Письмо"], promo: ["gift", "Промокод"],
+  attribution: ["eye", "Пришёл с сайта"], consent: ["check", "Согласие с офертой"], trial_start: ["gem", "Начал пробный период"],
 };
 const FINISH = { diagnosis: "диагноз", referral: "направление", discharge: "отказ" };
 
@@ -173,14 +174,16 @@ async function loadLive() {
 const REPORTS = [
   ["retention", "Удержание"], ["consultations", "Приёмы"], ["quality", "Качество"], ["procedures", "Обследования и осмотры"],
   ["specialties", "Специальности"], ["quizzes", "Тесты"], ["gamification", "Геймификация"], ["money", "Деньги"], ["ai", "Расход ИИ"],
-  ["sources", "Источники"], ["metrika", "Яндекс Метрика"], ["channels", "Каналы"], ["heatmap", "Активность по часам"], ["errors", "Ошибки"],
+  ["sources", "Источники"], ["cjm", "CJM по каналу"], ["metrika", "Яндекс Метрика"], ["channels", "Каналы"], ["heatmap", "Активность по часам"], ["errors", "Ошибки"],
 ];
 const AF = { source: "", level: "", profession: "", tariff: "" };
+// Канал для отчёта CJM: по умолчанию Яндекс Директ, выбор запоминается до перезагрузки
+const CJM = { channel: "Реклама: Яндекс Директ" };
 
 export async function viewAnalytics(el, ctx) {
   const r = REPORTS.some(([k]) => k === S.route.q.r) ? S.route.q.r : "retention";
   const p = S.period;
-  const noFilters = ["specialties", "retention", "money", "ai", "errors"].includes(r);
+  const noFilters = ["specialties", "retention", "money", "ai", "errors", "cjm"].includes(r);
   el.innerHTML = str(html`
     <div class="page-head"><div class="grow">${periodPicker()}</div></div>
     <div class="report-layout">
@@ -201,7 +204,7 @@ export async function viewAnalytics(el, ctx) {
   bindPeriod(el, () => viewAnalytics(el, ctx).then(() => renderCharts(el)));
   $("#rsel").onchange = (e) => { location.hash = `#/analytics?r=${e.target.value}`; };
   $$("[data-af]", el).forEach((i) => (i.onchange = () => { AF[i.dataset.af] = i.value.trim(); viewAnalytics(el, ctx).then(() => renderCharts(el)); }));
-  const data = await q("report", { name: r, from: p.from, to: p.to, ...(noFilters ? {} : AF) });
+  const data = await q("report", { name: r, from: p.from, to: p.to, ...(noFilters ? {} : AF), ...(r === "cjm" ? { channel: CJM.channel } : {}) });
   if (!ctx.isCurrent()) return;
   const box = $("#report");
   box.innerHTML = str(RENDER[r](data));
@@ -209,6 +212,9 @@ export async function viewAnalytics(el, ctx) {
   renderCharts(box);
 }
 
+// Минуты → «12 мин», «3 ч», «2 дн»
+const fMin = (m) => (m == null ? "—" : m < 60 ? `${m} мин` : m < 48 * 60 ? `${Math.round(m / 60)} ч` : `${Math.round(m / 1440)} дн`);
+const PAY_ST = { paid: "оплачен", error: "ошибка", link: "ссылка выдана", pending: "ждёт оплаты", expired: "истёк" };
 const csvBtn = (id, label = "CSV") => html`<button class="btn ghost sm" data-csv="${id}">${ic("download", "sm")}<span>${label}</span></button>`;
 function bindCsv(box, map) {
   $$("[data-csv]", box).forEach((b) => (b.onclick = () => { const [name, cols, rows] = map[b.dataset.csv](); downloadCsv(name, cols, rows); }));
@@ -346,6 +352,69 @@ const RENDER = {
       <div class="card mb"><div class="card-head"><h2>Каналы · ${d.total} ${plural(d.total, "регистрация", "регистрации", "регистраций")}</h2></div>${table({ columns: cols({ key: "key", label: "Канал" }), rows: d.channels })}</div>
       <div class="card"><div class="card-head"><h2>Первая страница на сайте</h2></div>${table({ columns: cols({ key: "key", label: "Страница", render: (r) => html`<a href="https://helpmedoctor.ru${r.key}" target="_blank" rel="noopener">${r.key}</a>` }), rows: d.pages })}</div>`;
   },
+  cjm: (d) => {
+    const f = d.funnel;
+    const pc = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : "—");
+    const step = (k) => f.steps.find((x) => x.key === k)?.count || 0;
+    const revenue = d.users.reduce((a, u) => a + (u.paid_total || 0), 0);
+    const payErr = d.users.reduce((a, u) => a + u.pay_errors, 0);
+    let worst = -1, worstDrop = 0;
+    f.steps.forEach((st, i) => { if (!i) return; const prev = f.steps[i - 1].count; const drop = prev ? 1 - st.count / prev : 0; if (drop > worstDrop) { worstDrop = drop; worst = i; } });
+    const funnelHtml = f.total ? html`<div class="funnel">${f.steps.map((st, i) => {
+      const pctFirst = Math.round((st.count / f.total) * 100);
+      const prev = i ? f.steps[i - 1].count : st.count;
+      const pctPrev = prev ? Math.round((st.count / prev) * 100) : 0;
+      return html`<div class="fstep ${i === worst ? "worst" : ""}" data-cjm-step="${i}" data-tip="${st.label}: ${st.count} (${pctFirst}% от всех${i ? `, ${pctPrev}% от прошлого шага` : ""})\nНажмите — кто дошёл и кто нет">
+        <span class="small ellipsis">${st.label}</span><span class="bar"><i style="width:${Math.max(0.5, pctFirst)}%"></i></span>
+        <span class="nums"><b>${st.count}</b> · ${pctFirst}%${i ? html` <span class="muted">(${pctPrev}%)</span>` : ""}</span></div>`;
+    })}</div>${worst > 0 ? html`<p class="small muted mt">Больше всего теряем на шаге «${f.steps[worst].label}»: −${Math.round(worstDrop * 100)}%.</p>` : ""}` : html`<div class="empty">Нет регистраций из этого канала за период</div>`;
+    const TIMING = [["consult", "Начал приём"], ["finish", "Завершил приём"], ["plans", "Открыл тарифы"], ["pay_click", "Нажал «Оплатить»"], ["paid", "Оплатил"]];
+    const LOGIN = { telegram: "Telegram", google: "Google", yandex: "Яндекс", "—": "—" };
+    const yes = (v) => (v ? html`<span class="badge ok">✓</span>` : html`<span class="muted">—</span>`);
+    // Путь: подряд идущие одинаковые события схлопываем в «×N», время — от регистрации
+    const pathHtml = (u) => {
+      const out = [];
+      for (const e of u.path) { const last = out[out.length - 1]; if (last && last.type === e.type) last.n++; else out.push({ ...e, n: 1 }); }
+      return html`<div class="row wrap" style="gap:4px;min-width:300px">${out.slice(0, 40).map((e) => html`<span class="badge ${/pay_error|failed|error/.test(e.type) ? "danger" : /paid|pay_/.test(e.type) || e.type === "plans_open" ? "warn" : e.type === "finish" ? "ok" : ""}" data-tip="${fDT(e.ts)}${e.source ? ` · ${SOURCES[e.source] || e.source}` : ""}">${(EV[e.type] || [null, e.type])[1]}${e.n > 1 ? ` ×${e.n}` : ""} <span class="muted">${fMin(Math.round((e.ts - u.registered_at) / 60000))}</span></span>`)}</div>`;
+    };
+    return html`
+      <div class="card mb"><div class="row wrap" style="gap:12px;align-items:flex-end">
+        <div class="field" style="min-width:260px"><label>Канал</label><select class="input" id="cjm-ch">${[...new Set([d.channel, ...d.channels.map((c) => c.name)])].map((c) => html`<option value="${c}" ${c === d.channel ? "selected" : ""}>${c}${d.channels.find((x) => x.name === c) ? ` · ${d.channels.find((x) => x.name === c).n}` : ""}</option>`)}</select></div>
+        <span class="grow"></span>${csvBtn("cjm")}</div>
+        <p class="small muted mt">Пользователи, которые зарегистрировались за выбранный период и впервые пришли на сайт из этого канала (для Директа — по метке yclid в ссылке). Путь — события в тренажёре по порядку, время — от регистрации.</p></div>
+      <div class="tiles">
+        ${stat("Регистраций", fNum(d.total))}${stat("Провели приём", fNum(step("finished")), pc(step("finished"), d.total))}
+        ${stat("Вернулись на 2-й день", fNum(step("returned")), pc(step("returned"), d.total))}${stat("Открыли тарифы", fNum(step("plans")), pc(step("plans"), d.total))}
+        ${stat("Нажали «Оплатить»", fNum(step("pay_click")), pc(step("pay_click"), d.total))}${stat("Оплатили", fNum(step("paid")), pc(step("paid"), d.total))}
+        ${stat("Выручка", fRub(revenue), d.total ? `${fRub(Math.round(revenue / d.total))} на регистрацию` : "")}${stat("Ошибок оплаты", fNum(payErr), payErr ? "платёж не создан" : "")}
+      </div>
+      <div class="grid c2 mt">
+        <div class="card"><div class="card-head"><h2>Воронка канала</h2><span class="small muted">${d.total} ${plural(d.total, "регистрация", "регистрации", "регистраций")}</span></div>${funnelHtml}</div>
+        <div class="card"><div class="card-head"><h2>Регистрации по дням</h2></div>${d.by_day.length ? chart({ type: "bars", labels: d.by_day.map((x) => x.day), series: [{ name: "Регистрации", values: d.by_day.map((x) => x.n) }] }) : html`<div class="empty">—</div>`}</div>
+        <div class="card"><div class="card-head"><h2>Сколько времени до шага (медиана)</h2></div>${TIMING.some(([k]) => d.timing?.[k]?.n) ? hbars(TIMING.filter(([k]) => d.timing?.[k]?.n).map(([k, l], i) => ({ label: `${l} · ${d.timing[k].n} чел.`, value: d.timing[k].median, color: SERIES[i] })), { fmtV: (v) => fMin(v) }) : html`<div class="empty">Никто ещё не дошёл до приёма или тарифов</div>`}</div>
+        <div class="card"><div class="card-head"><h2>Что делали (люди / события)</h2></div>${hbars(d.events.filter((e) => EV[e.type]).slice(0, 14).map((e) => ({ label: `${EV[e.type][1]} · ${fNum(e.n)}`, value: e.users })), { fmtV: (v) => `${v} чел.` })}</div>
+        <div class="card"><div class="card-head"><h2>Страница входа</h2></div>${hbars(d.lands.map((x, i) => ({ label: x.k, value: x.n, color: SERIES[i % 8] })))}</div>
+        <div class="card"><div class="card-head"><h2>Кампании (utm_campaign)</h2></div>${hbars(d.campaigns.map((x, i) => ({ label: x.k, value: x.n, color: SERIES[i % 8] })))}</div>
+        <div class="card"><div class="card-head"><h2>Способ входа</h2></div>${hbars(d.logins.map((x, i) => ({ label: LOGIN[x.k] || x.k, value: x.n, color: SERIES[i % 8] })))}</div>
+        <div class="card"><div class="card-head"><h2>Где работают сейчас</h2></div>${hbars(d.where.map((x, i) => ({ label: SOURCES[x.k] || x.k, value: x.n, color: SERIES[i % 8] })))}</div>
+      </div>
+      ${d.payments.length ? html`<div class="card mt pad-0"><div class="card-head" style="padding:14px 16px 0"><h2>Оплаты и попытки</h2></div>${table({ columns: [
+        { key: "created_at", label: "Когда", render: (r) => html`<span class="nowrap">${fDT(r.created_at)}</span>` },
+        { key: "name", label: "Пользователь", render: (r) => html`<a href="#/users/${r.uid}">${r.name || r.uid}</a>` },
+        { key: "plan", label: "Тариф", render: (r) => PLAN_LABELS[r.plan] || r.plan },
+        { key: "status", label: "Статус", render: (r) => html`<span class="badge ${r.status === "paid" ? "ok" : r.status === "error" ? "danger" : ""}">${PAY_ST[r.status] || r.status}</span>` },
+        { key: "amount", label: "Сумма", cls: "r", render: (r) => (r.amount ? fRub(r.amount) : "—") },
+        { key: "error", label: "Ошибка", render: (r) => html`<span class="small muted">${r.error || ""}</span>` },
+      ], rows: d.payments })}</div>` : ""}
+      <div class="card mt pad-0"><div class="card-head" style="padding:14px 16px 0"><h2>Путь каждого пользователя (CJM)</h2></div>${table({ columns: [
+        { key: "name", label: "Пользователь", render: (u) => html`<a href="#/users/${u.uid}" style="color:inherit"><b>${u.name || u.uid}</b></a><div class="tiny muted">${fDT(u.registered_at)}</div><div class="tiny muted">${u.logins.map((l) => `${LOGIN[l.provider] || l.provider}${l.email ? ` · ${l.email}` : ""}`).join(", ") || "—"}</div>` },
+        { key: "land", label: "Вход / кампания", render: (u) => html`<span class="small">${u.land || "—"}</span>${u.utm.campaign ? html`<div class="tiny muted">${u.utm.campaign}${u.utm.term ? ` · ${u.utm.term}` : ""}</div>` : ""}` },
+        { key: "cons", label: "Приёмов", cls: "r" }, { key: "active_days", label: "Дней", cls: "r" },
+        { key: "plans", label: "Тарифы", render: (u) => yes(u.to.plans != null) }, { key: "pay", label: "Оплатить", render: (u) => yes(u.to.pay_click != null) },
+        { key: "paid_total", label: "Оплатил", cls: "r", render: (u) => (u.paid_total ? fRub(u.paid_total) : u.pay_errors ? html`<span class="badge danger">ошибка ×${u.pay_errors}</span>` : "—") },
+        { key: "path", label: "Путь", render: pathHtml },
+      ], rows: d.users, empty: "Нет регистраций из этого канала за период" })}</div>`;
+  },
   channels: (d) => html`<div class="card"><div class="card-head"><h2>Бот, мини-приложение, сайт</h2></div>${table({ columns: [
     { key: "source", label: "Канал", render: (r) => SOURCES[r.source] || (r.source === "—" ? "До запуска аналитики" : r.source) }, { key: "users", label: "Пользователей", cls: "r" },
     { key: "events", label: "Действий", cls: "r" }, { key: "finished", label: "Приёмов", cls: "r" }, { key: "rating", label: "Оценка", cls: "r", render: (r) => r.rating ?? "—" },
@@ -419,6 +488,24 @@ function cfBlock(cf) {
 }
 
 const BIND = {
+  cjm: (box, d, el, ctx) => {
+    $("#cjm-ch", box).onchange = (e) => { CJM.channel = e.target.value; viewAnalytics(el, ctx).then(() => renderCharts(el)); };
+    $$("[data-cjm-step]", box).forEach((row) => (row.onclick = () => {
+      const st = d.funnel.steps[Number(row.dataset.cjmStep)];
+      const reached = new Set(st.uids);
+      const item = (u) => html`<a href="#/users/${u.uid}" class="row" style="color:inherit" data-close>${u.name || u.uid}</a>`;
+      openModal({ title: st.label, body: html`<div class="grid c2"><div><h3 class="small">Дошли (${reached.size})</h3><div class="stack-sm">${d.users.filter((u) => reached.has(u.uid)).map(item)}</div></div>
+        <div><h3 class="small">Не дошли (${d.users.length - reached.size})</h3><div class="stack-sm">${d.users.filter((u) => !reached.has(u.uid)).map(item)}</div></div></div>` });
+    }));
+    bindCsv(box, { cjm: () => ["cjm", [
+      { key: "uid", label: "ID" }, { key: "name", label: "Имя" }, { label: "Вход", value: (u) => u.logins.map((l) => l.provider).join(", ") }, { key: "email", label: "Почта" },
+      { label: "Регистрация", value: (u) => fDT(u.registered_at) }, { key: "land", label: "Страница входа" }, { label: "Кампания", value: (u) => u.utm.campaign }, { label: "Ключ", value: (u) => u.utm.term },
+      { key: "cons", label: "Приёмов" }, { key: "quizzes", label: "Тестов" }, { key: "active_days", label: "Активных дней" },
+      { label: "До приёма, мин", value: (u) => u.to.consult ?? "" }, { label: "До тарифов, мин", value: (u) => u.to.plans ?? "" }, { label: "До «Оплатить», мин", value: (u) => u.to.pay_click ?? "" },
+      { key: "pay_errors", label: "Ошибок оплаты" }, { key: "paid_total", label: "Оплачено, ₽" },
+      { label: "Путь", value: (u) => u.path.map((e) => (EV[e.type] || [null, e.type])[1]).join(" → ") },
+    ], d.users] });
+  },
   retention: (box, d) => bindCsv(box, { ret: () => ["retention", [{ key: "week", label: "Неделя" }, { key: "size", label: "Людей" }, ...Array.from({ length: 9 }, (_, k) => ({ label: `Н${k}`, value: (r) => r.weeks[k] })), { key: "d1", label: "D1" }, { key: "d7", label: "D7" }, { key: "d14", label: "D14" }, { key: "d30", label: "D30" }], d.cohorts] }),
   quality: (box, d) => {
     const cols = [{ key: "key", label: "Группа" }, { key: "count", label: "Приёмов" }, { key: "avg", label: "Оценка" }, { key: "correct_pct", label: "Верный диагноз, %" }, { key: "diagnosis", label: "Диагностика" }, { key: "communication", label: "Общение" }, { key: "treatment", label: "Лечение" }];
