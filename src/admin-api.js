@@ -11,6 +11,13 @@ import { tg, stripHtml } from "./lib/telegram.js";
 import { hubStub, userStub } from "./bot/handlers.js";
 import { buildKeyboard } from "./do/hub.js";
 
+// Только чтение: эти операции доступны и по ключу выгрузки ADMIN_EXPORT_KEY — так Claude видит данные приложения
+const READ_OPS = new Set([
+  "dashboard", "live", "report", "users", "chat", "events", "subscriptions", "payments", "inbox", "broadcasts", "segment_count",
+  "templates", "texts", "feedback", "onboarding", "tasks", "task", "audit_log", "backfill_status", "counts", "autopay_list",
+  "partners", "bloggers", "blogger_log", "promos", "promo_uses", "docs", "doc",
+]);
+
 // Операции HubDO, которые можно вызывать из интерфейса (остальные — только изнутри сервера)
 const HUB_OPS = new Set([
   "dashboard", "live", "report", "users", "chat", "events", "subscriptions", "payments", "inbox", "broadcasts", "broadcast",
@@ -59,6 +66,23 @@ export async function adminApi(request, env, url, ctx) {
     if (key.length < 24) return json({ error: "Выгрузка не настроена" }, 404);
     if (!safeEqual(request.headers.get("X-Export-Key") || "", key)) return json({ error: "Нет доступа" }, 403);
     if (url.searchParams.get("what") === "replies") return json(await hub.admin("replies_export", { days: url.searchParams.get("days") }, "export"));
+    // Чтение данных приложения (для Claude): ?op=<операция>&args=<JSON> — как /q в админке, но только операции из READ_OPS
+    const op = url.searchParams.get("op");
+    if (op) {
+      if (!READ_OPS.has(op)) return json({ error: "Операция не для чтения" }, 400);
+      let args = {};
+      try { args = JSON.parse(url.searchParams.get("args") || "{}") || {}; } catch { return json({ error: "args — не JSON" }, 400); }
+      return json(await hub.admin(op, args, "export"));
+    }
+    // Карточка пользователя (?user=<uid>) и пациент (?user=<uid>&patient=<id>) — как в админке
+    const uid = url.searchParams.get("user");
+    if (uid) {
+      if (!/^w?\d+$/.test(uid)) return json({ error: "Неверный uid" }, 400);
+      const pid = url.searchParams.get("patient");
+      if (pid) return json((await userStub(env, uid, "admin").adminPatient(pid)) || { error: "Пациент не найден" });
+      const [h, view] = await Promise.all([hub.admin("user_hub", { uid }, "export"), userStub(env, uid, "admin").adminView()]);
+      return json(h || view ? { ...(h || {}), view } : { error: "Пользователь не найден" });
+    }
     const id = url.searchParams.get("id");
     return json(id ? await hub.admin("task", { id }, "export") : await hub.admin("tasks", {}, "export"));
   }

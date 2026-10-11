@@ -872,7 +872,21 @@ ex = await (await fetch(`${BASE}/api/admin/export?what=replies&days=30`, { heade
 const rep = ex.rows.find((x) => x.text.includes("всё супер"));
 assert.ok(rep && rep.question, "ответы на рассылки — с вопросом, на который ответили");
 assert.ok(!("uid" in rep) && !("username" in rep), "в выгрузке ответов нет uid и username");
-step("выгрузка задач, идей и ответов на рассылки: только по ключу и только чтение");
+// Чтение данных приложения по тому же ключу (для Claude): операции админки только на чтение и карточка пользователя
+const exq = async (qs) => { const r = await fetch(`${BASE}/api/admin/export?${qs}`, { headers: { "X-Export-Key": EXP } }); return { status: r.status, data: await r.json() }; };
+ex = await exq(`op=users&args=${encodeURIComponent(JSON.stringify({ filter: { q: "boris@example" } }))}`);
+const borisRow = ex.data.rows?.find((u) => u.uid === W2 && u.email === "boris@example.com");
+assert.ok(ex.status === 200 && borisRow, JSON.stringify(ex.data).slice(0, 300));
+ex = await exq(`op=report&args=${encodeURIComponent(JSON.stringify({ name: "sources", from: Date.now() - 86400000, to: Date.now() + 60000 }))}`);
+assert.ok(ex.status === 200 && ex.data.total >= 1, JSON.stringify(ex.data).slice(0, 300));
+ex = await exq(`user=${borisRow.uid}`);
+assert.ok(ex.status === 200 && ex.data.user?.uid === borisRow.uid && ex.data.view?.profile && ex.data.identities.length, JSON.stringify(ex.data).slice(0, 300));
+assert.equal((await exq("op=task_create&args=%7B%7D")).status, 400, "операции записи по ключу недоступны");
+assert.equal((await exq("op=bloggers_plan&args=%7B%7D")).status, 400, "и та, что меняет план блогеров");
+assert.equal((await exq("op=users&args=%7Bbad")).status, 400, "args — только JSON");
+assert.equal((await exq("user=../x")).status, 400);
+assert.equal((await fetch(`${BASE}/api/admin/export?op=users`)).status, 403, "без ключа — отказ");
+step("выгрузка задач, идей и ответов на рассылки: только по ключу и только чтение; данные приложения — только чтение по тому же ключу");
 
 // Веб-аккаунт привязывает Telegram, где уже есть прогресс — прогресс складывается
 const before777 = (await api(webToken, "GET", "/me")).data;
