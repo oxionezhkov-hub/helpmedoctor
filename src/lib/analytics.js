@@ -23,8 +23,9 @@ export function userWhere(f = {}) {
   const now = Date.now();
   if (f.q) {
     const q = String(f.q).trim().replace(/^@/, "").toLowerCase();
-    w.push("(u.search LIKE ? OR u.uid = ?)");
-    args.push(`%${q}%`, q);
+    // Поиск и по почте из Google/Яндекс
+    w.push("(u.search LIKE ? OR u.uid = ? OR u.uid IN (SELECT uid FROM identities WHERE LOWER(email) LIKE ?))");
+    args.push(`%${q}%`, q, `%${q}%`);
   }
   if (f.reg_from) { w.push("u.registered_at >= ?"); args.push(Number(f.reg_from)); }
   if (f.reg_to) { w.push("u.registered_at < ?"); args.push(Number(f.reg_to)); }
@@ -221,8 +222,8 @@ export function withApp(pages, app) {
   });
 }
 
-function funnel(h, from, to) {
-  const cohort = h.all("SELECT uid, registered_at, about, expectations, onboarding_done, patients, cons, quizzes FROM users WHERE registered_at >= ? AND registered_at < ?", from, to);
+function funnel(h, from, to, { channel = null, payClick = false } = {}) {
+  const cohort = h.all(`SELECT uid, registered_at, about, expectations, onboarding_done, patients, cons, quizzes FROM users WHERE registered_at >= ? AND registered_at < ?${channel ? " AND src_channel = ?" : ""}`, from, to, ...(channel ? [channel] : []));
   if (!cohort.length) return { total: 0, steps: [] };
   const ids = cohort.map((u) => u.uid);
   const inList = (col) => `${col} IN (${ids.map(() => "?").join(",")})`;
@@ -230,6 +231,7 @@ function funnel(h, from, to) {
   const started = setOf(`SELECT DISTINCT uid FROM events WHERE type = 'consult_start' AND ${inList("uid")}`);
   const plans = setOf(`SELECT DISTINCT uid FROM events WHERE type IN ('plans_open', 'pay_click') AND ${inList("uid")}`);
   const paid = setOf(`SELECT DISTINCT uid FROM payments WHERE status = 'paid' AND ${inList("uid")}`);
+  const clicked = payClick ? setOf(`SELECT DISTINCT uid FROM events WHERE type = 'pay_click' AND ${inList("uid")}`) : null;
   const days = {};
   for (const r of h.all(`SELECT uid, day FROM active WHERE ${inList("uid")}`, ...ids)) (days[r.uid] = days[r.uid] || new Set()).add(r.day);
   const steps = [
@@ -242,6 +244,7 @@ function funnel(h, from, to) {
     ["quiz", "Прошёл тест", (u) => u.quizzes > 0],
     ["returned", "Вернулся на 2-й день", (u) => [...(days[u.uid] || [])].some((d) => d > mskDate(u.registered_at))],
     ["plans", "Открыл тарифы", (u) => plans.has(u.uid) || paid.has(u.uid)],
+    ...(clicked ? [["pay_click", "Нажал «Оплатить»", (u) => clicked.has(u.uid) || paid.has(u.uid)]] : []),
     ["paid", "Оплатил", (u) => paid.has(u.uid)],
   ].map(([key, label, test]) => {
     const users = cohort.filter(test).map((u) => u.uid);
@@ -558,6 +561,62 @@ const REPORTS = {
     return { total: rows.length, channels: group("channel"), pages: group("land").filter((x) => x.key !== "—").slice(0, 40) };
   },
 
+  // CJM по каналу (по умолчанию — Яндекс Директ): воронка, путь каждого пользователя по событиям, время до ключевых шагов, лендинги и способы входа
+  cjm(h, f) {
+    const from = Number(f.from), to = Number(f.to);
+    const channels = h.all("SELECT src_channel AS name, COUNT(*) AS n FROM users WHERE registered_at >= ? AND registered_at < ? AND src_channel IS NOT NULL GROUP BY src_channel ORDER BY n DESC", from, to);
+    const channel = String(f.channel || "Реклама: Яндекс Директ");
+    const users = h.all(`SELECT u.*, (SELECT COALESCE(SUM(amount), 0) FROM payments p WHERE p.uid = u.uid AND p.status = 'paid') AS paid_total, ${LOGINS_SQL}
+      FROM users u WHERE u.registered_at >= ? AND u.registered_at < ? AND u.src_channel = ? ORDER BY u.registered_at`, from, to, channel).map(publicUserRow);
+    const base = { channel, channels, total: users.length };
+    if (!users.length) return { ...base, funnel: { total: 0, steps: [] }, users: [] };
+    const ids = users.map((u) => u.uid);
+    const marks = ids.map(() => "?").join(",");
+    // Путь: события пользователя по порядку, без служебных (напоминания, ответы ИИ по одному)
+    const SKIP = ["reply", "reminder", "quiz_answer", "message", "test", "exam", "pause", "streak_up", "email", "winback"];
+    const evs = h.all(`SELECT uid, type, ts, source FROM events WHERE uid IN (${marks}) AND type NOT IN (${SKIP.map(() => "?").join(",")}) ORDER BY ts`, ...ids, ...SKIP);
+    const counts = h.all(`SELECT type, COUNT(*) AS n, COUNT(DISTINCT uid) AS users FROM events WHERE uid IN (${marks}) GROUP BY type ORDER BY users DESC, n DESC`, ...ids);
+    const pays = h.all(`SELECT uid, plan, status, amount, created_at, error FROM payments WHERE uid IN (${marks}) ORDER BY created_at`, ...ids);
+    const byUid = {};
+    for (const e of evs) (byUid[e.uid] = byUid[e.uid] || []).push(e);
+    const first = (uid, types) => (byUid[uid] || []).find((e) => types.includes(e.type))?.ts || null;
+    const utmOf = (s) => { const q = new URLSearchParams(String(s || "")); return { campaign: q.get("campaign") || q.get("utm_campaign") || "", content: q.get("content") || q.get("utm_content") || "", term: q.get("term") || q.get("utm_term") || "" }; };
+    const rows = users.map((u) => {
+      const path = byUid[u.uid] || [];
+      const t = {
+        consult: first(u.uid, ["consult_start"]), finish: first(u.uid, ["finish"]), plans: first(u.uid, ["plans_open"]),
+        pay_click: first(u.uid, ["pay_click"]), paid: pays.find((p) => p.uid === u.uid && p.status === "paid")?.created_at || null,
+      };
+      const mins = (ts) => (ts && u.registered_at ? Math.max(0, Math.round((ts - u.registered_at) / 60000)) : null);
+      return {
+        uid: u.uid, name: u.name, username: u.username, registered_at: u.registered_at, last_active: u.last_active, last_source: u.last_source,
+        land: u.src_land, last: u.src_last, utm: utmOf(u.src_utm), logins: u.logins, email: u.email,
+        patients: u.patients || 0, cons: u.cons || 0, quizzes: u.quizzes || 0, paid_total: u.paid_total || 0, sub_plan: u.sub_plan, sub_until: u.sub_until,
+        active_days: new Set(path.map((e) => mskDate(e.ts))).size,
+        pay_errors: pays.filter((p) => p.uid === u.uid && p.status === "error").length,
+        to: { consult: mins(t.consult), finish: mins(t.finish), plans: mins(t.plans), pay_click: mins(t.pay_click), paid: mins(t.paid) },
+        path: path.slice(0, 80).map((e) => ({ type: e.type, ts: e.ts, source: e.source })),
+      };
+    });
+    const median = (arr) => { const a = arr.filter((x) => x != null).sort((x, y) => x - y); return a.length ? a[Math.floor((a.length - 1) / 2)] : null; };
+    const group = (fn) => { const m = new Map(); for (const r of rows) for (const k of [].concat(fn(r))) m.set(k || "—", (m.get(k || "—") || 0) + 1); return [...m.entries()].map(([k, n]) => ({ k, n })).sort((a, b) => b.n - a.n); };
+    const days = {};
+    for (const r of rows) { const d = mskDate(r.registered_at); days[d] = (days[d] || 0) + 1; }
+    return {
+      ...base,
+      funnel: funnel(h, from, to, { channel, payClick: true }),
+      timing: Object.fromEntries(["consult", "finish", "plans", "pay_click", "paid"].map((k) => [k, { median: median(rows.map((r) => r.to[k])), n: rows.filter((r) => r.to[k] != null).length }])),
+      by_day: Object.entries(days).sort(([a], [b]) => a.localeCompare(b)).map(([day, n]) => ({ day, n })),
+      lands: group((r) => String(r.land || "").replace(/[?#].*$/, "")),
+      campaigns: group((r) => r.utm.campaign),
+      logins: group((r) => (r.logins.length ? r.logins.map((l) => l.provider) : ["—"])),
+      where: group((r) => r.last_source),
+      events: counts,
+      payments: pays.map((p) => ({ ...p, name: users.find((u) => u.uid === p.uid)?.name || "" })),
+      users: rows,
+    };
+  },
+
   channels(h, f) {
     const { where, args } = evWhere({ ...f, source: "" });
     return {
@@ -664,9 +723,17 @@ function users(h, { filter = {}, sort = "last_active", dir = "desc", limit = 50,
   const order = USER_SORT[sort] || USER_SORT.last_active;
   const d = dir === "asc" ? "ASC" : "DESC";
   const total = h.one(`SELECT COUNT(*) AS n FROM users u WHERE ${where}`, ...args).n;
-  const rows = h.all(`SELECT u.*, (SELECT COALESCE(SUM(amount), 0) FROM payments p WHERE p.uid = u.uid AND p.status = 'paid') AS paid_total
+  const rows = h.all(`SELECT u.*, (SELECT COALESCE(SUM(amount), 0) FROM payments p WHERE p.uid = u.uid AND p.status = 'paid') AS paid_total, ${LOGINS_SQL}
     FROM users u WHERE ${where} ORDER BY ${order} ${d} NULLS LAST, u.uid LIMIT ? OFFSET ?`, ...args, Math.min(5000, Number(limit) || 50), Number(offset) || 0);
   return { total, rows: rows.map(publicUserRow) };
+}
+
+// Способы входа: Google/Яндекс из identities («provider|email» через «;»), Telegram — если uid числовой
+const LOGINS_SQL = "(SELECT GROUP_CONCAT(i.provider || '|' || COALESCE(i.email, ''), ';') FROM identities i WHERE i.uid = u.uid) AS logins_raw";
+const isTgUid = (uid) => /^\d+$/.test(String(uid));
+function loginsOf(u) {
+  const list = String(u.logins_raw || "").split(";").filter(Boolean).map((x) => { const [provider, email = ""] = x.split("|"); return { provider, email }; });
+  return isTgUid(u.uid) ? [{ provider: "telegram", email: "" }, ...list] : list;
 }
 
 export function publicUserRow(u) {
@@ -674,15 +741,20 @@ export function publicUserRow(u) {
   let specs = [];
   try { specs = JSON.parse(u.specs || "[]") || []; } catch {}
   const now = Date.now();
-  return { ...u, specs, sub_active: u.sub_until === -1 || u.sub_until > now };
+  const logins = loginsOf(u);
+  const { logins_raw, ...rest } = u;
+  return { ...rest, specs, sub_active: u.sub_until === -1 || u.sub_until > now, logins, email: logins.find((l) => l.email)?.email || "" };
 }
 
 function userHub(h, { uid }) {
   uid = String(uid);
-  const row = h.one(`SELECT u.*, (SELECT COALESCE(SUM(amount), 0) FROM payments p WHERE p.uid = u.uid AND p.status = 'paid') AS paid_total FROM users u WHERE u.uid = ?`, uid);
+  const row = h.one(`SELECT u.*, (SELECT COALESCE(SUM(amount), 0) FROM payments p WHERE p.uid = u.uid AND p.status = 'paid') AS paid_total, ${LOGINS_SQL} FROM users u WHERE u.uid = ?`, uid);
   if (!row) return null;
   return {
     user: publicUserRow(row),
+    // Все привязанные входы с датой и именем в аккаунте + веб-аккаунты, склеенные с этим профилем
+    identities: h.all("SELECT provider, email, name, created_at FROM identities WHERE uid = ? ORDER BY created_at", uid),
+    aliases: h.all("SELECT from_uid, created_at FROM aliases WHERE to_uid = ? ORDER BY created_at", uid),
     notes: h.all("SELECT * FROM notes WHERE uid = ? ORDER BY ts DESC", uid),
     payments: h.all("SELECT * FROM payments WHERE uid = ? ORDER BY created_at DESC", uid),
     feedback: h.all("SELECT * FROM feedback WHERE uid = ? ORDER BY ts DESC", uid),
