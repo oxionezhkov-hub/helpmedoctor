@@ -6,7 +6,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 import { faceSvg } from "../src/lib/face.js";
-import { CASE, DECKS, PROMO, AUTHOR } from "../content/telegram-channel/decks.mjs";
+import { CASE, CASES, DECKS, PROMO, AUTHOR } from "../content/telegram-channel/decks.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIR = join(ROOT, "content/telegram-channel");
@@ -114,8 +114,7 @@ function intro() {
     </div>`);
 }
 
-function caseCard() {
-  const c = CASE;
+function caseCard(c = CASE) {
   return page(`${top(c.kicker)}
     <h1>${md(c.title)}</h1>
     <div class="card" style="margin-top:56px">
@@ -163,6 +162,7 @@ for (const [key, d] of Object.entries(DECKS)) {
 }
 add("intro-1", intro());
 add("case-1", caseCard());
+for (const [key, c] of Object.entries(CASES)) add(`${key}-1`, caseCard(c));
 add("promo-1", promo());
 add("avatar-1", avatar(), { width: 640, height: 640 });
 
