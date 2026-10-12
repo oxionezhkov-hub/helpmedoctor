@@ -78,10 +78,81 @@
    "sent_at": "2026-10-09T07:30:45.488Z",
    "message_id": "<92ef20bf-1cf6-809a-d383-13769b2606e3@gmail.com>",
    "subject": "Для МАСЦ РНИМУ: виртуальный пациент для отработки анамнеза"
+  },
+  "c1a45f99": {
+   "to": "conf-kemsma@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:20:59.393Z",
+   "message_id": "<a8ee1271-b40e-a44b-1e43-dfdc8c3cfefd@gmail.com>",
+   "subject": "Тренажёр клинического мышления для конференции молодых терапевтов"
+  },
+  "582314a8": {
+   "to": "info@volmedic.com",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:25:43.872Z",
+   "message_id": "<d641e0a0-2f62-2e20-a9d2-411387805c0e@gmail.com>",
+   "subject": "Тренажёр приёма пациента для волонтёров-медиков"
+  },
+  "c1726df5": {
+   "to": "ledov@ordinatura-org.ru",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:28:24.478Z",
+   "message_id": "<a86d9721-3c69-c320-2fe9-e7d5d13ffa7a@gmail.com>",
+   "subject": "Тема для «Ординатуры и боли»: ИИ-пациенты в подготовке врачей"
+  },
+  "272dd355": {
+   "to": "unc_praktika@usma.ru",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:31:59.897Z",
+   "message_id": "<2e36839b-121d-b049-4ff2-431981aa1ffc@gmail.com>",
+   "subject": "Тренажёр сбора анамнеза для студентов УГМУ — от студентов-медиков"
+  },
+  "b1ffeeda": {
+   "to": "creditmed@ya.ru",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:37:16.605Z",
+   "message_id": "<b1b3e998-c541-dc68-1ac9-1f35097f54dc@gmail.com>",
+   "subject": "Размещение в «Аккредитация врачей | Ординатура»: практика приёма"
+  },
+  "9fe655a5": {
+   "to": "lancetuniformcorporate@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:40:43.693Z",
+   "message_id": "<74a4cfb8-1c6c-d953-6ae6-1ab37ae4b962@gmail.com>",
+   "subject": "Lancet Uniform и студенты-медики: идея совместного проекта"
+  },
+  "8ff60c6e": {
+   "to": "tikhonov.sergei@szgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:44:47.835Z",
+   "message_id": "<553aa099-8582-bb72-60eb-ae57493a6dd7@gmail.com>",
+   "subject": "Идея для «Мечниковских чтений» и СНО СЗГМУ: тренажёр приёма"
+  },
+  "4fe3ab73": {
+   "to": "congress@orgzdrav.com",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:49:13.440Z",
+   "message_id": "<327a79ca-6a7d-1b04-8d39-2ffcc196dc0d@gmail.com>",
+   "subject": "ИИ в подготовке врачей: идея для «ОргЗдрава-2027»"
+  },
+  "0710ffe1": {
+   "to": "team@rb.ru",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:52:19.122Z",
+   "message_id": "<5ea9fe4f-3e54-0d67-6ac6-80e285ed9a50@gmail.com>",
+   "subject": "Для RB.ru: студенческий стартап с ИИ-пациентом для медиков"
+  },
+  "d2febe68": {
+   "to": "info@samsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-12T06:56:06.269Z",
+   "message_id": "<186eba5f-f6ba-100a-8096-37deb601ac6a@gmail.com>",
+   "subject": "Для МАСЦ СамГМУ: тренировка сбора анамнеза между занятиями"
   }
  },
  "days": [
-  "2026-10-09"
+  "2026-10-09",
+  "2026-10-12"
  ],
- "inbox_checked_at": "2026-10-09T13:28:04.180Z"
+ "inbox_checked_at": "2026-10-12T06:20:58.341Z"
 }
