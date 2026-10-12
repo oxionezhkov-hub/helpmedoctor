@@ -53,10 +53,18 @@
   },
   "6ee9aec9": {
    "to": "med@consef.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-09T07:20:34.693Z",
    "message_id": "<29606db4-feff-57ee-9a71-7ff4865ada5b@gmail.com>",
-   "subject": "«Цифровые технологии в современной медицине»: ИИ-пациент в обучении"
+   "subject": "«Цифровые технологии в современной медицине»: ИИ-пациент в обучении",
+   "seen": [
+    "<bx.mail.6acca682.5199ce@itmportal.net>"
+   ],
+   "last_in_msgid": "<bx.mail.6acca682.5199ce@itmportal.net>",
+   "last_in_subject": "Re: «Цифровые технологии в современной медицине»: ИИ-пациент в обучении",
+   "last_in_from": "med@consef.ru",
+   "last_in_at": "2026-10-12T10:20:28.469Z",
+   "reply_at": "2026-10-12T10:20:28.469Z"
   },
   "3c835948": {
    "to": "post@rosomed.ru",
@@ -154,5 +162,5 @@
   "2026-10-09",
   "2026-10-12"
  ],
- "inbox_checked_at": "2026-10-12T09:20:19.707Z"
+ "inbox_checked_at": "2026-10-12T10:20:28.787Z"
 }
