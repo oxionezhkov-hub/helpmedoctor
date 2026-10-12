@@ -138,10 +138,18 @@
   },
   "4fe3ab73": {
    "to": "congress@orgzdrav.com",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-12T06:49:13.440Z",
    "message_id": "<327a79ca-6a7d-1b04-8d39-2ffcc196dc0d@gmail.com>",
-   "subject": "ИИ в подготовке врачей: идея для «ОргЗдрава-2027»"
+   "subject": "ИИ в подготовке врачей: идея для «ОргЗдрава-2027»",
+   "seen": [
+    "<CACVp-ktwgEC3P+S+bAJ=Lsb6zCDRW-DgZbEsG0TyQ9c-BXs5Ug@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CACVp-ktwgEC3P+S+bAJ=Lsb6zCDRW-DgZbEsG0TyQ9c-BXs5Ug@mail.gmail.com>",
+   "last_in_subject": "Re: ИИ в подготовке врачей: идея для «ОргЗдрава-2027»",
+   "last_in_from": "guseva.vshouz@gmail.com",
+   "last_in_at": "2026-10-12T13:20:31.204Z",
+   "reply_at": "2026-10-12T13:20:31.204Z"
   },
   "0710ffe1": {
    "to": "team@rb.ru",
@@ -162,5 +170,5 @@
   "2026-10-09",
   "2026-10-12"
  ],
- "inbox_checked_at": "2026-10-12T12:21:24.615Z"
+ "inbox_checked_at": "2026-10-12T13:20:31.277Z"
 }
