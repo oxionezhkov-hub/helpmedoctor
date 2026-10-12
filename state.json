@@ -117,10 +117,18 @@
   },
   "b1ffeeda": {
    "to": "creditmed@ya.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-12T06:37:16.605Z",
    "message_id": "<b1b3e998-c541-dc68-1ac9-1f35097f54dc@gmail.com>",
-   "subject": "Размещение в «Аккредитация врачей | Ординатура»: практика приёма"
+   "subject": "Размещение в «Аккредитация врачей | Ординатура»: практика приёма",
+   "seen": [
+    "<12061791822361@mail.yandex.ru>"
+   ],
+   "last_in_msgid": "<12061791822361@mail.yandex.ru>",
+   "last_in_subject": "Re: Размещение в «Аккредитация врачей | Ординатура»: практика приёма",
+   "last_in_from": "creditmed@ya.ru",
+   "last_in_at": "2026-10-12T17:20:24.158Z",
+   "reply_at": "2026-10-12T17:20:24.158Z"
   },
   "9fe655a5": {
    "to": "lancetuniformcorporate@mail.ru",
@@ -170,5 +178,5 @@
   "2026-10-09",
   "2026-10-12"
  ],
- "inbox_checked_at": "2026-10-12T16:20:32.216Z"
+ "inbox_checked_at": "2026-10-12T17:20:24.245Z"
 }
