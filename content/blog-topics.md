@@ -11,7 +11,7 @@
 
 
 ### Октябрь 2026 — семестр, курация
-- [ ] #1 Ситуационные задачи по пульмонологии с ответами — situacionnye-zadachi-po-pulmonologii · ЗАД · A
+- [x] #1 Ситуационные задачи по пульмонологии с ответами — situacionnye-zadachi-po-pulmonologii · ЗАД · A → /blog/situacionnye-zadachi-po-pulmonologii/
 - [ ] #2 Ситуационные задачи по гастроэнтерологии с ответами — situacionnye-zadachi-po-gastroenterologii · ЗАД · A
 - [ ] #3 Учебная история болезни по хирургии: схема и пример — uchebnaya-istoriya-bolezni-hirurgiya · УЧБ · A
 - [ ] #4 Боль в груди: дифференциальный диагноз за 5 шагов — bol-v-grudi-differencialnyj-diagnoz · СИМ · A — каннибализация: в /blog/differencialnyj-diagnoz/ есть раздел про боль в груди — новая статья забирает этот интент, раздел в ДД сократить до ссылки на неё
@@ -125,7 +125,7 @@
 
 ### Октябрь–ноябрь 2026 — все 23 статьи
 Все 23 статьи по шаблону плана: FAQ с разметкой (есть у статей из posts/, проверить у остальных), перелинковка на новые статьи кластера и на /specialnosti/…, ссылка на чек-лист анамнеза, рецензент — когда появится; глубокая ссылка case= — когда её поддержит тренажёр. Сначала три статьи, оставшиеся с шаблонной правки 25–26.09: газы крови, коагулограмма, рентген.
-- [ ] /blog/gazy-krovi-rasshifrovka/
+- [x] /blog/gazy-krovi-rasshifrovka/ → обновлена 12.10.2026
 - [ ] /blog/koagulogramma-rasshifrovka/
 - [ ] /blog/kak-chitat-rentgen-legkih/
 - [ ] /blog/obshchij-analiz-krovi/
