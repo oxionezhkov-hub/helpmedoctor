@@ -39,10 +39,18 @@
   },
   "12ce6db3": {
    "to": "alla07420@gmail.com",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-09T07:12:51.497Z",
    "message_id": "<c3a884a2-c39c-ce28-ce2f-77ad548b8023@gmail.com>",
-   "subject": "Размещение на канале «I am your beasty»: практика для медиков"
+   "subject": "Размещение на канале «I am your beasty»: практика для медиков",
+   "seen": [
+    "<1791874958.822670767@f458.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1791874958.822670767@f458.i.mail.ru>",
+   "last_in_subject": "Re: Размещение на канале «I am your beasty»: практика для медиков",
+   "last_in_from": "alla07420@gmail.com",
+   "last_in_at": "2026-10-13T07:20:23.569Z",
+   "reply_at": "2026-10-13T07:20:23.569Z"
   },
   "0321713c": {
    "to": "info@christmedschool.com",
@@ -249,5 +257,5 @@
   "2026-10-12",
   "2026-10-13"
  ],
- "inbox_checked_at": "2026-10-13T06:20:23.939Z"
+ "inbox_checked_at": "2026-10-13T07:20:23.588Z"
 }
