@@ -172,11 +172,82 @@
    "sent_at": "2026-10-12T06:56:06.269Z",
    "message_id": "<186eba5f-f6ba-100a-8096-37deb601ac6a@gmail.com>",
    "subject": "Для МАСЦ СамГМУ: тренировка сбора анамнеза между занятиями"
+  },
+  "64d5894c": {
+   "to": "roman_for_work@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:20:24.761Z",
+   "message_id": "<9a8b8211-61d2-dc34-dde8-858b92e88432@gmail.com>",
+   "subject": "К следующей конференции СНО ЯГМУ: тренажёр приёма пациента"
+  },
+  "22ed43d0": {
+   "to": "vuznauka@staff.sechenov.ru",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:24:39.661Z",
+   "message_id": "<57e04fbf-d46e-b212-acde-7df8c8d2c0d6@gmail.com>",
+   "subject": "Студенческий медтех-проект для «Эстафеты вузовской науки»"
+  },
+  "4287f086": {
+   "to": "dmdmkr@idffmedia.ru",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:27:27.339Z",
+   "message_id": "<db7052ea-d93c-a5a6-8123-e33afe62954a@gmail.com>",
+   "subject": "Для Vademecum: EdTech-проект студентов в медобразовании"
+  },
+  "5642db35": {
+   "to": "simcentr@ssmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:31:27.128Z",
+   "message_id": "<62353c4d-5a6c-dc95-6206-ea7a8c7cd7ce@gmail.com>",
+   "subject": "Подготовка к ОСКЭ в СибГМУ: виртуальный пациент для студентов"
+  },
+  "49e00595": {
+   "to": "sales@medach.pro",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:33:58.651Z",
+   "message_id": "<d846291c-7231-c1f7-c724-f341550d4834@gmail.com>",
+   "subject": "Размещение в «Медаче»: тренажёр приёма для студентов-медиков"
+  },
+  "f77aed67": {
+   "to": "support@medexam.ru",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:38:58.183Z",
+   "message_id": "<12e48d02-6681-543a-67af-c53256ab5de2@gmail.com>",
+   "subject": "MedExam и практика приёма: партнёрство в подготовке к аккредитации"
+  },
+  "8b9ad88c": {
+   "to": "snorzgmu@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:44:04.048Z",
+   "message_id": "<45a6594b-efe4-7214-8705-7840393e08a2@gmail.com>",
+   "subject": "Разбор клинических случаев в СНО РязГМУ: тренажёр для практики"
+  },
+  "ab97f095": {
+   "to": "partners@mmco-expo.ru",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:47:06.179Z",
+   "message_id": "<8e8d060c-08ed-1162-f605-1900d9573eb1@gmail.com>",
+   "subject": "ИИ-тренажёр для будущих врачей на ММСО.ЭКСПО-2027"
+  },
+  "b27849c7": {
+   "to": "secret@vc.ru",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:51:35.633Z",
+   "message_id": "<92c7103b-7d8a-1985-6ac4-b2e8a35ee131@gmail.com>",
+   "subject": "Новость для vc.ru: студенты-медики сделали ИИ-тренажёр"
+  },
+  "ee2a2815": {
+   "to": "masc@gpmu.org",
+   "status": "sent",
+   "sent_at": "2026-10-13T06:54:49.666Z",
+   "message_id": "<a8b2943e-4045-eb4f-2838-4209f6137ee1@gmail.com>",
+   "subject": "Для МАСЦ СПбГПМУ: тренажёр приёма с виртуальным пациентом"
   }
  },
  "days": [
   "2026-10-09",
-  "2026-10-12"
+  "2026-10-12",
+  "2026-10-13"
  ],
- "inbox_checked_at": "2026-10-12T20:16:12.960Z"
+ "inbox_checked_at": "2026-10-13T06:20:23.939Z"
 }
