@@ -250,12 +250,83 @@
    "sent_at": "2026-10-13T06:54:49.666Z",
    "message_id": "<a8b2943e-4045-eb4f-2838-4209f6137ee1@gmail.com>",
    "subject": "Для МАСЦ СПбГПМУ: тренажёр приёма с виртуальным пациентом"
+  },
+  "1ba6b120": {
+   "to": "olimp@iproficlub.ru",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:20:33.351Z",
+   "message_id": "<66ce7bcd-39ef-9227-1991-6e930f2f3049@gmail.com>",
+   "subject": "Подготовка к медицинским трекам «Я — профессионал»: ИИ-пациент"
+  },
+  "d81657f8": {
+   "to": "official@fondfilatova.ru",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:25:53.244Z",
+   "message_id": "<33d433cf-bb48-213f-de9e-90da5920094f@gmail.com>",
+   "subject": "Студенческий медтех-проект для «Медицины молодой»"
+  },
+  "ab2abc8f": {
+   "to": "gorshkov@rosomed.ru",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:29:50.380Z",
+   "message_id": "<72347f76-96ce-fc79-0d68-54fee14067f2@gmail.com>",
+   "subject": "Статья для журнала РОСОМЕД: виртуальные ИИ-пациенты"
+  },
+  "8f8b64cf": {
+   "to": "simcentr@pimunn.net",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:32:51.763Z",
+   "message_id": "<b3dd54e6-1163-d581-4be4-16441d181ec7@gmail.com>",
+   "subject": "Для симцентра ПИМУ: тренировка сбора анамнеза онлайн"
+  },
+  "353028ea": {
+   "to": "ordi@euat.ru",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:37:43.691Z",
+   "message_id": "<844c3df2-644b-f9e3-4357-ad8b5a1e5816@gmail.com>",
+   "subject": "Партнёрство с «Орди»: клинические случаи в формате приёма"
+  },
+  "e967683a": {
+   "to": "info@medicalservice.ru",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:42:55.424Z",
+   "message_id": "<51e51644-120f-4965-8760-b8d2ed0daf31@gmail.com>",
+   "subject": "MedicalService и студенты-медики: идея взаимного продвижения"
+  },
+  "58924b6c": {
+   "to": "medobr@confreg.org",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:46:37.281Z",
+   "message_id": "<730374ca-71d8-2793-8c52-3138ddd2b158@gmail.com>",
+   "subject": "Тренировка приёма пациента для команд «Золотого МедСкилла»"
+  },
+  "af02aefb": {
+   "to": "polikarpova@expocentr.ru",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:49:51.750Z",
+   "message_id": "<973ffcfa-91ec-5d56-6474-3e85b467fdcf@gmail.com>",
+   "subject": "Цифровое медобразование в деловой программе РНЗ-2026"
+  },
+  "ce4e624b": {
+   "to": "info@uromedia.ru",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:52:50.675Z",
+   "message_id": "<e41daaed-a3da-7a81-9072-32cc02fb8d36@gmail.com>",
+   "subject": "Статья об ИИ-пациентах для «Журнала телемедицины»"
+  },
+  "b76c94a7": {
+   "to": "nomus@volgmed.ru",
+   "status": "sent",
+   "sent_at": "2026-10-14T06:55:48.734Z",
+   "message_id": "<10b76d2c-3f7d-7f8c-9818-5b9a42ca9f41@gmail.com>",
+   "subject": "Для НОМУС ВолгГМУ: кейс на виртуальном пациенте для форума"
   }
  },
  "days": [
   "2026-10-09",
   "2026-10-12",
-  "2026-10-13"
+  "2026-10-13",
+  "2026-10-14"
  ],
- "inbox_checked_at": "2026-10-13T18:21:15.293Z"
+ "inbox_checked_at": "2026-10-14T06:20:31.362Z"
 }
