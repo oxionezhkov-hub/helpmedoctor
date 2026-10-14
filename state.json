@@ -218,7 +218,7 @@
   },
   "f77aed67": {
    "to": "support@medexam.ru",
-   "status": "sent",
+   "status": "bounced",
    "sent_at": "2026-10-13T06:38:58.183Z",
    "message_id": "<12e48d02-6681-543a-67af-c53256ab5de2@gmail.com>",
    "subject": "MedExam и практика приёма: партнёрство в подготовке к аккредитации"
@@ -253,10 +253,18 @@
   },
   "1ba6b120": {
    "to": "olimp@iproficlub.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-14T06:20:33.351Z",
    "message_id": "<66ce7bcd-39ef-9227-1991-6e930f2f3049@gmail.com>",
-   "subject": "Подготовка к медицинским трекам «Я — профессионал»: ИИ-пациент"
+   "subject": "Подготовка к медицинским трекам «Я — профессионал»: ИИ-пациент",
+   "seen": [
+    "<59351791958836@16a81d24-b8f7-450b-81d4-e39bde378506>"
+   ],
+   "last_in_msgid": "<59351791958836@16a81d24-b8f7-450b-81d4-e39bde378506>",
+   "last_in_subject": "Re: Подготовка к медицинским трекам «Я — профессионал»: ИИ-пациент",
+   "last_in_from": "olimp@iproficlub.ru",
+   "last_in_at": "2026-10-14T07:20:37.747Z",
+   "reply_at": "2026-10-14T07:20:37.747Z"
   },
   "d81657f8": {
    "to": "official@fondfilatova.ru",
@@ -302,10 +310,18 @@
   },
   "af02aefb": {
    "to": "polikarpova@expocentr.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-14T06:49:51.750Z",
    "message_id": "<973ffcfa-91ec-5d56-6474-3e85b467fdcf@gmail.com>",
-   "subject": "Цифровое медобразование в деловой программе РНЗ-2026"
+   "subject": "Цифровое медобразование в деловой программе РНЗ-2026",
+   "seen": [
+    "<a180d38433b34e5d92d354b15202154a@ws-ms1.expocentr.ru>"
+   ],
+   "last_in_msgid": "<a180d38433b34e5d92d354b15202154a@ws-ms1.expocentr.ru>",
+   "last_in_subject": "RE: Цифровое медобразование в деловой программе РНЗ-2026",
+   "last_in_from": "polikarpova@expocentr.ru",
+   "last_in_at": "2026-10-14T07:20:38.071Z",
+   "reply_at": "2026-10-14T07:20:38.071Z"
   },
   "ce4e624b": {
    "to": "info@uromedia.ru",
@@ -328,5 +344,5 @@
   "2026-10-13",
   "2026-10-14"
  ],
- "inbox_checked_at": "2026-10-14T06:20:31.362Z"
+ "inbox_checked_at": "2026-10-14T07:20:38.197Z"
 }
