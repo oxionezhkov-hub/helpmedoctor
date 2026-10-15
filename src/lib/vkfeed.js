@@ -44,7 +44,7 @@ export async function vkFeedPush(request, env) {
     await env.HELPMEDOCTOR.put(IMG(id), bin, { metadata: { type: p.image_type || "image/jpeg" } });
     img = { len: bin.byteLength, type: p.image_type || "image/jpeg" };
   }
-  const item = { id, title: String(p.title || "").slice(0, 200), text: String(p.text), link: p.link ? String(p.link) : null, img, ts: Date.now() };
+  const item = { id, title: String(p.title || "").slice(0, 200), text: String(p.text), ask: p.ask ? String(p.ask).slice(0, 300) : null, link: p.link ? String(p.link) : null, img, ts: Date.now() };
   const rest = items.filter((x) => x.id !== id);
   const next = [item, ...rest].slice(0, MAX_ITEMS);
   await env.HELPMEDOCTOR.put(ITEMS, JSON.stringify(next));
@@ -52,13 +52,24 @@ export async function vkFeedPush(request, env) {
   return Response.json({ ok: true, id, items: next.length });
 }
 
-// Текст записи → HTML статьи ВК (режим «Публиковать в виде статьи»): без первой строки-заголовка, абзацы по пустой строке
-function articleHtml(it, site) {
+// Текст записи → пост и статья ВК (режим «Публиковать в виде статьи»).
+// Комментировать можно только пост, поэтому вопрос читателю, хештеги и ссылка в тренажёр уходят в текст поста (description),
+// а в статье остаётся сам материал: без первой строки-заголовка, абзацы по пустой строке, картинка сверху.
+export function vkParts(it, site) {
   const lines = String(it.text).split("\n");
   const body = (lines[0].trim() === String(it.title).trim() ? lines.slice(1) : lines).join("\n").trim();
-  const paras = body.split(/\n{2,}/).map((p) => `<p>${xml(p).replace(/\n/g, "<br>")}</p>`).join("");
+  let paras = body.split(/\n{2,}/).map((x) => x.trim()).filter(Boolean);
+  const take = (test) => { const i = paras.findLastIndex(test); return i < 0 ? "" : paras.splice(i, 1)[0]; };
+  const tags = take((x, i) => i === paras.length - 1 && /^(#[\p{L}\p{N}_]+\s*)+$/u.test(x));
+  const cta = take((x) => /helpmedoctor\.ru\/app/i.test(x));
+  // Вопрос в конце текста в статье не нужен (там не ответить): переносим в пост; ask из json важнее
+  const tail = take((x, i) => i === paras.length - 1 && x.length <= 300 && /\?\s*(\p{Extended_Pictographic}\uFE0F?\s*)*$/u.test(x));
+  const ask = it.ask ? String(it.ask).trim() : tail;
+  const lead = paras[0] || it.title;
+  const post = [lead, cta, ask, tags].filter(Boolean).join("\n\n");
   const img = it.img ? `<figure><img src="${xml(`${site}/vk/img/${it.id}.jpg`)}" alt="${xml(it.title)}"></figure>` : "";
-  return { html: img + paras, lead: body.split(/\n{2,}/)[0] || it.title };
+  const html = img + paras.map((x) => `<p>${xml(x).replace(/\n/g, "<br>")}</p>`).join("");
+  return { lead, ask, cta, tags, post, html };
 }
 
 const HITS = "vkfeed:hits";
@@ -78,21 +89,26 @@ export async function vkFeedHits(env) {
   return Response.json(hits.map((h) => ({ ...h, at: new Date(h.ts).toISOString() })), { headers: { "Cache-Control": "no-store" } });
 }
 
-/** RSS 2.0 для импорта в ВК: description — первый абзац, content:encoded — вся статья с картинкой, enclosure — обложка */
+/** Свежие записи держим вне ленты несколько минут: картинка в KV доходит до всех узлов Cloudflare не сразу,
+ *  и если ВК заберёт запись раньше, статья выйдет без картинки */
+const HOLD_MS = 5 * 60000;
+
+/** RSS 2.0 для импорта в ВК: description — текст поста (первый абзац, вопрос, хештеги), content:encoded — статья с картинкой, enclosure — обложка */
 export async function vkFeedRss(env, origin, request = null, ctx = null) {
   const hit = logHit(env, request).catch(() => {});
   if (ctx?.waitUntil) ctx.waitUntil(hit); else await hit;
-  const items = (await env.HELPMEDOCTOR.get(ITEMS, "json")) || [];
+  const now = Date.now();
+  const items = ((await env.HELPMEDOCTOR.get(ITEMS, "json")) || []).filter((it) => now - it.ts >= HOLD_MS);
   const site = origin.replace(/\/$/, "");
   const body = items.map((it) => {
-    const a = articleHtml(it, site);
+    const a = vkParts(it, site);
     return `
     <item>
       <title>${xml(it.title)}</title>
-      <link>${xml(it.link || `${site}/vk/p/${it.id}`)}</link>
+      <link>${xml(`${site}/vk/p/${it.id}`)}</link>
       <guid isPermaLink="false">vk-${xml(it.id)}</guid>
       <pubDate>${new Date(it.ts).toUTCString()}</pubDate>
-      <description>${cdata(a.lead)}</description>
+      <description>${cdata(a.post)}</description>
       <content:encoded>${cdata(a.html)}</content:encoded>
       ${it.img ? `<enclosure url="${xml(`${site}/vk/img/${it.id}.jpg`)}" length="${it.img.len}" type="${xml(it.img.type)}"/>` : ""}
     </item>`;
@@ -109,13 +125,14 @@ export async function vkFeedRss(env, origin, request = null, ctx = null) {
   return new Response(out, { headers: { "Content-Type": "application/rss+xml; charset=utf-8", "Cache-Control": "public, max-age=300", "X-Robots-Tag": "noindex" } });
 }
 
-/** Страница записи: ссылка нужна каждой записи RSS (импорт ВК без неё пропускает запись); в группе её скрывает настройка «Не указывать ссылку» */
+/** Страница записи: ссылка нужна каждой записи RSS (импорт ВК без неё пропускает запись); в группе её скрывает настройка «Не указывать ссылку».
+ *  Ссылка записи всегда сюда, а не в тренажёр: на странице — весь материал и кнопка в тренажёр */
 export async function vkFeedPage(env, id, origin = "") {
   const items = (await env.HELPMEDOCTOR.get(ITEMS, "json")) || [];
   const it = items.find((x) => x.id === id);
   if (!it) return new Response("not found", { status: 404 });
   const site = String(origin).replace(/\/$/, "");
-  const a = articleHtml(it, site);
+  const a = vkParts(it, site);
   const img = it.img ? `${site}/vk/img/${it.id}.jpg` : "";
   // Open Graph — из него ВК собирает сниппет записи при импорте RSS
   const og = `<meta property="og:type" content="article"><meta property="og:site_name" content="Для будущих врачей">
@@ -124,7 +141,8 @@ export async function vkFeedPage(env, id, origin = "") {
   const html = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>${xml(it.title)} — Для будущих врачей</title><meta name="description" content="${xml(a.lead.slice(0, 300))}">${og}
 <style>body{font:17px/1.55 system-ui,sans-serif;max-width:680px;margin:0 auto;padding:24px 16px;background:#f5f2e9;color:#1b1f1d}img{max-width:100%;border-radius:12px}</style></head>
-<body><article><h1>${xml(it.title)}</h1>${a.html}</article></body></html>`;
+<body><article><h1>${xml(it.title)}</h1>${a.html}${a.ask ? `<p><b>${xml(a.ask)}</b></p>` : ""}</article>
+<p><a href="https://helpmedoctor.ru/app?from=vk_page" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#1f6f5c;color:#fff;text-decoration:none">Потренироваться на ИИ-пациенте</a></p></body></html>`;
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex" } });
 }
 
