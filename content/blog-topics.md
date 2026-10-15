@@ -12,7 +12,7 @@
 
 ### Октябрь 2026 — семестр, курация
 - [x] #1 Ситуационные задачи по пульмонологии с ответами — situacionnye-zadachi-po-pulmonologii · ЗАД · A → /blog/situacionnye-zadachi-po-pulmonologii/
-- [ ] #2 Ситуационные задачи по гастроэнтерологии с ответами — situacionnye-zadachi-po-gastroenterologii · ЗАД · A
+- [x] #2 Ситуационные задачи по гастроэнтерологии с ответами — situacionnye-zadachi-po-gastroenterologii · ЗАД · A → /blog/situacionnye-zadachi-po-gastroenterologii/
 - [ ] #3 Учебная история болезни по хирургии: схема и пример — uchebnaya-istoriya-bolezni-hirurgiya · УЧБ · A
 - [ ] #4 Боль в груди: дифференциальный диагноз за 5 шагов — bol-v-grudi-differencialnyj-diagnoz · СИМ · A — каннибализация: в /blog/differencialnyj-diagnoz/ есть раздел про боль в груди — новая статья забирает этот интент, раздел в ДД сократить до ссылки на неё
 - [ ] #5 Боль в животе: алгоритм и красные флаги — bol-v-zhivote-algoritm · СИМ · A
@@ -126,7 +126,7 @@
 ### Октябрь–ноябрь 2026 — все 23 статьи
 Все 23 статьи по шаблону плана: FAQ с разметкой (есть у статей из posts/, проверить у остальных), перелинковка на новые статьи кластера и на /specialnosti/…, ссылка на чек-лист анамнеза, рецензент — когда появится; глубокая ссылка case= — когда её поддержит тренажёр. Сначала три статьи, оставшиеся с шаблонной правки 25–26.09: газы крови, коагулограмма, рентген.
 - [x] /blog/gazy-krovi-rasshifrovka/ → обновлена 12.10.2026
-- [ ] /blog/koagulogramma-rasshifrovka/
+- [x] /blog/koagulogramma-rasshifrovka/ → обновлена 15.10.2026
 - [ ] /blog/kak-chitat-rentgen-legkih/
 - [ ] /blog/obshchij-analiz-krovi/
 - [ ] /blog/biohimiya-krovi-rasshifrovka/
