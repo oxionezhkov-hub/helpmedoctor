@@ -363,10 +363,18 @@
   },
   "4b16b5bf": {
    "to": "secretariat@chelovekilekarstvo.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-15T06:25:00.531Z",
    "message_id": "<63380b53-6966-08b6-d5d6-7c68611544fe@gmail.com>",
-   "subject": "ИИ-пациенты для Саммита медицинских образовательных организаций"
+   "subject": "ИИ-пациенты для Саммита медицинских образовательных организаций",
+   "seen": [
+    "<00f501dd5c7e$53c50b40$fb4f21c0$@chelovekilekarstvo.ru>"
+   ],
+   "last_in_msgid": "<00f501dd5c7e$53c50b40$fb4f21c0$@chelovekilekarstvo.ru>",
+   "last_in_subject": "RE: ИИ-пациенты для Саммита медицинских образовательных организаций",
+   "last_in_from": "secretariat@chelovekilekarstvo.ru",
+   "last_in_at": "2026-10-15T09:20:49.571Z",
+   "reply_at": "2026-10-15T09:20:49.571Z"
   },
   "27a62eed": {
    "to": "isaeva@geotar.ru",
@@ -433,5 +441,5 @@
   "2026-10-14",
   "2026-10-15"
  ],
- "inbox_checked_at": "2026-10-15T08:20:49.333Z"
+ "inbox_checked_at": "2026-10-15T09:20:49.599Z"
 }
