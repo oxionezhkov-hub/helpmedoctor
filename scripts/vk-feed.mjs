@@ -1,13 +1,15 @@
 // Публикация поста в группу ВК «Для будущих врачей» через ленту RSS (ВК сам забирает https://helpmedoctor.ru/vk/rss.xml).
-// Пост — content/vk-group/queue/<дата>-<тема>.json: { title, text, image?, link? }
+// Пост — content/vk-group/queue/<дата>-<тема>.json: { title, text, ask?, image?, link? }
 //   title — заголовок (первая строка поста), text — текст без HTML (ВК не понимает разметку), абзацы через пустую строку;
-//   image — картинка из репозитория (jpg/png, до 4 МБ); link — ссылка записи (только для поста с призывом в тренажёр).
+//   ask — вопрос читателю: идёт в текст поста ВК, где можно комментировать (статью комментировать нельзя); без ask — последний абзац-вопрос;
+//   image — картинка из репозитория (jpg/png, до 4 МБ); link — отметка поста с призывом в тренажёр (сама ссылка — в тексте).
 // Запуск: SESSION_SECRET=… node scripts/vk-feed.mjs <файл.json> [--dry]
 // В GitHub Actions — workflow «Группа ВК» при пуше ветки vk/** (секрет SESSION_SECRET уже есть в репозитории).
 import { readFileSync } from "node:fs";
 import { basename, extname } from "node:path";
 import { createHmac } from "node:crypto";
 import { styleIssues } from "./site/style.mjs";
+import { vkParts } from "../src/lib/vkfeed.js";
 
 const [file, flag] = process.argv.slice(2);
 const dry = flag === "--dry";
@@ -22,11 +24,12 @@ const errors = [];
 if (!/^[a-z0-9-]{3,80}$/.test(id)) errors.push("имя файла — латиница, цифры и дефис (например 2026-10-07-anamnez)");
 if (!post.title || post.title.length > 120) errors.push("нужен заголовок до 120 символов");
 if (!post.text || post.text.length > 6000) errors.push("нужен текст до 6000 символов");
+if (post.ask != null && (String(post.ask).length > 300 || !/\?/.test(post.ask))) errors.push("ask — один вопрос читателю до 300 символов");
 if (/<\/?[a-z][^>]*>/i.test(`${post.title} ${post.text}`)) errors.push("без HTML-тегов: ВК покажет их как есть");
 if (/\*\*|__|==/.test(post.text || "")) errors.push("без markdown (**, __, ==): ВК покажет символы как есть");
 const ad = /helpmedoctor/i.test(`${post.text} ${post.link || ""}`);
 if (post.link && !ad) errors.push("link — только для поста с призывом в тренажёр");
-const bad = styleIssues(`${post.title}\n${post.text}`);
+const bad = styleIssues(`${post.title}\n${post.text}\n${post.ask || ""}`);
 if (bad.length) errors.push(`перепишите по-человечески — ${bad.join("; ")}`);
 let image = null;
 if (post.image) {
@@ -38,10 +41,13 @@ if (errors.length) throw new Error(`${file}: ${errors.join("; ")}`);
 
 // Заголовок — первой строкой текста: импорт ВК публикует описание записи
 const text = `${post.title}\n\n${post.text.trim()}`;
-console.log(`${id}${ad ? " · с призывом в тренажёр" : ""}${image ? " · с картинкой" : ""}\n\n${text}\n`);
+const parts = vkParts({ id, title: post.title, text, ask: post.ask }, "");
+if (!parts.ask) errors.push("нет вопроса читателю: добавьте ask или закончите текст вопросом — комментировать можно только пост");
+if (errors.length) throw new Error(`${file}: ${errors.join("; ")}`);
+console.log(`${id}${ad ? " · с призывом в тренажёр" : ""}${image ? " · с картинкой" : ""}\n\n=== Пост (тут комментируют):\n${post.title}\n\n${parts.post}\n\n=== Статья:\n${parts.html.replace(/<\/p>/g, "\n\n").replace(/<br>/g, "\n").replace(/<[^>]+>/g, "").trim()}\n`);
 if (dry) process.exit(0);
 
-const body = JSON.stringify({ id, title: post.title, text, link: post.link || null, image: image?.data || null, image_type: image?.type || null, ts: Date.now() });
+const body = JSON.stringify({ id, title: post.title, text, ask: post.ask || null, link: post.link || null, image: image?.data || null, image_type: image?.type || null, ts: Date.now() });
 const sig = createHmac("sha256", secret).update(`vkfeed:${body}`).digest("hex");
 const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Feed-Sig": sig }, body });
 const out = await r.text();

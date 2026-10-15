@@ -1113,12 +1113,12 @@ step("«Кто круче?»: QR и ссылка, подключение, выб
   const { execFileSync } = await import("node:child_process");
   const dir = ".wrangler/vk-e2e"; fs.mkdirSync(dir, { recursive: true });
   const f = `${dir}/2026-10-07-e2e-test.json`;
-  fs.writeFileSync(f, JSON.stringify({ title: "Как читать ОАК за минуту", text: "Сначала гемоглобин, потом лейкоциты & формула.\n\nВторой абзац.", image: "public/icon-192.png" }));
+  fs.writeFileSync(f, JSON.stringify({ title: "Как читать ОАК за минуту", text: "Сначала гемоглобин, потом лейкоциты & формула.\n\nВторой абзац.\n\nА ты с чего начинаешь? 👇\n\n#длябудущихврачей #лайфхак_медика", image: "public/icon-192.png" }));
   const env = { ...process.env, SESSION_SECRET: "test-secret", VK_FEED_URL: `${BASE}/feed/vk/push` };
   execFileSync("node", ["scripts/vk-feed.mjs", f], { env, stdio: "pipe" });
   const rss = await (await fetch(`${BASE}/vk/rss.xml`, { headers: { "User-Agent": "Mozilla/5.0 (compatible; vkShare)" } })).text();
-  assert.ok(rss.includes("<rss") && rss.includes("Как читать ОАК за минуту") && rss.includes("<description><![CDATA[Сначала гемоглобин, потом лейкоциты & формула.]]>"), "запись в ленте: анонс — первый абзац");
-  assert.ok(rss.includes("<content:encoded><![CDATA[<figure><img src=\"http://localhost:8787/vk/img/2026-10-07-e2e-test.jpg\"") && rss.includes("<p>Второй абзац.</p>"), "статья для режима «в виде статьи»");
+  assert.ok(rss.includes("<rss") && rss.includes("Как читать ОАК за минуту") && rss.includes("<description><![CDATA[Сначала гемоглобин, потом лейкоциты & формула.\n\nА ты с чего начинаешь? 👇\n\n#длябудущихврачей #лайфхак_медика]]>"), "запись в ленте: в посте — первый абзац, вопрос и хештеги");
+  assert.ok(rss.includes("<content:encoded><![CDATA[<figure><img src=\"http://localhost:8787/vk/img/2026-10-07-e2e-test.jpg\"") && rss.includes("<p>Второй абзац.</p></content:encoded>".replace("</content:encoded>", "]]></content:encoded>")), "статья без вопроса и хештегов: комментируют только пост");
   const hits = await (await fetch(`${BASE}/vk/hits.json`)).json();
   assert.ok(hits.some((h) => h.ua.includes("vkShare")), "видно, кто забирал ленту");
   assert.ok(rss.includes('<enclosure url="http://localhost:8787/vk/img/2026-10-07-e2e-test.jpg"') && rss.includes("<link>http://localhost:8787/vk/p/2026-10-07-e2e-test</link>"), "картинка записи и ссылка на её страницу");
@@ -1130,6 +1130,8 @@ step("«Кто круче?»: QR и ссылка, подключение, выб
   assert.equal(img.status, 200); assert.equal(img.headers.get("content-type"), "image/png");
   const forged = await fetch(`${BASE}/feed/vk/push`, { method: "POST", body: JSON.stringify({ id: "hack-1", text: "x", ts: Date.now() }), headers: { "X-Feed-Sig": "00".repeat(32) } });
   assert.equal(forged.status, 403, "без подписи запись не принимается");
+  fs.writeFileSync(f.replace("e2e-test", "e2e-noask"), JSON.stringify({ title: "Т", text: "Абзац без вопроса." }));
+  assert.throws(() => execFileSync("node", ["scripts/vk-feed.mjs", f.replace("e2e-test", "e2e-noask"), "--dry"], { env, stdio: "pipe" }), "без вопроса читателю пост не пропускаем");
   fs.writeFileSync(f.replace("e2e-test", "e2e-bad"), JSON.stringify({ title: "Т", text: "<b>жирный</b>" }));
   assert.throws(() => execFileSync("node", ["scripts/vk-feed.mjs", f.replace("e2e-test", "e2e-bad"), "--dry"], { env, stdio: "pipe" }), "HTML в посте ВК не пропускаем");
   step("лента ВК: запись с картинкой по подписи, RSS, чужая запись отклонена");

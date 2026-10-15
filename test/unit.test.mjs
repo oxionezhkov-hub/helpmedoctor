@@ -9,6 +9,9 @@ import { b64u, encryptPayload, validSubscription } from "../src/lib/webpush.js";
 import nodeCrypto from "node:crypto";
 import { STOP_PHRASES, styleIssues } from "../scripts/site/style.mjs";
 import { mdPlain } from "../src/lib/md-plain.js";
+import { firstLetter, followUp, OFF_TARGET } from "../content/outreach/mailing/templates.mjs";
+import { readFileSync } from "node:fs";
+import { vkParts } from "../src/lib/vkfeed.js";
 
 test("parseJsonLoose достаёт JSON из болтовни модели", () => {
   assert.deepEqual(parseJsonLoose('Вот:\n```json\n{"a":1}\n```'), { a: 1 });
@@ -598,3 +601,29 @@ test("документы админки: заголовок из .md и идея
   assert.equal(appendIdea("## Идеи\n\n- [ ] а\n\n## Потом\n\nх", "- [ ] б"), "## Идеи\n\n- [ ] а\n- [ ] б\n\n## Потом\n\nх\n");
 });
 
+
+test("рассылка: новые письма просят только рассказать студентам онлайн, без выступлений и статей", () => {
+  const cfg = { sender_name: "Нина Королева", sender_about: "студентка", app_url: "https://x/app?from=em_{id}", pdf_url: "https://x/p.pdf", signature: [] };
+  const base = { id: "t1", subject: "Тема", hook: "Привет.", questions: "Можно ли рассказать студентам?" };
+  for (const offer of ["event", "forum", "media", "journal", "sno", "sim"]) {
+    assert.doesNotMatch(firstLetter({ ...base, offer }, cfg).text, OFF_TARGET, offer);
+  }
+  // уже отправленные (v: 1) напоминание цитирует как было, а просьбу берёт из followup
+  const v1 = firstLetter({ ...base, offer: "forum", v: 1 }, cfg).text;
+  assert.match(v1, /докладом/);
+  const fu = followUp({ ...base, offer: "forum", v: 1, followup: "Можно ли рассказать участникам в рассылке?" }, cfg, Date.now()).text;
+  assert.match(fu, /Можно ли рассказать участникам в рассылке\?/);
+  const letters = JSON.parse(readFileSync(new URL("../content/outreach/mailing/letters.json", import.meta.url), "utf8"));
+  const bad = letters.filter((l) => !l.skip && l.v !== 1 && OFF_TARGET.test(`${l.subject} ${l.hook} ${l.questions || ""}`)).map((l) => l.id);
+  assert.deepEqual(bad, []);
+});
+
+test("лента ВК: вопрос, ссылка в тренажёр и хештеги — в пост, в статье только материал", () => {
+  const text = "Заголовок\n\nПервый абзац.\n\nРазбор.\n\nПотренировать на ИИ-пациенте: https://helpmedoctor.ru/app?from=vk_group\n\nА ты как думаешь? 👇\n\n#длябудущихврачей #клинслучай";
+  const p = vkParts({ id: "x", title: "Заголовок", text, img: { len: 1 } }, "https://s");
+  assert.equal(p.post, "Первый абзац.\n\nПотренировать на ИИ-пациенте: https://helpmedoctor.ru/app?from=vk_group\n\nА ты как думаешь? 👇\n\n#длябудущихврачей #клинслучай");
+  assert.equal(p.html, '<figure><img src="https://s/vk/img/x.jpg" alt="Заголовок"></figure><p>Первый абзац.</p><p>Разбор.</p>');
+  const q = vkParts({ id: "x", title: "Заголовок", text, ask: "Что думаешь? Пиши в комментариях 👇" }, "");
+  assert.equal(q.ask, "Что думаешь? Пиши в комментариях 👇");
+  assert.doesNotMatch(q.html, /как думаешь/);
+});

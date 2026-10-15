@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { firstLetter, followUp } from "../content/outreach/mailing/templates.mjs";
+import { firstLetter, followUp, OFF_TARGET } from "../content/outreach/mailing/templates.mjs";
 
 const DIR = path.resolve("content/outreach/mailing");
 const args = process.argv.slice(2);
@@ -88,7 +88,7 @@ function dueFollowUps(today) {
   return Object.entries(state.contacts)
     .filter(([, c]) => c.status === "sent" && !c.followup_at && workdaysBetween(mskDate(new Date(c.sent_at)), today) >= cfg.followup_after_workdays)
     .map(([id, c]) => ({ id, c, letter: letters.find((l) => l.id === id) }))
-    .filter((x) => x.letter);
+    .filter((x) => x.letter && x.letter.followup !== false); // "followup": false — напоминание не шлём
 }
 /** Сколько ещё можно отправить сегодня: дневной лимит минус уже ушедшее (второй запуск за день не удваивает объём) */
 function capToday(today) {
@@ -240,9 +240,14 @@ function checkConfig() {
     const rec = recById.get(l.id);
     if (rec && !rec.emails.map((e) => e.toLowerCase()).includes(String(l.to).toLowerCase())) throw new Error(`Адрес ${l.to} не из базы контактов (${rec.name})`);
   }
+  // Новые письма и напоминания — только с онлайн-просьбой: без выступлений, стендов, статей и исследований
+  const bad = letters.filter((l) => !l.skip && l.v !== 1 && OFF_TARGET.test(`${l.subject} ${l.hook} ${l.questions || ""}`))
+    .concat(letters.filter((l) => typeof l.followup === "string" && OFF_TARGET.test(l.followup)));
+  if (bad.length) throw new Error(`Письма предлагают то, чего мы не делаем (очные выступления, статьи): ${bad.map((l) => l.id).join(", ")}`);
 }
 
 if (PREVIEW) {
+  checkConfig();
   const preview = { ...cfg, sender_name: cfg.sender_name || "[Имя Фамилия]", from_name: cfg.from_name || "[Имя Фамилия]", sender_about: cfg.sender_about || "[студент N курса … вуза]" };
   const q = queue();
   const md = [`# Письма рассылки — ${q.length} шт. (в порядке отправки)\n`];
