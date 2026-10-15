@@ -91,14 +91,15 @@ export async function vkFeedHits(env) {
 
 /** Свежие записи держим вне ленты несколько минут: картинка в KV доходит до всех узлов Cloudflare не сразу,
  *  и если ВК заберёт запись раньше, статья выйдет без картинки */
-const HOLD_MS = 5 * 60000;
+const HOLD_SEC = 300; // в тестах VK_FEED_HOLD_SEC=0
 
 /** RSS 2.0 для импорта в ВК: description — текст поста (первый абзац, вопрос, хештеги), content:encoded — статья с картинкой, enclosure — обложка */
 export async function vkFeedRss(env, origin, request = null, ctx = null) {
   const hit = logHit(env, request).catch(() => {});
   if (ctx?.waitUntil) ctx.waitUntil(hit); else await hit;
   const now = Date.now();
-  const items = ((await env.HELPMEDOCTOR.get(ITEMS, "json")) || []).filter((it) => now - it.ts >= HOLD_MS);
+  const hold = Number(env.VK_FEED_HOLD_SEC ?? HOLD_SEC) * 1000;
+  const items = ((await env.HELPMEDOCTOR.get(ITEMS, "json")) || []).filter((it) => now - it.ts >= hold);
   const site = origin.replace(/\/$/, "");
   const body = items.map((it) => {
     const a = vkParts(it, site);
