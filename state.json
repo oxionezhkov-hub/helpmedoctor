@@ -1,5 +1,12 @@
 {
  "contacts": {
+  "28864398": {
+   "to": "sno@staff.sechenov.ru",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:45:48.162Z",
+   "message_id": "<83fb50df-6f7f-4cdf-e7f0-668a92ab3131@gmail.com>",
+   "subject": "Практика приёма пациента для участников «Медицинской весны» 2027"
+  },
   "4a418bfd": {
    "to": "lanskaya_ev@almazovcentre.ru",
    "status": "sent",
@@ -346,13 +353,77 @@
    "sent_at": "2026-10-14T06:55:48.734Z",
    "message_id": "<10b76d2c-3f7d-7f8c-9818-5b9a42ca9f41@gmail.com>",
    "subject": "Для НОМУС ВолгГМУ: кейс на виртуальном пациенте для форума"
+  },
+  "0dd07287": {
+   "to": "info_sovet_sno@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:20:38.520Z",
+   "message_id": "<5ed53f69-aaa3-02c1-1560-bea0cb7c9c35@gmail.com>",
+   "subject": "«Конверт диагностики»: тренажёр приёма для участников конкурса"
+  },
+  "4b16b5bf": {
+   "to": "secretariat@chelovekilekarstvo.ru",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:25:00.531Z",
+   "message_id": "<63380b53-6966-08b6-d5d6-7c68611544fe@gmail.com>",
+   "subject": "ИИ-пациенты для Саммита медицинских образовательных организаций"
+  },
+  "27a62eed": {
+   "to": "isaeva@geotar.ru",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:29:24.257Z",
+   "message_id": "<f3eee1f6-d18c-7d4c-c9dd-770b26cfe0f6@gmail.com>",
+   "subject": "Вопрос о статье: ИИ-пациенты в подготовке студентов-медиков"
+  },
+  "819e2ee0": {
+   "to": "gennadij.odinczow@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:34:06.996Z",
+   "message_id": "<1e70793c-75e1-67e2-b56b-62e662fc9d36@gmail.com>",
+   "subject": "Для НОМУС ПИМУ: тренажёр приёма от студентов-медиков"
+  },
+  "f8eed381": {
+   "to": "support@anatomykf.ru",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:38:44.222Z",
+   "message_id": "<476f3b1d-b81d-e4f7-9ba0-b95087e4ddcf@gmail.com>",
+   "subject": "Канал Эдгара Кафарова: условия размещения для студентов-медиков"
+  },
+  "b496496d": {
+   "to": "pr@redplus.store",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:42:49.877Z",
+   "message_id": "<b993bbc8-582c-73b4-6841-de0c563cffb9@gmail.com>",
+   "subject": "RED+ и тренажёр приёма: коллаборация для студентов-медиков"
+  },
+  "80be8e94": {
+   "to": "idmz@mednet.ru",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:50:25.532Z",
+   "message_id": "<977606e2-0779-fbe0-f510-f0d3d390ec14@gmail.com>",
+   "subject": "Статья для «Врача и информационных технологий»: ИИ-пациенты"
+  },
+  "061ab0ef": {
+   "to": "nomus.usma@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:54:36.216Z",
+   "message_id": "<070dc489-0cf2-06d7-f365-e7e4a2677e50@gmail.com>",
+   "subject": "Для НОМУС Уральского ГМУ: приём виртуального пациента"
+  },
+  "239c9fbd": {
+   "to": "sechenovuniverskill@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-10-15T06:59:38.920Z",
+   "message_id": "<896ad5f5-1478-6a0a-552c-78b2b705c849@gmail.com>",
+   "subject": "Universkill и практика приёма: партнёрство для студентов-медиков"
   }
  },
  "days": [
   "2026-10-09",
   "2026-10-12",
   "2026-10-13",
-  "2026-10-14"
+  "2026-10-14",
+  "2026-10-15"
  ],
- "inbox_checked_at": "2026-10-14T18:20:24.070Z"
+ "inbox_checked_at": "2026-10-15T06:20:37.336Z"
 }
