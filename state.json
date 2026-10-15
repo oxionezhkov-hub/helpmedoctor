@@ -370,10 +370,18 @@
   },
   "27a62eed": {
    "to": "isaeva@geotar.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-15T06:29:24.257Z",
    "message_id": "<f3eee1f6-d18c-7d4c-c9dd-770b26cfe0f6@gmail.com>",
-   "subject": "Вопрос о статье: ИИ-пациенты в подготовке студентов-медиков"
+   "subject": "Вопрос о статье: ИИ-пациенты в подготовке студентов-медиков",
+   "seen": [
+    "<1792049181.713514758@5.f.mail-release.rc.mrucl.ru>"
+   ],
+   "last_in_msgid": "<1792049181.713514758@5.f.mail-release.rc.mrucl.ru>",
+   "last_in_subject": "Re: Вопрос о статье: ИИ-пациенты в подготовке студентов-медиков",
+   "last_in_from": "isaeva@geotar.ru",
+   "last_in_at": "2026-10-15T08:20:49.281Z",
+   "reply_at": "2026-10-15T08:20:49.281Z"
   },
   "819e2ee0": {
    "to": "gennadij.odinczow@mail.ru",
@@ -425,5 +433,5 @@
   "2026-10-14",
   "2026-10-15"
  ],
- "inbox_checked_at": "2026-10-15T07:20:48.582Z"
+ "inbox_checked_at": "2026-10-15T08:20:49.333Z"
 }
