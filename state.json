@@ -441,6 +441,76 @@
    "sent_at": "2026-10-15T06:59:38.920Z",
    "message_id": "<896ad5f5-1478-6a0a-552c-78b2b705c849@gmail.com>",
    "subject": "Universkill и практика приёма: партнёрство для студентов-медиков"
+  },
+  "6bcc2c62": {
+   "to": "sno@gpmu.org",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:21:02.510Z",
+   "message_id": "<55f17ac2-5150-85d8-7a8d-e019e59ce3c6@gmail.com>",
+   "subject": "«Студенческая наука — Будущее медицины»: тренажёр для студентов"
+  },
+  "05d78bb1": {
+   "to": "zdrav@tadviser.ru",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:26:04.224Z",
+   "message_id": "<c7490ded-7a5d-b75d-0bfe-02dc47f2d3a8@gmail.com>",
+   "subject": "Новость для Здрав.Эксперта: ИИ-тренажёр приёма для медиков"
+  },
+  "4817f3c6": {
+   "to": "anton.bgmu@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:31:11.326Z",
+   "message_id": "<b883641b-1880-d40f-7826-b624698f2ccc@gmail.com>",
+   "subject": "Для СНО Башкирского ГМУ: тренажёр приёма с виртуальным пациентом"
+  },
+  "a577df13": {
+   "to": "info@wetlab.spb.ru",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:36:13.992Z",
+   "message_id": "<705da2ff-4b21-8acb-225b-183185df9048@gmail.com>",
+   "subject": "WETLAB и тренажёр приёма: коллаборация «руки + голова»"
+  },
+  "6fad5304": {
+   "to": "mno@rostgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:39:53.671Z",
+   "message_id": "<9dafb5ff-c9d5-7a36-9cec-50ba6858af19@gmail.com>",
+   "subject": "Для МНО РостГМУ: тренажёр приёма для участников «Ярмарки кружков»"
+  },
+  "d5a796da": {
+   "to": "mggazeta@mgzt.ru",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:45:23.601Z",
+   "message_id": "<cfab663f-913e-33c3-f9d1-ef9e9eb9c8f3@gmail.com>",
+   "subject": "Для «Медицинской газеты»: студенты сделали ИИ-тренажёр приёма"
+  },
+  "aa0e411f": {
+   "to": "nauka_msmsu@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:48:10.491Z",
+   "message_id": "<fef675d9-530b-8418-83ca-2cd3c3b6ea99@gmail.com>",
+   "subject": "Для СНО им. Фалина: тренажёр приёма для младших курсов"
+  },
+  "e14ade27": {
+   "to": "pr@webium.ru",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:52:12.897Z",
+   "message_id": "<e4cd10db-981e-e0f4-bf1f-ff0c64327855@gmail.com>",
+   "subject": "Вебиум и будущие медики: спецпроект для учеников биологии"
+  },
+  "08b9b3ac": {
+   "to": "sovetsno@spb-gmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-16T06:55:12.963Z",
+   "message_id": "<71ac95d2-e776-4cde-e5fe-fda89cfe3a58@gmail.com>",
+   "subject": "Совету СНО Первого Павловского: тренажёр приёма для студентов"
+  },
+  "2a246380": {
+   "to": "medikrussia@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-16T07:00:39.720Z",
+   "message_id": "<e2c806cb-8f49-fb54-3fa5-61a308e07525@gmail.com>",
+   "subject": "Для «Медицинской России»: ИИ-пациенты в учёбе будущих врачей"
   }
  },
  "days": [
@@ -448,7 +518,8 @@
   "2026-10-12",
   "2026-10-13",
   "2026-10-14",
-  "2026-10-15"
+  "2026-10-15",
+  "2026-10-16"
  ],
- "inbox_checked_at": "2026-10-15T18:21:01.427Z"
+ "inbox_checked_at": "2026-10-16T06:21:01.689Z"
 }
