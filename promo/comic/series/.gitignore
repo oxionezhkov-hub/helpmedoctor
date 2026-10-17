@@ -1,0 +1,8 @@
+seg/
+*.wav
+video.mp4
+part*.mp4
+parts.txt
+*.log
+frames/
+events.json
