@@ -9,24 +9,30 @@
   },
   "4a418bfd": {
    "to": "lanskaya_ev@almazovcentre.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-09T06:59:26.105Z",
    "message_id": "<8e9fdfed-73e0-ae47-01a3-98db01a400e9@gmail.com>",
-   "subject": "Тренажёр приёма пациента для Алмазовского молодёжного форума"
+   "subject": "Тренажёр приёма пациента для Алмазовского молодёжного форума",
+   "followup_at": "2026-10-19T06:20:40.199Z",
+   "followup_message_id": "<f216e396-98cf-f23f-06de-69c7aabbf4d7@gmail.com>"
   },
   "b3bae567": {
    "to": "medlab@sk.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-09T07:02:02.789Z",
    "message_id": "<f549d652-426d-9e0d-c836-acaa2e921e27@gmail.com>",
-   "subject": "ИИ-тренажёр для студентов-медиков и следующий набор MedLab"
+   "subject": "ИИ-тренажёр для студентов-медиков и следующий набор MedLab",
+   "followup_at": "2026-10-19T06:25:01.864Z",
+   "followup_message_id": "<a3569158-2166-9899-abd7-b75a796ae907@gmail.com>"
   },
   "1950aa7d": {
    "to": "ed@edexpert.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-09T07:05:54.496Z",
    "message_id": "<b61e243c-2d61-1182-de66-b4b805e1bf7d@gmail.com>",
-   "subject": "Для EdExpert: студенты-медики сделали ИИ-тренажёр приёма"
+   "subject": "Для EdExpert: студенты-медики сделали ИИ-тренажёр приёма",
+   "followup_at": "2026-10-19T06:28:48.033Z",
+   "followup_message_id": "<f53ec679-ccf3-0cd9-9139-0092ace36ede@gmail.com>"
   },
   "28faf661": {
    "to": "viktoriia.shulga@szgmu.ru",
@@ -62,10 +68,12 @@
   },
   "0321713c": {
    "to": "info@christmedschool.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-09T07:16:34.548Z",
    "message_id": "<b056b964-e0b2-5419-4408-ae87931c1c49@gmail.com>",
-   "subject": "Christmedschool и практика приёма: предложение о партнёрстве"
+   "subject": "Christmedschool и практика приёма: предложение о партнёрстве",
+   "followup_at": "2026-10-19T06:32:36.889Z",
+   "followup_message_id": "<59bf6e1a-f7fe-ce14-bc60-b24e8b798264@gmail.com>"
   },
   "6ee9aec9": {
    "to": "med@consef.ru",
@@ -84,24 +92,30 @@
   },
   "3c835948": {
    "to": "post@rosomed.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-09T07:23:55.333Z",
    "message_id": "<37e2e376-2b18-350f-c0e9-1ba8bb3271aa@gmail.com>",
-   "subject": "Виртуальные пациенты для «Отечественных инноваций» РОСОМЕД"
+   "subject": "Виртуальные пациенты для «Отечественных инноваций» РОСОМЕД",
+   "followup_at": "2026-10-19T06:37:55.548Z",
+   "followup_message_id": "<8c87f148-53f7-b55a-2f1a-bb68ef87f23b@gmail.com>"
   },
   "09cf5466": {
    "to": "medachofficial@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-09T07:27:58.795Z",
    "message_id": "<968cf758-6764-8210-9cec-4b03e841bef0@gmail.com>",
-   "subject": "Идея для Medach: как студенты учатся на ИИ-пациентах"
+   "subject": "Идея для Medach: как студенты учатся на ИИ-пациентах",
+   "followup_at": "2026-10-19T06:41:01.075Z",
+   "followup_message_id": "<63077495-5b99-68e0-170d-9285d3447660@gmail.com>"
   },
   "49385eb8": {
    "to": "centr@rsmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-09T07:30:45.488Z",
    "message_id": "<92ef20bf-1cf6-809a-d383-13769b2606e3@gmail.com>",
-   "subject": "Для МАСЦ РНИМУ: виртуальный пациент для отработки анамнеза"
+   "subject": "Для МАСЦ РНИМУ: виртуальный пациент для отработки анамнеза",
+   "followup_at": "2026-10-19T06:44:40.873Z",
+   "followup_message_id": "<dff2a7db-bcd0-cd4f-9ea0-5928d09bedf9@gmail.com>"
   },
   "c1a45f99": {
    "to": "conf-kemsma@yandex.ru",
@@ -511,6 +525,27 @@
    "sent_at": "2026-10-16T07:00:39.720Z",
    "message_id": "<e2c806cb-8f49-fb54-3fa5-61a308e07525@gmail.com>",
    "subject": "Для «Медицинской России»: ИИ-пациенты в учёбе будущих врачей"
+  },
+  "03958830": {
+   "to": "mariya.volokonskaya@volgmed.ru",
+   "status": "sent",
+   "sent_at": "2026-10-19T06:48:14.992Z",
+   "message_id": "<6e230413-90eb-3031-cd4e-7ebe056d63c8@gmail.com>",
+   "subject": "К 85-й конференции НОМУС ВолгГМУ: тренажёр приёма пациента"
+  },
+  "7b5ccd0f": {
+   "to": "dr.okhotin@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-19T06:52:48.996Z",
+   "message_id": "<8ca6b851-1c9b-7180-b2b7-834249ef5086@gmail.com>",
+   "subject": "Тема для подкаста: ИИ-пациенты и подготовка будущих врачей"
+  },
+  "eac77028": {
+   "to": "ksma.sno@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-19T06:56:03.052Z",
+   "message_id": "<eb320b82-4c7e-34a5-1afe-6b5aad35747c@gmail.com>",
+   "subject": "Для СНО КубГМУ: тренажёр приёма от студентов-медиков"
   }
  },
  "days": [
@@ -519,7 +554,8 @@
   "2026-10-13",
   "2026-10-14",
   "2026-10-15",
-  "2026-10-16"
+  "2026-10-16",
+  "2026-10-19"
  ],
- "inbox_checked_at": "2026-10-16T18:20:21.414Z"
+ "inbox_checked_at": "2026-10-19T06:20:38.810Z"
 }
