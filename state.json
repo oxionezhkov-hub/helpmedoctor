@@ -92,12 +92,20 @@
   },
   "3c835948": {
    "to": "post@rosomed.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-09T07:23:55.333Z",
    "message_id": "<37e2e376-2b18-350f-c0e9-1ba8bb3271aa@gmail.com>",
    "subject": "Виртуальные пациенты для «Отечественных инноваций» РОСОМЕД",
    "followup_at": "2026-10-19T06:37:55.548Z",
-   "followup_message_id": "<8c87f148-53f7-b55a-2f1a-bb68ef87f23b@gmail.com>"
+   "followup_message_id": "<8c87f148-53f7-b55a-2f1a-bb68ef87f23b@gmail.com>",
+   "seen": [
+    "<CAGO4boJMwTA9uUykyYNUQnLYZytwgYyFYS09Xd1+cZn5SW3q2A@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CAGO4boJMwTA9uUykyYNUQnLYZytwgYyFYS09Xd1+cZn5SW3q2A@mail.gmail.com>",
+   "last_in_subject": "Re: Виртуальные пациенты для «Отечественных инноваций» РОСОМЕД",
+   "last_in_from": "post@rosomed.ru",
+   "last_in_at": "2026-10-19T07:20:33.375Z",
+   "reply_at": "2026-10-19T07:20:33.375Z"
   },
   "09cf5466": {
    "to": "medachofficial@gmail.com",
@@ -557,5 +565,5 @@
   "2026-10-16",
   "2026-10-19"
  ],
- "inbox_checked_at": "2026-10-19T06:20:38.810Z"
+ "inbox_checked_at": "2026-10-19T07:20:33.496Z"
 }
