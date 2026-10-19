@@ -109,12 +109,20 @@
   },
   "09cf5466": {
    "to": "medachofficial@gmail.com",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-09T07:27:58.795Z",
    "message_id": "<968cf758-6764-8210-9cec-4b03e841bef0@gmail.com>",
    "subject": "Идея для Medach: как студенты учатся на ИИ-пациентах",
    "followup_at": "2026-10-19T06:41:01.075Z",
-   "followup_message_id": "<63077495-5b99-68e0-170d-9285d3447660@gmail.com>"
+   "followup_message_id": "<63077495-5b99-68e0-170d-9285d3447660@gmail.com>",
+   "seen": [
+    "<CANuMvs8VXvjbpp3_DG-4htOn-89iYYXDgzkH66TaocSw8EuA2w@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CANuMvs8VXvjbpp3_DG-4htOn-89iYYXDgzkH66TaocSw8EuA2w@mail.gmail.com>",
+   "last_in_subject": "Re: Идея для Medach: как студенты учатся на ИИ-пациентах",
+   "last_in_from": "medachofficial@gmail.com",
+   "last_in_at": "2026-10-19T09:20:48.878Z",
+   "reply_at": "2026-10-19T09:20:48.878Z"
   },
   "49385eb8": {
    "to": "centr@rsmu.ru",
@@ -573,5 +581,5 @@
   "2026-10-16",
   "2026-10-19"
  ],
- "inbox_checked_at": "2026-10-19T08:20:36.143Z"
+ "inbox_checked_at": "2026-10-19T09:20:48.985Z"
 }
