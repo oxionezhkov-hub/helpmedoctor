@@ -543,10 +543,18 @@
   },
   "7b5ccd0f": {
    "to": "dr.okhotin@gmail.com",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-19T06:52:48.996Z",
    "message_id": "<8ca6b851-1c9b-7180-b2b7-834249ef5086@gmail.com>",
-   "subject": "Тема для подкаста: ИИ-пациенты и подготовка будущих врачей"
+   "subject": "Тема для подкаста: ИИ-пациенты и подготовка будущих врачей",
+   "seen": [
+    "<CA+3CXKY+M+-a4Ls=zhRUi_119rHNFcBBk16ybrPuLgte9pUvEg@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CA+3CXKY+M+-a4Ls=zhRUi_119rHNFcBBk16ybrPuLgte9pUvEg@mail.gmail.com>",
+   "last_in_subject": "Re: Тема для подкаста: ИИ-пациенты и подготовка будущих врачей",
+   "last_in_from": "dr.okhotin@gmail.com",
+   "last_in_at": "2026-10-19T08:20:36.028Z",
+   "reply_at": "2026-10-19T08:20:36.028Z"
   },
   "eac77028": {
    "to": "ksma.sno@mail.ru",
@@ -565,5 +573,5 @@
   "2026-10-16",
   "2026-10-19"
  ],
- "inbox_checked_at": "2026-10-19T07:20:33.496Z"
+ "inbox_checked_at": "2026-10-19T08:20:36.143Z"
 }
