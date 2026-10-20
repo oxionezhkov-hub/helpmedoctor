@@ -161,12 +161,20 @@
   },
   "c1726df5": {
    "to": "ledov@ordinatura-org.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-12T06:28:24.478Z",
    "message_id": "<a86d9721-3c69-c320-2fe9-e7d5d13ffa7a@gmail.com>",
    "subject": "Тема для «Ординатуры и боли»: ИИ-пациенты в подготовке врачей",
    "followup_at": "2026-10-20T06:29:08.084Z",
-   "followup_message_id": "<f743068c-4639-12f1-cbf2-fbb9dae1e8b9@gmail.com>"
+   "followup_message_id": "<f743068c-4639-12f1-cbf2-fbb9dae1e8b9@gmail.com>",
+   "seen": [
+    "<537711792503759@mail.yandex.ru>"
+   ],
+   "last_in_msgid": "<537711792503759@mail.yandex.ru>",
+   "last_in_subject": "Re: Тема для «Ординатуры и боли»: ИИ-пациенты в подготовке врачей",
+   "last_in_from": "ledov@ordinatura-org.ru",
+   "last_in_at": "2026-10-20T14:21:16.594Z",
+   "reply_at": "2026-10-20T14:21:16.594Z"
   },
   "272dd355": {
    "to": "unc_praktika@usma.ru",
@@ -628,5 +636,5 @@
   "2026-10-19",
   "2026-10-20"
  ],
- "inbox_checked_at": "2026-10-20T13:51:31.945Z"
+ "inbox_checked_at": "2026-10-20T14:21:16.657Z"
 }
