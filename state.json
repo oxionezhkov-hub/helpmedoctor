@@ -195,12 +195,20 @@
   },
   "8ff60c6e": {
    "to": "tikhonov.sergei@szgmu.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-12T06:44:47.835Z",
    "message_id": "<553aa099-8582-bb72-60eb-ae57493a6dd7@gmail.com>",
    "subject": "Идея для «Мечниковских чтений» и СНО СЗГМУ: тренажёр приёма",
    "followup_at": "2026-10-20T06:38:35.546Z",
-   "followup_message_id": "<8f8bb1a6-9311-cada-b771-616e45c63ba2@gmail.com>"
+   "followup_message_id": "<8f8bb1a6-9311-cada-b771-616e45c63ba2@gmail.com>",
+   "seen": [
+    "<D3DE3A766508F643AA96CB8D198368960533C084C1@exchMBX1.szgmu.local>"
+   ],
+   "last_in_msgid": "<D3DE3A766508F643AA96CB8D198368960533C084C1@exchMBX1.szgmu.local>",
+   "last_in_subject": "HA: Идея для «Мечниковских чтений» и СНО СЗГМУ: тренажёр приёма",
+   "last_in_from": "tikhonov.sergei@szgmu.ru",
+   "last_in_at": "2026-10-20T07:22:03.685Z",
+   "reply_at": "2026-10-20T07:22:03.685Z"
   },
   "4fe3ab73": {
    "to": "congress@orgzdrav.com",
@@ -596,7 +604,7 @@
   },
   "060ff815": {
    "to": "media@nbmz.ru",
-   "status": "sent",
+   "status": "bounced",
    "sent_at": "2026-10-20T06:55:13.759Z",
    "message_id": "<697b67dd-10f3-9003-40cb-1782d3281ac4@gmail.com>",
    "subject": "Для канала «ИИ в медицине»: студенческий тренажёр с ИИ-пациентом"
@@ -612,5 +620,5 @@
   "2026-10-19",
   "2026-10-20"
  ],
- "inbox_checked_at": "2026-10-20T06:21:27.755Z"
+ "inbox_checked_at": "2026-10-20T07:22:03.770Z"
 }
