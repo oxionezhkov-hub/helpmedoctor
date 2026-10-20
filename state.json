@@ -135,12 +135,20 @@
   },
   "c1a45f99": {
    "to": "conf-kemsma@yandex.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-12T06:20:59.393Z",
    "message_id": "<a8ee1271-b40e-a44b-1e43-dfdc8c3cfefd@gmail.com>",
    "subject": "Тренажёр клинического мышления для конференции молодых терапевтов",
    "followup_at": "2026-10-20T06:21:29.206Z",
-   "followup_message_id": "<5d9a58aa-e799-ab37-56eb-092e872bea7b@gmail.com>"
+   "followup_message_id": "<5d9a58aa-e799-ab37-56eb-092e872bea7b@gmail.com>",
+   "seen": [
+    "<120411792492196@mail.yandex.ru>"
+   ],
+   "last_in_msgid": "<120411792492196@mail.yandex.ru>",
+   "last_in_subject": "Re: Тренажёр клинического мышления для конференции молодых терапевтов",
+   "last_in_from": "conf-kemsma@yandex.ru",
+   "last_in_at": "2026-10-20T11:21:46.479Z",
+   "reply_at": "2026-10-20T11:21:46.479Z"
   },
   "582314a8": {
    "to": "info@volmedic.com",
@@ -620,5 +628,5 @@
   "2026-10-19",
   "2026-10-20"
  ],
- "inbox_checked_at": "2026-10-20T10:21:17.599Z"
+ "inbox_checked_at": "2026-10-20T11:21:46.680Z"
 }
