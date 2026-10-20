@@ -135,31 +135,39 @@
   },
   "c1a45f99": {
    "to": "conf-kemsma@yandex.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-12T06:20:59.393Z",
    "message_id": "<a8ee1271-b40e-a44b-1e43-dfdc8c3cfefd@gmail.com>",
-   "subject": "Тренажёр клинического мышления для конференции молодых терапевтов"
+   "subject": "Тренажёр клинического мышления для конференции молодых терапевтов",
+   "followup_at": "2026-10-20T06:21:29.206Z",
+   "followup_message_id": "<5d9a58aa-e799-ab37-56eb-092e872bea7b@gmail.com>"
   },
   "582314a8": {
    "to": "info@volmedic.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-12T06:25:43.872Z",
    "message_id": "<d641e0a0-2f62-2e20-a9d2-411387805c0e@gmail.com>",
-   "subject": "Тренажёр приёма пациента для волонтёров-медиков"
+   "subject": "Тренажёр приёма пациента для волонтёров-медиков",
+   "followup_at": "2026-10-20T06:24:12.408Z",
+   "followup_message_id": "<9d632f2d-b8af-63e6-db6d-5535fae90f14@gmail.com>"
   },
   "c1726df5": {
    "to": "ledov@ordinatura-org.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-12T06:28:24.478Z",
    "message_id": "<a86d9721-3c69-c320-2fe9-e7d5d13ffa7a@gmail.com>",
-   "subject": "Тема для «Ординатуры и боли»: ИИ-пациенты в подготовке врачей"
+   "subject": "Тема для «Ординатуры и боли»: ИИ-пациенты в подготовке врачей",
+   "followup_at": "2026-10-20T06:29:08.084Z",
+   "followup_message_id": "<f743068c-4639-12f1-cbf2-fbb9dae1e8b9@gmail.com>"
   },
   "272dd355": {
    "to": "unc_praktika@usma.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-12T06:31:59.897Z",
    "message_id": "<2e36839b-121d-b049-4ff2-431981aa1ffc@gmail.com>",
-   "subject": "Тренажёр сбора анамнеза для студентов УГМУ — от студентов-медиков"
+   "subject": "Тренажёр сбора анамнеза для студентов УГМУ — от студентов-медиков",
+   "followup_at": "2026-10-20T06:32:16.547Z",
+   "followup_message_id": "<0924149c-1b54-6783-905f-891fa1d81100@gmail.com>"
   },
   "b1ffeeda": {
    "to": "creditmed@ya.ru",
@@ -178,17 +186,21 @@
   },
   "9fe655a5": {
    "to": "lancetuniformcorporate@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-12T06:40:43.693Z",
    "message_id": "<74a4cfb8-1c6c-d953-6ae6-1ab37ae4b962@gmail.com>",
-   "subject": "Lancet Uniform и студенты-медики: идея совместного проекта"
+   "subject": "Lancet Uniform и студенты-медики: идея совместного проекта",
+   "followup_at": "2026-10-20T06:35:40.847Z",
+   "followup_message_id": "<6fb8eda0-46ce-10b8-d22b-df62f6de04f5@gmail.com>"
   },
   "8ff60c6e": {
    "to": "tikhonov.sergei@szgmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-12T06:44:47.835Z",
    "message_id": "<553aa099-8582-bb72-60eb-ae57493a6dd7@gmail.com>",
-   "subject": "Идея для «Мечниковских чтений» и СНО СЗГМУ: тренажёр приёма"
+   "subject": "Идея для «Мечниковских чтений» и СНО СЗГМУ: тренажёр приёма",
+   "followup_at": "2026-10-20T06:38:35.546Z",
+   "followup_message_id": "<8f8bb1a6-9311-cada-b771-616e45c63ba2@gmail.com>"
   },
   "4fe3ab73": {
    "to": "congress@orgzdrav.com",
@@ -207,17 +219,21 @@
   },
   "0710ffe1": {
    "to": "team@rb.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-12T06:52:19.122Z",
    "message_id": "<5ea9fe4f-3e54-0d67-6ac6-80e285ed9a50@gmail.com>",
-   "subject": "Для RB.ru: студенческий стартап с ИИ-пациентом для медиков"
+   "subject": "Для RB.ru: студенческий стартап с ИИ-пациентом для медиков",
+   "followup_at": "2026-10-20T06:44:05.556Z",
+   "followup_message_id": "<1bd403b8-b476-c22f-2b4c-10d21fcfeae8@gmail.com>"
   },
   "d2febe68": {
    "to": "info@samsmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-12T06:56:06.269Z",
    "message_id": "<186eba5f-f6ba-100a-8096-37deb601ac6a@gmail.com>",
-   "subject": "Для МАСЦ СамГМУ: тренировка сбора анамнеза между занятиями"
+   "subject": "Для МАСЦ СамГМУ: тренировка сбора анамнеза между занятиями",
+   "followup_at": "2026-10-20T06:47:07.008Z",
+   "followup_message_id": "<e2535f47-e46c-88dc-123a-988f91aed254@gmail.com>"
   },
   "64d5894c": {
    "to": "roman_for_work@mail.ru",
@@ -570,6 +586,20 @@
    "sent_at": "2026-10-19T06:56:03.052Z",
    "message_id": "<eb320b82-4c7e-34a5-1afe-6b5aad35747c@gmail.com>",
    "subject": "Для СНО КубГМУ: тренажёр приёма от студентов-медиков"
+  },
+  "e1999d7f": {
+   "to": "nomus.ugmu@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-20T06:51:34.960Z",
+   "message_id": "<2c5890e1-1b98-e37d-d0e0-538231b616c7@gmail.com>",
+   "subject": "Новые технологии медобразования: тренажёр для участников НОМУС УГМУ"
+  },
+  "060ff815": {
+   "to": "media@nbmz.ru",
+   "status": "sent",
+   "sent_at": "2026-10-20T06:55:13.759Z",
+   "message_id": "<697b67dd-10f3-9003-40cb-1782d3281ac4@gmail.com>",
+   "subject": "Для канала «ИИ в медицине»: студенческий тренажёр с ИИ-пациентом"
   }
  },
  "days": [
@@ -579,7 +609,8 @@
   "2026-10-14",
   "2026-10-15",
   "2026-10-16",
-  "2026-10-19"
+  "2026-10-19",
+  "2026-10-20"
  ],
- "inbox_checked_at": "2026-10-19T18:21:20.431Z"
+ "inbox_checked_at": "2026-10-20T06:21:27.755Z"
 }
