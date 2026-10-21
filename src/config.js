@@ -5,12 +5,14 @@
 
 export const ADMIN_ID = "1326867567";
 
-/** Админы: env.ADMIN_ID — список Telegram ID через запятую (Олег, Саша) */
+/** Админы: env.ADMIN_ID — список Telegram ID через запятую (сейчас только Олег) */
 export function adminIds(env) {
   return String(env?.ADMIN_ID || ADMIN_ID).split(",").map((s) => s.trim()).filter(Boolean);
 }
-/** Имена админов в уведомлениях и админке */
+/** Имена в уведомлениях и истории задач. Доступ даёт только adminIds: Саша вышел из проекта 21.10.2026 — имя осталось для старых записей */
 export const ADMIN_NAMES = { "1326867567": "Олег", "1062804986": "Саша" };
+/** Бывшие админы: при деплое у них убирается админское меню команд в Telegram */
+export const FORMER_ADMIN_IDS = ["1062804986"];
 export const BOT_USERNAME = "helpmedoctor_aibot";
 
 export const MAX_ACTIVE_PATIENTS = 6;

@@ -981,6 +981,18 @@ function runTaskStatusUpdates(h) {
   }
 }
 
+// Саша вышел из проекта (21.10): его открытые задачи остаются без исполнителя, с пометкой — один раз
+function runFormerAdminTasks(h) {
+  if (h.getMeta("former_admin:sasha_2026_10_21")) return;
+  const now = Date.now();
+  h.setMeta("former_admin:sasha_2026_10_21", now);
+  for (const t of h.all("SELECT id FROM tasks WHERE assignee = ? AND status NOT IN ('done', 'rejected')", SASHA)) {
+    h.sql.exec("UPDATE tasks SET assignee = NULL, updated_at = ? WHERE id = ?", now, t.id);
+    h.sql.exec("INSERT INTO task_history (task_id, ts, admin, field, old, new) VALUES (?, ?, 'system', 'assignee', ?, NULL)", t.id, now, SASHA);
+    h.sql.exec("INSERT INTO task_comments (task_id, ts, admin, text) VALUES (?, ?, 'system', ?)", t.id, now, "Александр вышел из проекта — задача без исполнителя.");
+  }
+}
+
 // ---------- История проекта из PR и идеи (26.09) ----------
 // Каждый пункт — одна законченная вещь с датой мержа и ссылками на PR. Если такая задача уже была в трекере
 // (match — её название), она не дублируется: закрывается и получает ссылки на PR и комментарий с датой.
@@ -1369,6 +1381,7 @@ function runTaskImports(h) {
     ));
   }
   runTaskStatusUpdates(h); // после импортов: обновляет и только что добавленные задачи
+  runFormerAdminTasks(h);
   runHistoryImport(h);
   runHistorySync(h);
   runPartnerTasks(h);
