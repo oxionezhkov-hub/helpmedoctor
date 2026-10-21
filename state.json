@@ -279,12 +279,20 @@
   },
   "4287f086": {
    "to": "dmdmkr@idffmedia.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-13T06:27:27.339Z",
    "message_id": "<db7052ea-d93c-a5a6-8123-e33afe62954a@gmail.com>",
    "subject": "Для Vademecum: EdTech-проект студентов в медобразовании",
    "followup_at": "2026-10-21T06:27:53.640Z",
-   "followup_message_id": "<a89ae03e-4c6a-2e14-b12d-0cd7a3295218@gmail.com>"
+   "followup_message_id": "<a89ae03e-4c6a-2e14-b12d-0cd7a3295218@gmail.com>",
+   "seen": [
+    "<2328301792580921@177634fd-d02c-4240-9223-c8c4aabbd67b>"
+   ],
+   "last_in_msgid": "<2328301792580921@177634fd-d02c-4240-9223-c8c4aabbd67b>",
+   "last_in_subject": "Re: Для Vademecum: EdTech-проект студентов в медобразовании",
+   "last_in_from": "kryazhev-21@yandex.ru",
+   "last_in_at": "2026-10-21T11:21:21.048Z",
+   "reply_at": "2026-10-21T11:21:21.048Z"
   },
   "5642db35": {
    "to": "simcentr@ssmu.ru",
@@ -667,5 +675,5 @@
   "2026-10-20",
   "2026-10-21"
  ],
- "inbox_checked_at": "2026-10-21T10:21:30.822Z"
+ "inbox_checked_at": "2026-10-21T11:21:21.185Z"
 }
