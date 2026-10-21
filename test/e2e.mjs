@@ -77,12 +77,12 @@ await waitFor(() => sent(U).some((m) => m.text.includes("Профиль гото
 // Админам — одно сообщение «Новый пользователь», анкета и первый пациент дописываются в него правкой
 const adminCard = (chat) => tgCalls().filter((c) => c.method === "editMessageText" && String(c.chat_id) === chat).map((c) => c.text);
 await waitFor(() => adminCard("1326867567").some((t) => t.startsWith("🆕 Новый пользователь") && t.includes("Анкета") && t.includes("Терапевт") && t.includes("Сложность: Средняя")), "admin onboarding");
-await waitFor(() => adminCard("1062804986").some((t) => t.includes("Новый пользователь") && t.includes("гастроэнтерология")), "second admin onboarding");
+await waitFor(() => adminCard("1000000002").some((t) => t.includes("Новый пользователь") && t.includes("гастроэнтерология")), "second admin onboarding");
 assert.ok(!sent("1326867567").some((m) => m.text.startsWith("📝 Анкета")), "анкета не отдельным сообщением");
 await waitFor(() => sent(U).some((m) => m.text.includes("Пока пациент готовится")), "about ask");
 await text(U, "4 курс, Сеченовский, хочу научиться ставить диагноз");
 await waitFor(() => sent(U).some((m) => m.text.includes("Спасибо! Пациент уже на подходе")), "about saved");
-await waitFor(() => adminCard("1062804986").some((t) => t.includes("Новый пользователь") && t.includes("О себе: 4 курс")), "admin about");
+await waitFor(() => adminCard("1000000002").some((t) => t.includes("Новый пользователь") && t.includes("О себе: 4 курс")), "admin about");
 step("бот: анкета (роль, специальность, разделы, сложность, о себе) → профиль, оба админа получают ответы");
 
 // Первый пациент приходит сам — по выбранному профилю, без нажатия «Новый пациент»
@@ -414,7 +414,7 @@ async function adm(token, method, path, body) {
 assert.equal((await adm(null, "POST", "/auth/telegram", { initData: initData(U) })).status, 403, "не-админ не входит в админку");
 assert.equal((await adm(webToken, "GET", "/me")).status, 401, "токен пользователя не подходит для админки");
 const admTok = (await adm(null, "POST", "/auth/telegram", { initData: initData("1326867567") })).data.token;
-const admTok2 = (await adm(null, "POST", "/auth/telegram", { initData: initData("1062804986") })).data.token;
+const admTok2 = (await adm(null, "POST", "/auth/telegram", { initData: initData("1000000002") })).data.token;
 assert.ok(admTok && admTok2);
 const aq = async (op, args = {}, tok = admTok) => {
   const r = await adm(tok, "POST", "/q", { op, args });
@@ -431,7 +431,7 @@ const meAdm = (await adm(admTok, "GET", "/me")).data;
   assert.equal(d.title, "Стратегия", "название из первого заголовка");
   assert.ok(!d.body.startsWith("# Стратегия"), "заголовок не дублируется в тексте");
   const idea = await aq("doc_idea", { id: c.id, text: "Опрос старост" }, admTok2);
-  assert.match(idea.body, /- \[ \] старая идея\n- \[ \] Опрос старост — Саша, \d\d\.\d\d\n\n## Дальше/, "идея — в конец раздела «Идеи», с именем и датой");
+  assert.match(idea.body, /- \[ \] старая идея\n- \[ \] Опрос старост — админ 1000000002, \d\d\.\d\d\n\n## Дальше/, "идея — в конец раздела «Идеи», с именем и датой");
   const stale = await adm(admTok, "POST", "/q", { op: "doc_save", args: { id: c.id, base: d.updated_at, body: "затираю" } });
   assert.equal(stale.data.code, "conflict", "правка со старой версии не затирает чужие изменения");
   d = (await aq("doc", { id: c.id })).doc;
@@ -449,11 +449,11 @@ await text(U, `/start login_${al.data.code}`);
 await waitFor(() => sent(U).filter((m) => m.text.includes("Вход подтверждён")).length >= 2, "admin login confirm by non-admin");
 assert.equal((await adm(null, "GET", `/auth/poll?code=${al.data.code}`)).status, 403, "не-админ не входит в админку через бота");
 const al2 = await adm(null, "POST", "/auth/login");
-await text("1062804986", `/start login_${al2.data.code}`);
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("Вход подтверждён")), "admin login confirm");
+await text("1000000002", `/start login_${al2.data.code}`);
+await waitFor(() => sent("1000000002").some((m) => m.text.includes("Вход подтверждён")), "admin login confirm");
 const ap = await adm(null, "GET", `/auth/poll?code=${al2.data.code}`);
 assert.equal(ap.data.status, "ok");
-assert.equal((await adm(ap.data.token, "GET", "/me")).data.me.name, "Саша");
+assert.equal((await adm(ap.data.token, "GET", "/me")).data.me.name, "1000000002");
 step("админка: вход только для Олега и Саши, внутренние операции закрыты");
 
 // ---------------------------------------------------------------- автопродление, отмена, разовые покупки
@@ -533,7 +533,7 @@ await fetch(`${MOCK}/tochka-pay?op=${holdOp}`);
 r = await api(t2, "POST", "/pay/check");
 assert.equal(r.data.activated, "freeze", "после оплаты проверка сразу включает покупку");
 assert.equal((await api(t2, "GET", "/me")).data.profile.streak_freezes, 2);
-await waitFor(() => ["1326867567", "1062804986"].every((id) => sent(id).some((m) => m.text.includes("Новая оплата") && m.text.includes(`uid ${P2}`))), "уведомление об оплате обоим админам");
+await waitFor(() => ["1326867567", "1000000002"].every((id) => sent(id).some((m) => m.text.includes("Новая оплата") && m.text.includes(`uid ${P2}`))), "уведомление об оплате обоим админам");
 assert.equal((await api(t2, "POST", "/pay/check")).data.pending, 0, "повторно не активируется");
 await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: holdOp }) });
 assert.equal((await api(t2, "GET", "/me")).data.profile.streak_freezes, 2, "поздний вебхук не дублирует покупку");
@@ -575,7 +575,7 @@ assert.equal((await api(webToken, "GET", "/me")).data.profile.has_sub, false);
 act = await adm(admTok, "POST", `/user/${U}/action`, { action: "grant", days: 30, reason: "тест", text: "Держите **месяц**" });
 assert.equal(act.status, 200, JSON.stringify(act.data));
 await waitFor(() => sent(U).some((m) => m.text.includes("<b>месяц</b>")), "grant text");
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("выдал(а) подписку")), "other admin notified");
+await waitFor(() => sent("1000000002").some((m) => m.text.includes("выдал(а) подписку")), "other admin notified");
 me = (await api(webToken, "GET", "/me")).data;
 assert.ok(me.profile.has_sub && me.profile.sub_until > Date.now() + 29 * 86400000);
 act = await adm(admTok, "POST", `/user/${U}/action`, { action: "extra", n: 2 });
@@ -595,7 +595,7 @@ chat = (await aq("chat", { uid: U, limit: 2000 })).rows;
 const outAdm = chat.find((c) => c.kind === "admin" && c.text.includes("Привет от"));
 assert.ok(outAdm && outAdm.admin === "1326867567", "сообщение админа в переписке с автором");
 await tgUpdate(U, { message: { message_id: updateId, from: from(U), chat: { id: Number(U), type: "private" }, date: 1, text: "Спасибо, всё супер", reply_to_message: { message_id: outAdm.tg_mid } } });
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("Ответ пользователя") && m.text.includes("всё супер")), "reply routed");
+await waitFor(() => sent("1000000002").some((m) => m.text.includes("Ответ пользователя") && m.text.includes("всё супер")), "reply routed");
 await waitFor(() => sent(U).some((m) => m.text.includes("Передали команде")), "reply ack");
 chat = (await aq("chat", { uid: U, limit: 2000 })).rows;
 assert.ok(chat.some((c) => c.dir === "in" && c.kind === "reply" && c.text.includes("всё супер")));
@@ -623,19 +623,19 @@ await press(U, `bc:${bc.id}:new`);
 await waitFor(async () => (await aq("broadcast", { id: bc.id })).stats?.clicked === 1, "broadcast click");
 step("админка: рассылка по сегменту, подстановки, клики по кнопке считаются");
 
-const t = await aq("task_create", { title: "Проверить отчёты", assignee: "1062804986", priority: "high" });
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("Проверить отчёты")), "task assignee notified");
+const t = await aq("task_create", { title: "Проверить отчёты", assignee: "1000000002", priority: "high" });
+await waitFor(() => sent("1000000002").some((m) => m.text.includes("Проверить отчёты")), "task assignee notified");
 await aq("task_update", { id: t.id, patch: { status: "doing" } }, admTok2);
 const tfull = await aq("task_comment", { id: t.id, text: "Взял" }, admTok2);
 assert.equal(tfull.status, "doing");
 assert.equal(tfull.comments_list.length, 1);
 assert.ok(tfull.history.length >= 1);
-await text("1062804986", "/idea Добавить тёмную тему в тест");
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("записана в бэклог")), "idea");
+await text("1000000002", "/idea Добавить тёмную тему в тест");
+await waitFor(() => sent("1000000002").some((m) => m.text.includes("записана в бэклог")), "idea");
 const tasksAll = await aq("tasks", {});
 const imported = tasksAll.rows.filter((x) => x.labels.includes("созвон 24.09"));
 assert.equal(imported.length, 19, "задачи созвона 24.09 импортированы");
-assert.ok(imported.some((x) => x.assignee === "1062804986" && x.title.includes("паспортные данные")));
+assert.ok(imported.some((x) => !x.assignee && x.title.includes("паспортные данные")), "задачи Саши после его ухода — без исполнителя");
 assert.equal((await aq("tasks", {})).rows.filter((x) => x.labels.includes("созвон 24.09")).length, 19, "импорт не дублируется");
 {
   const hist = JSON.parse(fs.readFileSync(new URL("../src/data/history.json", import.meta.url), "utf8"));
@@ -658,11 +658,11 @@ step("админка: задачи — создание, назначение с
 
 const np = await aq("notify_save", { prefs: { new_user: false } }, admTok2);
 assert.equal(np.prefs.new_user, false);
-const before2 = sent("1062804986").length;
+const before2 = sent("1000000002").length;
 await text("888", "/start");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("888")), "new user to oleg", 20000);
 await sleep(500);
-assert.ok(!sent("1062804986").slice(before2).some((m) => m.text.includes("888") && m.text.includes("Новый")), "Саша отключил уведомления о новых");
+assert.ok(!sent("1000000002").slice(before2).some((m) => m.text.includes("888") && m.text.includes("Новый")), "второй админ отключил уведомления о новых");
 const audit = await aq("audit_log");
 for (const a of ["grant", "cancel", "extra", "block", "message"]) assert.ok(audit.rows.some((r) => r.action === a), `audit ${a}`);
 step("админка: личные настройки уведомлений, журнал действий админов");
@@ -774,7 +774,7 @@ await api(g1, "POST", "/attribution", { r: "vk.com", l: "/", p: "/", u: "" });
 {
   const pr = await fetch(`${BASE}/api/student`, { method: "POST", headers: { Authorization: `Bearer ${g1}`, "Content-Type": "image/jpeg" }, body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]) });
   assert.equal(pr.status, 200, await pr.clone().text());
-  await press("1062804986", `stu_ok_${gme.profile.uid}`);
+  await press("1000000002", `stu_ok_${gme.profile.uid}`);
   const n = await waitFor(async () => (await api(g1, "GET", "/me")).data.profile.notice, "student notice");
   assert.ok(n.title.includes("подтверждён") && n.button.go === "/plans", JSON.stringify(n));
   const mail = await waitFor(() => tgCalls().find((c) => c.method === "resend" && c.to?.includes("anna@example.com")), "student email");
@@ -1140,8 +1140,8 @@ step("«Кто круче?»: QR и ссылка, подключение, выб
 // ---------------------------------------------------------------- админка и cron
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");
-await text("1062804986", "/admin");
-await waitFor(() => sent("1062804986").some((m) => m.text.includes("дашборд")), "second admin");
+await text("1000000002", "/admin");
+await waitFor(() => sent("1000000002").some((m) => m.text.includes("дашборд")), "second admin");
 const cron = await fetch(`${BASE}/__scheduled?cron=0+17+*+*+*`);
 assert.equal(cron.status, 200);
 assert.equal((await fetch(`${BASE}/__scheduled?cron=0+7+*+*+*`)).status, 200);

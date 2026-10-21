@@ -2,6 +2,7 @@
 // Запуск (токены не сохраняются в файлы):
 //   TELEGRAM_TOKEN=... WEBHOOK_SECRET=... node scripts/set-webhook.mjs
 // С флагом --menu-only вебхук не трогаем — только кнопка меню и команды (так запускает деплой).
+import { ADMIN_ID, FORMER_ADMIN_IDS } from "../src/config.js";
 const token = process.env.TELEGRAM_TOKEN;
 const secret = process.env.WEBHOOK_SECRET;
 const base = (process.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "");
@@ -35,7 +36,7 @@ const userCommands = [
 ];
 await call("setMyCommands", { commands: userCommands });
 // Админам — те же команды плюс админские (видны только им)
-const admins = (process.env.ADMIN_ID || "1326867567,1062804986").split(",").map((s) => s.trim()).filter(Boolean);
+const admins = (process.env.ADMIN_ID || ADMIN_ID).split(",").map((s) => s.trim()).filter(Boolean);
 for (const id of admins) {
   await call("setMyCommands", {
     scope: { type: "chat", chat_id: Number(id) },
@@ -46,4 +47,8 @@ for (const id of admins) {
       { command: "grant", description: "Выдать подписку: /grant @user 7" },
     ],
   });
+}
+// Бывшим админам — снова обычное меню (у них оставались /admin, /idea, /grant)
+for (const id of FORMER_ADMIN_IDS.filter((x) => !admins.includes(x))) {
+  await call("deleteMyCommands", { scope: { type: "chat", chat_id: Number(id) } });
 }
