@@ -261,38 +261,48 @@
   },
   "64d5894c": {
    "to": "roman_for_work@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-13T06:20:24.761Z",
    "message_id": "<9a8b8211-61d2-dc34-dde8-858b92e88432@gmail.com>",
-   "subject": "К следующей конференции СНО ЯГМУ: тренажёр приёма пациента"
+   "subject": "К следующей конференции СНО ЯГМУ: тренажёр приёма пациента",
+   "followup_at": "2026-10-21T06:21:16.000Z",
+   "followup_message_id": "<548e4281-8f51-d857-0c08-e510bc7806fd@gmail.com>"
   },
   "22ed43d0": {
    "to": "vuznauka@staff.sechenov.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-13T06:24:39.661Z",
    "message_id": "<57e04fbf-d46e-b212-acde-7df8c8d2c0d6@gmail.com>",
-   "subject": "Студенческий медтех-проект для «Эстафеты вузовской науки»"
+   "subject": "Студенческий медтех-проект для «Эстафеты вузовской науки»",
+   "followup_at": "2026-10-21T06:24:58.341Z",
+   "followup_message_id": "<32416811-3329-963e-7fb8-4d94b3b8a0c5@gmail.com>"
   },
   "4287f086": {
    "to": "dmdmkr@idffmedia.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-13T06:27:27.339Z",
    "message_id": "<db7052ea-d93c-a5a6-8123-e33afe62954a@gmail.com>",
-   "subject": "Для Vademecum: EdTech-проект студентов в медобразовании"
+   "subject": "Для Vademecum: EdTech-проект студентов в медобразовании",
+   "followup_at": "2026-10-21T06:27:53.640Z",
+   "followup_message_id": "<a89ae03e-4c6a-2e14-b12d-0cd7a3295218@gmail.com>"
   },
   "5642db35": {
    "to": "simcentr@ssmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-13T06:31:27.128Z",
    "message_id": "<62353c4d-5a6c-dc95-6206-ea7a8c7cd7ce@gmail.com>",
-   "subject": "Подготовка к ОСКЭ в СибГМУ: виртуальный пациент для студентов"
+   "subject": "Подготовка к ОСКЭ в СибГМУ: виртуальный пациент для студентов",
+   "followup_at": "2026-10-21T06:30:25.960Z",
+   "followup_message_id": "<3c214b8e-2a82-edbb-c028-eab70efd925e@gmail.com>"
   },
   "49e00595": {
    "to": "sales@medach.pro",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-13T06:33:58.651Z",
    "message_id": "<d846291c-7231-c1f7-c724-f341550d4834@gmail.com>",
-   "subject": "Размещение в «Медаче»: тренажёр приёма для студентов-медиков"
+   "subject": "Размещение в «Медаче»: тренажёр приёма для студентов-медиков",
+   "followup_at": "2026-10-21T06:35:39.305Z",
+   "followup_message_id": "<b9ad4b64-94fc-0e45-5f6d-10c897f7183d@gmail.com>"
   },
   "f77aed67": {
    "to": "support@medexam.ru",
@@ -303,10 +313,12 @@
   },
   "8b9ad88c": {
    "to": "snorzgmu@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-13T06:44:04.048Z",
    "message_id": "<45a6594b-efe4-7214-8705-7840393e08a2@gmail.com>",
-   "subject": "Разбор клинических случаев в СНО РязГМУ: тренажёр для практики"
+   "subject": "Разбор клинических случаев в СНО РязГМУ: тренажёр для практики",
+   "followup_at": "2026-10-21T06:38:41.074Z",
+   "followup_message_id": "<aa2f7315-f92f-c6f7-619f-cd195ec0d826@gmail.com>"
   },
   "ab97f095": {
    "to": "partners@mmco-expo.ru",
@@ -317,17 +329,21 @@
   },
   "b27849c7": {
    "to": "secret@vc.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-13T06:51:35.633Z",
    "message_id": "<92c7103b-7d8a-1985-6ac4-b2e8a35ee131@gmail.com>",
-   "subject": "Новость для vc.ru: студенты-медики сделали ИИ-тренажёр"
+   "subject": "Новость для vc.ru: студенты-медики сделали ИИ-тренажёр",
+   "followup_at": "2026-10-21T06:42:52.020Z",
+   "followup_message_id": "<4e189560-cdb1-4a1f-8ca0-ec8c0da6de3f@gmail.com>"
   },
   "ee2a2815": {
    "to": "masc@gpmu.org",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-13T06:54:49.666Z",
    "message_id": "<a8b2943e-4045-eb4f-2838-4209f6137ee1@gmail.com>",
-   "subject": "Для МАСЦ СПбГПМУ: тренажёр приёма с виртуальным пациентом"
+   "subject": "Для МАСЦ СПбГПМУ: тренажёр приёма с виртуальным пациентом",
+   "followup_at": "2026-10-21T06:47:53.239Z",
+   "followup_message_id": "<78b2afeb-a6c1-8e24-3f1e-5f9d821ed8fd@gmail.com>"
   },
   "1ba6b120": {
    "to": "olimp@iproficlub.ru",
@@ -624,6 +640,20 @@
    "sent_at": "2026-10-20T06:55:13.759Z",
    "message_id": "<697b67dd-10f3-9003-40cb-1782d3281ac4@gmail.com>",
    "subject": "Для канала «ИИ в медицине»: студенческий тренажёр с ИИ-пациентом"
+  },
+  "18f37501": {
+   "to": "pirogov_conf@rsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-21T06:51:17.332Z",
+   "message_id": "<780d8024-fe45-14f5-b350-3f78f709cafb@gmail.com>",
+   "subject": "Пироговская конференция 2027: тренажёр приёма для участников"
+  },
+  "20db15b9": {
+   "to": "podcast.rnimu2022@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-21T06:55:30.209Z",
+   "message_id": "<1d2a3132-b5ea-1f59-6341-3cc66fc9e84d@gmail.com>",
+   "subject": "Для «Кота Пирогова»: ИИ-пациент для студентов-медиков"
   }
  },
  "days": [
@@ -634,7 +664,8 @@
   "2026-10-15",
   "2026-10-16",
   "2026-10-19",
-  "2026-10-20"
+  "2026-10-20",
+  "2026-10-21"
  ],
- "inbox_checked_at": "2026-10-20T18:21:18.432Z"
+ "inbox_checked_at": "2026-10-21T06:21:14.210Z"
 }
