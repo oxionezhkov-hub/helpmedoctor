@@ -1,0 +1,11 @@
+seg/
+*.wav
+video.mp4
+render.log
+part*.mp4
+parts.txt
+*.log
+frames/
+events.json
+voice-*/*
+!voice-*/timeline.json
