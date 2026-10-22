@@ -43,12 +43,13 @@
    "seen": [
     "<13DC9BB6C22C674AB5C6C0B76D46C1A301C7530D42@exchMBX1.szgmu.local>",
     "<13DC9BB6C22C674AB5C6C0B76D46C1A301C7530D98@exchMBX1.szgmu.local>",
-    "<13DC9BB6C22C674AB5C6C0B76D46C1A301C753144F@exchMBX1.szgmu.local>"
+    "<13DC9BB6C22C674AB5C6C0B76D46C1A301C753144F@exchMBX1.szgmu.local>",
+    "<13DC9BB6C22C674AB5C6C0B76D46C1A301C7531FCF@exchMBX1.szgmu.local>"
    ],
-   "last_in_msgid": "<13DC9BB6C22C674AB5C6C0B76D46C1A301C753144F@exchMBX1.szgmu.local>",
+   "last_in_msgid": "<13DC9BB6C22C674AB5C6C0B76D46C1A301C7531FCF@exchMBX1.szgmu.local>",
    "last_in_subject": "RE: Станция сбора анамнеза: тренажёр для студентов СЗГМУ",
    "last_in_from": "viktoriia.shulga@szgmu.ru",
-   "last_in_at": "2026-10-14T10:21:03.067Z",
+   "last_in_at": "2026-10-22T10:21:14.082Z",
    "reply_at": "2026-10-09T11:49:17.357Z"
   },
   "12ce6db3": {
@@ -730,5 +731,5 @@
   "2026-10-21",
   "2026-10-22"
  ],
- "inbox_checked_at": "2026-10-22T09:21:11.961Z"
+ "inbox_checked_at": "2026-10-22T10:21:14.182Z"
 }
