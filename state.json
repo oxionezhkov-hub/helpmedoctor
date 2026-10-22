@@ -372,12 +372,20 @@
   },
   "d81657f8": {
    "to": "official@fondfilatova.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-14T06:25:53.244Z",
    "message_id": "<33d433cf-bb48-213f-de9e-90da5920094f@gmail.com>",
    "subject": "Студенческий медтех-проект для «Медицины молодой»",
    "followup_at": "2026-10-22T06:21:13.940Z",
-   "followup_message_id": "<b5e6d26f-252d-988d-0f1e-62c6cc4f5002@gmail.com>"
+   "followup_message_id": "<b5e6d26f-252d-988d-0f1e-62c6cc4f5002@gmail.com>",
+   "seen": [
+    "<1792669312.610992323@f763.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1792669312.610992323@f763.i.mail.ru>",
+   "last_in_subject": "Re: Студенческий медтех-проект для «Медицины молодой»",
+   "last_in_from": "official@fondfilatova.ru",
+   "last_in_at": "2026-10-22T12:05:31.429Z",
+   "reply_at": "2026-10-22T12:05:31.429Z"
   },
   "ab2abc8f": {
    "to": "gorshkov@rosomed.ru",
@@ -731,5 +739,5 @@
   "2026-10-21",
   "2026-10-22"
  ],
- "inbox_checked_at": "2026-10-22T11:21:13.131Z"
+ "inbox_checked_at": "2026-10-22T12:05:31.491Z"
 }
