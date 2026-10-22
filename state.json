@@ -371,10 +371,12 @@
   },
   "d81657f8": {
    "to": "official@fondfilatova.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-14T06:25:53.244Z",
    "message_id": "<33d433cf-bb48-213f-de9e-90da5920094f@gmail.com>",
-   "subject": "Студенческий медтех-проект для «Медицины молодой»"
+   "subject": "Студенческий медтех-проект для «Медицины молодой»",
+   "followup_at": "2026-10-22T06:21:13.940Z",
+   "followup_message_id": "<b5e6d26f-252d-988d-0f1e-62c6cc4f5002@gmail.com>"
   },
   "ab2abc8f": {
    "to": "gorshkov@rosomed.ru",
@@ -385,10 +387,12 @@
   },
   "8f8b64cf": {
    "to": "simcentr@pimunn.net",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-14T06:32:51.763Z",
    "message_id": "<b3dd54e6-1163-d581-4be4-16441d181ec7@gmail.com>",
-   "subject": "Для симцентра ПИМУ: тренировка сбора анамнеза онлайн"
+   "subject": "Для симцентра ПИМУ: тренировка сбора анамнеза онлайн",
+   "followup_at": "2026-10-22T06:26:13.309Z",
+   "followup_message_id": "<71e93d9b-a03c-d931-37a9-4bd20b8ea5c1@gmail.com>"
   },
   "353028ea": {
    "to": "ordi@euat.ru",
@@ -407,17 +411,21 @@
   },
   "e967683a": {
    "to": "info@medicalservice.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-14T06:42:55.424Z",
    "message_id": "<51e51644-120f-4965-8760-b8d2ed0daf31@gmail.com>",
-   "subject": "MedicalService и студенты-медики: идея взаимного продвижения"
+   "subject": "MedicalService и студенты-медики: идея взаимного продвижения",
+   "followup_at": "2026-10-22T06:29:46.527Z",
+   "followup_message_id": "<a327808a-15ea-ce4a-a90c-b074c7aa1ca6@gmail.com>"
   },
   "58924b6c": {
    "to": "medobr@confreg.org",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-14T06:46:37.281Z",
    "message_id": "<730374ca-71d8-2793-8c52-3138ddd2b158@gmail.com>",
-   "subject": "Тренировка приёма пациента для команд «Золотого МедСкилла»"
+   "subject": "Тренировка приёма пациента для команд «Золотого МедСкилла»",
+   "followup_at": "2026-10-22T06:35:00.604Z",
+   "followup_message_id": "<42e451c4-9d15-20ed-4ada-0a2f0f1aef76@gmail.com>"
   },
   "af02aefb": {
    "to": "polikarpova@expocentr.ru",
@@ -444,10 +452,12 @@
   },
   "b76c94a7": {
    "to": "nomus@volgmed.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-14T06:55:48.734Z",
    "message_id": "<10b76d2c-3f7d-7f8c-9818-5b9a42ca9f41@gmail.com>",
-   "subject": "Для НОМУС ВолгГМУ: кейс на виртуальном пациенте для форума"
+   "subject": "Для НОМУС ВолгГМУ: кейс на виртуальном пациенте для форума",
+   "followup_at": "2026-10-22T06:37:42.683Z",
+   "followup_message_id": "<ad1f1913-bad0-aafd-794c-93136414a379@gmail.com>"
   },
   "0dd07287": {
    "to": "info_sovet_sno@mail.ru",
@@ -630,10 +640,19 @@
   },
   "eac77028": {
    "to": "ksma.sno@mail.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-19T06:56:03.052Z",
    "message_id": "<eb320b82-4c7e-34a5-1afe-6b5aad35747c@gmail.com>",
-   "subject": "Для СНО КубГМУ: тренажёр приёма от студентов-медиков"
+   "subject": "Для СНО КубГМУ: тренажёр приёма от студентов-медиков",
+   "seen": [
+    "<1792646705.859850231@f484.i.mail.ru>",
+    "<1792646779.474119053@f484.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1792646779.474119053@f484.i.mail.ru>",
+   "last_in_subject": "Re: Для СНО КубГМУ: тренажёр приёма от студентов-медиков",
+   "last_in_from": "ksma.sno@mail.ru",
+   "last_in_at": "2026-10-22T06:21:12.879Z",
+   "reply_at": "2026-10-22T06:21:12.817Z"
   },
   "e1999d7f": {
    "to": "nomus.ugmu@gmail.com",
@@ -662,6 +681,41 @@
    "sent_at": "2026-10-21T06:55:30.209Z",
    "message_id": "<1d2a3132-b5ea-1f59-6341-3cc66fc9e84d@gmail.com>",
    "subject": "Для «Кота Пирогова»: ИИ-пациент для студентов-медиков"
+  },
+  "d8894d38": {
+   "to": "mmmk11.spb@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-22T06:42:42.843Z",
+   "message_id": "<b361b0fd-a337-a93b-9c17-40cfa75bf0a1@gmail.com>",
+   "subject": "Тренажёр приёма для участников «Санкт-Петербургских научных чтений»"
+  },
+  "be79b283": {
+   "to": "podcastbyfmm@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-22T06:45:33.706Z",
+   "message_id": "<5f3d870c-0af4-13e0-8e42-f0552470fee0@gmail.com>",
+   "subject": "Идея выпуска для ФММПодкаста: студенты и ИИ-пациенты"
+  },
+  "7c5c79c5": {
+   "to": "strepil@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-10-22T06:51:03.767Z",
+   "message_id": "<f5c26901-f038-8b6b-3838-9bf558a8b4d0@gmail.com>",
+   "subject": "Для СНО Новосибирского ГМУ: виртуальный пациент для студентов"
+  },
+  "c5ef2226": {
+   "to": "info@vrachirf.ru",
+   "status": "sent",
+   "sent_at": "2026-10-22T06:54:01.071Z",
+   "message_id": "<406ae3e6-75bb-2ae3-9995-2790dcf35e4f@gmail.com>",
+   "subject": "«Врачи РФ»: новость о тренажёре приёма для ординаторов"
+  },
+  "389aa033": {
+   "to": "sno-kgmu@kazangmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-22T06:59:09.258Z",
+   "message_id": "<2a983d77-0ded-8bf7-4b09-78bf15972401@gmail.com>",
+   "subject": "Тренажёр с ИИ-пациентами для участников форума «Белые цветы»"
   }
  },
  "days": [
@@ -673,7 +727,8 @@
   "2026-10-16",
   "2026-10-19",
   "2026-10-20",
-  "2026-10-21"
+  "2026-10-21",
+  "2026-10-22"
  ],
- "inbox_checked_at": "2026-10-21T18:21:14.020Z"
+ "inbox_checked_at": "2026-10-22T06:21:12.900Z"
 }
