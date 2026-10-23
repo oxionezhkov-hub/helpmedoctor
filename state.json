@@ -560,12 +560,20 @@
   },
   "061ab0ef": {
    "to": "nomus.usma@gmail.com",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-15T06:54:36.216Z",
    "message_id": "<070dc489-0cf2-06d7-f365-e7e4a2677e50@gmail.com>",
    "subject": "Для НОМУС Уральского ГМУ: приём виртуального пациента",
    "followup_at": "2026-10-23T06:37:36.222Z",
-   "followup_message_id": "<88567043-ebaa-de9a-66a3-95026990142f@gmail.com>"
+   "followup_message_id": "<88567043-ebaa-de9a-66a3-95026990142f@gmail.com>",
+   "seen": [
+    "<CABHCCvOuQWxebXJFnGHpDO1r6zaNQYbR3sGES3moHefxrnBJWQ@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CABHCCvOuQWxebXJFnGHpDO1r6zaNQYbR3sGES3moHefxrnBJWQ@mail.gmail.com>",
+   "last_in_subject": "Re: Для НОМУС Уральского ГМУ: приём виртуального пациента",
+   "last_in_from": "nomus.usma@gmail.com",
+   "last_in_at": "2026-10-23T07:21:12.138Z",
+   "reply_at": "2026-10-23T07:21:12.138Z"
   },
   "239c9fbd": {
    "to": "sechenovuniverskill@yandex.ru",
@@ -775,5 +783,5 @@
   "2026-10-22",
   "2026-10-23"
  ],
- "inbox_checked_at": "2026-10-23T06:21:16.875Z"
+ "inbox_checked_at": "2026-10-23T07:21:12.156Z"
 }
