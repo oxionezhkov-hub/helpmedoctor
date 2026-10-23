@@ -405,12 +405,20 @@
   },
   "8f8b64cf": {
    "to": "simcentr@pimunn.net",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-14T06:32:51.763Z",
    "message_id": "<b3dd54e6-1163-d581-4be4-16441d181ec7@gmail.com>",
    "subject": "Для симцентра ПИМУ: тренировка сбора анамнеза онлайн",
    "followup_at": "2026-10-22T06:26:13.309Z",
-   "followup_message_id": "<71e93d9b-a03c-d931-37a9-4bd20b8ea5c1@gmail.com>"
+   "followup_message_id": "<71e93d9b-a03c-d931-37a9-4bd20b8ea5c1@gmail.com>",
+   "seen": [
+    "<22531792742398@mail.yandex.ru>"
+   ],
+   "last_in_msgid": "<22531792742398@mail.yandex.ru>",
+   "last_in_subject": "Re: Для симцентра ПИМУ: тренировка сбора анамнеза онлайн",
+   "last_in_from": "simcentr@pimunn.net",
+   "last_in_at": "2026-10-23T08:21:28.180Z",
+   "reply_at": "2026-10-23T08:21:28.180Z"
   },
   "353028ea": {
    "to": "ordi@euat.ru",
@@ -783,5 +791,5 @@
   "2026-10-22",
   "2026-10-23"
  ],
- "inbox_checked_at": "2026-10-23T07:21:12.156Z"
+ "inbox_checked_at": "2026-10-23T08:21:28.475Z"
 }
