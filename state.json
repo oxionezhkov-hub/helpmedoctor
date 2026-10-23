@@ -1,11 +1,20 @@
 {
  "contacts": {
+  "14881312": {
+   "to": "info@geotar.ru",
+   "status": "sent",
+   "sent_at": "2026-10-23T06:55:16.509Z",
+   "message_id": "<f65ec5eb-d2a9-7eb2-8e73-3791ed5b0d99@gmail.com>",
+   "subject": "ГЭОТАР-Медиа и клинические случаи: идея партнёрства"
+  },
   "28864398": {
    "to": "sno@staff.sechenov.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-15T06:45:48.162Z",
    "message_id": "<83fb50df-6f7f-4cdf-e7f0-668a92ab3131@gmail.com>",
-   "subject": "Практика приёма пациента для участников «Медицинской весны» 2027"
+   "subject": "Практика приёма пациента для участников «Медицинской весны» 2027",
+   "followup_at": "2026-10-23T06:21:18.094Z",
+   "followup_message_id": "<4240bf16-0fd9-b003-4534-ffe8a76df6bc@gmail.com>"
   },
   "4a418bfd": {
    "to": "lanskaya_ev@almazovcentre.ru",
@@ -470,10 +479,12 @@
   },
   "0dd07287": {
    "to": "info_sovet_sno@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-15T06:20:38.520Z",
    "message_id": "<5ed53f69-aaa3-02c1-1560-bea0cb7c9c35@gmail.com>",
-   "subject": "«Конверт диагностики»: тренажёр приёма для участников конкурса"
+   "subject": "«Конверт диагностики»: тренажёр приёма для участников конкурса",
+   "followup_at": "2026-10-23T06:25:24.795Z",
+   "followup_message_id": "<63f84846-2819-f775-3230-ac8fd8aa9ba9@gmail.com>"
   },
   "4b16b5bf": {
    "to": "secretariat@chelovekilekarstvo.ru",
@@ -507,24 +518,30 @@
   },
   "819e2ee0": {
    "to": "gennadij.odinczow@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-15T06:34:06.996Z",
    "message_id": "<1e70793c-75e1-67e2-b56b-62e662fc9d36@gmail.com>",
-   "subject": "Для НОМУС ПИМУ: тренажёр приёма от студентов-медиков"
+   "subject": "Для НОМУС ПИМУ: тренажёр приёма от студентов-медиков",
+   "followup_at": "2026-10-23T06:27:59.397Z",
+   "followup_message_id": "<b60a3ce6-7076-05f8-dc4b-3c0e2a741236@gmail.com>"
   },
   "f8eed381": {
    "to": "support@anatomykf.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-15T06:38:44.222Z",
    "message_id": "<476f3b1d-b81d-e4f7-9ba0-b95087e4ddcf@gmail.com>",
-   "subject": "Канал Эдгара Кафарова: условия размещения для студентов-медиков"
+   "subject": "Канал Эдгара Кафарова: условия размещения для студентов-медиков",
+   "followup_at": "2026-10-23T06:30:54.165Z",
+   "followup_message_id": "<f892f08c-a630-fa93-89d5-3bf0584467f0@gmail.com>"
   },
   "b496496d": {
    "to": "pr@redplus.store",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-15T06:42:49.877Z",
    "message_id": "<b993bbc8-582c-73b4-6841-de0c563cffb9@gmail.com>",
-   "subject": "RED+ и тренажёр приёма: коллаборация для студентов-медиков"
+   "subject": "RED+ и тренажёр приёма: коллаборация для студентов-медиков",
+   "followup_at": "2026-10-23T06:34:31.549Z",
+   "followup_message_id": "<23fc88da-5d0a-d63d-892d-5a69d6edf074@gmail.com>"
   },
   "80be8e94": {
    "to": "idmz@mednet.ru",
@@ -543,17 +560,21 @@
   },
   "061ab0ef": {
    "to": "nomus.usma@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-15T06:54:36.216Z",
    "message_id": "<070dc489-0cf2-06d7-f365-e7e4a2677e50@gmail.com>",
-   "subject": "Для НОМУС Уральского ГМУ: приём виртуального пациента"
+   "subject": "Для НОМУС Уральского ГМУ: приём виртуального пациента",
+   "followup_at": "2026-10-23T06:37:36.222Z",
+   "followup_message_id": "<88567043-ebaa-de9a-66a3-95026990142f@gmail.com>"
   },
   "239c9fbd": {
    "to": "sechenovuniverskill@yandex.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-15T06:59:38.920Z",
    "message_id": "<896ad5f5-1478-6a0a-552c-78b2b705c849@gmail.com>",
-   "subject": "Universkill и практика приёма: партнёрство для студентов-медиков"
+   "subject": "Universkill и практика приёма: партнёрство для студентов-медиков",
+   "followup_at": "2026-10-23T06:41:13.567Z",
+   "followup_message_id": "<52743ed5-c931-5636-f226-157143f9b85c@gmail.com>"
   },
   "6bcc2c62": {
    "to": "sno@gpmu.org",
@@ -725,6 +746,20 @@
    "sent_at": "2026-10-22T06:59:09.258Z",
    "message_id": "<2a983d77-0ded-8bf7-4b09-78bf15972401@gmail.com>",
    "subject": "Тренажёр с ИИ-пациентами для участников форума «Белые цветы»"
+  },
+  "56c3372c": {
+   "to": "smu@stgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-23T06:46:02.108Z",
+   "message_id": "<4ef056e9-e432-2b48-6062-b2c7a2c5cfc3@gmail.com>",
+   "subject": "Вопрос по молодежному форуму «Медицинская наука без границ»"
+  },
+  "31d6fd27": {
+   "to": "valeria_0315@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-23T06:50:24.033Z",
+   "message_id": "<027028a9-8f1a-d3e1-e7e0-88c153ae273d@gmail.com>",
+   "subject": "Для СНО РНИМУ: тренажёр приёма для клинических кружков"
   }
  },
  "days": [
@@ -737,7 +772,8 @@
   "2026-10-19",
   "2026-10-20",
   "2026-10-21",
-  "2026-10-22"
+  "2026-10-22",
+  "2026-10-23"
  ],
- "inbox_checked_at": "2026-10-22T18:21:25.585Z"
+ "inbox_checked_at": "2026-10-23T06:21:16.875Z"
 }
