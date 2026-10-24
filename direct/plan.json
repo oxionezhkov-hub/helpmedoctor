@@ -1,0 +1,14 @@
+{
+  "client_login": null,
+  "goal_id": null,
+  "goal_name": "registration",
+  "metrika_counter": 113057442,
+  "target_cpa": 37,
+  "goal_mismatch_threshold": 0.2,
+  "overspend_pause_threshold": 0.2,
+  "hours": { "from": 0, "to": 24, "timezone": "Europe/Moscow" },
+  "campaigns": [
+    { "id": 0, "name": "Help me, Doctor · Поиск", "weekly_budget": 1000, "daily_plan": 143 }
+  ],
+  "notify": { "telegram_chat_id": "env:TG_CHAT_ID" }
+}
