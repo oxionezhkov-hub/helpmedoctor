@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<!-- Шаблон баннера. Подставь тексты и цвета, отрендери в PNG через Playwright (см. references/06-images.md).
+     Размер берётся из окна браузера: 1080×1080 — обычный, 1920×1080 — широкий 16:9.
+     Надписи держи в пределах ~20% площади. -->
+<style>
+  :root { --bg: #15171C; --accent: #FFD43B; --text: #F4F1EA; }
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: 100vw; height: 100vh; }
+  body {
+    background: var(--bg) url("photo.jpg") center / cover no-repeat;
+    font-family: "Manrope", Arial, sans-serif; color: var(--text);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 6vmin;
+  }
+  .card { background: rgba(21, 23, 28, .82); border-radius: 3vmin; padding: 4vmin 5vmin; max-width: 70%; }
+  h1 { font-size: 7vmin; line-height: 1.1; }
+  .price { margin-top: 2vmin; font-size: 5vmin; font-weight: 800; color: var(--accent); }
+  .logo { position: absolute; top: 6vmin; left: 6vmin; height: 8vmin; }
+</style>
+</head>
+<body>
+  <img class="logo" src="logo.png" alt="">
+  <div class="card">
+    <h1>Замена экрана iPhone за 40 минут</h1>
+    <p class="price">от 2 900 ₽</p>
+  </div>
+</body>
+</html>

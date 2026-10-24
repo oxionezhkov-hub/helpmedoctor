@@ -1,0 +1,17 @@
+{
+  "client_login": "client-login",
+  "goal_id": 12345678,
+  "target_cpa": 900,
+  "goal_mismatch_threshold": 0.2,
+  "overspend_pause_threshold": 0.2,
+  "hours": { "from": 8, "to": 23, "timezone": "Europe/Moscow" },
+  "campaigns": [
+    {
+      "id": 0,
+      "name": "Ремонт iPhone · Поиск",
+      "weekly_budget": 28000,
+      "daily_plan": 4000
+    }
+  ],
+  "notify": { "telegram_chat_id": "env:TG_CHAT_ID" }
+}

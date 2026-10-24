@@ -1,0 +1,32 @@
+{
+  "id": "2026-10-24-morning",
+  "client_login": "client-login",
+  "created_at": "2026-10-24T09:00:00+03:00",
+  "status": "waiting_approval",
+  "summary": "9 минус-слов и 2 площадки: мусор на 1 952 ₽ за вчера",
+  "changes": [
+    {
+      "type": "negative_keywords_add",
+      "level": "campaign",
+      "campaign": "Ремонт iPhone · Поиск",
+      "items": ["бесплатно", "своими руками"],
+      "reason": "14 кликов, 0 заявок, 612 ₽"
+    },
+    {
+      "type": "excluded_sites_add",
+      "campaign": "Ремонт iPhone · Сети",
+      "items": ["example-games.app"],
+      "reason": "63 клика, 0 заявок, 1 340 ₽; звонков с площадки нет"
+    },
+    {
+      "type": "bid_modifier",
+      "campaign": "Ремонт iPhone · Поиск",
+      "segment": "возраст 18–24",
+      "value_percent": -40,
+      "reason": "CPA 1 520 ₽ при цели 900 ₽, 11 заявок за 14 дней"
+    }
+  ],
+  "approved_by": null,
+  "approved_at": null,
+  "applied_at": null
+}

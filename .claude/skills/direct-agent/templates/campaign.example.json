@@ -1,0 +1,36 @@
+{
+  "campaign": {
+    "name": "Ремонт iPhone · Поиск",
+    "type": "unified",
+    "regions": [213],
+    "schedule": "пн–вс 8:00–23:00",
+    "networks": false,
+    "strategy": { "type": "max_clicks", "weekly_budget": 28000 },
+    "negative_keywords": ["бесплатно", "своими руками", "курсы", "вакансии", "скачать"],
+    "excluded_sites": []
+  },
+  "groups": [
+    {
+      "name": "Замена экрана iPhone",
+      "landing": "https://site.ru/iphone/ekran",
+      "keywords": ["замена экрана iphone", "замена дисплея iphone", "разбил экран iphone ремонт"],
+      "negative_keywords": ["батарея", "аккумулятор"],
+      "ads": [
+        {
+          "titles": ["Замена экрана iPhone за 40 минут", "Новый экран iPhone с гарантией 1 год"],
+          "title2": "Выезд на дом",
+          "texts": ["Мастер приедет с запчастями. Экран от 2 900 ₽. Оплата после ремонта"],
+          "href": "https://site.ru/iphone/ekran?utm_source=yandex&utm_medium=cpc&utm_campaign={campaign_id}&utm_content={ad_id}&utm_term={keyword}",
+          "image": "direct/banners/ekran-wide.png",
+          "sitelinks": [
+            { "title": "Цены", "href": "https://site.ru/ceny" },
+            { "title": "Гарантия", "href": "https://site.ru/garantiya" },
+            { "title": "Отзывы", "href": "https://site.ru/otzyvy" },
+            { "title": "Контакты", "href": "https://site.ru/kontakty" }
+          ],
+          "callouts": ["Выезд за 40 минут", "Гарантия 1 год", "Оплата после ремонта"]
+        }
+      ]
+    }
+  ]
+}
