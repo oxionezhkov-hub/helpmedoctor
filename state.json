@@ -535,12 +535,20 @@
   },
   "f8eed381": {
    "to": "support@anatomykf.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-15T06:38:44.222Z",
    "message_id": "<476f3b1d-b81d-e4f7-9ba0-b95087e4ddcf@gmail.com>",
    "subject": "Канал Эдгара Кафарова: условия размещения для студентов-медиков",
    "followup_at": "2026-10-23T06:30:54.165Z",
-   "followup_message_id": "<f892f08c-a630-fa93-89d5-3bf0584467f0@gmail.com>"
+   "followup_message_id": "<f892f08c-a630-fa93-89d5-3bf0584467f0@gmail.com>",
+   "seen": [
+    "<148421792856151@mail.yandex.ru>"
+   ],
+   "last_in_msgid": "<148421792856151@mail.yandex.ru>",
+   "last_in_subject": "Re: Канал Эдгара Кафарова: условия размещения для студентов-медиков",
+   "last_in_from": "support@anatomykf.ru",
+   "last_in_at": "2026-10-26T06:21:38.753Z",
+   "reply_at": "2026-10-26T06:21:38.753Z"
   },
   "b496496d": {
    "to": "pr@redplus.store",
@@ -594,73 +602,93 @@
   },
   "6bcc2c62": {
    "to": "sno@gpmu.org",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:21:02.510Z",
    "message_id": "<55f17ac2-5150-85d8-7a8d-e019e59ce3c6@gmail.com>",
-   "subject": "«Студенческая наука — Будущее медицины»: тренажёр для студентов"
+   "subject": "«Студенческая наука — Будущее медицины»: тренажёр для студентов",
+   "followup_at": "2026-10-26T06:21:40.113Z",
+   "followup_message_id": "<ef6c77dd-67eb-5c43-9c84-00e84b723014@gmail.com>"
   },
   "05d78bb1": {
    "to": "zdrav@tadviser.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:26:04.224Z",
    "message_id": "<c7490ded-7a5d-b75d-0bfe-02dc47f2d3a8@gmail.com>",
-   "subject": "Новость для Здрав.Эксперта: ИИ-тренажёр приёма для медиков"
+   "subject": "Новость для Здрав.Эксперта: ИИ-тренажёр приёма для медиков",
+   "followup_at": "2026-10-26T06:26:27.471Z",
+   "followup_message_id": "<c3ca411d-c95e-89fb-2be6-0354c9de156b@gmail.com>"
   },
   "4817f3c6": {
    "to": "anton.bgmu@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:31:11.326Z",
    "message_id": "<b883641b-1880-d40f-7826-b624698f2ccc@gmail.com>",
-   "subject": "Для СНО Башкирского ГМУ: тренажёр приёма с виртуальным пациентом"
+   "subject": "Для СНО Башкирского ГМУ: тренажёр приёма с виртуальным пациентом",
+   "followup_at": "2026-10-26T06:29:41.398Z",
+   "followup_message_id": "<53fcdf09-0ee1-0db3-d8ac-e8dec45d2ceb@gmail.com>"
   },
   "a577df13": {
    "to": "info@wetlab.spb.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:36:13.992Z",
    "message_id": "<705da2ff-4b21-8acb-225b-183185df9048@gmail.com>",
-   "subject": "WETLAB и тренажёр приёма: коллаборация «руки + голова»"
+   "subject": "WETLAB и тренажёр приёма: коллаборация «руки + голова»",
+   "followup_at": "2026-10-26T06:34:40.433Z",
+   "followup_message_id": "<069d349c-cb4a-23b4-f834-2601b096c646@gmail.com>"
   },
   "6fad5304": {
    "to": "mno@rostgmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:39:53.671Z",
    "message_id": "<9dafb5ff-c9d5-7a36-9cec-50ba6858af19@gmail.com>",
-   "subject": "Для МНО РостГМУ: тренажёр приёма для участников «Ярмарки кружков»"
+   "subject": "Для МНО РостГМУ: тренажёр приёма для участников «Ярмарки кружков»",
+   "followup_at": "2026-10-26T06:39:13.788Z",
+   "followup_message_id": "<e2c2634c-c6ec-89f1-4e83-4862f62b3b72@gmail.com>"
   },
   "d5a796da": {
    "to": "mggazeta@mgzt.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:45:23.601Z",
    "message_id": "<cfab663f-913e-33c3-f9d1-ef9e9eb9c8f3@gmail.com>",
-   "subject": "Для «Медицинской газеты»: студенты сделали ИИ-тренажёр приёма"
+   "subject": "Для «Медицинской газеты»: студенты сделали ИИ-тренажёр приёма",
+   "followup_at": "2026-10-26T06:43:07.246Z",
+   "followup_message_id": "<7344dae9-0754-30dc-4e01-936d0657a3dd@gmail.com>"
   },
   "aa0e411f": {
    "to": "nauka_msmsu@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:48:10.491Z",
    "message_id": "<fef675d9-530b-8418-83ca-2cd3c3b6ea99@gmail.com>",
-   "subject": "Для СНО им. Фалина: тренажёр приёма для младших курсов"
+   "subject": "Для СНО им. Фалина: тренажёр приёма для младших курсов",
+   "followup_at": "2026-10-26T06:47:14.646Z",
+   "followup_message_id": "<99a01228-e23e-6061-28bd-842a7ad53075@gmail.com>"
   },
   "e14ade27": {
    "to": "pr@webium.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:52:12.897Z",
    "message_id": "<e4cd10db-981e-e0f4-bf1f-ff0c64327855@gmail.com>",
-   "subject": "Вебиум и будущие медики: спецпроект для учеников биологии"
+   "subject": "Вебиум и будущие медики: спецпроект для учеников биологии",
+   "followup_at": "2026-10-26T06:50:33.756Z",
+   "followup_message_id": "<8bf422b3-1904-9b78-df41-02bcaae41a9a@gmail.com>"
   },
   "08b9b3ac": {
    "to": "sovetsno@spb-gmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T06:55:12.963Z",
    "message_id": "<71ac95d2-e776-4cde-e5fe-fda89cfe3a58@gmail.com>",
-   "subject": "Совету СНО Первого Павловского: тренажёр приёма для студентов"
+   "subject": "Совету СНО Первого Павловского: тренажёр приёма для студентов",
+   "followup_at": "2026-10-26T06:54:18.869Z",
+   "followup_message_id": "<65e12cf3-5156-cbd4-db11-d116e195089c@gmail.com>"
   },
   "2a246380": {
    "to": "medikrussia@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-16T07:00:39.720Z",
    "message_id": "<e2c806cb-8f49-fb54-3fa5-61a308e07525@gmail.com>",
-   "subject": "Для «Медицинской России»: ИИ-пациенты в учёбе будущих врачей"
+   "subject": "Для «Медицинской России»: ИИ-пациенты в учёбе будущих врачей",
+   "followup_at": "2026-10-26T06:58:35.385Z",
+   "followup_message_id": "<1985b851-eeae-b6f8-a3cc-b51c336f70e0@gmail.com>"
   },
   "03958830": {
    "to": "mariya.volokonskaya@volgmed.ru",
@@ -772,10 +800,18 @@
   },
   "31d6fd27": {
    "to": "valeria_0315@mail.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-23T06:50:24.033Z",
    "message_id": "<027028a9-8f1a-d3e1-e7e0-88c153ae273d@gmail.com>",
-   "subject": "Для СНО РНИМУ: тренажёр приёма для клинических кружков"
+   "subject": "Для СНО РНИМУ: тренажёр приёма для клинических кружков",
+   "seen": [
+    "<1792829331.444378769@f346.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1792829331.444378769@f346.i.mail.ru>",
+   "last_in_subject": "Re: Для СНО РНИМУ: тренажёр приёма для клинических кружков",
+   "last_in_from": "valeria_0315@mail.ru",
+   "last_in_at": "2026-10-26T06:21:38.653Z",
+   "reply_at": "2026-10-26T06:21:38.653Z"
   }
  },
  "days": [
@@ -789,7 +825,8 @@
   "2026-10-20",
   "2026-10-21",
   "2026-10-22",
-  "2026-10-23"
+  "2026-10-23",
+  "2026-10-26"
  ],
- "inbox_checked_at": "2026-10-23T18:21:19.225Z"
+ "inbox_checked_at": "2026-10-26T06:21:38.815Z"
 }
