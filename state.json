@@ -602,12 +602,20 @@
   },
   "6bcc2c62": {
    "to": "sno@gpmu.org",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-16T06:21:02.510Z",
    "message_id": "<55f17ac2-5150-85d8-7a8d-e019e59ce3c6@gmail.com>",
    "subject": "«Студенческая наука — Будущее медицины»: тренажёр для студентов",
    "followup_at": "2026-10-26T06:21:40.113Z",
-   "followup_message_id": "<ef6c77dd-67eb-5c43-9c84-00e84b723014@gmail.com>"
+   "followup_message_id": "<ef6c77dd-67eb-5c43-9c84-00e84b723014@gmail.com>",
+   "seen": [
+    "<624901792996342@d8179a1b-7f93-4c18-991b-07c1b9cd66da>"
+   ],
+   "last_in_msgid": "<624901792996342@d8179a1b-7f93-4c18-991b-07c1b9cd66da>",
+   "last_in_subject": "Re: «Студенческая наука — Будущее медицины»: тренажёр для студентов",
+   "last_in_from": "sno@gpmu.org",
+   "last_in_at": "2026-10-26T07:21:20.554Z",
+   "reply_at": "2026-10-26T07:21:20.554Z"
   },
   "05d78bb1": {
    "to": "zdrav@tadviser.ru",
@@ -828,5 +836,5 @@
   "2026-10-23",
   "2026-10-26"
  ],
- "inbox_checked_at": "2026-10-26T06:21:38.815Z"
+ "inbox_checked_at": "2026-10-26T07:21:20.667Z"
 }
