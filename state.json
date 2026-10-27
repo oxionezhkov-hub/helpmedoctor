@@ -861,10 +861,18 @@
   },
   "80c7321b": {
    "to": "reines_myu@rsmu.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-27T06:43:11.833Z",
    "message_id": "<ab1c0cef-b367-6b8b-1cde-a2018dbd55a3@gmail.com>",
-   "subject": "Для студентов Пироговского университета: тренажёр приёма"
+   "subject": "Для студентов Пироговского университета: тренажёр приёма",
+   "seen": [
+    "<309f85e91e8242019a0e59818a1b98c9@rsmu.ru>"
+   ],
+   "last_in_msgid": "<309f85e91e8242019a0e59818a1b98c9@rsmu.ru>",
+   "last_in_subject": "RE: Для студентов Пироговского университета: тренажёр приёма",
+   "last_in_from": "reines_myu@rsmu.ru",
+   "last_in_at": "2026-10-27T10:21:41.282Z",
+   "reply_at": "2026-10-27T10:21:41.282Z"
   },
   "9046ec55": {
    "to": "support@medvuza.ru",
@@ -910,5 +918,5 @@
   "2026-10-26",
   "2026-10-27"
  ],
- "inbox_checked_at": "2026-10-27T09:22:51.417Z"
+ "inbox_checked_at": "2026-10-27T10:21:41.882Z"
 }
