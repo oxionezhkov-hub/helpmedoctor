@@ -700,10 +700,12 @@
   },
   "03958830": {
    "to": "mariya.volokonskaya@volgmed.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-19T06:48:14.992Z",
    "message_id": "<6e230413-90eb-3031-cd4e-7ebe056d63c8@gmail.com>",
-   "subject": "К 85-й конференции НОМУС ВолгГМУ: тренажёр приёма пациента"
+   "subject": "К 85-й конференции НОМУС ВолгГМУ: тренажёр приёма пациента",
+   "followup_at": "2026-10-27T06:21:17.312Z",
+   "followup_message_id": "<e140ad5b-4fd6-51cb-61dd-8865ca10db28@gmail.com>"
   },
   "7b5ccd0f": {
    "to": "dr.okhotin@gmail.com",
@@ -820,6 +822,69 @@
    "last_in_from": "valeria_0315@mail.ru",
    "last_in_at": "2026-10-26T06:21:38.653Z",
    "reply_at": "2026-10-26T06:21:38.653Z"
+  },
+  "4de26f7e": {
+   "to": "corpus@ksma.ru",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:26:38.054Z",
+   "message_id": "<751d032c-6f22-dc9b-c2f5-443131cc5437@gmail.com>",
+   "subject": "Для участников «НОМУС+»: тренажёр для студенческих обществ"
+  },
+  "e649f099": {
+   "to": "sovetsno.gpmu@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:30:56.252Z",
+   "message_id": "<4585c879-32ad-fdbb-f9d2-99100f35ce4e@gmail.com>",
+   "subject": "Для СНО СПбГПМУ: тренажёр приёма с виртуальным пациентом"
+  },
+  "7894ef36": {
+   "to": "info@med-skills.ru",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:35:22.770Z",
+   "message_id": "<b6f459ba-d2ac-d91f-c2ce-8db5565b2724@gmail.com>",
+   "subject": "МедСкиллс и подготовка к ординатуре: практика приёма"
+  },
+  "b8143901": {
+   "to": "medobr-conf@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:38:10.992Z",
+   "message_id": "<c4683e9a-fcfa-86cd-f598-0f3b7fa011b6@gmail.com>",
+   "subject": "Неделя медицинского образования 2027: тренажёр для студентов"
+  },
+  "80c7321b": {
+   "to": "reines_myu@rsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:43:11.833Z",
+   "message_id": "<ab1c0cef-b367-6b8b-1cde-a2018dbd55a3@gmail.com>",
+   "subject": "Для студентов Пироговского университета: тренажёр приёма"
+  },
+  "9046ec55": {
+   "to": "support@medvuza.ru",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:48:04.024Z",
+   "message_id": "<2051b749-094d-a8d0-7d7d-894bc217430a@gmail.com>",
+   "subject": "Партнёрство с «Медвуза»: практика приёма для ваших учеников"
+  },
+  "63547f46": {
+   "to": "zavyalov.av@ssmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:51:54.479Z",
+   "message_id": "<48d1c8ea-611c-3b7c-25bc-d3956636e180@gmail.com>",
+   "subject": "Пироговская конференция СибГМУ: тренажёр приёма для СНО"
+  },
+  "adca68ff": {
+   "to": "sovet.sechenov@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:56:06.492Z",
+   "message_id": "<326f99e3-7624-2559-3867-15fff8c06fc1@gmail.com>",
+   "subject": "Для Совета обучающихся Сеченовского университета: тренажёр приёма"
+  },
+  "2552cc2c": {
+   "to": "shop@russiandoc.ru",
+   "status": "sent",
+   "sent_at": "2026-10-27T06:59:37.290Z",
+   "message_id": "<3d50e87c-f94c-3d83-5e6b-9f328f214ada@gmail.com>",
+   "subject": "«Русский Доктор» и студенты-медики: идея коллаборации"
   }
  },
  "days": [
@@ -834,7 +899,8 @@
   "2026-10-21",
   "2026-10-22",
   "2026-10-23",
-  "2026-10-26"
+  "2026-10-26",
+  "2026-10-27"
  ],
- "inbox_checked_at": "2026-10-26T18:32:30.838Z"
+ "inbox_checked_at": "2026-10-27T06:21:15.747Z"
 }
