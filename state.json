@@ -832,10 +832,18 @@
   },
   "e649f099": {
    "to": "sovetsno.gpmu@gmail.com",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-27T06:30:56.252Z",
    "message_id": "<4585c879-32ad-fdbb-f9d2-99100f35ce4e@gmail.com>",
-   "subject": "Для СНО СПбГПМУ: тренажёр приёма с виртуальным пациентом"
+   "subject": "Для СНО СПбГПМУ: тренажёр приёма с виртуальным пациентом",
+   "seen": [
+    "<CANQsgeEz_7vzYRR5oFoKBvk_gzH3_FNmX8JY_4nuCvfmmOZqHA@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CANQsgeEz_7vzYRR5oFoKBvk_gzH3_FNmX8JY_4nuCvfmmOZqHA@mail.gmail.com>",
+   "last_in_subject": "Студенческое научное общества СПбГПМУ Re: Для СНО СПбГПМУ: тренажёр приёма с виртуальным пациентом",
+   "last_in_from": "sovetsno.gpmu@gmail.com",
+   "last_in_at": "2026-10-27T07:21:17.095Z",
+   "reply_at": "2026-10-27T07:21:17.095Z"
   },
   "7894ef36": {
    "to": "info@med-skills.ru",
@@ -902,5 +910,5 @@
   "2026-10-26",
   "2026-10-27"
  ],
- "inbox_checked_at": "2026-10-27T06:21:15.747Z"
+ "inbox_checked_at": "2026-10-27T07:21:17.575Z"
 }
