@@ -740,10 +740,12 @@
   },
   "e1999d7f": {
    "to": "nomus.ugmu@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-20T06:51:34.960Z",
    "message_id": "<2c5890e1-1b98-e37d-d0e0-538231b616c7@gmail.com>",
-   "subject": "Новые технологии медобразования: тренажёр для участников НОМУС УГМУ"
+   "subject": "Новые технологии медобразования: тренажёр для участников НОМУС УГМУ",
+   "followup_at": "2026-10-28T06:21:22.409Z",
+   "followup_message_id": "<73026df8-b3b1-1340-1cec-c05dafb23f46@gmail.com>"
   },
   "060ff815": {
    "to": "media@nbmz.ru",
@@ -901,6 +903,69 @@
    "sent_at": "2026-10-27T06:59:37.290Z",
    "message_id": "<3d50e87c-f94c-3d83-5e6b-9f328f214ada@gmail.com>",
    "subject": "«Русский Доктор» и студенты-медики: идея коллаборации"
+  },
+  "2a7fccaa": {
+   "to": "avicennangmu@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-28T06:26:38.960Z",
+   "message_id": "<ab53a093-2e18-d314-7e87-f7b3df919c1c@gmail.com>",
+   "subject": "К следующей «Авиценне»: тренажёр приёма пациента для участников"
+  },
+  "ad00d737": {
+   "to": "elina.kapitonova@szgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-28T06:30:47.141Z",
+   "message_id": "<1d57c51a-f194-cbd4-135e-51c254da684b@gmail.com>",
+   "subject": "Для СНО СЗГМУ им. Мечникова: тренажёр приёма пациента"
+  },
+  "5e96ab7a": {
+   "to": "info@medsolutions.ru",
+   "status": "sent",
+   "sent_at": "2026-10-28T06:35:03.678Z",
+   "message_id": "<122a74ca-fc44-ec66-021e-3ec82c94f6fc@gmail.com>",
+   "subject": "Приложение «МКБ-10, РЛС» и тренажёр приёма: партнёрство для студентов"
+  },
+  "a2a83cb9": {
+   "to": "a@antonyukk.ru",
+   "status": "sent",
+   "sent_at": "2026-10-28T06:39:49.332Z",
+   "message_id": "<ce1f2a79-dfc9-d285-8f28-992bbab4aecf@gmail.com>",
+   "subject": "Для Совета студентов медвузов Минздрава: тренажёр приёма пациента"
+  },
+  "e5582edb": {
+   "to": "pr@umschool.ru",
+   "status": "sent",
+   "sent_at": "2026-10-28T06:43:38.790Z",
+   "message_id": "<0e18aac2-0047-9983-1bde-32ffb6f1f39c@gmail.com>",
+   "subject": "Умскул и будущие медики: спецпроект «Попробуй себя врачом»"
+  },
+  "91cea622": {
+   "to": "elsatrippel@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-28T06:46:16.959Z",
+   "message_id": "<70c13df6-68c5-498f-f293-c04e601f4863@gmail.com>",
+   "subject": "Для тьюторов АСЦ Сеченовского: тренажёр к станциям ОСКЭ"
+  },
+  "4b231137": {
+   "to": "info@fasie.ru",
+   "status": "sent",
+   "sent_at": "2026-10-28T06:51:03.708Z",
+   "message_id": "<dfc0b640-b760-2d14-4946-a81829e620c6@gmail.com>",
+   "subject": "«Студенческий стартап»: вопрос о заявке студенческого MedTech-проекта"
+  },
+  "2c6969de": {
+   "to": "fmasc@vrngmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-28T06:55:37.136Z",
+   "message_id": "<5590a51c-0b29-0577-74f4-f9360745e9e5@gmail.com>",
+   "subject": "Для ФМАСЦ ВГМУ им. Бурденко: тренировка сбора анамнеза"
+  },
+  "a1acd737": {
+   "to": "info@rosmedlib.ru",
+   "status": "sent",
+   "sent_at": "2026-10-28T07:00:59.569Z",
+   "message_id": "<6712d1c1-02d6-9277-b7fd-a3dad936e07e@gmail.com>",
+   "subject": "«Консультант студента» и разборы клинических случаев: партнёрство"
   }
  },
  "days": [
@@ -916,7 +981,8 @@
   "2026-10-22",
   "2026-10-23",
   "2026-10-26",
-  "2026-10-27"
+  "2026-10-27",
+  "2026-10-28"
  ],
- "inbox_checked_at": "2026-10-27T18:21:32.561Z"
+ "inbox_checked_at": "2026-10-28T06:21:19.817Z"
 }
