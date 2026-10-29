@@ -756,17 +756,21 @@
   },
   "18f37501": {
    "to": "pirogov_conf@rsmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-21T06:51:17.332Z",
    "message_id": "<780d8024-fe45-14f5-b350-3f78f709cafb@gmail.com>",
-   "subject": "Пироговская конференция 2027: тренажёр приёма для участников"
+   "subject": "Пироговская конференция 2027: тренажёр приёма для участников",
+   "followup_at": "2026-10-29T06:21:19.162Z",
+   "followup_message_id": "<9be3e353-6fa7-beef-6def-a975877230cd@gmail.com>"
   },
   "20db15b9": {
    "to": "podcast.rnimu2022@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-21T06:55:30.209Z",
    "message_id": "<1d2a3132-b5ea-1f59-6341-3cc66fc9e84d@gmail.com>",
-   "subject": "Для «Кота Пирогова»: ИИ-пациент для студентов-медиков"
+   "subject": "Для «Кота Пирогова»: ИИ-пациент для студентов-медиков",
+   "followup_at": "2026-10-29T06:25:13.676Z",
+   "followup_message_id": "<232608d6-e057-53d7-901c-08bee5efd0d8@gmail.com>"
   },
   "d8894d38": {
    "to": "mmmk11.spb@gmail.com",
@@ -974,6 +978,62 @@
    "sent_at": "2026-10-28T07:00:59.569Z",
    "message_id": "<6712d1c1-02d6-9277-b7fd-a3dad936e07e@gmail.com>",
    "subject": "«Консультант студента» и разборы клинических случаев: партнёрство"
+  },
+  "7cb6e281": {
+   "to": "ciot@list.ru",
+   "status": "sent",
+   "sent_at": "2026-10-29T06:28:51.712Z",
+   "message_id": "<3efe3ec9-82eb-a69a-61fa-35e3f0212121@gmail.com>",
+   "subject": "Для ЦИОТ ПСПбГМУ: виртуальный пациент для тренировки анамнеза"
+  },
+  "3f15c355": {
+   "to": "hochavamr@ksma.ru",
+   "status": "sent",
+   "sent_at": "2026-10-29T06:32:50.768Z",
+   "message_id": "<e040b1c3-e1f5-6850-3fb3-97f13456797d@gmail.com>",
+   "subject": "Олимпиада по инфекционным болезням КубГМУ: идея к следующей"
+  },
+  "2cd93777": {
+   "to": "info@kstgroup.ru",
+   "status": "sent",
+   "sent_at": "2026-10-29T06:37:37.785Z",
+   "message_id": "<cdfa1ca7-8d55-87e5-bd14-f4fd1d133e9c@gmail.com>",
+   "subject": "Тренажёр приёма для Форума молодых терапевтов РНМОТ"
+  },
+  "2a22281a": {
+   "to": "info@medportal.ru",
+   "status": "sent",
+   "sent_at": "2026-10-29T06:42:01.717Z",
+   "message_id": "<2ae681d1-63b5-9347-58e7-91ec30b5202e@gmail.com>",
+   "subject": "Новость для MedPortal: студенты-медики сделали ИИ-тренажёр"
+  },
+  "7c1a669f": {
+   "to": "info@clinic.msmsu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-29T06:45:24.730Z",
+   "message_id": "<c60d7c63-156f-47ff-8ee3-1f509c8f97c2@gmail.com>",
+   "subject": "Для симцентра «Кусково»: тренажёр приёма для студентов РосУниМеда"
+  },
+  "5c899c63": {
+   "to": "pressa@volmedic.com",
+   "status": "sent",
+   "sent_at": "2026-10-29T06:49:34.630Z",
+   "message_id": "<8b3b3f8f-ba6e-128b-6b85-f52a01a85677@gmail.com>",
+   "subject": "«Волонтеры-медики» и практика приёма: идея партнёрства"
+  },
+  "575d01c4": {
+   "to": "athenium@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-10-29T06:52:53.502Z",
+   "message_id": "<79969290-f37e-4ae9-6183-c3812527075d@gmail.com>",
+   "subject": "Athenium и будущие врачи: первый опыт приёма для выпускников"
+  },
+  "446e1b39": {
+   "to": "medscopefefu@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-10-29T06:57:37.215Z",
+   "message_id": "<3c530d13-ce8d-322d-c719-807039fff0b2@gmail.com>",
+   "subject": "Финалистам «МедСкопа»: тренировка диагностики на ИИ-пациентах"
   }
  },
  "days": [
@@ -990,7 +1050,8 @@
   "2026-10-23",
   "2026-10-26",
   "2026-10-27",
-  "2026-10-28"
+  "2026-10-28",
+  "2026-10-29"
  ],
- "inbox_checked_at": "2026-10-28T18:21:17.075Z"
+ "inbox_checked_at": "2026-10-29T06:21:17.380Z"
 }
