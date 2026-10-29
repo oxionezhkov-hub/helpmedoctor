@@ -995,10 +995,18 @@
   },
   "2cd93777": {
    "to": "info@kstgroup.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-29T06:37:37.785Z",
    "message_id": "<cdfa1ca7-8d55-87e5-bd14-f4fd1d133e9c@gmail.com>",
-   "subject": "Тренажёр приёма для Форума молодых терапевтов РНМОТ"
+   "subject": "Тренажёр приёма для Форума молодых терапевтов РНМОТ",
+   "seen": [
+    "<c7f09a637e5f4f0395f194d404165e08@kstgroup.ru>"
+   ],
+   "last_in_msgid": "<c7f09a637e5f4f0395f194d404165e08@kstgroup.ru>",
+   "last_in_subject": "RE: Тренажёр приёма для Форума молодых терапевтов РНМОТ",
+   "last_in_from": "info@kstgroup.ru",
+   "last_in_at": "2026-10-29T08:21:13.846Z",
+   "reply_at": "2026-10-29T08:21:13.846Z"
   },
   "2a22281a": {
    "to": "info@medportal.ru",
@@ -1053,5 +1061,5 @@
   "2026-10-28",
   "2026-10-29"
  ],
- "inbox_checked_at": "2026-10-29T07:21:13.535Z"
+ "inbox_checked_at": "2026-10-29T08:21:14.078Z"
 }
