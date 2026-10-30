@@ -774,38 +774,48 @@
   },
   "d8894d38": {
    "to": "mmmk11.spb@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-22T06:42:42.843Z",
    "message_id": "<b361b0fd-a337-a93b-9c17-40cfa75bf0a1@gmail.com>",
-   "subject": "Тренажёр приёма для участников «Санкт-Петербургских научных чтений»"
+   "subject": "Тренажёр приёма для участников «Санкт-Петербургских научных чтений»",
+   "followup_at": "2026-10-30T06:21:13.120Z",
+   "followup_message_id": "<96448b53-fe16-3e78-8694-52b64a29478a@gmail.com>"
   },
   "be79b283": {
    "to": "podcastbyfmm@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-22T06:45:33.706Z",
    "message_id": "<5f3d870c-0af4-13e0-8e42-f0552470fee0@gmail.com>",
-   "subject": "Идея выпуска для ФММПодкаста: студенты и ИИ-пациенты"
+   "subject": "Идея выпуска для ФММПодкаста: студенты и ИИ-пациенты",
+   "followup_at": "2026-10-30T06:25:36.081Z",
+   "followup_message_id": "<613c5274-9c36-6602-d841-ebadf643dc7e@gmail.com>"
   },
   "7c5c79c5": {
    "to": "strepil@yandex.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-22T06:51:03.767Z",
    "message_id": "<f5c26901-f038-8b6b-3838-9bf558a8b4d0@gmail.com>",
-   "subject": "Для СНО Новосибирского ГМУ: виртуальный пациент для студентов"
+   "subject": "Для СНО Новосибирского ГМУ: виртуальный пациент для студентов",
+   "followup_at": "2026-10-30T06:28:14.849Z",
+   "followup_message_id": "<30d83190-d9fd-df5a-d51d-82583d50c505@gmail.com>"
   },
   "c5ef2226": {
    "to": "info@vrachirf.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-22T06:54:01.071Z",
    "message_id": "<406ae3e6-75bb-2ae3-9995-2790dcf35e4f@gmail.com>",
-   "subject": "«Врачи РФ»: новость о тренажёре приёма для ординаторов"
+   "subject": "«Врачи РФ»: новость о тренажёре приёма для ординаторов",
+   "followup_at": "2026-10-30T06:33:21.867Z",
+   "followup_message_id": "<11262fb8-74e1-2ee3-5cb1-ef3b7329f7db@gmail.com>"
   },
   "389aa033": {
    "to": "sno-kgmu@kazangmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-22T06:59:09.258Z",
    "message_id": "<2a983d77-0ded-8bf7-4b09-78bf15972401@gmail.com>",
-   "subject": "Тренажёр с ИИ-пациентами для участников форума «Белые цветы»"
+   "subject": "Тренажёр с ИИ-пациентами для участников форума «Белые цветы»",
+   "followup_at": "2026-10-30T06:37:05.654Z",
+   "followup_message_id": "<b1ad98ad-1946-8209-9158-879dc5203982@gmail.com>"
   },
   "56c3372c": {
    "to": "smu@stgmu.ru",
@@ -1050,6 +1060,41 @@
    "sent_at": "2026-10-29T06:57:37.215Z",
    "message_id": "<3c530d13-ce8d-322d-c719-807039fff0b2@gmail.com>",
    "subject": "Финалистам «МедСкопа»: тренировка диагностики на ИИ-пациентах"
+  },
+  "7be58531": {
+   "to": "sitnikova.ey@ssmu.ru",
+   "status": "sent",
+   "sent_at": "2026-10-30T06:42:20.805Z",
+   "message_id": "<4a4f0783-d8d7-ffb0-2f6b-11d8c0b472da@gmail.com>",
+   "subject": "Подготовка к олимпиаде по онкологии: тренировка на ИИ-пациентах"
+  },
+  "efd9c2ae": {
+   "to": "skorenev@kantiana.ru",
+   "status": "sent",
+   "sent_at": "2026-10-30T06:46:28.425Z",
+   "message_id": "<f435271b-8091-cd55-707a-0696d264617d@gmail.com>",
+   "subject": "Виртуальные пациенты для студентов Высшей школы медицины БФУ"
+  },
+  "27eea34f": {
+   "to": "daria@smartranking.ru",
+   "status": "sent",
+   "sent_at": "2026-10-30T06:49:04.667Z",
+   "message_id": "<59d2c856-9b02-beac-1098-c7fcf2b24250@gmail.com>",
+   "subject": "Для Smart Ranking: нишевый EdTech-проект для студентов-медиков"
+  },
+  "aa09dfd9": {
+   "to": "cav75@list.ru",
+   "status": "sent",
+   "sent_at": "2026-10-30T06:52:54.602Z",
+   "message_id": "<b235061d-2c29-c035-6db2-89cb5843dc49@gmail.com>",
+   "subject": "Для МАСЦ ОмГМУ: виртуальный пациент для студентов"
+  },
+  "5b6b8969": {
+   "to": "info@euat.ru",
+   "status": "sent",
+   "sent_at": "2026-10-30T06:56:52.338Z",
+   "message_id": "<a65252e6-4065-a6c8-b887-c773a0aa8923@gmail.com>",
+   "subject": "Евразийская Ассоциация Терапевтов: партнёрство для молодых врачей"
   }
  },
  "days": [
@@ -1067,7 +1112,8 @@
   "2026-10-26",
   "2026-10-27",
   "2026-10-28",
-  "2026-10-29"
+  "2026-10-29",
+  "2026-10-30"
  ],
- "inbox_checked_at": "2026-10-29T18:21:12.410Z"
+ "inbox_checked_at": "2026-10-30T06:21:12.221Z"
 }
