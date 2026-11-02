@@ -621,12 +621,20 @@
   },
   "05d78bb1": {
    "to": "zdrav@tadviser.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-16T06:26:04.224Z",
    "message_id": "<c7490ded-7a5d-b75d-0bfe-02dc47f2d3a8@gmail.com>",
    "subject": "Новость для Здрав.Эксперта: ИИ-тренажёр приёма для медиков",
    "followup_at": "2026-10-26T06:26:27.471Z",
-   "followup_message_id": "<c3ca411d-c95e-89fb-2be6-0354c9de156b@gmail.com>"
+   "followup_message_id": "<c3ca411d-c95e-89fb-2be6-0354c9de156b@gmail.com>",
+   "seen": [
+    "<CAKQ1uyHp+XbxjnbjEOiecuptcu7XXc88Wsp0ZsL-_+vAqHUpHg@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CAKQ1uyHp+XbxjnbjEOiecuptcu7XXc88Wsp0ZsL-_+vAqHUpHg@mail.gmail.com>",
+   "last_in_subject": "Re: Новость для Здрав.Эксперта: ИИ-тренажёр приёма для медиков",
+   "last_in_from": "santo@tadviser.ru",
+   "last_in_at": "2026-11-02T18:50:26.917Z",
+   "reply_at": "2026-11-02T18:50:26.917Z"
   },
   "4817f3c6": {
    "to": "anton.bgmu@gmail.com",
@@ -1192,5 +1200,5 @@
   "2026-10-30",
   "2026-11-02"
  ],
- "inbox_checked_at": "2026-11-02T18:21:16.198Z"
+ "inbox_checked_at": "2026-11-02T18:50:26.956Z"
 }
