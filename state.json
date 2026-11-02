@@ -974,10 +974,18 @@
   },
   "4b231137": {
    "to": "info@fasie.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-10-28T06:51:03.708Z",
    "message_id": "<dfc0b640-b760-2d14-4946-a81829e620c6@gmail.com>",
-   "subject": "«Студенческий стартап»: вопрос о заявке студенческого MedTech-проекта"
+   "subject": "«Студенческий стартап»: вопрос о заявке студенческого MedTech-проекта",
+   "seen": [
+    "<FF430BA27B101E44B3C1234DDF32AC3D260DBA4C71@srvmail.fond.local>"
+   ],
+   "last_in_msgid": "<FF430BA27B101E44B3C1234DDF32AC3D260DBA4C71@srvmail.fond.local>",
+   "last_in_subject": "RE: «Студенческий стартап»: вопрос о заявке студенческого MedTech-проекта",
+   "last_in_from": "info@fasie.ru",
+   "last_in_at": "2026-11-02T11:21:13.596Z",
+   "reply_at": "2026-11-02T11:21:13.596Z"
   },
   "2c6969de": {
    "to": "fmasc@vrngmu.ru",
@@ -1184,5 +1192,5 @@
   "2026-10-30",
   "2026-11-02"
  ],
- "inbox_checked_at": "2026-11-02T10:21:17.442Z"
+ "inbox_checked_at": "2026-11-02T11:21:13.653Z"
 }
