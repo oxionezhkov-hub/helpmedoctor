@@ -2,10 +2,12 @@
  "contacts": {
   "14881312": {
    "to": "info@geotar.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-23T06:55:16.509Z",
    "message_id": "<f65ec5eb-d2a9-7eb2-8e73-3791ed5b0d99@gmail.com>",
-   "subject": "ГЭОТАР-Медиа и клинические случаи: идея партнёрства"
+   "subject": "ГЭОТАР-Медиа и клинические случаи: идея партнёрства",
+   "followup_at": "2026-11-02T06:21:15.067Z",
+   "followup_message_id": "<6cb121d7-8393-37b5-ed40-d9c2a1ee151c@gmail.com>"
   },
   "28864398": {
    "to": "sno@staff.sechenov.ru",
@@ -819,10 +821,12 @@
   },
   "56c3372c": {
    "to": "smu@stgmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-23T06:46:02.108Z",
    "message_id": "<4ef056e9-e432-2b48-6062-b2c7a2c5cfc3@gmail.com>",
-   "subject": "Вопрос по молодежному форуму «Медицинская наука без границ»"
+   "subject": "Вопрос по молодежному форуму «Медицинская наука без границ»",
+   "followup_at": "2026-11-02T06:25:30.821Z",
+   "followup_message_id": "<ba6bf63e-bd4a-b005-f31d-7f9323b844d3@gmail.com>"
   },
   "31d6fd27": {
    "to": "valeria_0315@mail.ru",
@@ -1095,6 +1099,62 @@
    "sent_at": "2026-10-30T06:56:52.338Z",
    "message_id": "<a65252e6-4065-a6c8-b887-c773a0aa8923@gmail.com>",
    "subject": "Евразийская Ассоциация Терапевтов: партнёрство для молодых врачей"
+  },
+  "c78b2fe2": {
+   "to": "uglov@ysmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-02T06:30:24.904Z",
+   "message_id": "<a332f268-ead6-5d52-a0c2-9f2938389b8d@gmail.com>",
+   "subject": "Олимпиада по педиатрии и неонатологии ЯГМУ: тренажёр для участников"
+  },
+  "a95313b1": {
+   "to": "smu@rzgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-02T06:34:46.200Z",
+   "message_id": "<61c81e58-131f-6dc4-5fa8-e6a4083030e6@gmail.com>",
+   "subject": "ИИ-пациент для участников конференции СМУ РязГМУ"
+  },
+  "520be8b2": {
+   "to": "info@webiomed.ru",
+   "status": "sent",
+   "sent_at": "2026-11-02T06:38:45.910Z",
+   "message_id": "<957cb363-7a1e-fd4b-fcd7-79d19a35e90c@gmail.com>",
+   "subject": "Для Webiomed: студенческий тренажёр с ИИ-пациентом"
+  },
+  "86934a0d": {
+   "to": "post@astgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-02T06:41:50.954Z",
+   "message_id": "<7ff92ac8-ab2e-d73a-0cb4-36eb7da23442@gmail.com>",
+   "subject": "Для НОМУС Астраханского ГМУ: тренажёр приёма для студентов"
+  },
+  "cab135e9": {
+   "to": "dariaiugaipr@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-11-02T06:46:30.595Z",
+   "message_id": "<aea568c7-62ce-4f2b-9340-bdb07a145aed@gmail.com>",
+   "subject": "Размещение в «Жизни кардиолога»: тренажёр клинических задач"
+  },
+  "cdeaf78a": {
+   "to": "info@md.school",
+   "status": "sent",
+   "sent_at": "2026-11-02T06:49:02.975Z",
+   "message_id": "<888020e8-8a70-d5a2-7c63-5f65e2583e3f@gmail.com>",
+   "subject": "MD School и практика приёма: партнёрство для молодых врачей"
+  },
+  "88b5134b": {
+   "to": "press@pimunn.net",
+   "status": "sent",
+   "sent_at": "2026-11-02T06:52:05.584Z",
+   "message_id": "<071d3c99-035a-b48f-e7ff-23540d2f7e9f@gmail.com>",
+   "subject": "Для оргкомитета «ВолгаМедНауки»: тренажёр приёма для участников"
+  },
+  "10b44fdd": {
+   "to": "mcitz@zdrav.mos.ru",
+   "status": "sent",
+   "sent_at": "2026-11-02T06:55:50.273Z",
+   "message_id": "<9104312b-e84d-6ad5-1983-62c492d7acc8@gmail.com>",
+   "subject": "ИИ-тренажёр приёма и Медтех.Москва: обмен рассказами о проектах"
   }
  },
  "days": [
@@ -1113,7 +1173,8 @@
   "2026-10-27",
   "2026-10-28",
   "2026-10-29",
-  "2026-10-30"
+  "2026-10-30",
+  "2026-11-02"
  ],
- "inbox_checked_at": "2026-10-30T18:21:16.710Z"
+ "inbox_checked_at": "2026-11-02T06:21:14.092Z"
 }
