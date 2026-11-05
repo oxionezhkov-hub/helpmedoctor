@@ -853,10 +853,12 @@
   },
   "4de26f7e": {
    "to": "corpus@ksma.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-27T06:26:38.054Z",
    "message_id": "<751d032c-6f22-dc9b-c2f5-443131cc5437@gmail.com>",
-   "subject": "Для участников «НОМУС+»: тренажёр для студенческих обществ"
+   "subject": "Для участников «НОМУС+»: тренажёр для студенческих обществ",
+   "followup_at": "2026-11-05T06:21:15.703Z",
+   "followup_message_id": "<d47ef42c-683f-89af-e99a-c19b56508a87@gmail.com>"
   },
   "e649f099": {
    "to": "sovetsno.gpmu@gmail.com",
@@ -875,17 +877,21 @@
   },
   "7894ef36": {
    "to": "info@med-skills.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-27T06:35:22.770Z",
    "message_id": "<b6f459ba-d2ac-d91f-c2ce-8db5565b2724@gmail.com>",
-   "subject": "МедСкиллс и подготовка к ординатуре: практика приёма"
+   "subject": "МедСкиллс и подготовка к ординатуре: практика приёма",
+   "followup_at": "2026-11-05T06:23:55.353Z",
+   "followup_message_id": "<123f0887-1dc6-6c41-f034-971a7a03648b@gmail.com>"
   },
   "b8143901": {
    "to": "medobr-conf@yandex.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-27T06:38:10.992Z",
    "message_id": "<c4683e9a-fcfa-86cd-f598-0f3b7fa011b6@gmail.com>",
-   "subject": "Неделя медицинского образования 2027: тренажёр для студентов"
+   "subject": "Неделя медицинского образования 2027: тренажёр для студентов",
+   "followup_at": "2026-11-05T06:28:42.416Z",
+   "followup_message_id": "<eb7bff12-e05c-aa88-54ee-6b1bd6226b8c@gmail.com>"
   },
   "80c7321b": {
    "to": "reines_myu@rsmu.ru",
@@ -904,31 +910,39 @@
   },
   "9046ec55": {
    "to": "support@medvuza.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-27T06:48:04.024Z",
    "message_id": "<2051b749-094d-a8d0-7d7d-894bc217430a@gmail.com>",
-   "subject": "Партнёрство с «Медвуза»: практика приёма для ваших учеников"
+   "subject": "Партнёрство с «Медвуза»: практика приёма для ваших учеников",
+   "followup_at": "2026-11-05T06:32:29.839Z",
+   "followup_message_id": "<b071899d-8570-6c6f-3753-b159d3130157@gmail.com>"
   },
   "63547f46": {
    "to": "zavyalov.av@ssmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-27T06:51:54.479Z",
    "message_id": "<48d1c8ea-611c-3b7c-25bc-d3956636e180@gmail.com>",
-   "subject": "Пироговская конференция СибГМУ: тренажёр приёма для СНО"
+   "subject": "Пироговская конференция СибГМУ: тренажёр приёма для СНО",
+   "followup_at": "2026-11-05T06:37:17.428Z",
+   "followup_message_id": "<79282a2c-ea7e-46d0-be57-964eda9316be@gmail.com>"
   },
   "adca68ff": {
    "to": "sovet.sechenov@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-27T06:56:06.492Z",
    "message_id": "<326f99e3-7624-2559-3867-15fff8c06fc1@gmail.com>",
-   "subject": "Для Совета обучающихся Сеченовского университета: тренажёр приёма"
+   "subject": "Для Совета обучающихся Сеченовского университета: тренажёр приёма",
+   "followup_at": "2026-11-05T06:42:38.352Z",
+   "followup_message_id": "<95f15920-799b-76b3-a380-5129182b5a31@gmail.com>"
   },
   "2552cc2c": {
    "to": "shop@russiandoc.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-27T06:59:37.290Z",
    "message_id": "<3d50e87c-f94c-3d83-5e6b-9f328f214ada@gmail.com>",
-   "subject": "«Русский Доктор» и студенты-медики: идея коллаборации"
+   "subject": "«Русский Доктор» и студенты-медики: идея коллаборации",
+   "followup_at": "2026-11-05T06:45:59.182Z",
+   "followup_message_id": "<c894996e-1f7b-560a-33c4-46c2cf5f9fa1@gmail.com>"
   },
   "2a7fccaa": {
    "to": "avicennangmu@mail.ru",
@@ -1249,6 +1263,27 @@
    "sent_at": "2026-11-03T06:59:43.439Z",
    "message_id": "<d1e1d951-9c6b-920e-b3ec-5f30d5d649ba@gmail.com>",
    "subject": "NINE ELEVEEN и студенты-медики: идея совместного розыгрыша"
+  },
+  "a067fed3": {
+   "to": "da.isaeva@hmgma.ru",
+   "status": "sent",
+   "sent_at": "2026-11-05T06:48:50.085Z",
+   "message_id": "<f2364ee4-d5c1-3b3a-8b78-ff3e3e8d4085@gmail.com>",
+   "subject": "Конкурс «Клинический случай» ХМГМА: тренажёр для подготовки"
+  },
+  "222c60cc": {
+   "to": "info@mel.fm",
+   "status": "sent",
+   "sent_at": "2026-11-05T06:51:37.488Z",
+   "message_id": "<cb66bb0e-93df-04b5-4d5a-d29deed607d9@gmail.com>",
+   "subject": "Для «Мела»: как студенты-медики учатся на ИИ-пациентах"
+  },
+  "42d190b1": {
+   "to": "meduniv@sgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-05T06:54:34.048Z",
+   "message_id": "<6498e751-7473-055c-0a6f-ae8412cd1106@gmail.com>",
+   "subject": "Для Объединённого совета обучающихся СГМУ: тренажёр приёма"
   }
  },
  "days": [
@@ -1269,7 +1304,8 @@
   "2026-10-29",
   "2026-10-30",
   "2026-11-02",
-  "2026-11-03"
+  "2026-11-03",
+  "2026-11-05"
  ],
- "inbox_checked_at": "2026-11-04T18:21:24.372Z"
+ "inbox_checked_at": "2026-11-05T06:21:13.863Z"
 }
