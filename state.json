@@ -919,12 +919,20 @@
   },
   "63547f46": {
    "to": "zavyalov.av@ssmu.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-27T06:51:54.479Z",
    "message_id": "<48d1c8ea-611c-3b7c-25bc-d3956636e180@gmail.com>",
    "subject": "Пироговская конференция СибГМУ: тренажёр приёма для СНО",
    "followup_at": "2026-11-05T06:37:17.428Z",
-   "followup_message_id": "<79282a2c-ea7e-46d0-be57-964eda9316be@gmail.com>"
+   "followup_message_id": "<79282a2c-ea7e-46d0-be57-964eda9316be@gmail.com>",
+   "seen": [
+    "<7fa1e60dde3043d3a0a2bf379313b488@ssmu.ru>"
+   ],
+   "last_in_msgid": "<7fa1e60dde3043d3a0a2bf379313b488@ssmu.ru>",
+   "last_in_subject": "Re: Пироговская конференция СибГМУ: тренажёр приёма для СНО",
+   "last_in_from": "zavyalov.av@ssmu.ru",
+   "last_in_at": "2026-11-05T12:21:17.302Z",
+   "reply_at": "2026-11-05T12:21:17.302Z"
   },
   "adca68ff": {
    "to": "sovet.sechenov@gmail.com",
@@ -1307,5 +1315,5 @@
   "2026-11-03",
   "2026-11-05"
  ],
- "inbox_checked_at": "2026-11-05T11:21:12.930Z"
+ "inbox_checked_at": "2026-11-05T12:21:17.367Z"
 }
