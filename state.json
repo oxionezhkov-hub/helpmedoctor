@@ -1266,7 +1266,7 @@
   },
   "a067fed3": {
    "to": "da.isaeva@hmgma.ru",
-   "status": "sent",
+   "status": "bounced",
    "sent_at": "2026-11-05T06:48:50.085Z",
    "message_id": "<f2364ee4-d5c1-3b3a-8b78-ff3e3e8d4085@gmail.com>",
    "subject": "Конкурс «Клинический случай» ХМГМА: тренажёр для подготовки"
@@ -1307,5 +1307,5 @@
   "2026-11-03",
   "2026-11-05"
  ],
- "inbox_checked_at": "2026-11-05T06:21:13.863Z"
+ "inbox_checked_at": "2026-11-05T07:21:17.016Z"
 }
