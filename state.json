@@ -18,6 +18,13 @@
    "followup_at": "2026-10-23T06:21:18.094Z",
    "followup_message_id": "<4240bf16-0fd9-b003-4534-ffe8a76df6bc@gmail.com>"
   },
+  "67135310": {
+   "to": "rectorat@bashgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-06T06:54:59.108Z",
+   "message_id": "<cccf5c6e-7e6b-ee55-d264-2461e130fc7b@gmail.com>",
+   "subject": "Для МНО БГМУ: тренажёр приёма к итоговой конференции 2027"
+  },
   "4a418bfd": {
    "to": "lanskaya_ev@almazovcentre.ru",
    "status": "followed",
@@ -954,17 +961,21 @@
   },
   "2a7fccaa": {
    "to": "avicennangmu@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-28T06:26:38.960Z",
    "message_id": "<ab53a093-2e18-d314-7e87-f7b3df919c1c@gmail.com>",
-   "subject": "К следующей «Авиценне»: тренажёр приёма пациента для участников"
+   "subject": "К следующей «Авиценне»: тренажёр приёма пациента для участников",
+   "followup_at": "2026-11-06T06:21:16.342Z",
+   "followup_message_id": "<b61e5feb-ad38-57a4-bc0f-c482ff95824d@gmail.com>"
   },
   "ad00d737": {
    "to": "elina.kapitonova@szgmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-28T06:30:47.141Z",
    "message_id": "<1d57c51a-f194-cbd4-135e-51c254da684b@gmail.com>",
-   "subject": "Для СНО СЗГМУ им. Мечникова: тренажёр приёма пациента"
+   "subject": "Для СНО СЗГМУ им. Мечникова: тренажёр приёма пациента",
+   "followup_at": "2026-11-06T06:25:29.353Z",
+   "followup_message_id": "<6883ea99-3914-d9f2-9f8c-d3ff9bce69d5@gmail.com>"
   },
   "5e96ab7a": {
    "to": "info@medsolutions.ru",
@@ -983,24 +994,30 @@
   },
   "a2a83cb9": {
    "to": "a@antonyukk.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-28T06:39:49.332Z",
    "message_id": "<ce1f2a79-dfc9-d285-8f28-992bbab4aecf@gmail.com>",
-   "subject": "Для Совета студентов медвузов Минздрава: тренажёр приёма пациента"
+   "subject": "Для Совета студентов медвузов Минздрава: тренажёр приёма пациента",
+   "followup_at": "2026-11-06T06:29:28.065Z",
+   "followup_message_id": "<e4cbc6ae-35ff-4d9a-7d9c-845c0b3e3bb9@gmail.com>"
   },
   "e5582edb": {
    "to": "pr@umschool.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-28T06:43:38.790Z",
    "message_id": "<0e18aac2-0047-9983-1bde-32ffb6f1f39c@gmail.com>",
-   "subject": "Умскул и будущие медики: спецпроект «Попробуй себя врачом»"
+   "subject": "Умскул и будущие медики: спецпроект «Попробуй себя врачом»",
+   "followup_at": "2026-11-06T06:34:05.593Z",
+   "followup_message_id": "<fcb4697b-5dfa-fa90-c005-741541fc19ea@gmail.com>"
   },
   "91cea622": {
    "to": "elsatrippel@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-28T06:46:16.959Z",
    "message_id": "<70c13df6-68c5-498f-f293-c04e601f4863@gmail.com>",
-   "subject": "Для тьюторов АСЦ Сеченовского: тренажёр к станциям ОСКЭ"
+   "subject": "Для тьюторов АСЦ Сеченовского: тренажёр к станциям ОСКЭ",
+   "followup_at": "2026-11-06T06:38:55.860Z",
+   "followup_message_id": "<c8cf6ee5-c1f9-e3af-bd03-d914915ffcc7@gmail.com>"
   },
   "4b231137": {
    "to": "info@fasie.ru",
@@ -1019,17 +1036,21 @@
   },
   "2c6969de": {
    "to": "fmasc@vrngmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-28T06:55:37.136Z",
    "message_id": "<5590a51c-0b29-0577-74f4-f9360745e9e5@gmail.com>",
-   "subject": "Для ФМАСЦ ВГМУ им. Бурденко: тренировка сбора анамнеза"
+   "subject": "Для ФМАСЦ ВГМУ им. Бурденко: тренировка сбора анамнеза",
+   "followup_at": "2026-11-06T06:44:25.678Z",
+   "followup_message_id": "<175a724b-6a58-415b-f4bc-d2467cf75db9@gmail.com>"
   },
   "a1acd737": {
    "to": "info@rosmedlib.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-28T07:00:59.569Z",
    "message_id": "<6712d1c1-02d6-9277-b7fd-a3dad936e07e@gmail.com>",
-   "subject": "«Консультант студента» и разборы клинических случаев: партнёрство"
+   "subject": "«Консультант студента» и разборы клинических случаев: партнёрство",
+   "followup_at": "2026-11-06T06:49:31.125Z",
+   "followup_message_id": "<03da8906-2f88-1503-d09c-3c2d8737c0d4@gmail.com>"
   },
   "7cb6e281": {
    "to": "ciot@list.ru",
@@ -1292,6 +1313,20 @@
    "sent_at": "2026-11-05T06:54:34.048Z",
    "message_id": "<6498e751-7473-055c-0a6f-ae8412cd1106@gmail.com>",
    "subject": "Для Объединённого совета обучающихся СГМУ: тренажёр приёма"
+  },
+  "a33e93ce": {
+   "to": "info@scientificrussia.ru",
+   "status": "sent",
+   "sent_at": "2026-11-06T06:59:00.713Z",
+   "message_id": "<80745c71-c4c5-a496-d95a-01407b803127@gmail.com>",
+   "subject": "Для «Научной России»: студенческая разработка ИИ-пациента"
+  },
+  "9908b214": {
+   "to": "kuznetsovia1@ssmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-06T07:01:56.138Z",
+   "message_id": "<5bbedf43-5061-4cf7-7a39-047c1096e32b@gmail.com>",
+   "subject": "Для студентов СибГМУ: тренажёр приёма от студентов-медиков"
   }
  },
  "days": [
@@ -1313,7 +1348,8 @@
   "2026-10-30",
   "2026-11-02",
   "2026-11-03",
-  "2026-11-05"
+  "2026-11-05",
+  "2026-11-06"
  ],
- "inbox_checked_at": "2026-11-05T18:41:54.461Z"
+ "inbox_checked_at": "2026-11-06T06:21:14.719Z"
 }
