@@ -961,12 +961,20 @@
   },
   "2a7fccaa": {
    "to": "avicennangmu@mail.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-28T06:26:38.960Z",
    "message_id": "<ab53a093-2e18-d314-7e87-f7b3df919c1c@gmail.com>",
    "subject": "К следующей «Авиценне»: тренажёр приёма пациента для участников",
    "followup_at": "2026-11-06T06:21:16.342Z",
-   "followup_message_id": "<b61e5feb-ad38-57a4-bc0f-c482ff95824d@gmail.com>"
+   "followup_message_id": "<b61e5feb-ad38-57a4-bc0f-c482ff95824d@gmail.com>",
+   "seen": [
+    "<1793955740.122615152@f462.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1793955740.122615152@f462.i.mail.ru>",
+   "last_in_subject": "Re: К следующей «Авиценне»: тренажёр приёма пациента для участников",
+   "last_in_from": "avicennangmu@mail.ru",
+   "last_in_at": "2026-11-06T09:21:13.324Z",
+   "reply_at": "2026-11-06T09:21:13.324Z"
   },
   "ad00d737": {
    "to": "elina.kapitonova@szgmu.ru",
@@ -1351,5 +1359,5 @@
   "2026-11-05",
   "2026-11-06"
  ],
- "inbox_checked_at": "2026-11-06T08:21:14.434Z"
+ "inbox_checked_at": "2026-11-06T09:21:13.829Z"
 }
