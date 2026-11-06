@@ -1053,12 +1053,20 @@
   },
   "a1acd737": {
    "to": "info@rosmedlib.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-28T07:00:59.569Z",
    "message_id": "<6712d1c1-02d6-9277-b7fd-a3dad936e07e@gmail.com>",
    "subject": "«Консультант студента» и разборы клинических случаев: партнёрство",
    "followup_at": "2026-11-06T06:49:31.125Z",
-   "followup_message_id": "<03da8906-2f88-1503-d09c-3c2d8737c0d4@gmail.com>"
+   "followup_message_id": "<03da8906-2f88-1503-d09c-3c2d8737c0d4@gmail.com>",
+   "seen": [
+    "<0bde01dd6dee$b1085420$1318fc60$@upzdrav.ru>"
+   ],
+   "last_in_msgid": "<0bde01dd6dee$b1085420$1318fc60$@upzdrav.ru>",
+   "last_in_subject": "RE: «Консультант студента» и разборы клинических случаев: партнёрство",
+   "last_in_from": "novikova_n@upzdrav.ru",
+   "last_in_at": "2026-11-06T13:21:16.523Z",
+   "reply_at": "2026-11-06T13:21:16.523Z"
   },
   "7cb6e281": {
    "to": "ciot@list.ru",
@@ -1359,5 +1367,5 @@
   "2026-11-05",
   "2026-11-06"
  ],
- "inbox_checked_at": "2026-11-06T12:21:13.120Z"
+ "inbox_checked_at": "2026-11-06T13:21:16.694Z"
 }
