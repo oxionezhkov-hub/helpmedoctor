@@ -1160,38 +1160,48 @@
   },
   "7be58531": {
    "to": "sitnikova.ey@ssmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-30T06:42:20.805Z",
    "message_id": "<4a4f0783-d8d7-ffb0-2f6b-11d8c0b472da@gmail.com>",
-   "subject": "Подготовка к олимпиаде по онкологии: тренировка на ИИ-пациентах"
+   "subject": "Подготовка к олимпиаде по онкологии: тренировка на ИИ-пациентах",
+   "followup_at": "2026-11-09T21:24:54.706Z",
+   "followup_message_id": "<9ec6dea7-fc6f-4242-2694-b7f243dd4723@gmail.com>"
   },
   "efd9c2ae": {
    "to": "skorenev@kantiana.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-30T06:46:28.425Z",
    "message_id": "<f435271b-8091-cd55-707a-0696d264617d@gmail.com>",
-   "subject": "Виртуальные пациенты для студентов Высшей школы медицины БФУ"
+   "subject": "Виртуальные пациенты для студентов Высшей школы медицины БФУ",
+   "followup_at": "2026-11-09T21:28:43.625Z",
+   "followup_message_id": "<349c7dee-2320-13ed-91e9-dffd156381a9@gmail.com>"
   },
   "27eea34f": {
    "to": "daria@smartranking.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-30T06:49:04.667Z",
    "message_id": "<59d2c856-9b02-beac-1098-c7fcf2b24250@gmail.com>",
-   "subject": "Для Smart Ranking: нишевый EdTech-проект для студентов-медиков"
+   "subject": "Для Smart Ranking: нишевый EdTech-проект для студентов-медиков",
+   "followup_at": "2026-11-09T21:33:51.147Z",
+   "followup_message_id": "<f1de49f9-d59c-774b-0f51-413f864fc5bd@gmail.com>"
   },
   "aa09dfd9": {
    "to": "cav75@list.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-30T06:52:54.602Z",
    "message_id": "<b235061d-2c29-c035-6db2-89cb5843dc49@gmail.com>",
-   "subject": "Для МАСЦ ОмГМУ: виртуальный пациент для студентов"
+   "subject": "Для МАСЦ ОмГМУ: виртуальный пациент для студентов",
+   "followup_at": "2026-11-09T21:38:49.578Z",
+   "followup_message_id": "<229e4d0b-b4dd-7a97-af4a-2768a52483bb@gmail.com>"
   },
   "5b6b8969": {
    "to": "info@euat.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-30T06:56:52.338Z",
    "message_id": "<a65252e6-4065-a6c8-b887-c773a0aa8923@gmail.com>",
-   "subject": "Евразийская Ассоциация Терапевтов: партнёрство для молодых врачей"
+   "subject": "Евразийская Ассоциация Терапевтов: партнёрство для молодых врачей",
+   "followup_at": "2026-11-09T21:42:31.767Z",
+   "followup_message_id": "<8b90b72c-2338-1ad9-9961-06d7c21bd0ec@gmail.com>"
   },
   "c78b2fe2": {
    "to": "uglov@ysmu.ru",
@@ -1404,6 +1414,41 @@
    "sent_at": "2026-11-09T06:58:38.869Z",
    "message_id": "<cd804bdd-838e-ff2f-5d94-96d3dbccad79@gmail.com>",
    "subject": "К следующей «Педиятрике»: тренажёр приёма для участников олимпиады"
+  },
+  "64ff546c": {
+   "to": "conf.shm.dvfu@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-11-09T21:46:34.019Z",
+   "message_id": "<d7b1243b-86f9-de3f-e7c0-c2bcbf4d933c@gmail.com>",
+   "subject": "«Медицина будущего» 2027: ИИ-пациент для участников"
+  },
+  "5abc20b0": {
+   "to": "lysenko_iakov@yahoo.com",
+   "status": "sent",
+   "sent_at": "2026-11-09T21:49:10.200Z",
+   "message_id": "<bb999fc9-7563-fefe-ced6-07bdbfaafe70@gmail.com>",
+   "subject": "Для «Ординаторской»: студенты и их ИИ-пациент"
+  },
+  "ed32ce86": {
+   "to": "lazarevsd@tyumsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-09T21:52:26.328Z",
+   "message_id": "<ef668cd4-5567-1336-1996-3b12d3cc3862@gmail.com>",
+   "subject": "Для симцентра ТюмГМУ: виртуальный пациент для сбора анамнеза"
+  },
+  "96e9372a": {
+   "to": "med@lanbook.ru",
+   "status": "sent",
+   "sent_at": "2026-11-09T21:57:38.622Z",
+   "message_id": "<f628f362-b800-2a8d-460d-835d5d2b3cd6@gmail.com>",
+   "subject": "Издательство «Лань»: подборки литературы к клиническим случаям"
+  },
+  "a84e239e": {
+   "to": "sno@vsmu.by",
+   "status": "sent",
+   "sent_at": "2026-11-09T22:02:47.573Z",
+   "message_id": "<f10fc4f6-7118-29eb-c79f-0b575da308b2@gmail.com>",
+   "subject": "Для Совета СНО ВГМУ: тренажёр приёма к следующей конференции"
   }
  },
  "days": [
@@ -1427,7 +1472,8 @@
   "2026-11-03",
   "2026-11-05",
   "2026-11-06",
-  "2026-11-09"
+  "2026-11-09",
+  "2026-11-10"
  ],
- "inbox_checked_at": "2026-11-09T19:09:37.157Z"
+ "inbox_checked_at": "2026-11-09T21:24:53.327Z"
 }
