@@ -1070,12 +1070,20 @@
   },
   "7cb6e281": {
    "to": "ciot@list.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-29T06:28:51.712Z",
    "message_id": "<3efe3ec9-82eb-a69a-61fa-35e3f0212121@gmail.com>",
    "subject": "Для ЦИОТ ПСПбГМУ: виртуальный пациент для тренировки анамнеза",
    "followup_at": "2026-11-09T06:21:16.170Z",
-   "followup_message_id": "<ba54f14a-1a95-c764-e0bb-610a56e243f0@gmail.com>"
+   "followup_message_id": "<ba54f14a-1a95-c764-e0bb-610a56e243f0@gmail.com>",
+   "seen": [
+    "<1794206478.219610333@f481.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1794206478.219610333@f481.i.mail.ru>",
+   "last_in_subject": "Re: Для ЦИОТ ПСПбГМУ: виртуальный пациент для тренировки анамнеза",
+   "last_in_from": "ciot@list.ru",
+   "last_in_at": "2026-11-09T07:21:12.693Z",
+   "reply_at": "2026-11-09T07:21:12.693Z"
   },
   "3f15c355": {
    "to": "hochavamr@ksma.ru",
@@ -1413,5 +1421,5 @@
   "2026-11-06",
   "2026-11-09"
  ],
- "inbox_checked_at": "2026-11-09T06:21:14.882Z"
+ "inbox_checked_at": "2026-11-09T07:21:12.776Z"
 }
