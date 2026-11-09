@@ -21,10 +21,12 @@ export const MAX_ACTIVE_PATIENTS = 6;
 export const HINTS_PER_PATIENT = 3;
 export const HINT_RATING_PENALTY = 0.2; // минус к оценке приёма
 export const HINT_XP_CUT = 0.15;        // доля опыта за приём
-export const FREE_DAILY_LIMIT = 2; // пациентов в день бесплатно
+export const FREE_DAILY_LIMIT = 1; // пациентов в день бесплатно (было 2: в 80% активных дней лимит не мешал, платить было незачем)
 // Бонус: за приём с оценкой от BONUS_RATING — ещё один бесплатный пациент сегодня (не больше BONUS_MAX_DAY в день)
 export const BONUS_RATING = 4.5;
-export const BONUS_MAX_DAY = 3;
+export const BONUS_MAX_DAY = 1;
+// Премиум-функции бесплатно раз в день: тест по ошибкам и разбор по КР — приманка, а не стена
+export const FREE_PERKS_PER_DAY = { quiz: 1, guide: 1 };
 
 // Сколько последних реплик отдаём ИИ целиком; всё что старше — сжимается в резюме
 export const HISTORY_WINDOW = 8;

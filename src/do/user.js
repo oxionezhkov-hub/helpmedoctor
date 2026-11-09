@@ -7,7 +7,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
-  BONUS_MAX_DAY, BONUS_RATING, DIFFICULTIES, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
+  BONUS_MAX_DAY, BONUS_RATING, DIFFICULTIES, FREE_DAILY_LIMIT, DOCTOR_LEVELS, HISTORY_SUMMARIZE_AT, HISTORY_WINDOW,
   HINTS_PER_PATIENT, LEVEL_RANKS, MAX_ACTIVE_PATIENTS, PACKS, PHYSICAL_EXAMPLES, PLANS, SPECIALIZATIONS, TEST_TYPES, TRIAL, planPrice, productLabel, renewPrice, specialtyOf,
 } from "../config.js";
 import { SYSTEM_TEXTS } from "../lib/analytics.js";
@@ -1063,7 +1063,7 @@ export class UserDO extends DurableObject {
       bonus_patient: bonusPatient,
     };
     // Весь разбор приёма открыт всем; в премиуме — разбор по клиническим рекомендациям (по кнопке) и тест
-    Object.assign(result, { recommendation: ev.recommendation, premium: G.isPremium(prof), trial_available: !prof.trial_used });
+    Object.assign(result, { recommendation: ev.recommendation, premium: G.isPremium(prof), trial_available: !prof.trial_used, free_quiz: G.freePerkLeft(prof, "quiz") > 0 });
     if (fresh.battle?.id) result.battle_id = fresh.battle.id;
     this.broadcast("evaluation", result);
     // Приём в битве «Кто круче?» — результат в HubDO: когда закончат оба, он определит победителя и сообщит обоим
@@ -1114,6 +1114,13 @@ export class UserDO extends DurableObject {
     if (!rec || rec.evaluating) throw new UserError("Разбор приёма ещё готовится — подождите минуту", "guide_wait");
     if (rec.guide) return { guide: rec.guide };
     const prof = await this.profile();
+    // Раз в день разбор по КР — бесплатно: пациент становится «подарочным», разбор открыт целиком
+    if (!G.isPremium(prof) && !pat.gift_kr && G.useFreePerk(prof, "guide")) {
+      pat.gift_kr = true;
+      await this.ctx.storage.put({ [patKey(patId)]: pat, [PROFILE]: prof });
+      this.broadcast("profile");
+      await this.track("free_perk", { what: "guide", patient: patId });
+    }
     if (!G.isPremium(prof) && !pat.gift_kr) {
       await this.track("paywall", { what: "guide" });
       throw new UserError(prof.trial_used
@@ -1312,6 +1319,16 @@ export class UserDO extends DurableObject {
   async quiz(patId) {
     const q = await this.ctx.storage.get(quizKey(patId));
     if (!q) throw new UserError("Тест ещё готовится — загляните через минуту", "quiz_pending");
+    if (!q.gift) {
+      // Раз в день тест по ошибкам — бесплатно: открытый тест остаётся доступным до конца
+      const prof = await this.profile();
+      if (!G.isPremium(prof) && G.useFreePerk(prof, "quiz")) {
+        q.gift = true;
+        await this.ctx.storage.put({ [quizKey(patId)]: q, [PROFILE]: prof });
+        this.broadcast("profile");
+        await this.track("free_perk", { what: "quiz", patient: patId });
+      }
+    }
     if (!q.gift) await this.requirePremium("quiz");
     if (q.status !== "done") await this.track("quiz_open", { patient: patId, answered: q.answers.length });
     return publicQuiz(q);
@@ -1490,8 +1507,9 @@ export class UserDO extends DurableObject {
     }
     if (PACKS[key]?.preorder && prof.community_preorder) throw new UserError("Предзаказ уже оформлен — напишем, как только откроем", "preordered");
     if (prof.sub_until === -1 && !PACKS[key]) throw new UserError("У вас бессрочный доступ — докупать ничего не нужно", "forever");
-    if (PLANS[key]?.student && prof.student?.status !== "approved") {
-      throw new UserError("Студенческий тариф — после проверки студенческого билета. Загрузите фото в «Тарифах».", "student");
+    // Студенческий можно оплатить сразу после загрузки билета, не дожидаясь проверки
+    if (PLANS[key]?.student && !["approved", "pending"].includes(prof.student?.status)) {
+      throw new UserError("Для студенческого тарифа загрузите фото студенческого билета в «Тарифах» — оплатить можно сразу после загрузки.", "student");
     }
     return { price: planPrice(key) };
   }
@@ -1520,11 +1538,17 @@ export class UserDO extends DurableObject {
     if (prof.student?.status !== "pending") return { status: prof.student?.status || "none", changed: false };
     prof.student = { status: ok ? "approved" : "declined", at: Date.now(), by: String(admin) };
     const price = fmtRub(PLANS.student.price);
+    // Оплатил студенческий до проверки, а билет не подтвердили: оплаченный месяц остаётся, автопродление по студенческой цене выключаем
+    const paidAhead = !ok && prof.autopay?.status === "active" && prof.autopay.plan === "student";
     // Окно в приложении: покажется сразу, а если приложение закрыто — при следующем открытии
     prof.notice = ok
       ? { id: `student-${Date.now()}`, kind: "ok", title: "Студенческий подтверждён 🎓", text: `Вам доступен студенческий премиум — ${price} ₽ в месяц.`, button: { text: "Оформить", go: "/plans" } }
-      : { id: `student-${Date.now()}`, kind: "warn", title: "Студенческий не подтвердили", text: "По фото не получилось проверить билет. Загрузите другое фото — чтобы были видны ФИО, вуз и срок действия.", button: { text: "Загрузить снова", go: "/plans" } };
+      : { id: `student-${Date.now()}`, kind: "warn", title: "Студенческий не подтвердили", text: `По фото не получилось проверить билет.${paidAhead ? " Оплаченный месяц остаётся, а автопродление по студенческой цене мы выключили." : ""} Загрузите другое фото — чтобы были видны ФИО, вуз и срок действия.`, button: { text: "Загрузить снова", go: "/plans" } };
     await this.ctx.storage.put(PROFILE, prof);
+    if (paidAhead) {
+      await this.hub().autopayCancel(prof.uid, "student_declined").catch((e) => console.error("student autopay", e));
+      await this.autopayEnded("student_declined");
+    }
     this.broadcast("profile", { notice: prof.notice });
     await this.track(ok ? "student_ok" : "student_no", { admin }, { source: "admin" });
     await this.emailUser(ok ? "Студенческий подтверждён — премиум за 100 ₽ в месяц" : "Студенческий не подтвердили", {
@@ -1532,7 +1556,7 @@ export class UserDO extends DurableObject {
     });
     const text = ok
       ? `🎓 <b>Статус студента подтверждён!</b>\n\nВам доступен студенческий премиум — ${price} ₽ в месяц. Оформить можно в «Тарифах».`
-      : "🎓 Не получилось подтвердить студенческий по фото. Попробуйте загрузить другое фото — чтобы были видны ФИО, вуз и срок действия.";
+      : `🎓 Не получилось подтвердить студенческий по фото.${paidAhead ? " Оплаченный месяц остаётся, автопродление по студенческой цене выключили." : ""} Попробуйте загрузить другое фото — чтобы были видны ФИО, вуз и срок действия.`;
     if (/^\d+$/.test(String(prof.uid))) {
       await tg(this.env, { kind: "system" }).send(prof.uid, text, [[{ text: "💎 Тарифы", web_app: { url: R.appUrl(this.env, "/plans") } }]]).catch(() => {});
     }
@@ -2396,6 +2420,9 @@ export function publicProfile(prof) {
     bonus_today: G.bonusToday(prof),
     bonus_rating: BONUS_RATING,
     bonus_max: BONUS_MAX_DAY,
+    free_base: FREE_DAILY_LIMIT,
+    free_quiz_left: G.freePerkLeft(prof, "quiz"),
+    free_guide_left: G.freePerkLeft(prof, "guide"),
     can_accept: G.canAcceptPatient(prof),
     generating_patient: !!(prof.generating_patient && Date.now() - prof.generating_patient < 120000),
     generating_since: prof.generating_patient && Date.now() - prof.generating_patient < 120000 ? prof.generating_patient : null,
