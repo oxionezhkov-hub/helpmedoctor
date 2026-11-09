@@ -1273,10 +1273,18 @@
   },
   "2144fad5": {
    "to": "info@doctorpiter.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-11-03T06:29:59.333Z",
    "message_id": "<d606b6af-b9db-21e8-c478-3d71aa6ac490@gmail.com>",
-   "subject": "Для «Доктора Питера»: как студенты-медики учатся на ИИ-пациентах"
+   "subject": "Для «Доктора Питера»: как студенты-медики учатся на ИИ-пациентах",
+   "seen": [
+    "<1794221106.886914342@f472.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1794221106.886914342@f472.i.mail.ru>",
+   "last_in_subject": "\"Доктора Питер\"",
+   "last_in_from": "monika_34@mail.ru",
+   "last_in_at": "2026-11-09T11:21:15.615Z",
+   "reply_at": "2026-11-09T11:21:15.615Z"
   },
   "6bb8d799": {
    "to": "sofyatoinova@ya.ru",
@@ -1421,5 +1429,5 @@
   "2026-11-06",
   "2026-11-09"
  ],
- "inbox_checked_at": "2026-11-09T10:21:16.706Z"
+ "inbox_checked_at": "2026-11-09T11:21:15.730Z"
 }
