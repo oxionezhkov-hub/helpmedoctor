@@ -1070,10 +1070,12 @@
   },
   "7cb6e281": {
    "to": "ciot@list.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-29T06:28:51.712Z",
    "message_id": "<3efe3ec9-82eb-a69a-61fa-35e3f0212121@gmail.com>",
-   "subject": "Для ЦИОТ ПСПбГМУ: виртуальный пациент для тренировки анамнеза"
+   "subject": "Для ЦИОТ ПСПбГМУ: виртуальный пациент для тренировки анамнеза",
+   "followup_at": "2026-11-09T06:21:16.170Z",
+   "followup_message_id": "<ba54f14a-1a95-c764-e0bb-610a56e243f0@gmail.com>"
   },
   "3f15c355": {
    "to": "hochavamr@ksma.ru",
@@ -1107,10 +1109,12 @@
   },
   "2a22281a": {
    "to": "info@medportal.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-29T06:42:01.717Z",
    "message_id": "<2ae681d1-63b5-9347-58e7-91ec30b5202e@gmail.com>",
-   "subject": "Новость для MedPortal: студенты-медики сделали ИИ-тренажёр"
+   "subject": "Новость для MedPortal: студенты-медики сделали ИИ-тренажёр",
+   "followup_at": "2026-11-09T06:26:12.113Z",
+   "followup_message_id": "<7cdf1a5d-af1f-cd2a-8818-ac3a1415985c@gmail.com>"
   },
   "7c1a669f": {
    "to": "info@clinic.msmsu.ru",
@@ -1121,24 +1125,30 @@
   },
   "5c899c63": {
    "to": "pressa@volmedic.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-29T06:49:34.630Z",
    "message_id": "<8b3b3f8f-ba6e-128b-6b85-f52a01a85677@gmail.com>",
-   "subject": "«Волонтеры-медики» и практика приёма: идея партнёрства"
+   "subject": "«Волонтеры-медики» и практика приёма: идея партнёрства",
+   "followup_at": "2026-11-09T06:30:15.681Z",
+   "followup_message_id": "<bc2beb48-5492-9f1e-0c1a-b56e5dd55dd5@gmail.com>"
   },
   "575d01c4": {
    "to": "athenium@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-29T06:52:53.502Z",
    "message_id": "<79969290-f37e-4ae9-6183-c3812527075d@gmail.com>",
-   "subject": "Athenium и будущие врачи: первый опыт приёма для выпускников"
+   "subject": "Athenium и будущие врачи: первый опыт приёма для выпускников",
+   "followup_at": "2026-11-09T06:34:16.423Z",
+   "followup_message_id": "<e8d27a7c-e8b6-1847-0b87-90e0bd3da052@gmail.com>"
   },
   "446e1b39": {
    "to": "medscopefefu@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-10-29T06:57:37.215Z",
    "message_id": "<3c530d13-ce8d-322d-c719-807039fff0b2@gmail.com>",
-   "subject": "Финалистам «МедСкопа»: тренировка диагностики на ИИ-пациентах"
+   "subject": "Финалистам «МедСкопа»: тренировка диагностики на ИИ-пациентах",
+   "followup_at": "2026-11-09T06:38:06.313Z",
+   "followup_message_id": "<e7e9d449-3384-62b9-c562-af1659bba45b@gmail.com>"
   },
   "7be58531": {
    "to": "sitnikova.ey@ssmu.ru",
@@ -1343,6 +1353,41 @@
    "sent_at": "2026-11-06T07:01:56.138Z",
    "message_id": "<5bbedf43-5061-4cf7-7a39-047c1096e32b@gmail.com>",
    "subject": "Для студентов СибГМУ: тренажёр приёма от студентов-медиков"
+  },
+  "897ba30b": {
+   "to": "pkolegova@amtec-kazan.com",
+   "status": "sent",
+   "sent_at": "2026-11-09T06:43:10.556Z",
+   "message_id": "<c1083871-51cc-a978-40f3-6fde7261bc7c@gmail.com>",
+   "subject": "MedProfi и ИИ-пациент: расспрос до манипуляций на симуляторе"
+  },
+  "96ae8026": {
+   "to": "maria.dvoryanchikovaa@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-11-09T06:47:30.487Z",
+   "message_id": "<8b3104c0-98de-a5d3-db0c-2a50135936bc@gmail.com>",
+   "subject": "Идея выпуска: студенты-медики, которые сделали ИИ-продукт"
+  },
+  "1b706492": {
+   "to": "studmedunion411@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-11-09T06:50:31.527Z",
+   "message_id": "<10c6065d-a0e2-48a9-43a6-6984cb799d41@gmail.com>",
+   "subject": "Для профкома Казанского ГМУ: тренажёр приёма для студентов"
+  },
+  "0e85f7f2": {
+   "to": "academofanatomy@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-11-09T06:53:21.077Z",
+   "message_id": "<95823b11-1b08-69cb-6a3d-f3eb06155631@gmail.com>",
+   "subject": "Академия Anatomy Education: партнёрство для студентов-медиков"
+  },
+  "948815c3": {
+   "to": "s.v.plahotnikova@samsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-09T06:58:38.869Z",
+   "message_id": "<cd804bdd-838e-ff2f-5d94-96d3dbccad79@gmail.com>",
+   "subject": "К следующей «Педиятрике»: тренажёр приёма для участников олимпиады"
   }
  },
  "days": [
@@ -1365,7 +1410,8 @@
   "2026-11-02",
   "2026-11-03",
   "2026-11-05",
-  "2026-11-06"
+  "2026-11-06",
+  "2026-11-09"
  ],
- "inbox_checked_at": "2026-11-06T18:21:17.922Z"
+ "inbox_checked_at": "2026-11-09T06:21:14.882Z"
 }
