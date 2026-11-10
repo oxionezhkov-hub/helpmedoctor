@@ -44,6 +44,8 @@
   "triggers": { "crons": ["0 7 * * *", "0 17 * * *", "0 18 * * *", "20 6-18 * * MON-FRI"] },
 
   // Не секретные настройки. Секреты — через `wrangler secret put` (см. README)
+  // Переменные, заданные в панели Cloudflare (не в этом файле), при деплое не стираются
+  "keep_vars": true,
   "vars": {
     "PUBLIC_URL": "https://helpmedoctor.ru",
     // Мини-приложение в Telegram открываем с workers.dev: helpmedoctor.ru (прокси на VPS) не открывается с VPN,
