@@ -1693,10 +1693,12 @@ function guideBlock(c, id, gift = false) {
         ${etaBox("guide", start)}
         <p class="small muted">Как надо было распознать, обязательный минимум, препараты и дозы. Разбор появится здесь сам — пока можно обсудить приём с экспертом.</p></div>`;
     }
-    // Первый пациент нового пользователя — разбор по КР в подарок
-    const premium = S.me?.profile?.premium || gift;
+    // Первый пациент нового пользователя — разбор по КР в подарок; без премиума — один разбор в день бесплатно
+    const freeToday = !S.me?.profile?.premium && !gift && (S.me?.profile?.free_guide_left || 0) > 0;
+    const premium = S.me?.profile?.premium || gift || freeToday;
     return html`<div class="guide-cta">
-      ${gift && !S.me?.profile?.premium ? html`<span class="badge accent gift-badge">${ic("gem")} Первый пациент — разбор по КР в подарок</span>` : ""}
+      ${gift && !S.me?.profile?.premium ? html`<span class="badge accent gift-badge">${ic("gem")} Разбор по КР в подарок</span>` : ""}
+      ${freeToday ? html`<span class="badge accent gift-badge">${ic("gift")} Сегодня один разбор по КР — бесплатно</span>` : ""}
       <div class="row-c"><div class="tile accent">${ic("book")}</div><div class="grow"><b>Разбор по клиническим рекомендациям Минздрава</b><div class="small muted">Как надо было распознать, что обязательно по КР, лучшая диагностика, препараты и дозы</div></div></div>
       ${premium ? html`<button class="btn block" data-guide-req="${id}">${ic("book")}<span>Получить разбор по КР</span></button>`
         : html`<a class="btn block" href="#/plans" ${S.me?.profile?.trial_available ? html`data-checkout="trial"` : ""}>${ic("gem")}<span>${S.me?.profile?.trial_available ? "Премиум: 7 дней за 1 ₽" : "Открыть в премиуме"}</span></a>`}
@@ -2601,7 +2603,9 @@ function viewQuizzes() {
   renderShell(html`<div class="page">
     <h1>Работа над ошибками</h1>
     <p class="muted small">После каждого приёма эксперт составляет тест по вашим пробелам. +5 XP за каждый верный ответ.</p>
-    ${list.some((q) => q.locked && q.status !== "done") ? premiumCta("Тесты по вашим ошибкам — в премиуме") : ""}
+    ${list.some((q) => q.locked && q.status !== "done") ? ((S.me?.profile?.free_quiz_left || 0) > 0
+      ? html`<div class="card row-c">${ic("gift", "c-accent")}<span class="small"><b>Один тест сегодня — бесплатно.</b> Откройте любой, остальные — в премиуме.</span></div>`
+      : premiumCta("Тесты по вашим ошибкам — в премиуме. Завтра один снова бесплатно")) : ""}
     ${pending.length ? html`<div class="section-title">Ждут прохождения</div>${limited("quizzes-pending", pending, item)}` : ""}
     ${done.length ? html`<div class="section-title">Пройдены</div>${limited("quizzes-done", done, item)}` : ""}
     ${!list.length ? html`<div class="empty"><div class="tile lg">${ic("quiz")}</div>Тесты появятся после первого приёма</div>` : ""}
@@ -3970,17 +3974,18 @@ function viewPlans(fresh) {
     ${order.length ? html`<div class="section-title">${upgradeOnly ? "Перейти на год" : "Продлить премиум"}</div>
       <p class="small muted">${upgradeOnly ? `Год — около ${Math.round(Number(o.plans.year?.price || 1000) / ((o.plans.year?.days || 365) / 30))} ₽ в месяц вместо ${rub(o.plans.month?.price || 200)} ₽. Срок прибавится к текущему, а автопродление месяца выключим само.` : `Новый срок начнётся после ${dateText(p.sub_until)} — ничего не сгорит.`}</p>` : ""}` : ""}
 
+    ${!p.has_sub && p.level === "студент" ? studentCard(p, o.student, ap) : ""}
     ${p.trial_available && o.trial ? html`<div class="card trial-card stack">
       <h2>Премиум 7 дней за ${rub(o.trial.price)} ₽</h2>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div>
       <button class="btn lg block" data-plan="trial">Попробовать за ${rub(o.trial.price)} ₽</button>
       <p class="tiny muted">Через 7 дней — ${rub(o.trial.then_price)} ₽ в месяц автоматически. Отключить можно в любой момент здесь же, до конца пробного периода — бесплатно.</p>
     </div>` : !p.has_sub ? html`<div class="card stack-sm">
-      <b>Бесплатно — 2 пациента в день</b><span class="small muted">и ещё один за каждую оценку от ${dec(p.bonus_rating || 4.5)} (до ${p.bonus_max || 3} в день)</span><span class="small muted">с оценкой и выводом эксперта. В премиуме:</span>
+      <b>Бесплатно — ${p.free_base ?? 1} ${plural(p.free_base ?? 1, "пациент", "пациента", "пациентов")} в день</b><span class="small muted">и ещё один за оценку от ${dec(p.bonus_rating || 4.5)}${(p.bonus_max || 1) > 1 ? ` (до ${p.bonus_max} в день)` : ""}. Раз в день — тест по ошибкам и разбор по КР.</span><span class="small muted">В премиуме:</span>
       <div class="perks">${PREMIUM_PERKS.map(([i, t]) => html`<div class="fact">${ic(i, "c-accent")}<span>${t}</span></div>`)}</div></div>` : ""}
 
     ${order.length ? html`<div class="plans ${order.length === 1 ? "single" : ""}">${order.map(planCard)}</div>` : ""}
-    ${p.has_sub ? "" : studentCard(p, o.student, ap)}
+    ${p.has_sub || p.level === "студент" ? "" : studentCard(p, o.student, ap)}
 
     <details class="card promo-box" ${S.promoOpen ? "open" : ""}><summary class="row-c">${ic("gift", "c-accent")}<b>Есть промокод?</b></summary>
       <form class="row" id="promo-form" style="margin-top:10px;gap:8px"><input class="input grow" id="promo-code" placeholder="Введите промокод" maxlength="32" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase"><button class="btn" id="promo-go">Применить</button></form>
@@ -4023,12 +4028,10 @@ function studentCard(p, st, ap) {
   if (!st || p.sub_until === -1) return "";
   const status = p.student?.status;
   const upload = (text) => html`<label class="btn block sm ghost file-btn">${ic("camera")}<span>${text}</span><input type="file" accept="image/*" id="stu-file" hidden></label>`;
-  const body = status === "approved"
-    ? html`<span class="small muted">Статус студента подтверждён.</span>
+  const body = status === "approved" || status === "pending"
+    ? html`<span class="small muted">${status === "approved" ? "Статус студента подтверждён." : "Студенческий получили — оплатить можно уже сейчас, проверим в течение дня."}</span>
       <button class="btn block sm" data-plan="student" ${ap?.status === "active" ? "disabled" : ""}>${ap?.status === "active" ? "Подписка уже оформлена" : `Оплатить ${rub(st.price)} ₽`}</button>`
-    : status === "pending"
-      ? html`<span class="small muted">Студенческий на проверке — обычно отвечаем в течение дня. Напишем в Telegram и здесь.</span>`
-      : html`<span class="small muted">${status === "declined" ? "Не получилось подтвердить по прошлому фото — загрузите другое. " : ""}Загрузите фото студенческого билета: должны быть видны ФИО, вуз и срок действия. Фото видят только админы и нигде не хранят.</span>
+    : html`<span class="small muted">${status === "declined" ? "Не получилось подтвердить по прошлому фото — загрузите другое. " : ""}Загрузите фото студенческого билета — и сразу оплачивайте, проверим потом. Должны быть видны ФИО, вуз и срок действия. Фото видят только админы и нигде не хранят.</span>
         ${upload(status === "declined" ? "Загрузить другое фото" : "Загрузить студенческий")}`;
   return html`<div class="card stack-sm">
     <b class="row-c">${ic("book", "c-accent")}Студентам — ${rub(st.price)} ₽ в месяц</b>

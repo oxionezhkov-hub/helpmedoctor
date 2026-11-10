@@ -196,11 +196,11 @@ const giftGuide = await waitFor(async () => (await api(webToken, "GET", `/patien
 assert.ok(!giftGuide.locked && giftGuide.treatment.length && giftGuide.treatment[0].dose, "подарочный разбор — полный, с дозами");
 step("разбор по КР: по кнопке; у первого пациента нового пользователя — в подарок без премиума");
 
-// Лимит бесплатного тарифа: 2 в день (+1 за оценку от 4,5) — сам запрет проверяем ниже на пользователе 902
+// Лимит бесплатного тарифа: 1 в день (+1 за оценку от 4,5) — сам запрет проверяем ниже на пользователе 902
 me = (await api(webToken, "GET", "/me")).data;
-assert.equal(me.profile.free_limit, 2 + me.profile.bonus_today, "2 бесплатных пациента в день + бонус за оценки");
+assert.equal(me.profile.free_limit, 1 + me.profile.bonus_today, "1 бесплатный пациент в день + бонус за оценки");
 assert.equal(me.profile.free_left, me.profile.free_limit - 1);
-step("лимит: 2 бесплатных пациента в день, бонус за высокую оценку виден в профиле");
+step("лимит: 1 бесплатный пациент в день, бонус за высокую оценку виден в профиле");
 
 // ---------------------------------------------------------------- премиум: закрытые функции, пробный период за 1 ₽
 assert.ok(JSON.stringify(evalMsg.reply_markup).includes(`qz_${patId}`), "первый пациент: тест в подарок — кнопка теста в боте");
@@ -498,10 +498,7 @@ const t2 = await login(P2);
 await api(t2, "PATCH", "/profile", { level: "student", profession: "Терапевт", specializations: ["гастроэнтерология"], onboarding_done: true });
 await api(t2, "POST", "/patients/new");
 await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 1, "p2 first patient");
-assert.equal((await api(t2, "GET", "/me")).data.profile.can_accept, true, "второй бесплатный пациент за день");
-await api(t2, "POST", "/patients/new");
-await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 2, "p2 second free patient");
-assert.equal((await api(t2, "GET", "/me")).data.profile.can_accept, false);
+assert.equal((await api(t2, "GET", "/me")).data.profile.can_accept, false, "второй пациент за день — уже сверх бесплатного лимита");
 r = await api(t2, "POST", "/patients/new");
 assert.equal(r.status, 409);
 assert.equal(r.data.code, "limit");
@@ -515,7 +512,7 @@ assert.equal(p2.patient_credits, 3);
 assert.equal(p2.can_accept, true);
 assert.equal(p2.premium, false, "покупка пациентов не даёт премиум");
 await api(t2, "POST", "/patients/new");
-await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 3, "p2 third patient (credit)");
+await waitFor(async () => (await api(t2, "GET", "/me")).data.patients.length === 2, "p2 second patient (credit)");
 assert.equal((await api(t2, "GET", "/me")).data.profile.patient_credits, 2);
 r = await api(t2, "POST", "/pay", { plan: "freeze", consent: true });
 await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: r.data.link.split("/").pop() }) });

@@ -1,6 +1,6 @@
 // Игровая механика: уровни, опыт, стрики, задания дня, лимиты
 import {
-  BONUS_MAX_DAY, BONUS_RATING, DAILY_TASKS, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, HINT_RATING_PENALTY, HINT_XP_CUT, LEVEL_RANKS, MAX_LEVEL, SPECIALIZATIONS,
+  BONUS_MAX_DAY, BONUS_RATING, DAILY_TASKS, FREE_PERKS_PER_DAY, DIFFICULTIES, DOCTOR_LEVELS, FREE_DAILY_LIMIT, HINT_RATING_PENALTY, HINT_XP_CUT, LEVEL_RANKS, MAX_LEVEL, SPECIALIZATIONS,
 } from "../config.js";
 import { mskDate, mskMidnight, daysBetween, pick } from "./util.js";
 
@@ -144,6 +144,22 @@ export function grantRatingBonus(prof, rating, now = Date.now()) {
   const n = bonusToday(prof, now);
   if (n >= BONUS_MAX_DAY) return false;
   prof.bonus_patients = { date: mskDate(now), n: n + 1 };
+  return true;
+}
+
+/** Сколько раз сегодня ещё можно бесплатно открыть премиум-функцию (quiz — тест по ошибкам, guide — разбор по КР) */
+export function freePerkLeft(prof, what, now = Date.now()) {
+  if (hasActiveSub(prof, now)) return 0;
+  const used = prof.free_perks?.date === mskDate(now) ? prof.free_perks[what] || 0 : 0;
+  return Math.max(0, (FREE_PERKS_PER_DAY[what] || 0) - used);
+}
+
+/** Тратит бесплатное открытие на сегодня. true — если было что тратить */
+export function useFreePerk(prof, what, now = Date.now()) {
+  if (freePerkLeft(prof, what, now) <= 0) return false;
+  const today = mskDate(now);
+  const cur = prof.free_perks?.date === today ? prof.free_perks : { date: today };
+  prof.free_perks = { ...cur, [what]: (cur[what] || 0) + 1 };
   return true;
 }
 

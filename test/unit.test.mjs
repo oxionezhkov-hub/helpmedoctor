@@ -43,25 +43,34 @@ test("стрик по московским дням", () => {
 
 test("лимит бесплатных пациентов и подписка", () => {
   const p = G.newProfile("1");
-  assert.equal(G.canAcceptPatient(p), true);
+  assert.equal(G.canAcceptPatient(p), true, "бесплатно 1 пациент в день");
   p.daily_patients = [Date.now()];
-  assert.equal(G.canAcceptPatient(p), true, "бесплатно 2 пациента в день");
-  p.daily_patients = [Date.now(), Date.now()];
   assert.equal(G.canAcceptPatient(p), false);
-  // Оценка от 4,5 — ещё один пациент сегодня, не больше трёх бонусов в день
+  // Оценка от 4,5 — ещё один пациент сегодня, не больше одного бонуса в день
   assert.equal(G.grantRatingBonus(p, 4.4), false);
   assert.equal(G.grantRatingBonus(p, 4.5), true);
   assert.equal(G.canAcceptPatient(p), true);
-  assert.equal(G.freeLimitToday(p), 3);
-  G.grantRatingBonus(p, 5); G.grantRatingBonus(p, 5);
+  assert.equal(G.freeLimitToday(p), 2);
   assert.equal(G.grantRatingBonus(p, 5), false);
-  assert.equal(G.bonusToday(p), 3);
+  assert.equal(G.bonusToday(p), 1);
   p.bonus_patients = null;
   p.sub_until = -1;
   assert.equal(G.grantRatingBonus(p, 5), false, "с премиумом бонус не нужен");
   assert.equal(G.canAcceptPatient(p), true);
   p.sub_until = Date.now() - 1;
   assert.equal(G.canAcceptPatient(p), false);
+});
+
+test("тест по ошибкам и разбор по КР — раз в день бесплатно", () => {
+  const p = G.newProfile("1");
+  assert.equal(G.freePerkLeft(p, "quiz"), 1);
+  assert.equal(G.useFreePerk(p, "quiz"), true);
+  assert.equal(G.useFreePerk(p, "quiz"), false, "второй тест за день — в премиуме");
+  assert.equal(G.freePerkLeft(p, "guide"), 1, "разбор считается отдельно");
+  assert.equal(G.useFreePerk(p, "guide"), true);
+  assert.equal(G.freePerkLeft(p, "quiz", Date.now() + 86400000), 1, "назавтра снова доступен");
+  p.sub_until = -1;
+  assert.equal(G.freePerkLeft(p, "quiz"), 0, "с премиумом бесплатные открытия не тратятся");
 });
 
 test("задание дня засчитывается", () => {
