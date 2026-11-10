@@ -1417,10 +1417,18 @@
   },
   "64ff546c": {
    "to": "conf.shm.dvfu@gmail.com",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-11-09T21:46:34.019Z",
    "message_id": "<d7b1243b-86f9-de3f-e7c0-c2bcbf4d933c@gmail.com>",
-   "subject": "«Медицина будущего» 2027: ИИ-пациент для участников"
+   "subject": "«Медицина будущего» 2027: ИИ-пациент для участников",
+   "seen": [
+    "<CAKbW0FQT7woq8cSjeS93vK6tgxe4qprW2=1UYNBFmL6-BB2=sw@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CAKbW0FQT7woq8cSjeS93vK6tgxe4qprW2=1UYNBFmL6-BB2=sw@mail.gmail.com>",
+   "last_in_subject": "Re: «Медицина будущего» 2027: ИИ-пациент для участников",
+   "last_in_from": "conf.shm.dvfu@gmail.com",
+   "last_in_at": "2026-11-10T12:21:14.331Z",
+   "reply_at": "2026-11-10T12:21:14.331Z"
   },
   "5abc20b0": {
    "to": "lysenko_iakov@yahoo.com",
@@ -1475,5 +1483,5 @@
   "2026-11-09",
   "2026-11-10"
  ],
- "inbox_checked_at": "2026-11-10T11:21:16.592Z"
+ "inbox_checked_at": "2026-11-10T12:21:14.554Z"
 }
