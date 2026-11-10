@@ -6,11 +6,22 @@
 //   node scripts/app-data.mjs dashboard '{"from":<ts>,"to":<ts>}'
 //   node scripts/app-data.mjs user w123456789012          — карточка пользователя
 //   node scripts/app-data.mjs patient w123456789012 pat_1 — пациент пользователя
+//   node scripts/app-data.mjs send 123456789 '{"text":"…"}' — личное сообщение в бот или на почту (до 30 в сутки)
 // Операции — READ_OPS в src/admin-api.js. Вывод — JSON в stdout.
 const [op, a1 = "", a2 = ""] = process.argv.slice(2);
 if (!op) throw new Error("укажите операцию: users, report, dashboard, events, chat, payments, user, patient…");
 const BASE = (process.env.BASE || "https://helpmedoctor.ru").replace(/\/$/, "");
 const key = process.env.ADMIN_EXPORT_KEY;
+
+// Личное сообщение: node scripts/app-data.mjs send <uid> '{"text":"…","subject":"…","channel":"auto|bot|email"}'
+if (op === "send") {
+  const r = await fetch(`${BASE}/api/admin/export/message`, {
+    method: "POST", headers: { "Content-Type": "application/json", ...(key ? { "X-Export-Key": key } : {}) },
+    body: JSON.stringify({ uid: a1, ...JSON.parse(a2 || "{}") }),
+  });
+  console.log(await r.text());
+  process.exit(r.ok ? 0 : 1);
+}
 
 const qs = op === "user" ? `user=${encodeURIComponent(a1)}`
   : op === "patient" ? `user=${encodeURIComponent(a1)}&patient=${encodeURIComponent(a2)}`

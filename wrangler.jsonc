@@ -52,6 +52,8 @@
     "BOT_USERNAME": "helpmedoctor_aibot",
     "ADMIN_ID": "1326867567",
     "TOCHKA_MERCHANT": "200000000029805",
-    "TOCHKA_CUSTOMER": "305372573"
+    "TOCHKA_CUSTOMER": "305372573",
+    // Куда приходят ответы на личные письма пользователям (Reply-To)
+    "EMAIL_REPLY_TO": "oxion.ezhkov@gmail.com"
   }
 }

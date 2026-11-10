@@ -20,7 +20,7 @@ export function emailHtml({ title, paragraphs = [], button = null, site = "https
 <div style="background:#fffdf8;border:1px solid #e6e1d4;border-radius:18px;overflow:hidden">
 ${hero ? `<img src="${img(hero)}" width="560" alt="" style="display:block;width:100%;height:auto;border:0;border-bottom:1px solid #e6e1d4">` : ""}
 <div style="padding:26px 26px 22px">
-<h1 style="margin:0 0 16px;font:700 24px/1.25 Georgia,'Times New Roman',serif;color:#191c1b">${esc(title)}</h1>${st}${p}${b}
+${title ? `<h1 style="margin:0 0 16px;font:700 24px/1.25 Georgia,'Times New Roman',serif;color:#191c1b">${esc(title)}</h1>` : ""}${st}${p}${b}
 </div></div>
 <p style="margin:16px 4px 0;font-size:12px;line-height:1.5;color:#8a908c;text-align:center">Вы получили письмо, потому что вошли в тренажёр <a href="${esc(site)}" style="color:#8a908c">helpmedoctor.ru</a> через этот адрес.${unsub ? ` <a href="${esc(unsub)}" style="color:#8a908c">Не присылать напоминания</a>` : ""}</p>
 </div></body></html>`;
@@ -28,16 +28,16 @@ ${hero ? `<img src="${img(hero)}" width="560" alt="" style="display:block;width:
 
 /**
  * Отправить письмо. Возвращает true, если Resend принял письмо. Сбой не бросает исключение: письмо — дополнительный канал.
- * @param {{to: string|string[], subject: string, html: string, text?: string}} m
+ * @param {{to: string|string[], subject: string, html: string, text?: string, replyTo?: string}} m
  */
-export async function sendEmail(env, { to, subject, html, text }) {
+export async function sendEmail(env, { to, subject, html, text, replyTo = "" }) {
   const list = [...new Set([].concat(to || []).map((x) => String(x || "").trim().toLowerCase()).filter((x) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))];
   if (!env.RESEND_API_KEY || !list.length) return false;
   try {
     const r = await fetch(env.RESEND_URL || "https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: env.EMAIL_FROM || DEFAULT_FROM, to: list, subject, html, ...(text ? { text } : {}) }),
+      body: JSON.stringify({ from: env.EMAIL_FROM || DEFAULT_FROM, to: list, subject, html, ...(text ? { text } : {}), ...(replyTo ? { reply_to: replyTo } : {}) }),
     });
     if (!r.ok) console.warn("resend", r.status, (await r.text()).slice(0, 300));
     return r.ok;

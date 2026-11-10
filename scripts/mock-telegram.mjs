@@ -62,7 +62,7 @@ http.createServer((req, res) => {
     if (req.url.startsWith("/resend")) {
       let m = {};
       try { m = JSON.parse(body || "{}"); } catch {}
-      fs.appendFileSync(LOG, JSON.stringify({ method: "resend", to: m.to, subject: m.subject, html: m.html, auth: req.headers.authorization }) + "\n");
+      fs.appendFileSync(LOG, JSON.stringify({ method: "resend", to: m.to, subject: m.subject, html: m.html, reply_to: m.reply_to, auth: req.headers.authorization }) + "\n");
       res.writeHead(200, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ id: `em_${Date.now()}` }));
     }
