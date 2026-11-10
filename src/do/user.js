@@ -16,7 +16,7 @@ import * as P from "../lib/prompts.js";
 import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
 import { cleanAttribution } from "../lib/attribution.js";
-import { clampStr, daysBetween, declDays, esc, fixMedTerms, isRefusal, meaningfulItems, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
+import { clampStr, daysBetween, declDays, esc, toTelegramHtml, fixMedTerms, isRefusal, meaningfulItems, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { appBtn, tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
 import { emailHtml, sendEmail } from "../lib/email.js";
@@ -1741,6 +1741,42 @@ export class UserDO extends DurableObject {
   }
 
   /** Всё о пользователе для карточки админки: профиль, пациенты целиком, тесты */
+  /**
+   * Личное сообщение от команды (выгрузка по ключу, для Claude): в бот или на почту.
+   * channel: "bot" | "email" | "auto" (бот, если есть Telegram и бот не заблокирован, иначе почта).
+   * Не пишем заблокированным, отписавшимся от писем и тем, кто заблокировал бота.
+   */
+  async directMessage({ text, subject = "", channel = "auto", by = "export" }) {
+    const prof = await this.profile();
+    if (!prof.uid || !prof.registered_at) return { ok: false, error: "Пользователь не найден" };
+    if (prof.blocked) return { ok: false, error: "Пользователь заблокирован" };
+    const hasTg = /^\d+$/.test(String(prof.uid)) && !prof.bot_blocked;
+    const emails = await this.hub().userEmails(prof.uid);
+    const via = channel === "auto" ? (hasTg ? "bot" : "email") : channel;
+    if (via === "bot") {
+      if (!hasTg) return { ok: false, error: prof.bot_blocked ? "Пользователь заблокировал бота" : "У пользователя нет Telegram" };
+      const bot = tg(this.env, { kind: "admin", admin: by });
+      const mid = await bot.send(prof.uid, toTelegramHtml(text));
+      if (!bot.last.ok) return { ok: false, via, error: bot.last.description };
+      await this.track("direct_msg", { via, by }, { source: "admin" });
+      return { ok: true, via, message_id: mid };
+    }
+    if (via === "email") {
+      if (!emails.length) return { ok: false, via, error: "У пользователя нет почты" };
+      if (prof.email_off) return { ok: false, via, error: "Пользователь отписался от писем" };
+      const paragraphs = String(text).split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+      const ok = await sendEmail(this.env, {
+        to: emails, subject: clampStr(subject || "Письмо от команды Help me, Doctor", 150),
+        html: emailHtml({ title: "", paragraphs, site: this.siteUrl() }), text: String(text),
+        replyTo: String(this.env.EMAIL_REPLY_TO || "").trim(),
+      });
+      if (!ok) return { ok: false, via, error: "Почтовый сервис не принял письмо" };
+      await this.track("email", { subject: clampStr(subject, 120), kind: "direct" }, { source: "admin" });
+      return { ok: true, via };
+    }
+    return { ok: false, error: "channel: bot, email или auto" };
+  }
+
   async adminView() {
     const prof = await this.ctx.storage.get(PROFILE);
     if (!prof) return null;

@@ -883,7 +883,19 @@ assert.equal((await exq("op=bloggers_plan&args=%7B%7D")).status, 400, "и та, 
 assert.equal((await exq("op=users&args=%7Bbad")).status, 400, "args — только JSON");
 assert.equal((await exq("user=../x")).status, 400);
 assert.equal((await fetch(`${BASE}/api/admin/export?op=users`)).status, 403, "без ключа — отказ");
-step("выгрузка задач, идей и ответов на рассылки: только по ключу и только чтение; данные приложения — только чтение по тому же ключу");
+// Личное сообщение по тому же ключу: в бот или на почту, с ответом на адрес команды
+const exm = async (body, key = EXP) => { const r = await fetch(`${BASE}/api/admin/export/message`, { method: "POST", headers: { "X-Export-Key": key, "Content-Type": "application/json" }, body: JSON.stringify(body) }); return { status: r.status, data: await r.json() }; };
+assert.equal((await exm({ uid: P2, text: "Привет" }, "wrong-key-0123456789abcdefgh")).status, 403, "сообщение — только по ключу");
+ex = await exm({ uid: P2, text: "Привет! Это Олег. Что вам не хватает в тренажёре?" });
+assert.ok(ex.status === 200 && ex.data.via === "bot" && ex.data.left === 29, JSON.stringify(ex.data));
+assert.ok(tgCalls().some((c) => c.method === "sendMessage" && String(c.chat_id) === P2 && c.text?.includes("Что вам не хватает")), "сообщение ушло в бот");
+ex = await exm({ uid: borisRow.uid, text: "Здравствуйте!\n\nВы пропали — расскажете почему?", subject: "Вопрос от создателя" });
+assert.ok(ex.status === 200 && ex.data.via === "email", JSON.stringify(ex.data));
+const dm = await waitFor(() => tgCalls().find((c) => c.method === "resend" && c.subject === "Вопрос от создателя"), "direct email");
+assert.ok(dm.to.includes("boris@example.com") && dm.reply_to === "team@example.com" && dm.html.includes("расскажете почему"), JSON.stringify(dm).slice(0, 300));
+assert.equal((await exm({ uid: borisRow.uid, text: "x", channel: "bot" })).status, 409, "у веб-аккаунта нет Telegram");
+assert.equal((await exm({ uid: P2, text: " " })).status, 400, "пустое — отказ");
+step("выгрузка задач, идей и ответов на рассылки: только по ключу и только чтение; данные приложения — только чтение по тому же ключу; личное сообщение в бот или на почту — с лимитом");
 
 // Веб-аккаунт привязывает Telegram, где уже есть прогресс — прогресс складывается
 const before777 = (await api(webToken, "GET", "/me")).data;

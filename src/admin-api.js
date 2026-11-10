@@ -12,6 +12,9 @@ import { hubStub, userStub } from "./bot/handlers.js";
 import { buildKeyboard } from "./do/hub.js";
 
 // Только чтение: эти операции доступны и по ключу выгрузки ADMIN_EXPORT_KEY — так Claude видит данные приложения
+/** Сколько личных сообщений пользователям в сутки можно отправить по ключу выгрузки */
+const EXPORT_MSG_PER_DAY = 30;
+
 const READ_OPS = new Set([
   "dashboard", "live", "report", "users", "chat", "events", "subscriptions", "payments", "inbox", "broadcasts", "segment_count",
   "templates", "texts", "feedback", "onboarding", "tasks", "task", "audit_log", "backfill_status", "counts", "autopay_list",
@@ -58,6 +61,26 @@ export async function adminApi(request, env, url, ctx) {
     if (!adminIds(env).includes(String(res.uid))) return json({ status: "forbidden", error: "Этот аккаунт не админ" }, 403);
     await hub.admin("audit", { action: "login", details: { via: url.searchParams.get("cn") ? "google" : "link" } }, res.uid);
     return json({ status: "ok", token: await createSession(env, res.uid, { scope: "admin", ttl: ADMIN_SESSION_TTL_MS }), me: adminMe(env, res.uid) });
+  }
+
+  // --- Личное сообщение пользователю по ключу выгрузки (для Claude): в бот или на почту, не больше EXPORT_MSG_PER_DAY в сутки ---
+  if (path === "/export/message" && method === "POST") {
+    const key = String(env.ADMIN_EXPORT_KEY || "");
+    if (key.length < 24) return json({ error: "Выгрузка не настроена" }, 404);
+    if (!safeEqual(request.headers.get("X-Export-Key") || "", key)) return json({ error: "Нет доступа" }, 403);
+    const { uid = "", text = "", subject = "", channel = "auto" } = await readJson(request);
+    if (!/^w?\d+$/.test(String(uid))) return json({ error: "Неверный uid" }, 400);
+    const body = String(text).trim().slice(0, 3500);
+    if (!body) return json({ error: "Пустое сообщение" }, 400);
+    if (!["auto", "bot", "email"].includes(channel)) return json({ error: "channel: auto, bot или email" }, 400);
+    const day = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+    const used = (await hub.admin("get_setting", { k: "export_msg_day" }, "export")) || {};
+    const n = used.day === day ? Number(used.n) || 0 : 0;
+    if (n >= EXPORT_MSG_PER_DAY) return json({ error: `Лимит ${EXPORT_MSG_PER_DAY} сообщений в сутки исчерпан` }, 429);
+    const res = await userStub(env, String(uid), "admin").directMessage({ text: body, subject: String(subject), channel, by: "claude" });
+    if (res.ok) await hub.admin("set_setting", { k: "export_msg_day", v: { day, n: n + 1 } }, "export");
+    await hub.admin("audit", { action: "message", target: String(uid), details: { via: res.via || channel, by: "claude", ok: !!res.ok, error: res.error || null, subject: String(subject).slice(0, 120), text: body.slice(0, 200) } }, "export");
+    return json({ ...res, left: EXPORT_MSG_PER_DAY - n - (res.ok ? 1 : 0) }, res.ok ? 200 : 409);
   }
 
   // --- Выгрузка задач и идей (workflow «Выгрузка из админки»): отдельный ключ ADMIN_EXPORT_KEY, только чтение ---
