@@ -1250,12 +1250,20 @@
   },
   "cdeaf78a": {
    "to": "info@md.school",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-02T06:49:02.975Z",
    "message_id": "<888020e8-8a70-d5a2-7c63-5f65e2583e3f@gmail.com>",
    "subject": "MD School и практика приёма: партнёрство для молодых врачей",
    "followup_at": "2026-11-11T06:39:58.613Z",
-   "followup_message_id": "<a90c4ed3-997b-57aa-7b1b-864bb51f9a8d@gmail.com>"
+   "followup_message_id": "<a90c4ed3-997b-57aa-7b1b-864bb51f9a8d@gmail.com>",
+   "seen": [
+    "<2c3dce3e.7dc213837ea6488d9de40d2669a9edd5@smtp-id.amocrm.com>"
+   ],
+   "last_in_msgid": "<2c3dce3e.7dc213837ea6488d9de40d2669a9edd5@smtp-id.amocrm.com>",
+   "last_in_subject": "Re: MD School и практика приёма: партнёрство для молодых врачей",
+   "last_in_from": "info@md.school",
+   "last_in_at": "2026-11-11T08:21:22.128Z",
+   "reply_at": "2026-11-11T08:21:22.128Z"
   },
   "88b5134b": {
    "to": "press@pimunn.net",
@@ -1527,5 +1535,5 @@
   "2026-11-10",
   "2026-11-11"
  ],
- "inbox_checked_at": "2026-11-11T07:21:10.589Z"
+ "inbox_checked_at": "2026-11-11T08:21:22.255Z"
 }
