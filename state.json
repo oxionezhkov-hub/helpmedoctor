@@ -1205,45 +1205,57 @@
   },
   "c78b2fe2": {
    "to": "uglov@ysmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-02T06:30:24.904Z",
    "message_id": "<a332f268-ead6-5d52-a0c2-9f2938389b8d@gmail.com>",
-   "subject": "Олимпиада по педиатрии и неонатологии ЯГМУ: тренажёр для участников"
+   "subject": "Олимпиада по педиатрии и неонатологии ЯГМУ: тренажёр для участников",
+   "followup_at": "2026-11-11T06:21:19.336Z",
+   "followup_message_id": "<55fc719e-3c5a-8acc-7f4b-e877569a8552@gmail.com>"
   },
   "a95313b1": {
    "to": "smu@rzgmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-02T06:34:46.200Z",
    "message_id": "<61c81e58-131f-6dc4-5fa8-e6a4083030e6@gmail.com>",
-   "subject": "ИИ-пациент для участников конференции СМУ РязГМУ"
+   "subject": "ИИ-пациент для участников конференции СМУ РязГМУ",
+   "followup_at": "2026-11-11T06:26:09.036Z",
+   "followup_message_id": "<ef55448a-8923-1eab-f413-21e0b44f4e7e@gmail.com>"
   },
   "520be8b2": {
    "to": "info@webiomed.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-02T06:38:45.910Z",
    "message_id": "<957cb363-7a1e-fd4b-fcd7-79d19a35e90c@gmail.com>",
-   "subject": "Для Webiomed: студенческий тренажёр с ИИ-пациентом"
+   "subject": "Для Webiomed: студенческий тренажёр с ИИ-пациентом",
+   "followup_at": "2026-11-11T06:30:29.389Z",
+   "followup_message_id": "<0544acd7-7eea-a463-2d0a-727057b029a4@gmail.com>"
   },
   "86934a0d": {
    "to": "post@astgmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-02T06:41:50.954Z",
    "message_id": "<7ff92ac8-ab2e-d73a-0cb4-36eb7da23442@gmail.com>",
-   "subject": "Для НОМУС Астраханского ГМУ: тренажёр приёма для студентов"
+   "subject": "Для НОМУС Астраханского ГМУ: тренажёр приёма для студентов",
+   "followup_at": "2026-11-11T06:34:16.719Z",
+   "followup_message_id": "<f1f80f8a-fd79-b4d4-3d4c-13a31c1c4303@gmail.com>"
   },
   "cab135e9": {
    "to": "dariaiugaipr@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-02T06:46:30.595Z",
    "message_id": "<aea568c7-62ce-4f2b-9340-bdb07a145aed@gmail.com>",
-   "subject": "Размещение в «Жизни кардиолога»: тренажёр клинических задач"
+   "subject": "Размещение в «Жизни кардиолога»: тренажёр клинических задач",
+   "followup_at": "2026-11-11T06:37:00.183Z",
+   "followup_message_id": "<806b240d-b0cf-6934-768e-40b9df4f677d@gmail.com>"
   },
   "cdeaf78a": {
    "to": "info@md.school",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-02T06:49:02.975Z",
    "message_id": "<888020e8-8a70-d5a2-7c63-5f65e2583e3f@gmail.com>",
-   "subject": "MD School и практика приёма: партнёрство для молодых врачей"
+   "subject": "MD School и практика приёма: партнёрство для молодых врачей",
+   "followup_at": "2026-11-11T06:39:58.613Z",
+   "followup_message_id": "<a90c4ed3-997b-57aa-7b1b-864bb51f9a8d@gmail.com>"
   },
   "88b5134b": {
    "to": "press@pimunn.net",
@@ -1262,10 +1274,12 @@
   },
   "10b44fdd": {
    "to": "mcitz@zdrav.mos.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-02T06:55:50.273Z",
    "message_id": "<9104312b-e84d-6ad5-1983-62c492d7acc8@gmail.com>",
-   "subject": "ИИ-тренажёр приёма и Медтех.Москва: обмен рассказами о проектах"
+   "subject": "ИИ-тренажёр приёма и Медтех.Москва: обмен рассказами о проектах",
+   "followup_at": "2026-11-11T06:43:29.437Z",
+   "followup_message_id": "<b79111ed-4ef3-b336-ef47-70fa36bedc5a@gmail.com>"
   },
   "19acc9fa": {
    "to": "fluchi@mail.ru",
@@ -1457,6 +1471,27 @@
    "sent_at": "2026-11-09T22:02:47.573Z",
    "message_id": "<f10fc4f6-7118-29eb-c79f-0b575da308b2@gmail.com>",
    "subject": "Для Совета СНО ВГМУ: тренажёр приёма к следующей конференции"
+  },
+  "76ba22a0": {
+   "to": "mail@vrngmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-11T06:48:19.444Z",
+   "message_id": "<a040fac4-85d9-d903-0e9c-137afff2a118@gmail.com>",
+   "subject": "Для СНО ВГМУ им. Бурденко: тренажёр к следующему конгрессу"
+  },
+  "656a8413": {
+   "to": "editor@remedium.ru",
+   "status": "sent",
+   "sent_at": "2026-11-11T06:52:24.275Z",
+   "message_id": "<488e436c-cb70-bb97-6e63-62459355eda5@gmail.com>",
+   "subject": "Новость для «Ремедиума»: студенты сделали ИИ-тренажёр приёма"
+  },
+  "a3efa852": {
+   "to": "r.s.o@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-11T06:57:30.382Z",
+   "message_id": "<0482fb02-0ce3-120c-7deb-35f8ce948764@gmail.com>",
+   "subject": "Для медицинских отрядов РСО: тренажёр приёма пациента"
   }
  },
  "days": [
@@ -1481,7 +1516,8 @@
   "2026-11-05",
   "2026-11-06",
   "2026-11-09",
-  "2026-11-10"
+  "2026-11-10",
+  "2026-11-11"
  ],
- "inbox_checked_at": "2026-11-10T18:39:34.372Z"
+ "inbox_checked_at": "2026-11-11T06:21:17.749Z"
 }
