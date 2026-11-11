@@ -1274,12 +1274,20 @@
   },
   "10b44fdd": {
    "to": "mcitz@zdrav.mos.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-02T06:55:50.273Z",
    "message_id": "<9104312b-e84d-6ad5-1983-62c492d7acc8@gmail.com>",
    "subject": "ИИ-тренажёр приёма и Медтех.Москва: обмен рассказами о проектах",
    "followup_at": "2026-11-11T06:43:29.437Z",
-   "followup_message_id": "<b79111ed-4ef3-b336-ef47-70fa36bedc5a@gmail.com>"
+   "followup_message_id": "<b79111ed-4ef3-b336-ef47-70fa36bedc5a@gmail.com>",
+   "seen": [
+    "<a0c151624d6143e598245e75b6072652@zdrav.mos.ru>"
+   ],
+   "last_in_msgid": "<a0c151624d6143e598245e75b6072652@zdrav.mos.ru>",
+   "last_in_subject": "RE: ИИ-тренажёр приёма и Медтех.Москва: обмен рассказами о проектах",
+   "last_in_from": "mcitz@zdrav.mos.ru",
+   "last_in_at": "2026-11-11T07:21:10.527Z",
+   "reply_at": "2026-11-11T07:21:10.527Z"
   },
   "19acc9fa": {
    "to": "fluchi@mail.ru",
@@ -1519,5 +1527,5 @@
   "2026-11-10",
   "2026-11-11"
  ],
- "inbox_checked_at": "2026-11-11T06:21:17.749Z"
+ "inbox_checked_at": "2026-11-11T07:21:10.589Z"
 }
