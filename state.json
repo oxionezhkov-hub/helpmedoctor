@@ -1324,12 +1324,20 @@
   },
   "f469411e": {
    "to": "olga.neumoina@kazangmu.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-03T06:26:16.619Z",
    "message_id": "<c715395f-3d66-c413-c14d-96a5302ba99b@gmail.com>",
    "subject": "ИИ-пациенты для студентов и ординаторов Казанского ГМУ",
    "followup_at": "2026-11-12T06:25:31.363Z",
-   "followup_message_id": "<8f388256-3fbe-f405-908e-8d0cdaffc480@gmail.com>"
+   "followup_message_id": "<8f388256-3fbe-f405-908e-8d0cdaffc480@gmail.com>",
+   "seen": [
+    "<838611794472829@mail.yandex.ru>"
+   ],
+   "last_in_msgid": "<838611794472829@mail.yandex.ru>",
+   "last_in_subject": "Re: ИИ-пациенты для студентов и ординаторов Казанского ГМУ",
+   "last_in_from": "olga.neumoina@kazangmu.ru",
+   "last_in_at": "2026-11-12T09:21:12.109Z",
+   "reply_at": "2026-11-12T09:21:12.109Z"
   },
   "2144fad5": {
    "to": "info@doctorpiter.ru",
@@ -1582,5 +1590,5 @@
   "2026-11-11",
   "2026-11-12"
  ],
- "inbox_checked_at": "2026-11-12T08:21:12.451Z"
+ "inbox_checked_at": "2026-11-12T09:21:12.139Z"
 }
