@@ -1214,12 +1214,20 @@
   },
   "a95313b1": {
    "to": "smu@rzgmu.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-02T06:34:46.200Z",
    "message_id": "<61c81e58-131f-6dc4-5fa8-e6a4083030e6@gmail.com>",
    "subject": "ИИ-пациент для участников конференции СМУ РязГМУ",
    "followup_at": "2026-11-11T06:26:09.036Z",
-   "followup_message_id": "<ef55448a-8923-1eab-f413-21e0b44f4e7e@gmail.com>"
+   "followup_message_id": "<ef55448a-8923-1eab-f413-21e0b44f4e7e@gmail.com>",
+   "seen": [
+    "<WC20261112065636.71020D@rzgmu.ru>"
+   ],
+   "last_in_msgid": "<WC20261112065636.71020D@rzgmu.ru>",
+   "last_in_subject": "Fwd: Re: ИИ-пациент для участников конференции СМУ РязГМУ",
+   "last_in_from": "smu@rzgmu.ru",
+   "last_in_at": "2026-11-12T07:21:16.518Z",
+   "reply_at": "2026-11-12T07:21:16.518Z"
   },
   "520be8b2": {
    "to": "info@webiomed.ru",
@@ -1299,12 +1307,20 @@
   },
   "19acc9fa": {
    "to": "fluchi@mail.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-03T06:21:18.915Z",
    "message_id": "<b3fb15db-66b5-9443-dc29-012844f4ead3@gmail.com>",
    "subject": "«Хирургия – от теории к практике»: тренажёр приёма для участников",
    "followup_at": "2026-11-12T06:21:14.311Z",
-   "followup_message_id": "<e4930ec4-8f11-c8b0-4184-f71f23973c9e@gmail.com>"
+   "followup_message_id": "<e4930ec4-8f11-c8b0-4184-f71f23973c9e@gmail.com>",
+   "seen": [
+    "<1794465226.80643081@f474.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1794465226.80643081@f474.i.mail.ru>",
+   "last_in_subject": "Re: «Хирургия – от теории к практике»: тренажёр приёма для участников",
+   "last_in_from": "fluchi@mail.ru",
+   "last_in_at": "2026-11-12T07:21:16.338Z",
+   "reply_at": "2026-11-12T07:21:16.338Z"
   },
   "f469411e": {
    "to": "olga.neumoina@kazangmu.ru",
@@ -1527,7 +1543,7 @@
   },
   "ec3413d3": {
    "to": "pedconf@krasgmu.ru",
-   "status": "sent",
+   "status": "bounced",
    "sent_at": "2026-11-12T06:57:04.761Z",
    "message_id": "<d113b332-a3f4-97f8-882a-1374de27184e@gmail.com>",
    "subject": "«Неотложка» и форум КрасГМУ 2027: тренажёр приёма пациента"
@@ -1566,5 +1582,5 @@
   "2026-11-11",
   "2026-11-12"
  ],
- "inbox_checked_at": "2026-11-12T06:21:12.603Z"
+ "inbox_checked_at": "2026-11-12T07:21:17.169Z"
 }
