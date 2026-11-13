@@ -1178,12 +1178,20 @@
   },
   "27eea34f": {
    "to": "daria@smartranking.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-10-30T06:49:04.667Z",
    "message_id": "<59d2c856-9b02-beac-1098-c7fcf2b24250@gmail.com>",
    "subject": "Для Smart Ranking: нишевый EdTech-проект для студентов-медиков",
    "followup_at": "2026-11-09T21:33:51.147Z",
-   "followup_message_id": "<f1de49f9-d59c-774b-0f51-413f864fc5bd@gmail.com>"
+   "followup_message_id": "<f1de49f9-d59c-774b-0f51-413f864fc5bd@gmail.com>",
+   "seen": [
+    "<78931794566557@mail.360.yandex.ru>"
+   ],
+   "last_in_msgid": "<78931794566557@mail.360.yandex.ru>",
+   "last_in_subject": "Re: Для Smart Ranking: нишевый EdTech-проект для студентов-медиков",
+   "last_in_from": "daria@smartranking.ru",
+   "last_in_at": "2026-11-13T11:21:19.826Z",
+   "reply_at": "2026-11-13T11:21:19.826Z"
   },
   "aa09dfd9": {
    "to": "cav75@list.ru",
@@ -1660,5 +1668,5 @@
   "2026-11-12",
   "2026-11-13"
  ],
- "inbox_checked_at": "2026-11-13T10:21:15.766Z"
+ "inbox_checked_at": "2026-11-13T11:21:19.944Z"
 }
