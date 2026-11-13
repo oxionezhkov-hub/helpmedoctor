@@ -1372,12 +1372,13 @@
    "followup_at": "2026-11-12T06:35:32.402Z",
    "followup_message_id": "<52cf2ecf-b170-b9cd-c4a7-58916ac3daaf@gmail.com>",
    "seen": [
-    "<CACG-vHy0aaRkPZGbmPaYpN_tLL9-hfYV2O=-Ti17FZbs7f9TDQ@mail.gmail.com>"
+    "<CACG-vHy0aaRkPZGbmPaYpN_tLL9-hfYV2O=-Ti17FZbs7f9TDQ@mail.gmail.com>",
+    "<CACG-vHzU+Tr9hcJg0AARog94x+jyGiQrfZKD6-8Q+V-xnNLEZA@mail.gmail.com>"
    ],
-   "last_in_msgid": "<CACG-vHy0aaRkPZGbmPaYpN_tLL9-hfYV2O=-Ti17FZbs7f9TDQ@mail.gmail.com>",
+   "last_in_msgid": "<CACG-vHzU+Tr9hcJg0AARog94x+jyGiQrfZKD6-8Q+V-xnNLEZA@mail.gmail.com>",
    "last_in_subject": "Re: Med.Studio и тренажёр приёма: идея для молодых врачей",
    "last_in_from": "info@med.studio",
-   "last_in_at": "2026-11-13T07:21:11.140Z",
+   "last_in_at": "2026-11-13T09:21:21.667Z",
    "reply_at": "2026-11-13T07:21:11.140Z"
   },
   "0970d8f8": {
@@ -1659,5 +1660,5 @@
   "2026-11-12",
   "2026-11-13"
  ],
- "inbox_checked_at": "2026-11-13T08:21:11.534Z"
+ "inbox_checked_at": "2026-11-13T09:21:21.687Z"
 }
