@@ -1424,17 +1424,21 @@
   },
   "222c60cc": {
    "to": "info@mel.fm",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-05T06:51:37.488Z",
    "message_id": "<cb66bb0e-93df-04b5-4d5a-d29deed607d9@gmail.com>",
-   "subject": "Для «Мела»: как студенты-медики учатся на ИИ-пациентах"
+   "subject": "Для «Мела»: как студенты-медики учатся на ИИ-пациентах",
+   "followup_at": "2026-11-13T06:21:12.878Z",
+   "followup_message_id": "<7d9c4bc3-2469-c669-2b82-f83787cfe17f@gmail.com>"
   },
   "42d190b1": {
    "to": "meduniv@sgmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-05T06:54:34.048Z",
    "message_id": "<6498e751-7473-055c-0a6f-ae8412cd1106@gmail.com>",
-   "subject": "Для Объединённого совета обучающихся СГМУ: тренажёр приёма"
+   "subject": "Для Объединённого совета обучающихся СГМУ: тренажёр приёма",
+   "followup_at": "2026-11-13T06:26:37.230Z",
+   "followup_message_id": "<5af65ecc-252d-4ceb-98ac-27b4db9f7ab8@gmail.com>"
   },
   "a33e93ce": {
    "to": "info@scientificrussia.ru",
@@ -1562,6 +1566,62 @@
    "sent_at": "2026-11-12T07:00:54.547Z",
    "message_id": "<49ee6e13-7852-cebc-6d94-19838ff608bc@gmail.com>",
    "subject": "История студенческого проекта: ИИ-тренажёр для будущих врачей"
+  },
+  "2c0f46d9": {
+   "to": "nomuis@asmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-13T06:31:52.946Z",
+   "message_id": "<b8fd3bfc-e95a-9494-c77c-7b3477c4a0e1@gmail.com>",
+   "subject": "Итоговая конференция НОМУИС АГМУ: тренажёр для участников"
+  },
+  "b96df921": {
+   "to": "editorial@hightech.fm",
+   "status": "sent",
+   "sent_at": "2026-11-13T06:36:22.600Z",
+   "message_id": "<500a9a8e-3d45-41d0-8244-512715447174@gmail.com>",
+   "subject": "Для «Хайтека»: ИИ-пациенты для обучения будущих врачей"
+  },
+  "3c1d7191": {
+   "to": "ne_3iminova@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-13T06:39:04.887Z",
+   "message_id": "<c213caaf-ef0f-f809-67c4-859dcb3af233@gmail.com>",
+   "subject": "Для СНО Дагестанского ГМУ: тренажёр приёма для студентов"
+  },
+  "54a8353e": {
+   "to": "info@koriphey.online",
+   "status": "sent",
+   "sent_at": "2026-11-13T06:43:41.478Z",
+   "message_id": "<b4f92e50-4f18-109b-13ff-aeb965a3f4b5@gmail.com>",
+   "subject": "Корифей Онлайн: виртуальный пациент для учеников медкласса"
+  },
+  "d61cae17": {
+   "to": "olgavlap@rambler.ru",
+   "status": "sent",
+   "sent_at": "2026-11-13T06:46:41.384Z",
+   "message_id": "<5b5bfcef-764a-3259-bb61-582daabe8b24@gmail.com>",
+   "subject": "«Venienti occurrite morbo»: тренажёр амбулаторного приёма"
+  },
+  "0153b7db": {
+   "to": "sno-orgma@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-13T06:49:29.511Z",
+   "message_id": "<cc1fe639-e8fe-e587-bfab-3392cf6b449c@gmail.com>",
+   "subject": "Для СНО Оренбургского ГМУ: приём виртуального пациента"
+  },
+  "03c21db1": {
+   "to": "info@kursnamed.ru",
+   "status": "sent",
+   "sent_at": "2026-11-13T06:52:44.643Z",
+   "message_id": "<a63ca1f3-3df0-3d32-50cc-4f8a76897854@gmail.com>",
+   "subject": "КурсНаМед и будущие врачи: первый приём виртуального пациента"
+  },
+  "4e442681": {
+   "to": "mno@chitgma.ru",
+   "status": "sent",
+   "sent_at": "2026-11-13T06:55:41.776Z",
+   "message_id": "<ef6b37c4-8319-a2b2-6368-ad2309f4e017@gmail.com>",
+   "subject": "«Медицина завтрашнего дня» и студенты ЧГМА: практика с ИИ-пациентом"
   }
  },
  "days": [
@@ -1588,7 +1648,8 @@
   "2026-11-09",
   "2026-11-10",
   "2026-11-11",
-  "2026-11-12"
+  "2026-11-12",
+  "2026-11-13"
  ],
- "inbox_checked_at": "2026-11-12T18:52:30.414Z"
+ "inbox_checked_at": "2026-11-13T06:21:11.107Z"
 }
