@@ -1607,10 +1607,18 @@
   },
   "54a8353e": {
    "to": "info@koriphey.online",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-11-13T06:43:41.478Z",
    "message_id": "<b4f92e50-4f18-109b-13ff-aeb965a3f4b5@gmail.com>",
-   "subject": "Корифей Онлайн: виртуальный пациент для учеников медкласса"
+   "subject": "Корифей Онлайн: виртуальный пациент для учеников медкласса",
+   "seen": [
+    "<bx.mail.6af6f2e6.5ede16@b24.koriphey.ru>"
+   ],
+   "last_in_msgid": "<bx.mail.6af6f2e6.5ede16@b24.koriphey.ru>",
+   "last_in_subject": "Re: Корифей Онлайн: виртуальный пациент для учеников медкласса",
+   "last_in_from": "info@koriphey.online",
+   "last_in_at": "2026-11-13T12:21:16.130Z",
+   "reply_at": "2026-11-13T12:21:16.130Z"
   },
   "d61cae17": {
    "to": "olgavlap@rambler.ru",
@@ -1668,5 +1676,5 @@
   "2026-11-12",
   "2026-11-13"
  ],
- "inbox_checked_at": "2026-11-13T11:21:19.944Z"
+ "inbox_checked_at": "2026-11-13T12:21:16.266Z"
 }
