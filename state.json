@@ -1365,12 +1365,20 @@
   },
   "607b28a5": {
    "to": "info@med.studio",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-03T06:37:19.073Z",
    "message_id": "<3bfa58df-848f-9813-867f-894d6f13e79c@gmail.com>",
    "subject": "Med.Studio и тренажёр приёма: идея для молодых врачей",
    "followup_at": "2026-11-12T06:35:32.402Z",
-   "followup_message_id": "<52cf2ecf-b170-b9cd-c4a7-58916ac3daaf@gmail.com>"
+   "followup_message_id": "<52cf2ecf-b170-b9cd-c4a7-58916ac3daaf@gmail.com>",
+   "seen": [
+    "<CACG-vHy0aaRkPZGbmPaYpN_tLL9-hfYV2O=-Ti17FZbs7f9TDQ@mail.gmail.com>"
+   ],
+   "last_in_msgid": "<CACG-vHy0aaRkPZGbmPaYpN_tLL9-hfYV2O=-Ti17FZbs7f9TDQ@mail.gmail.com>",
+   "last_in_subject": "Re: Med.Studio и тренажёр приёма: идея для молодых врачей",
+   "last_in_from": "info@med.studio",
+   "last_in_at": "2026-11-13T07:21:11.140Z",
+   "reply_at": "2026-11-13T07:21:11.140Z"
   },
   "0970d8f8": {
    "to": "smus@tvgmu.ru",
@@ -1651,5 +1659,5 @@
   "2026-11-12",
   "2026-11-13"
  ],
- "inbox_checked_at": "2026-11-13T06:21:11.107Z"
+ "inbox_checked_at": "2026-11-13T07:21:11.178Z"
 }
