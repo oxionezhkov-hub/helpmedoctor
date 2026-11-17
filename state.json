@@ -1479,38 +1479,48 @@
   },
   "897ba30b": {
    "to": "pkolegova@amtec-kazan.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T06:43:10.556Z",
    "message_id": "<c1083871-51cc-a978-40f3-6fde7261bc7c@gmail.com>",
-   "subject": "MedProfi и ИИ-пациент: расспрос до манипуляций на симуляторе"
+   "subject": "MedProfi и ИИ-пациент: расспрос до манипуляций на симуляторе",
+   "followup_at": "2026-11-17T06:21:12.348Z",
+   "followup_message_id": "<f117ec3d-9a3b-5389-ab94-c337621f3906@gmail.com>"
   },
   "96ae8026": {
    "to": "maria.dvoryanchikovaa@yandex.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T06:47:30.487Z",
    "message_id": "<8b3104c0-98de-a5d3-db0c-2a50135936bc@gmail.com>",
-   "subject": "Идея выпуска: студенты-медики, которые сделали ИИ-продукт"
+   "subject": "Идея выпуска: студенты-медики, которые сделали ИИ-продукт",
+   "followup_at": "2026-11-17T06:24:37.869Z",
+   "followup_message_id": "<d8562fa2-c65e-4f69-3d93-d5f9d7076b99@gmail.com>"
   },
   "1b706492": {
    "to": "studmedunion411@yandex.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T06:50:31.527Z",
    "message_id": "<10c6065d-a0e2-48a9-43a6-6984cb799d41@gmail.com>",
-   "subject": "Для профкома Казанского ГМУ: тренажёр приёма для студентов"
+   "subject": "Для профкома Казанского ГМУ: тренажёр приёма для студентов",
+   "followup_at": "2026-11-17T06:27:23.453Z",
+   "followup_message_id": "<b046d0cb-807d-faba-e543-c696dd1db45e@gmail.com>"
   },
   "0e85f7f2": {
    "to": "academofanatomy@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T06:53:21.077Z",
    "message_id": "<95823b11-1b08-69cb-6a3d-f3eb06155631@gmail.com>",
-   "subject": "Академия Anatomy Education: партнёрство для студентов-медиков"
+   "subject": "Академия Anatomy Education: партнёрство для студентов-медиков",
+   "followup_at": "2026-11-17T06:30:37.686Z",
+   "followup_message_id": "<362e4da6-dde2-f46d-2a98-50bece0b16b8@gmail.com>"
   },
   "948815c3": {
    "to": "s.v.plahotnikova@samsmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T06:58:38.869Z",
    "message_id": "<cd804bdd-838e-ff2f-5d94-96d3dbccad79@gmail.com>",
-   "subject": "К следующей «Педиятрике»: тренажёр приёма для участников олимпиады"
+   "subject": "К следующей «Педиятрике»: тренажёр приёма для участников олимпиады",
+   "followup_at": "2026-11-17T06:34:55.412Z",
+   "followup_message_id": "<28fd283e-1309-d907-58c4-aa9c1ae3dea3@gmail.com>"
   },
   "64ff546c": {
    "to": "conf.shm.dvfu@gmail.com",
@@ -1710,6 +1720,41 @@
    "sent_at": "2026-11-16T06:58:35.678Z",
    "message_id": "<8bc7c67d-7ea1-0664-ddca-40669c137e85@gmail.com>",
    "subject": "АПСМиФ-2027: идея для Совета молодых учёных БГМУ"
+  },
+  "6043df7b": {
+   "to": "syromyatnikova.os@tgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-17T06:37:52.351Z",
+   "message_id": "<0a3e5aca-8077-2718-1c8e-23de8c3b797c@gmail.com>",
+   "subject": "Тихоокеанская конференция СНО ТГМУ: идея к следующей весне"
+  },
+  "7757cb6a": {
+   "to": "onid.mu.ysmu@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-11-17T06:40:38.620Z",
+   "message_id": "<91cf8fff-56e3-dcac-1777-b36dcd76e2c4@gmail.com>",
+   "subject": "Для СНО Ярославского ГМУ: приём виртуального пациента"
+  },
+  "6ed090ed": {
+   "to": "rf@medelement.com",
+   "status": "sent",
+   "sent_at": "2026-11-17T06:43:32.552Z",
+   "message_id": "<a0d70cc8-6232-4505-e111-92371252c293@gmail.com>",
+   "subject": "МедЭлемент и практика приёма: предложение обменяться контентом"
+  },
+  "a005186e": {
+   "to": "sovet.bashgmu@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-11-17T06:48:19.093Z",
+   "message_id": "<677f8215-e620-ba81-41a7-a8764ffc7890@gmail.com>",
+   "subject": "Для Совета обучающихся БГМУ: тренажёр приёма для студентов"
+  },
+  "4ea94afa": {
+   "to": "info@kursmedik.ru",
+   "status": "sent",
+   "sent_at": "2026-11-17T06:50:55.306Z",
+   "message_id": "<7528ef3f-b0d2-e2d1-026a-c2d2d46fb7e2@gmail.com>",
+   "subject": "МЦ МФО и аккредитация: домашняя практика сбора анамнеза"
   }
  },
  "days": [
@@ -1738,7 +1783,8 @@
   "2026-11-11",
   "2026-11-12",
   "2026-11-13",
-  "2026-11-16"
+  "2026-11-16",
+  "2026-11-17"
  ],
- "inbox_checked_at": "2026-11-16T20:59:20.246Z"
+ "inbox_checked_at": "2026-11-17T06:21:10.744Z"
 }
