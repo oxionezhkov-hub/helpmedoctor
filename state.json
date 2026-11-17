@@ -1515,12 +1515,20 @@
   },
   "948815c3": {
    "to": "s.v.plahotnikova@samsmu.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-09T06:58:38.869Z",
    "message_id": "<cd804bdd-838e-ff2f-5d94-96d3dbccad79@gmail.com>",
    "subject": "К следующей «Педиятрике»: тренажёр приёма для участников олимпиады",
    "followup_at": "2026-11-17T06:34:55.412Z",
-   "followup_message_id": "<28fd283e-1309-d907-58c4-aa9c1ae3dea3@gmail.com>"
+   "followup_message_id": "<28fd283e-1309-d907-58c4-aa9c1ae3dea3@gmail.com>",
+   "seen": [
+    "<1794903604.451296845@f523.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1794903604.451296845@f523.i.mail.ru>",
+   "last_in_subject": "Re: К следующей «Педиятрике»: тренажёр приёма для участников олимпиады",
+   "last_in_from": "s.v.plahotnikova@samsmu.ru",
+   "last_in_at": "2026-11-17T08:21:15.331Z",
+   "reply_at": "2026-11-17T08:21:15.331Z"
   },
   "64ff546c": {
    "to": "conf.shm.dvfu@gmail.com",
@@ -1716,10 +1724,18 @@
   },
   "99c37584": {
    "to": "kreersvetlana@mail.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-11-16T06:58:35.678Z",
    "message_id": "<8bc7c67d-7ea1-0664-ddca-40669c137e85@gmail.com>",
-   "subject": "АПСМиФ-2027: идея для Совета молодых учёных БГМУ"
+   "subject": "АПСМиФ-2027: идея для Совета молодых учёных БГМУ",
+   "seen": [
+    "<1794900995.130769855@f333.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1794900995.130769855@f333.i.mail.ru>",
+   "last_in_subject": "АПСМиФ-2027: идея для Совета молодых учёных БГМУ",
+   "last_in_from": "kreersvetlana@mail.ru",
+   "last_in_at": "2026-11-17T08:21:15.024Z",
+   "reply_at": "2026-11-17T08:21:15.024Z"
   },
   "6043df7b": {
    "to": "syromyatnikova.os@tgmu.ru",
@@ -1786,5 +1802,5 @@
   "2026-11-16",
   "2026-11-17"
  ],
- "inbox_checked_at": "2026-11-17T07:21:15.077Z"
+ "inbox_checked_at": "2026-11-17T08:21:15.479Z"
 }
