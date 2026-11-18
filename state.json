@@ -1803,10 +1803,18 @@
   },
   "895d789f": {
    "to": "zabota@myrosmol.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-11-18T06:47:13.387Z",
    "message_id": "<a4d66711-2a5a-e56c-e769-9c6a139bec97@gmail.com>",
-   "subject": "Росмолодёжь.Гранты: заявка студенческого EdTech-проекта"
+   "subject": "Росмолодёжь.Гранты: заявка студенческого EdTech-проекта",
+   "seen": [
+    "<lBQP8yCdKRCkcGOn033AEDzVGERRZ6ZfvHwW9jpDY@app-2>"
+   ],
+   "last_in_msgid": "<lBQP8yCdKRCkcGOn033AEDzVGERRZ6ZfvHwW9jpDY@app-2>",
+   "last_in_subject": "[#SZQ-69385]: Служба Заботы Росмолодёжи",
+   "last_in_from": "zabota@myrosmol.ru",
+   "last_in_at": "2026-11-18T07:21:18.086Z",
+   "reply_at": "2026-11-18T07:21:18.086Z"
   },
   "d981b9c3": {
    "to": "kurskmed@mail.ru",
@@ -1853,5 +1861,5 @@
   "2026-11-17",
   "2026-11-18"
  ],
- "inbox_checked_at": "2026-11-18T06:21:18.568Z"
+ "inbox_checked_at": "2026-11-18T07:21:18.422Z"
 }
