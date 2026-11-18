@@ -1461,12 +1461,20 @@
   },
   "a33e93ce": {
    "to": "info@scientificrussia.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-06T06:59:00.713Z",
    "message_id": "<80745c71-c4c5-a496-d95a-01407b803127@gmail.com>",
    "subject": "Для «Научной России»: студенческая разработка ИИ-пациента",
    "followup_at": "2026-11-16T06:25:03.914Z",
-   "followup_message_id": "<6327e30c-05a1-7612-57ae-f3950f26af17@gmail.com>"
+   "followup_message_id": "<6327e30c-05a1-7612-57ae-f3950f26af17@gmail.com>",
+   "seen": [
+    "<180111795006884@mail.360.yandex.ru>"
+   ],
+   "last_in_msgid": "<180111795006884@mail.360.yandex.ru>",
+   "last_in_subject": "Re: Для «Научной России»: студенческая разработка ИИ-пациента",
+   "last_in_from": "info@scientificrussia.ru",
+   "last_in_at": "2026-11-18T13:21:30.824Z",
+   "reply_at": "2026-11-18T13:21:30.824Z"
   },
   "9908b214": {
    "to": "kuznetsovia1@ssmu.ru",
@@ -1878,5 +1886,5 @@
   "2026-11-17",
   "2026-11-18"
  ],
- "inbox_checked_at": "2026-11-18T12:21:12.065Z"
+ "inbox_checked_at": "2026-11-18T13:21:30.988Z"
 }
