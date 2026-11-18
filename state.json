@@ -1556,12 +1556,20 @@
   },
   "ed32ce86": {
    "to": "lazarevsd@tyumsmu.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-09T21:52:26.328Z",
    "message_id": "<ef668cd4-5567-1336-1996-3b12d3cc3862@gmail.com>",
    "subject": "Для симцентра ТюмГМУ: виртуальный пациент для сбора анамнеза",
    "followup_at": "2026-11-18T06:24:47.522Z",
-   "followup_message_id": "<c4f15518-56ec-2f24-dc4d-91c8ab7dc8e3@gmail.com>"
+   "followup_message_id": "<c4f15518-56ec-2f24-dc4d-91c8ab7dc8e3@gmail.com>",
+   "seen": [
+    "<21345e19df234946ab4bba8b6d40d021@TGMU-SRV-MAIL01.tgmu.tyumsmu.ru>"
+   ],
+   "last_in_msgid": "<21345e19df234946ab4bba8b6d40d021@TGMU-SRV-MAIL01.tgmu.tyumsmu.ru>",
+   "last_in_subject": "RE: Для симцентра ТюмГМУ: виртуальный пациент для сбора анамнеза",
+   "last_in_from": "lazarevsd@tyumsmu.ru",
+   "last_in_at": "2026-11-18T08:21:12.060Z",
+   "reply_at": "2026-11-18T08:21:12.060Z"
   },
   "96e9372a": {
    "to": "med@lanbook.ru",
@@ -1808,12 +1816,13 @@
    "message_id": "<a4d66711-2a5a-e56c-e769-9c6a139bec97@gmail.com>",
    "subject": "Росмолодёжь.Гранты: заявка студенческого EdTech-проекта",
    "seen": [
-    "<lBQP8yCdKRCkcGOn033AEDzVGERRZ6ZfvHwW9jpDY@app-2>"
+    "<lBQP8yCdKRCkcGOn033AEDzVGERRZ6ZfvHwW9jpDY@app-2>",
+    "<ZgDneq1kKObxBcoMq3MmmvxYU4AACeQV84ZGtD23c@app-2>"
    ],
-   "last_in_msgid": "<lBQP8yCdKRCkcGOn033AEDzVGERRZ6ZfvHwW9jpDY@app-2>",
+   "last_in_msgid": "<ZgDneq1kKObxBcoMq3MmmvxYU4AACeQV84ZGtD23c@app-2>",
    "last_in_subject": "[#SZQ-69385]: Служба Заботы Росмолодёжи",
    "last_in_from": "zabota@myrosmol.ru",
-   "last_in_at": "2026-11-18T07:21:18.086Z",
+   "last_in_at": "2026-11-18T08:21:11.989Z",
    "reply_at": "2026-11-18T07:21:18.086Z"
   },
   "d981b9c3": {
@@ -1861,5 +1870,5 @@
   "2026-11-17",
   "2026-11-18"
  ],
- "inbox_checked_at": "2026-11-18T07:21:18.422Z"
+ "inbox_checked_at": "2026-11-18T08:21:12.118Z"
 }
