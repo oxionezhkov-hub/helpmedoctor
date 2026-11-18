@@ -1547,31 +1547,39 @@
   },
   "5abc20b0": {
    "to": "lysenko_iakov@yahoo.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T21:49:10.200Z",
    "message_id": "<bb999fc9-7563-fefe-ced6-07bdbfaafe70@gmail.com>",
-   "subject": "Для «Ординаторской»: студенты и их ИИ-пациент"
+   "subject": "Для «Ординаторской»: студенты и их ИИ-пациент",
+   "followup_at": "2026-11-18T06:21:20.301Z",
+   "followup_message_id": "<63d9c91b-e966-46e3-15fe-b4efa04a313a@gmail.com>"
   },
   "ed32ce86": {
    "to": "lazarevsd@tyumsmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T21:52:26.328Z",
    "message_id": "<ef668cd4-5567-1336-1996-3b12d3cc3862@gmail.com>",
-   "subject": "Для симцентра ТюмГМУ: виртуальный пациент для сбора анамнеза"
+   "subject": "Для симцентра ТюмГМУ: виртуальный пациент для сбора анамнеза",
+   "followup_at": "2026-11-18T06:24:47.522Z",
+   "followup_message_id": "<c4f15518-56ec-2f24-dc4d-91c8ab7dc8e3@gmail.com>"
   },
   "96e9372a": {
    "to": "med@lanbook.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T21:57:38.622Z",
    "message_id": "<f628f362-b800-2a8d-460d-835d5d2b3cd6@gmail.com>",
-   "subject": "Издательство «Лань»: подборки литературы к клиническим случаям"
+   "subject": "Издательство «Лань»: подборки литературы к клиническим случаям",
+   "followup_at": "2026-11-18T06:29:27.394Z",
+   "followup_message_id": "<567381bb-72c1-0e69-afb0-e01130560116@gmail.com>"
   },
   "a84e239e": {
    "to": "sno@vsmu.by",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-09T22:02:47.573Z",
    "message_id": "<f10fc4f6-7118-29eb-c79f-0b575da308b2@gmail.com>",
-   "subject": "Для Совета СНО ВГМУ: тренажёр приёма к следующей конференции"
+   "subject": "Для Совета СНО ВГМУ: тренажёр приёма к следующей конференции",
+   "followup_at": "2026-11-18T06:34:20.200Z",
+   "followup_message_id": "<a42d0c33-ce1b-c076-c8f5-99e845457199@gmail.com>"
   },
   "76ba22a0": {
    "to": "mail@vrngmu.ru",
@@ -1771,6 +1779,48 @@
    "sent_at": "2026-11-17T06:50:55.306Z",
    "message_id": "<7528ef3f-b0d2-e2d1-026a-c2d2d46fb7e2@gmail.com>",
    "subject": "МЦ МФО и аккредитация: домашняя практика сбора анамнеза"
+  },
+  "b5fb4c5f": {
+   "to": "sovetpspbgmu@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-11-18T06:37:06.433Z",
+   "message_id": "<2572405c-a481-8fa8-26ea-09bf7a9b6692@gmail.com>",
+   "subject": "Для Совета обучающихся ПСПбГМУ: тренажёр приёма пациента"
+  },
+  "eb300450": {
+   "to": "pr@rlsnet.ru",
+   "status": "sent",
+   "sent_at": "2026-11-18T06:41:15.838Z",
+   "message_id": "<c4e00835-2919-f852-ba85-0d38f38e0eba@gmail.com>",
+   "subject": "РЛС и студенты-медики: фармакология на клинических случаях"
+  },
+  "d1429e63": {
+   "to": "studsovet@samsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-18T06:43:56.877Z",
+   "message_id": "<5416be22-b874-ca21-05a9-7e3c8c42453a@gmail.com>",
+   "subject": "Для Совета обучающихся СамГМУ: тренажёр приёма пациента"
+  },
+  "895d789f": {
+   "to": "zabota@myrosmol.ru",
+   "status": "sent",
+   "sent_at": "2026-11-18T06:47:13.387Z",
+   "message_id": "<a4d66711-2a5a-e56c-e769-9c6a139bec97@gmail.com>",
+   "subject": "Росмолодёжь.Гранты: заявка студенческого EdTech-проекта"
+  },
+  "d981b9c3": {
+   "to": "kurskmed@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-18T06:50:31.434Z",
+   "message_id": "<50270434-3410-a6f1-7f95-f77f09668dc9@gmail.com>",
+   "subject": "Для Совета СНО Курского ГМУ: виртуальный пациент для студентов"
+  },
+  "061a0d29": {
+   "to": "m.vlasenko@vidal.ru",
+   "status": "sent",
+   "sent_at": "2026-11-18T06:54:44.313Z",
+   "message_id": "<5a17af50-cc44-ee2f-2566-178bf675a955@gmail.com>",
+   "subject": "Vidal.ru и студенты-медики: спецпроект по фармакологии"
   }
  },
  "days": [
@@ -1800,7 +1850,8 @@
   "2026-11-12",
   "2026-11-13",
   "2026-11-16",
-  "2026-11-17"
+  "2026-11-17",
+  "2026-11-18"
  ],
- "inbox_checked_at": "2026-11-17T19:49:05.258Z"
+ "inbox_checked_at": "2026-11-18T06:21:18.568Z"
 }
