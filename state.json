@@ -1573,12 +1573,20 @@
   },
   "96e9372a": {
    "to": "med@lanbook.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-09T21:57:38.622Z",
    "message_id": "<f628f362-b800-2a8d-460d-835d5d2b3cd6@gmail.com>",
    "subject": "Издательство «Лань»: подборки литературы к клиническим случаям",
    "followup_at": "2026-11-18T06:29:27.394Z",
-   "followup_message_id": "<567381bb-72c1-0e69-afb0-e01130560116@gmail.com>"
+   "followup_message_id": "<567381bb-72c1-0e69-afb0-e01130560116@gmail.com>",
+   "seen": [
+    "<1794991333.755871934@4.f.mail-release.rc.mrucl.ru>"
+   ],
+   "last_in_msgid": "<1794991333.755871934@4.f.mail-release.rc.mrucl.ru>",
+   "last_in_subject": "Re: Издательство «Лань»: подборки литературы к клиническим случаям",
+   "last_in_from": "med@lanbook.ru",
+   "last_in_at": "2026-11-18T09:21:21.424Z",
+   "reply_at": "2026-11-18T09:21:21.424Z"
   },
   "a84e239e": {
    "to": "sno@vsmu.by",
@@ -1870,5 +1878,5 @@
   "2026-11-17",
   "2026-11-18"
  ],
- "inbox_checked_at": "2026-11-18T08:21:12.118Z"
+ "inbox_checked_at": "2026-11-18T09:21:21.551Z"
 }
