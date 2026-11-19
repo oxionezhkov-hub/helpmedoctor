@@ -1884,10 +1884,18 @@
   },
   "f3aa60cd": {
    "to": "profkom_1med@bk.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-11-19T06:40:57.345Z",
    "message_id": "<24b0128e-b5b7-72df-e33e-aceb1bc9d33e@gmail.com>",
-   "subject": "Для студпрофкома Сеченовского университета: тренажёр приёма"
+   "subject": "Для студпрофкома Сеченовского университета: тренажёр приёма",
+   "seen": [
+    "<1xTvpL-00000000Kzu-0fEm.profkom_1med.autoreply@bk.ru>"
+   ],
+   "last_in_msgid": "<1xTvpL-00000000Kzu-0fEm.profkom_1med.autoreply@bk.ru>",
+   "last_in_subject": "Re: Для студпрофкома Сеченовского университета: тренажёр приёма",
+   "last_in_from": "profkom_1med@bk.ru",
+   "last_in_at": "2026-11-19T07:21:12.209Z",
+   "reply_at": "2026-11-19T07:21:12.210Z"
   },
   "9fae9fb9": {
    "to": "studmed34@mail.ru",
@@ -1942,5 +1950,5 @@
   "2026-11-18",
   "2026-11-19"
  ],
- "inbox_checked_at": "2026-11-19T06:21:13.870Z"
+ "inbox_checked_at": "2026-11-19T07:21:12.238Z"
 }
