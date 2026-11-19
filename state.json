@@ -18,6 +18,13 @@
    "followup_at": "2026-10-23T06:21:18.094Z",
    "followup_message_id": "<4240bf16-0fd9-b003-4534-ffe8a76df6bc@gmail.com>"
   },
+  "58885903": {
+   "to": "studsovetngmu@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-19T06:50:06.218Z",
+   "message_id": "<4f33a713-7e45-f314-fb06-cde9d3b43701@gmail.com>",
+   "subject": "Для студсовета НГМУ: тренажёр приёма от студентов-медиков"
+  },
   "67135310": {
    "to": "rectorat@bashgmu.ru",
    "status": "followed",
@@ -1607,24 +1614,30 @@
   },
   "76ba22a0": {
    "to": "mail@vrngmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-11T06:48:19.444Z",
    "message_id": "<a040fac4-85d9-d903-0e9c-137afff2a118@gmail.com>",
-   "subject": "Для СНО ВГМУ им. Бурденко: тренажёр к следующему конгрессу"
+   "subject": "Для СНО ВГМУ им. Бурденко: тренажёр к следующему конгрессу",
+   "followup_at": "2026-11-19T06:21:14.935Z",
+   "followup_message_id": "<301400e5-83e5-a0bb-bc21-bf95e00c7153@gmail.com>"
   },
   "656a8413": {
    "to": "editor@remedium.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-11T06:52:24.275Z",
    "message_id": "<488e436c-cb70-bb97-6e63-62459355eda5@gmail.com>",
-   "subject": "Новость для «Ремедиума»: студенты сделали ИИ-тренажёр приёма"
+   "subject": "Новость для «Ремедиума»: студенты сделали ИИ-тренажёр приёма",
+   "followup_at": "2026-11-19T06:24:21.983Z",
+   "followup_message_id": "<cb78980c-3757-c8d5-a644-7c1dda10b325@gmail.com>"
   },
   "a3efa852": {
    "to": "r.s.o@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-11T06:57:30.382Z",
    "message_id": "<0482fb02-0ce3-120c-7deb-35f8ce948764@gmail.com>",
-   "subject": "Для медицинских отрядов РСО: тренажёр приёма пациента"
+   "subject": "Для медицинских отрядов РСО: тренажёр приёма пациента",
+   "followup_at": "2026-11-19T06:27:16.742Z",
+   "followup_message_id": "<aa31e2bb-39d1-2ce1-fd3c-5edb12f8da89@gmail.com>"
   },
   "ec3413d3": {
    "to": "pedconf@krasgmu.ru",
@@ -1854,6 +1867,48 @@
    "sent_at": "2026-11-18T06:54:44.313Z",
    "message_id": "<5a17af50-cc44-ee2f-2566-178bf675a955@gmail.com>",
    "subject": "Vidal.ru и студенты-медики: спецпроект по фармакологии"
+  },
+  "a02f2b97": {
+   "to": "med@rudn.ru",
+   "status": "sent",
+   "sent_at": "2026-11-19T06:32:13.091Z",
+   "message_id": "<02fe8b86-f772-9dda-ec57-909b794ae3af@gmail.com>",
+   "subject": "Для студкомитета Медицинского института РУДН: тренажёр приёма"
+  },
+  "13c482ab": {
+   "to": "mail@books-up.ru",
+   "status": "sent",
+   "sent_at": "2026-11-19T06:37:24.848Z",
+   "message_id": "<27ea0d43-c9eb-c818-d515-76ab9531ebab@gmail.com>",
+   "subject": "ЭБС BookUp и разборы клинических случаев: партнёрство"
+  },
+  "f3aa60cd": {
+   "to": "profkom_1med@bk.ru",
+   "status": "sent",
+   "sent_at": "2026-11-19T06:40:57.345Z",
+   "message_id": "<24b0128e-b5b7-72df-e33e-aceb1bc9d33e@gmail.com>",
+   "subject": "Для студпрофкома Сеченовского университета: тренажёр приёма"
+  },
+  "9fae9fb9": {
+   "to": "studmed34@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-19T06:45:14.755Z",
+   "message_id": "<e8a673d8-6c72-e7f7-3a71-1f1b10619e0a@gmail.com>",
+   "subject": "Для студсовета ВолгГМУ: тренажёр приёма для студентов"
+  },
+  "62533d4f": {
+   "to": "office_med@spbu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-19T06:54:33.317Z",
+   "message_id": "<f5b90f8c-c2de-43a2-f962-2a7f0c44fa53@gmail.com>",
+   "subject": "Для СНО Медицинского института СПбГУ: тренажёр приёма"
+  },
+  "56cba526": {
+   "to": "mpasc@bashgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-19T06:57:07.885Z",
+   "message_id": "<ef405865-b9c7-2792-3d25-fdc97030acb8@gmail.com>",
+   "subject": "Для аккредитационного центра БГМУ: тренировка сбора анамнеза"
   }
  },
  "days": [
@@ -1884,7 +1939,8 @@
   "2026-11-13",
   "2026-11-16",
   "2026-11-17",
-  "2026-11-18"
+  "2026-11-18",
+  "2026-11-19"
  ],
- "inbox_checked_at": "2026-11-18T19:23:09.883Z"
+ "inbox_checked_at": "2026-11-19T06:21:13.870Z"
 }
