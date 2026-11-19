@@ -1913,10 +1913,18 @@
   },
   "56cba526": {
    "to": "mpasc@bashgmu.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-11-19T06:57:07.885Z",
    "message_id": "<ef405865-b9c7-2792-3d25-fdc97030acb8@gmail.com>",
-   "subject": "Для аккредитационного центра БГМУ: тренировка сбора анамнеза"
+   "subject": "Для аккредитационного центра БГМУ: тренировка сбора анамнеза",
+   "seen": [
+    "<MRWPR03MB115385A3D94535B3870237289D8792@MRWPR03MB11538.eurprd03.prod.outlook.com>"
+   ],
+   "last_in_msgid": "<MRWPR03MB115385A3D94535B3870237289D8792@MRWPR03MB11538.eurprd03.prod.outlook.com>",
+   "last_in_subject": "RE: Для аккредитационного центра БГМУ: тренировка сбора анамнеза",
+   "last_in_from": "mpasc@bashgmu.ru",
+   "last_in_at": "2026-11-19T10:21:13.922Z",
+   "reply_at": "2026-11-19T10:21:13.922Z"
   }
  },
  "days": [
@@ -1950,5 +1958,5 @@
   "2026-11-18",
   "2026-11-19"
  ],
- "inbox_checked_at": "2026-11-19T09:22:10.304Z"
+ "inbox_checked_at": "2026-11-19T10:21:13.943Z"
 }
