@@ -297,7 +297,7 @@ const RENDER = {
   ai: (d) => {
     const cf = d.cloudflare;
     return html`<div class="card mb" id="ai-setup">${aiSetup(d.setup)}</div>
-      <div class="callout mb small">Цена Workers AI в нейронах за 1 млн токенов (вход / выход): Qwen3 30B — 4 625 / 30 475, Llama 3.3 70B — 26 668 / 204 805; Whisper — 46,63 за минуту аудио. Запасные провайдеры (Cerebras, Groq) бесплатны и нейронов не тратят. Бесплатно 10 000 нейронов в сутки (UTC), сверх — $0.011 за 1000. Наш подсчёт — по токенам из каждого ответа модели${d.kinds.some((k) => k.estimated) ? " (часть запросов — по оценке длины текста)" : ""}.</div>
+      <div class="callout mb small">Цена Workers AI в нейронах за 1 млн токенов (вход / выход): Gemma 4 26B — 9 091 / 27 273, Llama 3.3 70B — 26 668 / 204 805; Whisper — 46,63 за минуту аудио. Запасные провайдеры (Cerebras, Groq) бесплатны и нейронов не тратят. Бесплатно 10 000 нейронов в сутки (UTC), сверх — $0.011 за 1000. Наш подсчёт — по токенам из каждого ответа модели${d.kinds.some((k) => k.estimated) ? " (часть запросов — по оценке длины текста)" : ""}.</div>
       <div class="tiles">${stat("Нейронов за период", fNum(d.total_neurons))}${stat("Запросов к ИИ", fNum(d.total_requests))}${stat("Оплата сверх бесплатного", fUsd(d.usd_over_free), "по нашему подсчёту")}${stat("На одного пользователя", fNum(d.per_user, 1), "нейронов за период")}</div>
       <div class="card mt"><div class="card-head"><h2>Точные данные Cloudflare</h2><button class="btn soft sm" id="cf-load">${ic("refresh", "sm")}<span>Загрузить из Cloudflare</span></button></div>
         <div id="cf">${cfBlock(cf)}</div></div>
@@ -433,6 +433,7 @@ const AI_KIND = { patient: "Новый пациент", reply: "Ответ па�
 const ERR = { ai_error: "Сбой ИИ у пользователя", ai_fallback: "ИИ отказал — ответ запасным запросом", patient_failed: "Пациент не создан", pay_error: "Ошибка оплаты", stt_error: "Голос не распознан", bot_blocked: "Бот заблокирован", telegram: "Telegram не доставил" };
 
 const MODEL_NAMES = {
+  "@cf/google/gemma-4-26b-a4b-it": "Gemma 4 26B (Cloudflare)",
   "@cf/qwen/qwen3-30b-a3b-fp8": "Qwen3 30B (Cloudflare)", "@cf/meta/llama-3.3-70b-instruct-fp8-fast": "Llama 3.3 70B (Cloudflare)",
   "@cf/openai/whisper-large-v3-turbo": "Whisper (Cloudflare)", "cerebras:gpt-oss-120b": "GPT-OSS 120B (Cerebras, запасной)", "groq:openai/gpt-oss-120b": "GPT-OSS 120B (Groq, запасной)",
 };

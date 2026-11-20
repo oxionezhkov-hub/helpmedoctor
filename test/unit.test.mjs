@@ -186,10 +186,11 @@ test("страницы сайта пересобраны после измене
 
 test("ИИ: модель по шагу — умолчания и настройка админки", async () => {
   const { modelFor } = await import("../src/lib/ai.js");
-  assert.equal(modelFor("reply").key, "qwen3");
+  assert.equal(modelFor("reply").id, "@cf/google/gemma-4-26b-a4b-it");
   assert.equal(modelFor("evaluation").key, "llama70");
+  assert.equal(modelFor("evaluation", { evaluation: "qwen3" }).key, "gemma4", "сохранённый выбор Qwen3 переходит на Gemma 4");
   assert.equal(modelFor("reply", { reply: "llama70" }).key, "llama70");
-  assert.equal(modelFor("reply", { reply: "нет такой" }).key, "qwen3", "неизвестная модель — умолчание");
+  assert.equal(modelFor("reply", { reply: "нет такой" }).key, "gemma4", "неизвестная модель — умолчание");
 });
 
 test("ИИ: ответ в формате OpenAI и блок <think> у Qwen3", async () => {
@@ -221,7 +222,8 @@ test("ИИ: лимит Cloudflare → запасной провайдер, за�
   try {
     assert.equal(await aiText(env, { prompt: "Где болит?", kind: "reply" }), "Болит второй день");
     assert.equal(calls.cf, 1, "при лимите Cloudflare не повторяем");
-    assert.match(calls.inputs[0].messages.at(-1).content, /\/no_think$/, "Qwen3 без рассуждений");
+    assert.equal(calls.inputs[0].messages.at(-1).content, "Где болит?");
+    assert.equal(calls.inputs[0].chat_template_kwargs.enable_thinking, false, "Gemma 4 без рассуждений");
     assert.equal(calls.blocked, 1);
     assert.equal(calls.ext[0].url, "https://api.cerebras.ai/v1/chat/completions");
     assert.equal(calls.ext[0].body.model, "gpt-oss-120b");

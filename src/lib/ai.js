@@ -33,7 +33,8 @@ export async function aiTextStream(env, { system, prompt, maxTokens = 300, tempe
   const messages = [];
   if (system) messages.push({ role: "system", content: system });
   messages.push({ role: "user", content: prompt });
-  const payload = { messages: model.noThink ? noThink(messages) : messages, max_tokens: maxTokens, temperature, stream: true };
+  const payload = { messages, max_tokens: maxTokens, temperature, ...model.options, stream: true };
+  if (model.key === "gemma4") payload.stream_options = { include_usage: true };
   const t0 = Date.now();
   let raw = "";
   let usage = null;
@@ -180,7 +181,9 @@ export function resetAiRoute() {
 
 /** Модель Workers AI для шага: настройка админки → умолчание шага → общая модель по умолчанию */
 export function modelFor(kind, routing = {}) {
-  const key = [routing?.[kind], AI_ROUTING_DEFAULT[kind], AI_DEFAULT_MODEL].find((k) => k && AI_MODELS[k]);
+  const saved = routing?.[kind];
+  const selected = saved === "qwen3" ? "gemma4" : saved;
+  const key = [selected, AI_ROUTING_DEFAULT[kind], AI_DEFAULT_MODEL].find((k) => Object.hasOwn(AI_MODELS, k));
   return { key, ...AI_MODELS[key] };
 }
 
@@ -225,7 +228,7 @@ async function runWithRetry(env, input, meta = {}) {
 async function runCf(env, model, input, meta, attempts = 3) {
   let lastErr;
   const promptText = (input.messages || []).map((m) => m.content).join("\n");
-  const payload = model.noThink ? { ...input, messages: noThink(input.messages) } : input;
+  const payload = { ...input, ...model.options };
   for (let i = 0; i < attempts; i++) {
     const t0 = Date.now();
     try {
@@ -248,14 +251,6 @@ async function runCf(env, model, input, meta, attempts = 3) {
     }
   }
   throw lastErr;
-}
-
-/** Qwen3 по умолчанию «думает» вслух — отключаем мягким переключателем /no_think */
-function noThink(messages = []) {
-  const out = messages.map((m) => ({ ...m }));
-  const last = out.findLastIndex((m) => m.role === "user");
-  if (last >= 0) out[last].content = `${out[last].content}\n/no_think`;
-  return out;
 }
 
 /** OpenAI-совместимый запасной провайдер (Cerebras, Groq). Ответ приводим к виду Workers AI: { response, usage } */
