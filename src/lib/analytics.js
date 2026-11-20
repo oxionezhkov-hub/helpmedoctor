@@ -2,6 +2,7 @@
 // Все функции получают hub (с методами all/one/sql) — выполняются внутри HubDO.
 import { AI_CAP_DEFAULT, AI_DEFAULT_MODEL, AI_FALLBACKS, AI_FREE_NEURONS_PER_DAY, AI_MODELS, AI_ROUTING_DEFAULT, AI_STEPS, AI_USD_PER_1000_NEURONS, PLANS, SPECIALIZATIONS, DOCTOR_LEVELS } from "../config.js";
 import { mskDate, toTelegramHtml, utcDate } from "./util.js";
+import { modelFor } from "./ai.js";
 import GENERATED_HISTORY from "../data/history.json" with { type: "json" };
 import { mdPlain } from "./md-plain.js";
 
@@ -1603,7 +1604,9 @@ export const ADMIN_OPS = {
   ai_models_get: (h) => aiModels(h),
   ai_models_set: (h, a, admin) => {
     const routing = {};
-    for (const [k, v] of Object.entries(a.routing || {})) if (AI_STEPS[k] && AI_MODELS[v]) routing[k] = v;
+    for (const [k, v] of Object.entries(a.routing || {})) {
+      if (Object.hasOwn(AI_STEPS, k) && (v === "qwen3" || Object.hasOwn(AI_MODELS, v))) routing[k] = modelFor(k, { [k]: v }).key;
+    }
     h.setSetting("ai_routing", routing);
     if (a.cap != null) h.setSetting("ai_cap", Math.max(0, Math.round(Number(a.cap) || 0)));
     h.audit(admin, "ai_models", "", { routing, cap: a.cap });
@@ -1625,7 +1628,7 @@ export const ADMIN_OPS = {
 /** Настройки моделей ИИ для админки */
 function aiModels(h) {
   const saved = h.getSetting("ai_routing", {}) || {};
-  const routing = Object.fromEntries(Object.keys(AI_STEPS).map((k) => [k, [saved[k], AI_ROUTING_DEFAULT[k], AI_DEFAULT_MODEL].find((m) => m && AI_MODELS[m])]));
+  const routing = Object.fromEntries(Object.keys(AI_STEPS).map((k) => [k, modelFor(k, saved).key]));
   return {
     steps: AI_STEPS, routing, defaults: Object.fromEntries(Object.keys(AI_STEPS).map((k) => [k, AI_ROUTING_DEFAULT[k] || AI_DEFAULT_MODEL])),
     models: Object.fromEntries(Object.entries(AI_MODELS).map(([k, m]) => [k, { label: m.label, note: m.note }])),

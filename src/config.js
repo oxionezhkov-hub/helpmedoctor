@@ -231,12 +231,12 @@ export const LEVEL_RANKS = [
 ];
 
 // Модели ИИ. Каждый шаг приёма (kind) идёт в свою модель — выбор в админке («Расход ИИ» → «Модели по шагам»).
-// По умолчанию всё на дешёвой Qwen3 (≈ в 6 раз меньше нейронов), разбор эксперта — на Llama 70B.
+// По умолчанию используем Gemma 4, разбор эксперта — Llama 70B.
 export const AI_MODELS = {
-  qwen3: { id: "@cf/qwen/qwen3-30b-a3b-fp8", label: "Qwen3 30B", note: "быстрая и дешёвая, ≈ 200 нейронов на приём", noThink: true },
+  gemma4: { id: "@cf/google/gemma-4-26b-a4b-it", label: "Gemma 4 26B", note: "экономичная модель для диалога", options: { chat_template_kwargs: { enable_thinking: false } } },
   llama70: { id: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", label: "Llama 3.3 70B", note: "самая аккуратная, ≈ 1300 нейронов на приём" },
 };
-export const AI_DEFAULT_MODEL = "qwen3";
+export const AI_DEFAULT_MODEL = "gemma4";
 export const AI_ROUTING_DEFAULT = { evaluation: "llama70", guide: "llama70", expert: "llama70" };
 // Шаги, для которых в админке есть переключатель (ключи совпадают с kind в ai_usage)
 export const AI_STEPS = {
@@ -260,6 +260,7 @@ export const AI_CAP_DEFAULT = 9500;
 // in/out — за 1 млн токенов, audio_min — за минуту аудио. 10 000 нейронов в сутки (UTC) бесплатно, дальше $0.011 за 1000.
 export const AI_NEURONS = {
   "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { in: 26668, out: 204805 },
+  "@cf/google/gemma-4-26b-a4b-it": { in: 9091, out: 27273 },
   "@cf/qwen/qwen3-30b-a3b-fp8": { in: 4625, out: 30475 },
   "@cf/openai/whisper-large-v3-turbo": { audio_min: 46.63 },
 };
