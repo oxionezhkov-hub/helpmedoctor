@@ -1848,12 +1848,13 @@
    "subject": "Росмолодёжь.Гранты: заявка студенческого EdTech-проекта",
    "seen": [
     "<lBQP8yCdKRCkcGOn033AEDzVGERRZ6ZfvHwW9jpDY@app-2>",
-    "<ZgDneq1kKObxBcoMq3MmmvxYU4AACeQV84ZGtD23c@app-2>"
+    "<ZgDneq1kKObxBcoMq3MmmvxYU4AACeQV84ZGtD23c@app-2>",
+    "<Sb5GUo8sZygeRKdlwwMXfH37bNMEEZ5CYy5gd0ZHic@app-2>"
    ],
-   "last_in_msgid": "<ZgDneq1kKObxBcoMq3MmmvxYU4AACeQV84ZGtD23c@app-2>",
-   "last_in_subject": "[#SZQ-69385]: Служба Заботы Росмолодёжи",
+   "last_in_msgid": "<Sb5GUo8sZygeRKdlwwMXfH37bNMEEZ5CYy5gd0ZHic@app-2>",
+   "last_in_subject": "[#XEI-44096]: Служба Заботы Росмолодёжи",
    "last_in_from": "zabota@myrosmol.ru",
-   "last_in_at": "2026-11-18T08:21:11.989Z",
+   "last_in_at": "2026-11-20T11:22:12.798Z",
    "reply_at": "2026-11-18T07:21:18.086Z"
   },
   "d981b9c3": {
@@ -2024,5 +2025,5 @@
   "2026-11-19",
   "2026-11-20"
  ],
- "inbox_checked_at": "2026-11-20T10:22:14.724Z"
+ "inbox_checked_at": "2026-11-20T11:22:15.418Z"
 }
