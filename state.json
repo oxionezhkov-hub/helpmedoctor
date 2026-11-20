@@ -1648,10 +1648,12 @@
   },
   "b5bcf64a": {
    "to": "op@fadm.gov.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-12T07:00:54.547Z",
    "message_id": "<49ee6e13-7852-cebc-6d94-19838ff608bc@gmail.com>",
-   "subject": "История студенческого проекта: ИИ-тренажёр для будущих врачей"
+   "subject": "История студенческого проекта: ИИ-тренажёр для будущих врачей",
+   "followup_at": "2026-11-20T06:21:29.390Z",
+   "followup_message_id": "<0f13cf0a-3ea4-05fe-4908-10fecf5824bb@gmail.com>"
   },
   "2c0f46d9": {
    "to": "nomuis@asmu.ru",
@@ -1925,6 +1927,69 @@
    "last_in_from": "mpasc@bashgmu.ru",
    "last_in_at": "2026-11-19T10:21:13.922Z",
    "reply_at": "2026-11-19T10:21:13.922Z"
+  },
+  "fad76fb4": {
+   "to": "hajtova@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-20T06:25:22.958Z",
+   "message_id": "<4dde3a63-6560-d223-a788-12fdefba341d@gmail.com>",
+   "subject": "Для аккредитационного центра НГМУ: виртуальный пациент"
+  },
+  "78fe81d9": {
+   "to": "cso.rostgmu@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-11-20T06:28:54.122Z",
+   "message_id": "<b11e9911-9137-d89e-a247-4cfb613a00b1@gmail.com>",
+   "subject": "Для ЦСО РостГМУ: тренировка сбора анамнеза между тренингами"
+  },
+  "ee57b921": {
+   "to": "tgmu@tyumsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-20T06:33:44.616Z",
+   "message_id": "<c0948ef9-0f86-e3fc-5a4f-c2a4f999578d@gmail.com>",
+   "subject": "Для Центра молодёжной науки ТюмГМУ: тренажёр приёма для СНО"
+  },
+  "e949c52c": {
+   "to": "dzot87@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-11-20T06:37:10.667Z",
+   "message_id": "<06ed8ea3-60a6-bc9f-f64c-cc769c15b901@gmail.com>",
+   "subject": "«Лидеры педиатрии будущего»: тренажёр приёма для участников"
+  },
+  "7f3f5f77": {
+   "to": "info@rsv.ru",
+   "status": "sent",
+   "sent_at": "2026-11-20T06:42:04.979Z",
+   "message_id": "<5df7ce0d-4490-17fa-1514-84db9a3ae240@gmail.com>",
+   "subject": "Тренажёр приёма для медицинских направлений «Я — профессионал»"
+  },
+  "06177c69": {
+   "to": "news@cnews.ru",
+   "status": "sent",
+   "sent_at": "2026-11-20T06:47:02.929Z",
+   "message_id": "<7d585134-42d9-a817-0ac5-5f34fe533b9a@gmail.com>",
+   "subject": "Новость для CNews: студенты-медики сделали ИИ-тренажёр приёма"
+  },
+  "ab63799d": {
+   "to": "post@volgmed.ru",
+   "status": "sent",
+   "sent_at": "2026-11-20T06:52:13.783Z",
+   "message_id": "<b461bf93-9ed1-4a20-0690-326091374564@gmail.com>",
+   "subject": "Для симцентров ВолгГМУ: виртуальный пациент для сбора анамнеза"
+  },
+  "4e20148d": {
+   "to": "avokosk@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-20T06:56:25.709Z",
+   "message_id": "<f577dd05-9160-7b17-e986-e9145716ec6f@gmail.com>",
+   "subject": "Размещение в канале avokos: тренажёр для студентов-медиков"
+  },
+  "37e0e386": {
+   "to": "service@3m-shop.su",
+   "status": "sent",
+   "sent_at": "2026-11-20T07:01:43.313Z",
+   "message_id": "<f31679b5-3e5e-5d28-6c3b-5bb124665722@gmail.com>",
+   "subject": "3M Shop и студенты-медики: стетоскопы Littmann и практика приёма"
   }
  },
  "days": [
@@ -1956,7 +2021,8 @@
   "2026-11-16",
   "2026-11-17",
   "2026-11-18",
-  "2026-11-19"
+  "2026-11-19",
+  "2026-11-20"
  ],
- "inbox_checked_at": "2026-11-19T19:28:54.799Z"
+ "inbox_checked_at": "2026-11-20T06:21:26.253Z"
 }
