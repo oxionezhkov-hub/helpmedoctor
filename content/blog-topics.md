@@ -13,7 +13,7 @@
 ### Октябрь 2026 — семестр, курация
 - [x] #1 Ситуационные задачи по пульмонологии с ответами — situacionnye-zadachi-po-pulmonologii · ЗАД · A → /blog/situacionnye-zadachi-po-pulmonologii/
 - [x] #2 Ситуационные задачи по гастроэнтерологии с ответами — situacionnye-zadachi-po-gastroenterologii · ЗАД · A → /blog/situacionnye-zadachi-po-gastroenterologii/
-- [ ] #3 Учебная история болезни по хирургии: схема и пример — uchebnaya-istoriya-bolezni-hirurgiya · УЧБ · A
+- [x] #3 Учебная история болезни по хирургии: схема и пример — uchebnaya-istoriya-bolezni-hirurgiya · УЧБ · A → /blog/uchebnaya-istoriya-bolezni-hirurgiya/
 - [ ] #4 Боль в груди: дифференциальный диагноз за 5 шагов — bol-v-grudi-differencialnyj-diagnoz · СИМ · A — каннибализация: в /blog/differencialnyj-diagnoz/ есть раздел про боль в груди — новая статья забирает этот интент, раздел в ДД сократить до ссылки на неё
 - [ ] #5 Боль в животе: алгоритм и красные флаги — bol-v-zhivote-algoritm · СИМ · A
 - [ ] #6 Одышка: с чего начать дифференциальный диагноз — odyshka-differencialnyj-diagnoz · СИМ · A
@@ -23,7 +23,7 @@
 - [ ] #8 Ситуационные задачи по нефрологии с ответами — situacionnye-zadachi-po-nefrologii · ЗАД · B
 - [ ] #9 Ситуационные задачи по инфекционным болезням с ответами — situacionnye-zadachi-po-infekcionnym-boleznyam · ЗАД · A
 - [ ] #10 Ситуационные задачи по неврологии с ответами — situacionnye-zadachi-po-nevrologii · ЗАД · A
-- [ ] #11 Экзамен по пропедевтике: вопросы, навыки и как сдать — ekzamen-po-propedevtike · УЧБ · A
+- [x] #11 Экзамен по пропедевтике: вопросы, навыки и как сдать — ekzamen-po-propedevtike · УЧБ · A → /blog/ekzamen-po-propedevtike/
 - [ ] #12 Аускультация сердца: тоны и шумы для студента — auskultaciya-serdca-shumy · УЧБ · A — к старому пункту «Аускультация сердца: точки и тоны» (раздел «Клинические навыки») — это одна тема
 - [ ] #13 Учебная история болезни по педиатрии — uchebnaya-istoriya-bolezni-pediatriya · УЧБ · A
 - [ ] #14 Лихорадка: как искать причину — lihoradka-differencialnyj-diagnoz · СИМ · B
