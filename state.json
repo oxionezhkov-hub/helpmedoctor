@@ -1885,10 +1885,18 @@
   },
   "061a0d29": {
    "to": "m.vlasenko@vidal.ru",
-   "status": "sent",
+   "status": "replied",
    "sent_at": "2026-11-18T06:54:44.313Z",
    "message_id": "<5a17af50-cc44-ee2f-2566-178bf675a955@gmail.com>",
-   "subject": "Vidal.ru и студенты-медики: спецпроект по фармакологии"
+   "subject": "Vidal.ru и студенты-медики: спецпроект по фармакологии",
+   "seen": [
+    "<179543540199.29063.3297872516290312700@vidal.ru>"
+   ],
+   "last_in_msgid": "<179543540199.29063.3297872516290312700@vidal.ru>",
+   "last_in_subject": "Vidal.ru и студенты-медики: спецпроект по фармакологии",
+   "last_in_from": "m.vlasenko@vidal.ru",
+   "last_in_at": "2026-11-23T12:21:12.328Z",
+   "reply_at": "2026-11-23T12:21:12.328Z"
   },
   "a02f2b97": {
    "to": "med@rudn.ru",
@@ -2066,5 +2074,5 @@
   "2026-11-20",
   "2026-11-23"
  ],
- "inbox_checked_at": "2026-11-23T11:21:51.050Z"
+ "inbox_checked_at": "2026-11-23T12:21:12.385Z"
 }
