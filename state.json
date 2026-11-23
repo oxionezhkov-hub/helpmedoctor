@@ -25,6 +25,13 @@
    "message_id": "<4f33a713-7e45-f314-fb06-cde9d3b43701@gmail.com>",
    "subject": "Для студсовета НГМУ: тренажёр приёма от студентов-медиков"
   },
+  "63194435": {
+   "to": "smu@orgma.ru",
+   "status": "sent",
+   "sent_at": "2026-11-23T06:45:22.524Z",
+   "message_id": "<9fccc3a8-a432-5575-2db0-9f4d133df33a@gmail.com>",
+   "subject": "«Молодые учёные — науке и практике XXI века»: идея к 2027 году"
+  },
   "67135310": {
    "to": "rectorat@bashgmu.ru",
    "status": "followed",
@@ -1657,24 +1664,30 @@
   },
   "2c0f46d9": {
    "to": "nomuis@asmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-13T06:31:52.946Z",
    "message_id": "<b8fd3bfc-e95a-9494-c77c-7b3477c4a0e1@gmail.com>",
-   "subject": "Итоговая конференция НОМУИС АГМУ: тренажёр для участников"
+   "subject": "Итоговая конференция НОМУИС АГМУ: тренажёр для участников",
+   "followup_at": "2026-11-23T06:21:13.031Z",
+   "followup_message_id": "<bef79617-2004-396c-3205-1bb3f9047bcb@gmail.com>"
   },
   "b96df921": {
    "to": "editorial@hightech.fm",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-13T06:36:22.600Z",
    "message_id": "<500a9a8e-3d45-41d0-8244-512715447174@gmail.com>",
-   "subject": "Для «Хайтека»: ИИ-пациенты для обучения будущих врачей"
+   "subject": "Для «Хайтека»: ИИ-пациенты для обучения будущих врачей",
+   "followup_at": "2026-11-23T06:24:02.672Z",
+   "followup_message_id": "<b052f337-590b-2a1c-30cb-db76d28ad5f7@gmail.com>"
   },
   "3c1d7191": {
    "to": "ne_3iminova@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-13T06:39:04.887Z",
    "message_id": "<c213caaf-ef0f-f809-67c4-859dcb3af233@gmail.com>",
-   "subject": "Для СНО Дагестанского ГМУ: тренажёр приёма для студентов"
+   "subject": "Для СНО Дагестанского ГМУ: тренажёр приёма для студентов",
+   "followup_at": "2026-11-23T06:29:16.092Z",
+   "followup_message_id": "<a8a3df02-91bb-e71c-972f-0e584346988e@gmail.com>"
   },
   "54a8353e": {
    "to": "info@koriphey.online",
@@ -1693,17 +1706,21 @@
   },
   "d61cae17": {
    "to": "olgavlap@rambler.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-13T06:46:41.384Z",
    "message_id": "<5b5bfcef-764a-3259-bb61-582daabe8b24@gmail.com>",
-   "subject": "«Venienti occurrite morbo»: тренажёр амбулаторного приёма"
+   "subject": "«Venienti occurrite morbo»: тренажёр амбулаторного приёма",
+   "followup_at": "2026-11-23T06:34:26.484Z",
+   "followup_message_id": "<5dca9852-7381-190c-c55f-045a1ef13cfb@gmail.com>"
   },
   "0153b7db": {
    "to": "sno-orgma@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-13T06:49:29.511Z",
    "message_id": "<cc1fe639-e8fe-e587-bfab-3392cf6b449c@gmail.com>",
-   "subject": "Для СНО Оренбургского ГМУ: приём виртуального пациента"
+   "subject": "Для СНО Оренбургского ГМУ: приём виртуального пациента",
+   "followup_at": "2026-11-23T06:39:00.643Z",
+   "followup_message_id": "<d72daf20-3b3c-812e-2f40-a03134c05a3f@gmail.com>"
   },
   "03c21db1": {
    "to": "info@kursnamed.ru",
@@ -1722,10 +1739,12 @@
   },
   "4e442681": {
    "to": "mno@chitgma.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-13T06:55:41.776Z",
    "message_id": "<ef6b37c4-8319-a2b2-6368-ad2309f4e017@gmail.com>",
-   "subject": "«Медицина завтрашнего дня» и студенты ЧГМА: практика с ИИ-пациентом"
+   "subject": "«Медицина завтрашнего дня» и студенты ЧГМА: практика с ИИ-пациентом",
+   "followup_at": "2026-11-23T06:41:58.482Z",
+   "followup_message_id": "<84e36140-f2ab-d32c-c494-b9893c9cbb4f@gmail.com>"
   },
   "f2450116": {
    "to": "info@speransky-kidz.ru",
@@ -1991,6 +2010,27 @@
    "sent_at": "2026-11-20T07:01:43.313Z",
    "message_id": "<f31679b5-3e5e-5d28-6c3b-5bb124665722@gmail.com>",
    "subject": "3M Shop и студенты-медики: стетоскопы Littmann и практика приёма"
+  },
+  "5b3864c7": {
+   "to": "info@pediatr-russia.ru",
+   "status": "sent",
+   "sent_at": "2026-11-23T06:48:58.614Z",
+   "message_id": "<32e44205-0d98-f8f3-64ae-6736aae44304@gmail.com>",
+   "subject": "Тренажёр приёма для студентов и ординаторов-педиатров"
+  },
+  "a398d9cd": {
+   "to": "info@comnews.ru",
+   "status": "sent",
+   "sent_at": "2026-11-23T06:53:59.096Z",
+   "message_id": "<e125ada8-85af-ca82-06f5-fcf986066de6@gmail.com>",
+   "subject": "Для ComNews: ИИ-тренажёр в цифровом медобразовании"
+  },
+  "d904d5b6": {
+   "to": "volunteer-mgmu@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-23T06:59:20.202Z",
+   "message_id": "<f3765025-2587-19ef-6263-9028bc1d6a8a@gmail.com>",
+   "subject": "Для волонтёрского центра Сеченовского: тренажёр приёма пациента"
   }
  },
  "days": [
@@ -2023,7 +2063,8 @@
   "2026-11-17",
   "2026-11-18",
   "2026-11-19",
-  "2026-11-20"
+  "2026-11-20",
+  "2026-11-23"
  ],
- "inbox_checked_at": "2026-11-20T19:04:52.295Z"
+ "inbox_checked_at": "2026-11-23T06:21:12.184Z"
 }
