@@ -1748,45 +1748,57 @@
   },
   "f2450116": {
    "to": "info@speransky-kidz.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-16T06:34:43.837Z",
    "message_id": "<f82720e7-90d8-5858-6709-9e4c076d8303@gmail.com>",
-   "subject": "Для оргкомитета «Сперанских чтений»: тренажёр приёма пациента"
+   "subject": "Для оргкомитета «Сперанских чтений»: тренажёр приёма пациента",
+   "followup_at": "2026-11-23T22:36:45.891Z",
+   "followup_message_id": "<a8c9af0e-8651-a575-dfb6-8f678a142334@gmail.com>"
   },
   "9a62ae95": {
    "to": "sno.stgmu@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-16T06:38:09.582Z",
    "message_id": "<fb8864cc-3cd7-917c-2c05-d0e85d4b7122@gmail.com>",
-   "subject": "Для СНО Ставропольского ГМУ: тренажёр приёма пациента"
+   "subject": "Для СНО Ставропольского ГМУ: тренажёр приёма пациента",
+   "followup_at": "2026-11-23T22:42:00.279Z",
+   "followup_message_id": "<367c3bd7-c4ae-5ce6-8257-4734ea01591b@gmail.com>"
   },
   "c91f48e4": {
    "to": "info@medq.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-16T06:43:14.972Z",
    "message_id": "<94b11705-1830-a08d-d74c-8f30334175b4@gmail.com>",
-   "subject": "МедЗнания и ИИ-тренажёр приёма: обмен упоминаниями"
+   "subject": "МедЗнания и ИИ-тренажёр приёма: обмен упоминаниями",
+   "followup_at": "2026-11-23T22:44:55.275Z",
+   "followup_message_id": "<18f0d62b-e05c-4a5b-d347-3cd7026aca61@gmail.com>"
   },
   "562c2eed": {
    "to": "belyakovdenis2000@yandex.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-16T06:45:49.586Z",
    "message_id": "<63905661-1af0-4866-0766-75ae3c530a49@gmail.com>",
-   "subject": "Для НОМУС ОмГМУ: тренажёр приёма к весенней конференции"
+   "subject": "Для НОМУС ОмГМУ: тренажёр приёма к весенней конференции",
+   "followup_at": "2026-11-23T22:48:13.133Z",
+   "followup_message_id": "<2ef5af3f-f27f-c885-99aa-80e4bd2c8e62@gmail.com>"
   },
   "a834474b": {
    "to": "info@fbm.msu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-16T06:51:00.832Z",
    "message_id": "<99a948ea-f3ae-6434-0649-bd4b20a9ee17@gmail.com>",
-   "subject": "Для СНО ФФМ МГУ: тренажёр приёма с виртуальным пациентом"
+   "subject": "Для СНО ФФМ МГУ: тренажёр приёма с виртуальным пациентом",
+   "followup_at": "2026-11-23T22:50:47.921Z",
+   "followup_message_id": "<4f42789d-8f95-01ca-4ecb-3718fa0f92e0@gmail.com>"
   },
   "94626d7a": {
    "to": "pr1@eksmo.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-16T06:54:12.578Z",
    "message_id": "<fcf8c184-3a28-90ab-7b38-1bf9c923f1b5@gmail.com>",
-   "subject": "Медицинская линейка Эксмо: розыгрыш книг для студентов-медиков"
+   "subject": "Медицинская линейка Эксмо: розыгрыш книг для студентов-медиков",
+   "followup_at": "2026-11-23T22:53:39.366Z",
+   "followup_message_id": "<82da0c56-004c-f7d3-914a-d047ae788512@gmail.com>"
   },
   "99c37584": {
    "to": "kreersvetlana@mail.ru",
@@ -2039,6 +2051,34 @@
    "sent_at": "2026-11-23T06:59:20.202Z",
    "message_id": "<f3765025-2587-19ef-6263-9028bc1d6a8a@gmail.com>",
    "subject": "Для волонтёрского центра Сеченовского: тренажёр приёма пациента"
+  },
+  "997920f2": {
+   "to": "kafedraendornimu@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-23T22:56:18.268Z",
+   "message_id": "<8ec30f80-aba2-75a2-8169-e7887b046e1e@gmail.com>",
+   "subject": "ИИ-пациенты для участников «Креативного диалога в эндокринологии»"
+  },
+  "1fd92e55": {
+   "to": "amurkonf@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-11-23T23:00:16.378Z",
+   "message_id": "<d80ebca3-9dd3-9d4c-f9b6-ff189151e6b2@gmail.com>",
+   "subject": "Виртуальный приём пациента для участников «СИМПрактики»"
+  },
+  "bad9fe20": {
+   "to": "content@con-med.ru",
+   "status": "sent",
+   "sent_at": "2026-11-23T23:04:31.656Z",
+   "message_id": "<0a281f51-cd54-0416-ed6c-dc2fbbef0c3c@gmail.com>",
+   "subject": "Для con-med.ru: как студенты отрабатывают приём на ИИ-пациенте"
+  },
+  "13e81b77": {
+   "to": "pochta@chitgma.ru",
+   "status": "sent",
+   "sent_at": "2026-11-23T23:08:36.996Z",
+   "message_id": "<9452ab15-58c5-0062-fa93-0b96c425620b@gmail.com>",
+   "subject": "Для МНО Читинской ГМА: тренажёр приёма для студентов и ординаторов"
   }
  },
  "days": [
@@ -2072,7 +2112,8 @@
   "2026-11-18",
   "2026-11-19",
   "2026-11-20",
-  "2026-11-23"
+  "2026-11-23",
+  "2026-11-24"
  ],
- "inbox_checked_at": "2026-11-23T20:34:25.700Z"
+ "inbox_checked_at": "2026-11-23T22:36:44.959Z"
 }
