@@ -36,12 +36,12 @@
 - [ ] #19 Головная боль: красные флаги и дифдиагноз — golovnaya-bol-krasnye-flagi · СИМ · A
 - [ ] #20 Отёки: дифференциальный диагноз — oteki-differencialnyj-diagnoz · СИМ · B
 - [ ] #21 Желтуха: надпечёночная, печёночная, подпечёночная — zheltuha-differencialnyj-diagnoz · СИМ · B
-- [ ] #22 Ферритин и обмен железа: как читать анализ — ferritin-obmen-zheleza-rasshifrovka · АНЛ · A
+- [x] #22 Ферритин и обмен железа: как читать анализ — ferritin-obmen-zheleza-rasshifrovka · АНЛ · A → /blog/ferritin-obmen-zheleza-rasshifrovka/
 
 ### Январь 2027 — сессия и старт подготовки к аккредитации
 - [ ] #23 Ситуационные задачи по акушерству и гинекологии с ответами — situacionnye-zadachi-po-akusherstvu · ЗАД · A
 - [ ] #24 Ситуационные задачи по поликлинической терапии с ответами — situacionnye-zadachi-poliklinicheskaya-terapiya · ЗАД · B
-- [ ] #25 Тесты первичной аккредитации: как готовиться по банку ФМЗА — testy-akkreditacii-podgotovka · АКК · A — сверить с /blog/podgotovka-k-akkreditacii/ (там раздел про тесты) — без дублирования
+- [x] #25 Тесты первичной аккредитации: как готовиться по банку ФМЗА — testy-akkreditacii-podgotovka · АКК · A — сверить с /blog/podgotovka-k-akkreditacii/ (там раздел про тесты) — без дублирования → /blog/testy-akkreditacii-podgotovka/
 - [ ] #26 Станция «Экстренная медицинская помощь»: чек-лист и ошибки* — stanciya-ekstrennaya-pomoshch · АКК · A — станции ОСКЭ сейчас описаны на посадочной /akkreditaciya/ — статья про одну станцию глубже посадочной, с перекрёстной ссылкой
 - [ ] #27 Станция «Базовая СЛР»: алгоритм и частые ошибки* — stanciya-bazovaya-slr · АКК · A
 - [ ] #28 Станция «Физикальное обследование»: чек-лист* — stanciya-fizikalnoe-obsledovanie · АКК · A
