@@ -49,7 +49,7 @@
 - [ ] #30 СРБ и прокальцитонин: бактериальная инфекция или нет — srb-prokalcitonin · АНЛ · B — к старому пункту «СОЭ и СРБ» — объединить
 
 ### Февраль 2027
-- [ ] #31 Первичная аккредитация по педиатрии: этапы и подготовка — akkreditaciya-pediatriya · АКК · A
+- [x] #31 Первичная аккредитация по педиатрии: этапы и подготовка — akkreditaciya-pediatriya · АКК · A → /blog/akkreditaciya-pediatriya/
 - [ ] #32 Ситуационные задачи на аккредитации: как строить ответ — situacionnye-zadachi-akkreditaciya · АКК · A
 - [ ] #33 Станция «Профилактический осмотр / консультирование»* — stanciya-profilakticheskij-osmotr · АКК · B
 - [ ] #34 Ситуационные задачи по психиатрии с ответами — situacionnye-zadachi-po-psihiatrii · ЗАД · B
@@ -107,7 +107,7 @@
 ### Август 2027 — новые 3-курсники и ординаторы
 - [ ] #75 Первая клиника на 3 курсе: с чего начать — pervaya-klinika-3-kurs · УЧБ · A
 - [ ] #76 Как тренировать клиническое мышление — klinicheskoe-myshlenie · УЧБ · A
-- [ ] #77 Учебная история болезни по неврологии — uchebnaya-istoriya-bolezni-nevrologiya · УЧБ · B
+- [x] #77 Учебная история болезни по неврологии — uchebnaya-istoriya-bolezni-nevrologiya · УЧБ · B → /blog/uchebnaya-istoriya-bolezni-nevrologiya/
 - [ ] #78 Учебная история болезни по акушерству (история родов) — uchebnaya-istoriya-rodov · УЧБ · B
 - [ ] #79 EN: History-taking checklist for OSCE in Russian — en/osce-history-checklist-russian · EN · C — EN: нужна секция /en/
 - [ ] #80 Дежурство ординатора: чек-лист первой смены — dezhurstvo-ordinatora · НЕО · B — НЕО: нужен рецензент-врач
