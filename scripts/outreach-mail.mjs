@@ -25,7 +25,9 @@ const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : un
 const DRY = args.includes("--dry");
 const PREVIEW = opt("--preview");
 const TEST_TO = opt("--test-to");
-const LIMIT = Number(opt("--limit")) || Infinity;
+const rawLimit = opt("--limit");
+const LIMIT = rawLimit ? Number(rawLimit) : Infinity;
+if (rawLimit && (!Number.isSafeInteger(LIMIT) || LIMIT < 1)) throw new Error("--limit должен быть целым числом больше нуля");
 const STATE_FILE = path.resolve(opt("--state") || ".state/state.json");
 const INBOX = args.includes("--inbox");
 const CREATORS = args.includes("--creators");
@@ -292,7 +294,8 @@ if (PREVIEW) {
     md.push(`---\n\n### ${i + 1}. ${CREATORS ? l.name : l.rec.name}\n\n**Кому:** ${l.to}\n**Тема:** ${m.subject}\n\n${m.text.replace(/\n/g, "  \n")}\n`);
   });
   fs.writeFileSync(PREVIEW, md.join("\n"));
-  log(`✓ ${PREVIEW}: ${q.length} писем; пропущено ${letters.filter((l) => l.skip).length}`);
+  const skipped = CREATORS ? creatorRecipients.size - q.length : letters.filter((l) => l.skip).length;
+  log(`✓ ${PREVIEW}: ${q.length} писем; пропущено ${skipped}`);
   process.exit(0);
 }
 
