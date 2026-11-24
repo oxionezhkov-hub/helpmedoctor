@@ -609,6 +609,10 @@ function materialsPage() {
 }
 
 // ---------------------------------------------------------------- блог
+const TASK_HUB = "/blog/situacionnye-zadachi/";
+const TASK_HUB_DATE = "2026-11-24";
+const taskArticles = ARTICLES.filter((a) => a.cluster === "ЗАД" || a.slug.startsWith("situacionnye-zadachi-"));
+
 // Контекстный призыв по темам статьи
 function articleCta(a) {
   const t = a.tags.join(" ").toLowerCase();
@@ -643,6 +647,7 @@ function insertMidCta(html, cta) {
 function topicLinks(a) {
   const t = `${a.tags.join(" ")} ${a.h1}`.toLowerCase();
   const links = [];
+  if (taskArticles.includes(a)) links.push(["Ситуационные задачи с ответами по предметам", TASK_HUB]);
   if (/анамнез|коммуникац|общени|пропедевт/.test(t)) links.push(["Тренажёр к аккредитации: станция сбора анамнеза", "/akkreditaciya/"], ["Тренажёр для студентов-медиков", "/dlya-studentov/"]);
   if (/аккредит|оскэ|экзамен/.test(t)) links.push(["Тренажёр к аккредитации: сбор анамнеза и клиническое мышление", "/akkreditaciya/"], ["Клинические задачи онлайн с ответами", "/klinicheskie-zadachi/"]);
   if (/диагноз|мышлени/.test(t)) links.push(["Клинические задачи онлайн с ответами", "/klinicheskie-zadachi/"], ["Клинические случаи по кардиологии", "/specialnosti/kardiologiya/"], ["Сложные клинические случаи для врачей", "/dlya-vrachej/"]);
@@ -666,12 +671,37 @@ function blogIndex() {
   ${c.html}
   <h1>Блог для студентов-медиков</h1>
   <p class="lead">Навыки, которые нужны на практике и на аккредитации: расспрос, клиническое мышление, анализы и общение с пациентом.</p>
+  <p><a href="${TASK_HUB}">Ситуационные задачи с ответами по предметам</a></p>
 </div></section>
 <section style="padding-top:48px"><div class="wrap">
   <div class="posts">${ARTICLES.map(postCard).join("")}</div>
   <div style="margin-top:56px">${magnetBlock("magnet_blog")}</div>
 </div></section>`;
   return layout({ page: "blog", headOpts: { title, description, canonical: `${SITE}/blog/`, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
+}
+
+function taskHubPage() {
+  const title = "Ситуационные задачи по медицине с ответами";
+  const description = "Учебные ситуационные задачи с ответами по терапии, кардиологии, гастроэнтерологии, пульмонологии и ЭКГ. Выберите предмет и сравните своё решение с разбором.";
+  const main = `
+<section class="page-hero solo" data-hero><div class="wrap">
+  <h1>${esc(title)}</h1>
+  <p class="lead">Выберите подборку по терапии, кардиологии, гастроэнтерологии, пульмонологии или чтению ЭКГ. Сначала сформулируйте своё решение, затем сравните его с ответом и ходом разбора.</p>
+</div></section>
+<section style="padding-top:48px"><div class="wrap">
+  <div class="sec-head"><div><h2>Задачи по предметам</h2></div></div>
+  <div class="posts">${taskArticles.map(postCard).join("")}</div>
+</div></section>
+<section class="tint"><div class="wrap">
+  <div class="sec-head"><div><h2>Как проверить своё решение</h2></div></div>
+  <ol class="steps">
+    <li><span class="n">1</span><h3>Выделите находки</h3><p>Назовите ведущую жалобу и два сведения из условия, которые влияют на ваш вывод.</p></li>
+    <li><span class="n">2</span><h3>Обоснуйте гипотезу</h3><p>Скажите, почему она подходит и какое наблюдение могло бы изменить ваш ответ.</p></li>
+    <li><span class="n">3</span><h3>Откройте разбор</h3><p>Отметьте один пропущенный вопрос или признак и проверьте его на следующем случае.</p></li>
+  </ol>
+  ${inlineCta("Пройдите приём от первого вопроса", `${FREE_P_CAP} в день бесплатно. После приёма ИИ покажет, какие вопросы и обследования повлияли на разбор.`, "blog_tasks_hub", "Принять пациента")}
+</div></section>`;
+  return layout({ page: "blog-tasks", headOpts: { title, description, canonical: `${SITE}${TASK_HUB}` }, main });
 }
 
 function articlePage(a) {
@@ -912,6 +942,7 @@ function notFound() {
 
 // ---------------------------------------------------------------- sitemap и llms.txt
 const PAGES = [
+  { loc: TASK_HUB, lastmod: [TASK_HUB_DATE, ...taskArticles.map((a) => a.updated || a.date)].sort().at(-1), pr: "0.8" },
   { loc: "/demo/", pr: "0.8" },
   ...AUDIENCES.map((a) => ({ loc: `/${a.slug}/`, pr: "0.8" })),
   ...INTENTS.map((i) => ({ loc: `/${i.slug}/`, pr: "0.8" })),
@@ -925,7 +956,7 @@ const PAGES = [
 function sitemap() {
   const urls = [
     { loc: `${SITE}/`, lastmod: SITE_UPDATED, pr: "1.0" },
-    ...PAGES.map((p) => ({ loc: `${SITE}${p.loc}`, lastmod: SITE_UPDATED, pr: p.pr })),
+    ...PAGES.map((p) => ({ loc: `${SITE}${p.loc}`, lastmod: p.lastmod || SITE_UPDATED, pr: p.pr })),
     { loc: `${SITE}/blog/`, lastmod: ARTICLES.map((a) => a.updated || a.date).sort().pop(), pr: "0.8" },
     ...ARTICLES.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, lastmod: a.updated || a.date, pr: "0.7" })),
     ...[OFFER, PRIVACY, PARTNER_OFFER].map((d) => ({ loc: `${SITE}/${d.slug}/`, lastmod: LEGAL_UPDATED, pr: "0.2" })),
@@ -982,6 +1013,7 @@ write("materialy/index.html", materialsPage());
 write("o-proekte/index.html", aboutPage());
 write("partneram/index.html", partnersPage());
 write("blog/index.html", blogIndex());
+write(`${TASK_HUB.slice(1)}index.html`, taskHubPage());
 for (const a of ARTICLES) write(`blog/${a.slug}/index.html`, articlePage(a));
 for (const d of [OFFER, PRIVACY, PARTNER_OFFER]) write(`${d.slug}/index.html`, legalPage(d));
 write("404.html", notFound());
