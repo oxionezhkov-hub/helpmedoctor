@@ -309,6 +309,7 @@ test("оценка приёма считается формулой и не сп
 test("статьи блога из scripts/site/posts отвечают редакционным требованиям", async () => {
   const fsm = await import("node:fs");
   const { ARTICLES } = await import("../scripts/site/articles.mjs");
+  const { articleImageDir } = await import("../scripts/site/publication.mjs");
   const slugs = ARTICLES.map((a) => a.slug);
   assert.equal(new Set(slugs).size, slugs.length, "slug статей уникальны");
   assert.equal(new Set(ARTICLES.map((a) => a.title)).size, ARTICLES.length, "заголовки статей уникальны");
@@ -325,7 +326,8 @@ test("статьи блога из scripts/site/posts отвечают реда�
     assert.ok(a.faq?.length >= 3 && a.faq.length <= 6 && a.faq.every(([q, ans]) => q.endsWith("?") && ans.length >= 60), `${at}: 3–6 вопросов FAQ с развёрнутыми ответами`);
     assert.ok(a.sources?.length >= 2 && a.sources.every(([t, u]) => t && (!u || u.startsWith("https://"))), `${at}: минимум 2 источника`);
     assert.ok(a.cover?.says?.length === 2 && a.cover.patient && a.cover.doctor, `${at}: обложка`);
-    assert.ok(fsm.existsSync(`public/blog/${a.slug}/cover.jpg`) && fsm.existsSync(`public/blog/${a.slug}/og.jpg`), `${at}: картинки обложки — node scripts/build-images.mjs ${a.slug}`);
+    const images = articleImageDir(a.slug);
+    assert.ok(fsm.existsSync(`${images}/cover.jpg`) && fsm.existsSync(`${images}/og.jpg`), `${at}: картинки обложки — node scripts/build-images.mjs ${a.slug}`);
     const body = a.body;
     assert.ok(!/<h1|<script|<style|style="/i.test(body), `${at}: без h1, скриптов и инлайн-стилей`);
     assert.ok(/^\s*<p class="lead">/.test(body), `${at}: начинается с лида <p class="lead">`);
@@ -637,4 +639,60 @@ test("лента ВК: вопрос, ссылка в тренажёр и хеш�
   const q = vkParts({ id: "x", title: "Заголовок", text, ask: "Что думаешь? Пиши в комментариях 👇" }, "");
   assert.equal(q.ask, "Что думаешь? Пиши в комментариях 👇");
   assert.doesNotMatch(q.html, /как думаешь/);
+});
+
+test("очередь блога выпускает по два материала, повторяет сбой и публикует только подготовленные снимки", async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { execFileSync } = await import("node:child_process");
+  const { ARTICLES } = await import("../scripts/site/articles.mjs");
+  const { INITIAL_QUEUE, articleImageDir, prepareRelease, markPublished, publishedArticles, readArticle, readState, moscowDay } =
+    await import("../scripts/site/publication.mjs");
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "blog-publication-"));
+  const state = path.join(root, "state");
+  const queue = path.join(root, "queue");
+  const slug = "test-published-article";
+  const candidate = path.join(queue, `2026-11-25_${slug}`);
+  fs.mkdirSync(state);
+  fs.mkdirSync(candidate, { recursive: true });
+  const sample = ARTICLES.find((a) => a.slug === INITIAL_QUEUE[0]);
+  fs.writeFileSync(path.join(candidate, "article.json"), JSON.stringify({
+    ...sample, slug, body: sample.body + '<p onclick="alert(1)">Пример <a href="javascript:alert(1)">ссылка</a></p><script>alert(1)</script>',
+  }));
+  for (const image of ["cover.jpg", "og.jpg"]) {
+    fs.copyFileSync(path.join(articleImageDir(sample.slug), image), path.join(candidate, image));
+  }
+
+  try {
+    assert.equal(moscowDay(new Date("2026-11-24T21:00:00Z")), "2026-11-25");
+    assert.ok(!publishedArticles(ARTICLES).some((a) => INITIAL_QUEUE.includes(a.slug)));
+    assert.ok(prepareRelease(state, queue, ARTICLES, "2026-11-25"));
+    assert.deepEqual(readState(state).articles.map((a) => a.slug), INITIAL_QUEUE.slice(0, 2));
+    assert.ok(prepareRelease(state, queue, ARTICLES, "2026-11-26"), "повтор после сбоя не выбирает ещё пару");
+    assert.equal(readState(state).articles.length, 2);
+    markPublished(state, "2026-11-26");
+    assert.equal(prepareRelease(state, queue, ARTICLES, "2026-11-26"), false);
+    for (const day of ["2026-11-27", "2026-11-28"]) {
+      assert.ok(prepareRelease(state, queue, ARTICLES, day));
+      markPublished(state, day);
+    }
+    assert.deepEqual(readState(state).articles.map((a) => a.slug), INITIAL_QUEUE);
+    assert.ok(prepareRelease(state, queue, ARTICLES, "2026-11-29"));
+    const external = publishedArticles(ARTICLES, state).find((a) => a.slug === slug);
+    assert.equal(external.date, "2026-11-29");
+    assert.doesNotMatch(external.body, /javascript:|<script|onclick/);
+    fs.writeFileSync(path.join(candidate, "article.json"), "{}");
+    assert.throws(() => readArticle(candidate, slug), /метаданные/);
+    assert.equal(publishedArticles(ARTICLES, state).find((a) => a.slug === slug).body, external.body);
+    const out = path.join(root, "site");
+    execFileSync(process.execPath, ["scripts/build-site.mjs"], {
+      env: { ...process.env, SITE_OUT: out, BLOG_PUBLICATION_DIR: state },
+    });
+    assert.ok(fs.existsSync(path.join(out, "blog", slug, "og.jpg")));
+    assert.match(fs.readFileSync(path.join(out, "sitemap.xml"), "utf8"), new RegExp(`/blog/${slug}/<`));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

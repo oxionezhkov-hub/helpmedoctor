@@ -6,7 +6,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { BONUS_RATING, FREE_DAILY_LIMIT, PACKS, PLANS, REFERRAL, SPECIALIZATIONS, TRIAL } from "../src/config.js";
-import { ARTICLES } from "./site/articles.mjs";
+import { ARTICLES as ALL_ARTICLES } from "./site/articles.mjs";
+import { copyArticleImages, publishedArticles } from "./site/publication.mjs";
 import { withFigures } from "./site/figures.mjs";
 import { AUDIENCES, INTENTS, SPECIALTIES } from "./site/landings.mjs";
 import { LEGAL_UPDATED, OFFER, PARTNER_OFFER, PRIVACY, SELLER } from "./site/legal.mjs";
@@ -19,6 +20,7 @@ const BOT = "https://t.me/helpmedoctor_aibot";
 const SUPPORT = { handle: "@oleg_ezhkov", url: "https://t.me/oleg_ezhkov" }; // поддержка и коммерческие предложения
 const NAME = "Help me, Doctor";
 const OUT = path.resolve(process.env.SITE_OUT || "public");
+const ARTICLES = publishedArticles(ALL_ARTICLES, process.env.BLOG_PUBLICATION_DIR);
 const SITE_UPDATED = "2026-09-25"; // дата изменения главной и посадочных — для sitemap
 const CHECKLIST = { href: "/files/chek-list-sbor-anamneza.pdf", title: "Чек-лист: сбор анамнеза за 10 минут", pages: 2 };
 
@@ -1014,7 +1016,10 @@ write("o-proekte/index.html", aboutPage());
 write("partneram/index.html", partnersPage());
 write("blog/index.html", blogIndex());
 write(`${TASK_HUB.slice(1)}index.html`, taskHubPage());
-for (const a of ARTICLES) write(`blog/${a.slug}/index.html`, articlePage(a));
+for (const a of ARTICLES) {
+  write(`blog/${a.slug}/index.html`, articlePage(a));
+  copyArticleImages(a, OUT);
+}
 for (const d of [OFFER, PRIVACY, PARTNER_OFFER]) write(`${d.slug}/index.html`, legalPage(d));
 write("404.html", notFound());
 write("sitemap.xml", sitemap());

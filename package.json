@@ -15,6 +15,7 @@
     "kr:update": "node scripts/fetch-kr.mjs"
   },
   "devDependencies": {
+    "sanitize-html": "2.18.2",
     "wrangler": "^4.137.0"
   },
   "dependencies": {

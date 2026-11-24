@@ -1,0 +1,78 @@
+name: Выпуск статей блога
+
+on:
+  schedule:
+    - cron: '17 7 * * *' # 10:17 МСК
+    - cron: '17 10 * * *' # резерв в 13:17 МСК
+  workflow_dispatch:
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: helpmedoctor-production
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Выбрать выпуск
+        id: release
+        run: |
+          state_dir="$RUNNER_TEMP/blog-publication-state"
+          queue_dir="$RUNNER_TEMP/blog-content"
+          printf 'BLOG_PUBLICATION_DIR=%s\n' "$state_dir" >> "$GITHUB_ENV"
+          bash scripts/blog-publication-checkout.sh write blog-publication-state "$state_dir"
+          bash scripts/blog-publication-checkout.sh read blog-content "$queue_dir"
+          result=$(node scripts/blog-publication.mjs prepare "$state_dir" "$queue_dir/articles")
+          printf 'result=%s\n' "$result" >> "$GITHUB_OUTPUT"
+      - name: Проверить и собрать выпуск
+        if: steps.release.outputs.result == 'deploy'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # Проверки исходного сайта собирают только версию из main, без состояния очереди.
+          env -u BLOG_PUBLICATION_DIR npm test
+          npm run site
+          git fetch --no-tags origin '+refs/heads/tg/*:refs/remotes/origin/tg/*' || true
+          node scripts/build-history.mjs || echo "Используем историю из репозитория"
+          node scripts/build-app.mjs
+          node --check public/app.js
+      - name: Зафиксировать подготовленный выпуск
+        if: steps.release.outputs.result == 'deploy'
+        run: |
+          cd "$BLOG_PUBLICATION_DIR"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          if ! git diff --cached --quiet; then
+            git commit -m "Подготовить выпуск блога"
+          fi
+          git push origin HEAD:refs/heads/blog-publication-state
+      - name: Опубликовать сайт
+        if: steps.release.outputs.result == 'deploy'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+      - name: Отметить успешный выпуск
+        if: steps.release.outputs.result == 'deploy'
+        run: |
+          node scripts/blog-publication.mjs mark "$BLOG_PUBLICATION_DIR"
+          git -C "$BLOG_PUBLICATION_DIR" add -- released.json
+          git -C "$BLOG_PUBLICATION_DIR" commit -m "Отметить выпуск блога опубликованным"
+          git -C "$BLOG_PUBLICATION_DIR" push origin HEAD:refs/heads/blog-publication-state
+      - name: IndexNow
+        if: steps.release.outputs.result == 'deploy'
+        run: node scripts/indexnow.mjs || true

@@ -87,15 +87,17 @@ ${withTitle ? `<div style="position:absolute;left:0;top:0;bottom:0;width:560px;b
 }
 
 import fs from "node:fs";
+import { articleImageDir } from "./site/publication.mjs";
 await page.setViewportSize({ width: 1200, height: 630 });
 for (const a of ogOnly ? [] : ARTICLES) {
   if (!a.cover || (only.length && !only.includes(a.slug))) continue;
-  fs.mkdirSync(`public/blog/${a.slug}`, { recursive: true });
+  const dir = articleImageDir(a.slug);
+  fs.mkdirSync(dir, { recursive: true });
   await page.setContent(scene(a.cover, false));
-  await page.screenshot({ path: `public/blog/${a.slug}/cover.jpg`, type: "jpeg", quality: 84 });
+  await page.screenshot({ path: `${dir}/cover.jpg`, type: "jpeg", quality: 84 });
   await page.setContent(scene(a.cover, true, a.h1.split(":")[0]));
-  await page.screenshot({ path: `public/blog/${a.slug}/og.jpg`, type: "jpeg", quality: 84 });
-  console.log(`✓ public/blog/${a.slug}/cover.jpg, og.jpg`);
+  await page.screenshot({ path: `${dir}/og.jpg`, type: "jpeg", quality: 84 });
+  console.log(`✓ ${dir}/cover.jpg, og.jpg`);
 }
 
 await browser.close();

@@ -25,6 +25,9 @@ jobs:
 
   deploy:
     needs: test
+    concurrency:
+      group: helpmedoctor-production
+      cancel-in-progress: false
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -33,12 +36,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0 # полная история — для «Истории» в админке
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Проверить актуальный main, если он продвинулся во время CI
+        run: |
+          if [[ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ]]; then npm test; fi
       # История проекта для админки: все PR в main (с описаниями) и публикации в Telegram-канал (ветки tg/*)
       - name: История проекта
         env:
@@ -47,8 +54,12 @@ jobs:
           git fetch --no-tags origin '+refs/heads/tg/*:refs/remotes/origin/tg/*' || true
           node scripts/build-history.mjs || echo "История не собрана — используем src/data/history.json из репозитория"
       # Сжатый код приложения и версии файлов в app.html (только для выкладки, в репозиторий не коммитится)
-      - name: Сборка приложения
-        run: node scripts/build-app.mjs
+      - name: Сборка сайта и приложения
+        run: |
+          state_dir="$RUNNER_TEMP/blog-publication-state"
+          bash scripts/blog-publication-checkout.sh read blog-publication-state "$state_dir"
+          BLOG_PUBLICATION_DIR="$state_dir" npm run site
+          node scripts/build-app.mjs
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
