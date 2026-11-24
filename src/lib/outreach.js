@@ -27,8 +27,9 @@ export async function dispatchWorkflow(env, file, inputs) {
   return r.status === 204;
 }
 
-/** Cron: в 06:20 UTC — отправка писем, в остальные часы — проверка почты (ответы приходят в Telegram) */
+/** Cron: отправки в 09:20 и 15:20 МСК, в остальные часы проверяем ответы. */
 export function outreachCron(env, scheduledTime) {
-  const mode = new Date(scheduledTime).getUTCHours() === 6 ? "send" : "inbox";
+  const hour = new Date(scheduledTime).getUTCHours();
+  const mode = hour === 6 ? "send" : hour === 12 ? "creators" : "inbox";
   return dispatchWorkflow(env, "outreach-mail.yml", { mode });
 }
