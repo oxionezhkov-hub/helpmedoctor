@@ -24,8 +24,8 @@
 - [ ] #9 Ситуационные задачи по инфекционным болезням с ответами — situacionnye-zadachi-po-infekcionnym-boleznyam · ЗАД · A
 - [ ] #10 Ситуационные задачи по неврологии с ответами — situacionnye-zadachi-po-nevrologii · ЗАД · A
 - [x] #11 Экзамен по пропедевтике: вопросы, навыки и как сдать — ekzamen-po-propedevtike · УЧБ · A → /blog/ekzamen-po-propedevtike/
-- [ ] #12 Аускультация сердца: тоны и шумы для студента — auskultaciya-serdca-shumy · УЧБ · A — к старому пункту «Аускультация сердца: точки и тоны» (раздел «Клинические навыки») — это одна тема
-- [ ] #13 Учебная история болезни по педиатрии — uchebnaya-istoriya-bolezni-pediatriya · УЧБ · A
+- [x] #12 Аускультация сердца: тоны и шумы для студента — auskultaciya-serdca-shumy · УЧБ · A — к старому пункту «Аускультация сердца: точки и тоны» (раздел «Клинические навыки») — это одна тема → /blog/auskultaciya-serdca-shumy/
+- [x] #13 Учебная история болезни по педиатрии — uchebnaya-istoriya-bolezni-pediatriya · УЧБ · A → /blog/uchebnaya-istoriya-bolezni-pediatriya/
 - [ ] #14 Лихорадка: как искать причину — lihoradka-differencialnyj-diagnoz · СИМ · B
 
 ### Декабрь 2026 — сессия
@@ -36,12 +36,12 @@
 - [ ] #19 Головная боль: красные флаги и дифдиагноз — golovnaya-bol-krasnye-flagi · СИМ · A
 - [ ] #20 Отёки: дифференциальный диагноз — oteki-differencialnyj-diagnoz · СИМ · B
 - [ ] #21 Желтуха: надпечёночная, печёночная, подпечёночная — zheltuha-differencialnyj-diagnoz · СИМ · B
-- [ ] #22 Ферритин и обмен железа: как читать анализ — ferritin-obmen-zheleza-rasshifrovka · АНЛ · A
+- [x] #22 Ферритин и обмен железа: как читать анализ — ferritin-obmen-zheleza-rasshifrovka · АНЛ · A → /blog/ferritin-obmen-zheleza-rasshifrovka/
 
 ### Январь 2027 — сессия и старт подготовки к аккредитации
 - [ ] #23 Ситуационные задачи по акушерству и гинекологии с ответами — situacionnye-zadachi-po-akusherstvu · ЗАД · A
 - [ ] #24 Ситуационные задачи по поликлинической терапии с ответами — situacionnye-zadachi-poliklinicheskaya-terapiya · ЗАД · B
-- [ ] #25 Тесты первичной аккредитации: как готовиться по банку ФМЗА — testy-akkreditacii-podgotovka · АКК · A — сверить с /blog/podgotovka-k-akkreditacii/ (там раздел про тесты) — без дублирования
+- [x] #25 Тесты первичной аккредитации: как готовиться по банку ФМЗА — testy-akkreditacii-podgotovka · АКК · A — сверить с /blog/podgotovka-k-akkreditacii/ (там раздел про тесты) — без дублирования → /blog/testy-akkreditacii-podgotovka/
 - [ ] #26 Станция «Экстренная медицинская помощь»: чек-лист и ошибки* — stanciya-ekstrennaya-pomoshch · АКК · A — станции ОСКЭ сейчас описаны на посадочной /akkreditaciya/ — статья про одну станцию глубже посадочной, с перекрёстной ссылкой
 - [ ] #27 Станция «Базовая СЛР»: алгоритм и частые ошибки* — stanciya-bazovaya-slr · АКК · A
 - [ ] #28 Станция «Физикальное обследование»: чек-лист* — stanciya-fizikalnoe-obsledovanie · АКК · A
@@ -49,7 +49,7 @@
 - [ ] #30 СРБ и прокальцитонин: бактериальная инфекция или нет — srb-prokalcitonin · АНЛ · B — к старому пункту «СОЭ и СРБ» — объединить
 
 ### Февраль 2027
-- [ ] #31 Первичная аккредитация по педиатрии: этапы и подготовка — akkreditaciya-pediatriya · АКК · A
+- [x] #31 Первичная аккредитация по педиатрии: этапы и подготовка — akkreditaciya-pediatriya · АКК · A → /blog/akkreditaciya-pediatriya/
 - [ ] #32 Ситуационные задачи на аккредитации: как строить ответ — situacionnye-zadachi-akkreditaciya · АКК · A
 - [ ] #33 Станция «Профилактический осмотр / консультирование»* — stanciya-profilakticheskij-osmotr · АКК · B
 - [ ] #34 Ситуационные задачи по психиатрии с ответами — situacionnye-zadachi-po-psihiatrii · ЗАД · B
@@ -107,7 +107,7 @@
 ### Август 2027 — новые 3-курсники и ординаторы
 - [ ] #75 Первая клиника на 3 курсе: с чего начать — pervaya-klinika-3-kurs · УЧБ · A
 - [ ] #76 Как тренировать клиническое мышление — klinicheskoe-myshlenie · УЧБ · A
-- [ ] #77 Учебная история болезни по неврологии — uchebnaya-istoriya-bolezni-nevrologiya · УЧБ · B
+- [x] #77 Учебная история болезни по неврологии — uchebnaya-istoriya-bolezni-nevrologiya · УЧБ · B → /blog/uchebnaya-istoriya-bolezni-nevrologiya/
 - [ ] #78 Учебная история болезни по акушерству (история родов) — uchebnaya-istoriya-rodov · УЧБ · B
 - [ ] #79 EN: History-taking checklist for OSCE in Russian — en/osce-history-checklist-russian · EN · C — EN: нужна секция /en/
 - [ ] #80 Дежурство ординатора: чек-лист первой смены — dezhurstvo-ordinatora · НЕО · B — НЕО: нужен рецензент-врач
@@ -207,7 +207,7 @@
 - [ ] СОЭ и СРБ: в чём разница — срб и соэ
 
 ## Клинические навыки и пропедевтика
-- [ ] Аускультация сердца: точки и тоны — точки аускультации сердца
+- [x] Аускультация сердца: точки и тоны — см. #12 → /blog/auskultaciya-serdca-shumy/
 - [ ] Аускультация легких: дыхание и хрипы — виды хрипов в легких
 - [ ] Пальпация живота: поверхностная и глубокая — пальпация живота по Образцову-Стражеско
 - [ ] Перкуссия легких и сердца — перкуссия границ сердца

@@ -6,7 +6,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { BONUS_RATING, FREE_DAILY_LIMIT, PACKS, PLANS, REFERRAL, SPECIALIZATIONS, TRIAL } from "../src/config.js";
-import { ARTICLES } from "./site/articles.mjs";
+import { ARTICLES as ALL_ARTICLES } from "./site/articles.mjs";
+import { copyArticleImages, publishedArticles } from "./site/publication.mjs";
 import { withFigures } from "./site/figures.mjs";
 import { AUDIENCES, INTENTS, SPECIALTIES } from "./site/landings.mjs";
 import { LEGAL_UPDATED, OFFER, PARTNER_OFFER, PRIVACY, SELLER } from "./site/legal.mjs";
@@ -19,6 +20,7 @@ const BOT = "https://t.me/helpmedoctor_aibot";
 const SUPPORT = { handle: "@oleg_ezhkov", url: "https://t.me/oleg_ezhkov" }; // поддержка и коммерческие предложения
 const NAME = "Help me, Doctor";
 const OUT = path.resolve(process.env.SITE_OUT || "public");
+const ARTICLES = publishedArticles(ALL_ARTICLES, process.env.BLOG_PUBLICATION_DIR);
 const SITE_UPDATED = "2026-09-25"; // дата изменения главной и посадочных — для sitemap
 const CHECKLIST = { href: "/files/chek-list-sbor-anamneza.pdf", title: "Чек-лист: сбор анамнеза за 10 минут", pages: 2 };
 
@@ -221,17 +223,17 @@ const inlineCta = (title, text, from, label = "Попробовать беспл
 
 // ---------------------------------------------------------------- общие блоки
 function heroChart() {
-  return `<figure class="chart" role="img" aria-label="Пример карты приёма в тренажёре: жалобы пациента, вопросы врача, результат ФГДС, диагноз и оценка приёма 4,5 из 5">
+  return `<figure class="chart" aria-label="Пример карты приёма в тренажёре">
   <div class="chart-h"><div><span class="chart-no">Карта приёма № 0147</span><span class="chart-sub">Гастроэнтерология · средняя сложность</span></div><span class="chart-tag">пример</span></div>
   <dl>
     <dt>Пациент</dt><dd>Мирон Л., 47 лет, водитель</dd>
     <dt>Жалобы</dt><dd><q>Жжёт под ложечкой третью неделю</q></dd>
     <dt>Вы спросили</dt><dd class="hand">натощак или после еды? лекарства?</dd>
     <dt>Ответ</dt><dd><q>От спины пью ибупрофен…</q></dd>
-    <dt>ФГДС</dt><dd>язва луковицы ДПК, 8 мм</dd>
-    <dt>Диагноз</dt><dd class="hand">язва ДПК на фоне НПВП</dd>
+    <dt>Обследования</dt><dd>Выберите, что назначить</dd>
+    <dt>Диагноз</dt><dd class="hand">Предстоит поставить</dd>
   </dl>
-  <div class="stamp"><span>Разбор</span><b>4,5</b><span>из 5</span></div>
+  <div class="stamp"><b>Сбор</b><span>анамнеза</span></div>
 </figure>`;
 }
 
@@ -255,7 +257,7 @@ function demoBlock() {
 }
 
 function sampleReview() {
-  return `<div class="review" role="img" aria-label="Пример разбора приёма: оценки по разделам, цитата из диалога, пропущенные вопросы и исход">
+  return `<div class="review" role="group" aria-label="Пример разбора приёма">
   <div class="review-h"><b>Разбор приёма</b><span>4,5 / 5</span></div>
   <div class="scores">
     <div><span>Диагностика</span><i style="--w:90%"></i><span>4,5</span></div>
@@ -268,7 +270,7 @@ function sampleReview() {
     <li>Хорошо: уточнили лекарства и нашли причину — ибупрофен.</li>
     <li>Совет: отменяя НПВП, предложите пациенту, чем обезболить спину.</li>
   </ul>
-  <p class="outcome"><strong>По КР «Язвенная болезнь»:</strong> ЭГДС с тестом на H. pylori обязательна; эрадикация 14 дней — ИПП, амоксициллин 1000 мг и кларитромицин 500 мг 2 раза в сутки.</p>
+  <p class="outcome"><strong>Что было дальше.</strong> Пациента госпитализировали под наблюдение из-за признаков кровотечения. Ибупрофен отменили. После лечения язва зарубцевалась.</p>
 </div>`;
 }
 
@@ -289,7 +291,7 @@ const FAQ = [
   ["Сколько это стоит и что будет после 1 ₽?", `${FREE_P} в день — бесплатно и без карты, и ещё один за приём с оценкой от ${BONUS}; раз в день — тест по ошибкам и разбор по КР. Премиум — безлимит пациентов, полный ИИ-разбор, тесты по ошибкам и «Очень сложные» случаи: первые 7 дней за ${rub(TRIAL.price)} ₽, затем ${rub(MONTH.price)} ₽ в месяц. Студентам — ${rub(STUDENT.price)} ₽ в месяц после проверки студенческого билета (фото загружается в «Тарифах»). Есть тариф на год одним платежом — ${rub(PLANS.year.price)} ₽. За сутки до конца пробного периода напомним в приложении и в Telegram. Оплата картой или через СБП.`],
   ["Как отменить подписку и вернуть деньги?", "Автопродление отключается в профиле → «Подписка» одной кнопкой; до конца пробного периода — без оплаты, премиум остаётся до конца оплаченного срока. Если списание прошло ошибочно или вы не пользовались премиумом после него, в течение 14 дней можно запросить возврат — условия в оферте."],
   ["Кто пишет разбор приёма?", "Разбор генерирует искусственный интеллект: он сравнивает ваш диалог и назначения со скрытой историей случая и оценивает диагностику, коммуникацию и лечение. ИИ может ошибаться — используйте разбор для самопроверки, а медицинские факты сверяйте с клиническими рекомендациями и учебниками."],
-  ["По каким рекомендациям идёт разбор — российским или зарубежным?", "По российским. Тренажёр находит по диагнозу действующую клиническую рекомендацию Минздрава России в официальном рубрикаторе (cr.minzdrav.gov.ru) и строит разбор на её тексте: обязательный минимум диагностики, лучшие методы обследования, препараты по МНН с дозами и длительностью курса. Ссылка на рекомендацию есть в каждом разборе. Если КР по диагнозу в рубрикаторе нет, разбор об этом предупреждает."],
+  ["По каким рекомендациям идёт разбор — российским или зарубежным?", "По российским. Тренажёр ищет рекомендацию по диагнозу в официальном рубрикаторе Минздрава России (cr.minzdrav.gov.ru). Если документ найден, разбор содержит ссылку. ИИ опирается на текст рекомендации, когда он доступен."],
   ["Чем это лучше, чем попросить чат-бота сыграть пациента?", "У пациента в тренажёре есть скрытый диагноз и история болезни, которые не меняются по ходу разговора; анализы и исследования дают результаты под этот диагноз; после приёма — разбор по разделам и тест по вашим ошибкам. Плюс уровни сложности под вашу роль, специальности, прогресс и статистика."],
   ["Это медицинская консультация?", "Нет. «Help me, Doctor» — учебный тренажёр: все пациенты вымышлены. Сервис не ставит диагнозы реальным людям и не заменяет обращение к врачу."],
   ["Кому подходит тренажёр?", "Студентам медицинских вузов, ординаторам и практикующим врачам. При первом входе вы выбираете роль, специальность, разделы и сложность — пациенты подбираются под вас."],
@@ -352,36 +354,24 @@ function landing() {
 <section class="hero" data-hero><div class="wrap">
   <div>
     <h1>Тренажёр врача с виртуальными пациентами</h1>
-    <p class="hero-sub">Приём от жалобы до&nbsp;диагноза — за&nbsp;10&nbsp;минут</p>
-    <p class="lead">Расспросите пациента текстом или голосом, назначьте анализы, поставьте диагноз. Сразу после — разбор по клиническим рекомендациям Минздрава: что упустили, как надо было распознать и чем лечить.</p>
+    <p class="hero-sub">Практика клинического приёма за 10–15 минут</p>
+    <p class="lead">Расспросите пациента текстом или голосом, назначьте обследования, поставьте диагноз и предложите лечение. После приёма ИИ подскажет, что вы сделали хорошо и что упустили.</p>
     <div class="cta">
       <a class="btn btn-primary btn-lg" href="${app("hero")}">Принять пациента бесплатно ${ARR}</a>
-      <a class="btn btn-ghost btn-lg" href="#demo">Демо</a>
+      <a class="btn btn-ghost btn-lg" href="#demo">Пройти демо</a>
     </div>
+    <ul class="cta-note"><li>${FREE_P_CAP} в день бесплатно</li><li>Демо без регистрации</li></ul>
     <p class="live" data-live hidden><i></i><span></span></p>
   </div>
   ${heroChart()}
 </div></section>
 
-<section><div class="wrap">
-  <div class="sec-head"><div><h2>Знать болезнь и&nbsp;узнать её у&nbsp;пациента — разные навыки</h2><p>На экзамене и в клинике спросят не «что такое язва», а «что с этим пациентом». Второму учит только практика с обратной связью.</p></div></div>
-  <div class="versus">
-    <div class="bad"><h3>Как обычно учатся</h3><ul>
-      <li>ситуационные задачи, где все данные уже собраны за вас</li>
-      <li>на обходе — два-три вопроса пациенту, остальное слушаете</li>
-      <li>ошибку в расспросе никто не показывает — она всплывает на экзамене</li>
-      <li>учебник читается подряд, а не по вашим пробелам</li>
-    </ul></div>
-    <div class="good"><h3>Как в тренажёре</h3><ul>
-      <li>пациент говорит только то, о чём спросили, — данные собираете сами</li>
-      <li>полный приём от жалобы до лечения за 10–15 минут</li>
-      <li>разбор по клиническим рекомендациям Минздрава: что обязательно, что пропущено, препараты и дозы</li>
-      <li>тест по ошибкам именно этого приёма</li>
-    </ul></div>
-  </div>
+<section id="demo" class="airy"><div class="wrap">
+  <div class="sec-head"><div><h2>Демо-приём без регистрации</h2><p>Выберите вопросы и обследования, поставьте диагноз и получите разбор. В демо доступны готовые варианты, а в тренажёре вы формулируете вопросы сами.</p></div></div>
+  ${demoBlock()}
 </div></section>
 
-<section id="how" class="tint"><div class="wrap">
+<section id="how"><div class="wrap">
   <div class="sec-head"><div><h2>Приём от жалобы до разбора</h2><p>Как на настоящем приёме — только без риска для пациента и с обратной связью сразу после.</p></div></div>
   <ol class="steps">
     <li><span class="n">1</span><h3>Пациент с жалобой</h3><p>ИИ создаёт новый случай по вашей специальности, разделам и уровню сложности. У пациента свой характер и манера речи.</p></li>
@@ -391,20 +381,15 @@ function landing() {
   </ol>
 </div></section>
 
-<section id="demo" class="airy"><div class="wrap">
-  <div class="sec-head"><div><h2>Попробуйте прямо здесь</h2><p>Короткий приём с готовым сценарием: задайте вопросы, назначьте обследования и поставьте диагноз. Регистрация не нужна.</p></div></div>
-  ${demoBlock()}
-</div></section>
-
 <section class="tint"><div class="wrap">
-  <div class="sec-head"><div><h2>Разбор по клиническим рекомендациям Минздрава РФ</h2><p>Не просто «верно / неверно»: оценка по разделам, чек-лист обязательных шагов по КР, как надо было распознать диагноз, лучшая диагностика и схема лечения с дозами. В каждом разборе — ссылка на рекомендацию в официальном рубрикаторе.</p></div></div>
+  <div class="sec-head"><div><h2>Что показывает ИИ-разбор приёма</h2><p>Получите оценку диагностики, общения с пациентом и лечения. ИИ отметит важные пропуски и подскажет, что изменить в следующем приёме.</p></div></div>
   <div class="review-wrap">
     ${sampleReview()}
     <ul class="feat">
-      <li><span class="k">01</span><div><b>Российские клинические рекомендации</b><span>Разбор опирается на текст действующих КР Минздрава из рубрикатора cr.minzdrav.gov.ru: препараты по МНН, дозы и режимы, критерии качества помощи.</span></div></li>
+      <li><span class="k">01</span><div><b>Клинические рекомендации Минздрава России</b><span>Если тренажёр найдёт рекомендацию по диагнозу, в разборе будет ссылка. Когда текст доступен, ИИ использует его для разбора обследований и лечения.</span></div></li>
       <li><span class="k">02</span><div><b>Подсказка наставника</b><span>Зашли в тупик — возьмите подсказку: ИИ назовёт один следующий шаг. Три на пациента, и каждая стоит баллов.</span></div></li>
-      <li><span class="k">03</span><div><b>Живые пациенты</b><span>Тревожные, ворчливые, немногословные — у каждого свой характер и манера речи. Можно говорить голосом.</span></div></li>
-      <li><span class="k">04</span><div><b>Честные обследования</b><span>Каждый метод показывает только то, что может показать. Лишние назначения разбор тоже отметит.</span></div></li>
+      <li><span class="k">03</span><div><b>Пациенты с характером</b><span>Тревожные, ворчливые, немногословные — у каждого свой характер и манера речи. Можно говорить голосом.</span></div></li>
+      <li><span class="k">04</span><div><b>Результаты обследований</b><span>Результаты соответствуют выбранному методу и истории пациента. Разбор отметит лишние назначения.</span></div></li>
       <li><span class="k">05</span><div><b>Тесты по лечению и диагностике</b><span>После приёма — тест по КР: препарат выбора, дозы, метод диагностики и ваша главная ошибка — с подробными объяснениями.</span></div></li>
       <li><span class="k">06</span><div><b>Сайт и Telegram вместе</b><span>Начните в браузере, продолжите в боте. Уровни, стрики и задания дня держат в ритме.</span></div></li>
     </ul>
@@ -419,7 +404,7 @@ function landing() {
 </div></section>
 
 <section class="tint"><div class="wrap">
-  <div class="sec-head"><div><h2>Случаи по ${Object.keys(SPECIALIZATIONS).length} специальностям</h2><p>Выберите свою или впишите любую другую — разделы для неё подберёт ИИ.</p></div></div>
+  <div class="sec-head"><div><h2>Случаи по ${Object.keys(SPECIALIZATIONS).length} специальностям</h2><p>Откройте карточку с примером случая. При входе в тренажёр можно выбрать специальность из полного списка или вписать свою.</p></div></div>
   <div class="specs">${SPEC_LIST.map((s) => `<a href="/specialnosti/${s.slug}/"><b>${esc(s.name)}</b><span>${esc(s.sections.join(", "))}</span></a>`).join("")}</div>
 </div></section>
 
@@ -430,7 +415,7 @@ function landing() {
     <tbody>
       <tr><td>Самому собирать анамнез</td><td class="us yes">да</td><td class="no">нет</td><td class="no">нет</td><td class="part">иногда</td></tr>
       <tr><td>Разбор ошибок сразу после</td><td class="us yes">да</td><td class="part">эталон ответа</td><td class="no">нет</td><td class="part">если повезёт</td></tr>
-      <tr><td>Лечение и дозы по КР Минздрава РФ</td><td class="us yes">в каждом разборе</td><td class="part">иногда</td><td class="part">нужно искать</td><td class="part">как принято в отделении</td></tr>
+      <tr><td>Ссылка на КР Минздрава РФ</td><td class="us yes">если найдена КР по диагнозу</td><td class="part">иногда</td><td class="part">нужно искать</td><td class="part">зависит от случая</td></tr>
       <tr><td>Новые случаи каждый день</td><td class="us yes">да</td><td class="no">сборник кончается</td><td class="no">нет</td><td class="yes">да</td></tr>
       <tr><td>Без риска для пациента</td><td class="us yes">да</td><td class="yes">да</td><td class="yes">да</td><td class="no">нет</td></tr>
       <tr><td>В любое время, с телефона</td><td class="us yes">да</td><td class="yes">да</td><td class="yes">да</td><td class="no">нет</td></tr>
@@ -626,6 +611,10 @@ function materialsPage() {
 }
 
 // ---------------------------------------------------------------- блог
+const TASK_HUB = "/blog/situacionnye-zadachi/";
+const TASK_HUB_DATE = "2026-11-24";
+const taskArticles = ARTICLES.filter((a) => a.cluster === "ЗАД" || a.slug.startsWith("situacionnye-zadachi-"));
+
 // Контекстный призыв по темам статьи
 function articleCta(a) {
   const t = a.tags.join(" ").toLowerCase();
@@ -660,6 +649,7 @@ function insertMidCta(html, cta) {
 function topicLinks(a) {
   const t = `${a.tags.join(" ")} ${a.h1}`.toLowerCase();
   const links = [];
+  if (taskArticles.includes(a)) links.push(["Ситуационные задачи с ответами по предметам", TASK_HUB]);
   if (/анамнез|коммуникац|общени|пропедевт/.test(t)) links.push(["Тренажёр к аккредитации: станция сбора анамнеза", "/akkreditaciya/"], ["Тренажёр для студентов-медиков", "/dlya-studentov/"]);
   if (/аккредит|оскэ|экзамен/.test(t)) links.push(["Тренажёр к аккредитации: сбор анамнеза и клиническое мышление", "/akkreditaciya/"], ["Клинические задачи онлайн с ответами", "/klinicheskie-zadachi/"]);
   if (/диагноз|мышлени/.test(t)) links.push(["Клинические задачи онлайн с ответами", "/klinicheskie-zadachi/"], ["Клинические случаи по кардиологии", "/specialnosti/kardiologiya/"], ["Сложные клинические случаи для врачей", "/dlya-vrachej/"]);
@@ -683,12 +673,37 @@ function blogIndex() {
   ${c.html}
   <h1>Блог для студентов-медиков</h1>
   <p class="lead">Навыки, которые нужны на практике и на аккредитации: расспрос, клиническое мышление, анализы и общение с пациентом.</p>
+  <p><a href="${TASK_HUB}">Ситуационные задачи с ответами по предметам</a></p>
 </div></section>
 <section style="padding-top:48px"><div class="wrap">
   <div class="posts">${ARTICLES.map(postCard).join("")}</div>
   <div style="margin-top:56px">${magnetBlock("magnet_blog")}</div>
 </div></section>`;
   return layout({ page: "blog", headOpts: { title, description, canonical: `${SITE}/blog/`, extra: schema.filter(Boolean).map(ldjson).join("\n") }, main });
+}
+
+function taskHubPage() {
+  const title = "Ситуационные задачи по медицине с ответами";
+  const description = "Учебные ситуационные задачи с ответами по терапии, кардиологии, гастроэнтерологии, пульмонологии и ЭКГ. Выберите предмет и сравните своё решение с разбором.";
+  const main = `
+<section class="page-hero solo" data-hero><div class="wrap">
+  <h1>${esc(title)}</h1>
+  <p class="lead">Выберите подборку по терапии, кардиологии, гастроэнтерологии, пульмонологии или чтению ЭКГ. Сначала сформулируйте своё решение, затем сравните его с ответом и ходом разбора.</p>
+</div></section>
+<section style="padding-top:48px"><div class="wrap">
+  <div class="sec-head"><div><h2>Задачи по предметам</h2></div></div>
+  <div class="posts">${taskArticles.map(postCard).join("")}</div>
+</div></section>
+<section class="tint"><div class="wrap">
+  <div class="sec-head"><div><h2>Как проверить своё решение</h2></div></div>
+  <ol class="steps">
+    <li><span class="n">1</span><h3>Выделите находки</h3><p>Назовите ведущую жалобу и два сведения из условия, которые влияют на ваш вывод.</p></li>
+    <li><span class="n">2</span><h3>Обоснуйте гипотезу</h3><p>Скажите, почему она подходит и какое наблюдение могло бы изменить ваш ответ.</p></li>
+    <li><span class="n">3</span><h3>Откройте разбор</h3><p>Отметьте один пропущенный вопрос или признак и проверьте его на следующем случае.</p></li>
+  </ol>
+  ${inlineCta("Пройдите приём от первого вопроса", `${FREE_P_CAP} в день бесплатно. После приёма ИИ покажет, какие вопросы и обследования повлияли на разбор.`, "blog_tasks_hub", "Принять пациента")}
+</div></section>`;
+  return layout({ page: "blog-tasks", headOpts: { title, description, canonical: `${SITE}${TASK_HUB}` }, main });
 }
 
 function articlePage(a) {
@@ -929,6 +944,7 @@ function notFound() {
 
 // ---------------------------------------------------------------- sitemap и llms.txt
 const PAGES = [
+  { loc: TASK_HUB, lastmod: [TASK_HUB_DATE, ...taskArticles.map((a) => a.updated || a.date)].sort().at(-1), pr: "0.8" },
   { loc: "/demo/", pr: "0.8" },
   ...AUDIENCES.map((a) => ({ loc: `/${a.slug}/`, pr: "0.8" })),
   ...INTENTS.map((i) => ({ loc: `/${i.slug}/`, pr: "0.8" })),
@@ -942,7 +958,7 @@ const PAGES = [
 function sitemap() {
   const urls = [
     { loc: `${SITE}/`, lastmod: SITE_UPDATED, pr: "1.0" },
-    ...PAGES.map((p) => ({ loc: `${SITE}${p.loc}`, lastmod: SITE_UPDATED, pr: p.pr })),
+    ...PAGES.map((p) => ({ loc: `${SITE}${p.loc}`, lastmod: p.lastmod || SITE_UPDATED, pr: p.pr })),
     { loc: `${SITE}/blog/`, lastmod: ARTICLES.map((a) => a.updated || a.date).sort().pop(), pr: "0.8" },
     ...ARTICLES.map((a) => ({ loc: `${SITE}/blog/${a.slug}/`, lastmod: a.updated || a.date, pr: "0.7" })),
     ...[OFFER, PRIVACY, PARTNER_OFFER].map((d) => ({ loc: `${SITE}/${d.slug}/`, lastmod: LEGAL_UPDATED, pr: "0.2" })),
@@ -999,7 +1015,11 @@ write("materialy/index.html", materialsPage());
 write("o-proekte/index.html", aboutPage());
 write("partneram/index.html", partnersPage());
 write("blog/index.html", blogIndex());
-for (const a of ARTICLES) write(`blog/${a.slug}/index.html`, articlePage(a));
+write(`${TASK_HUB.slice(1)}index.html`, taskHubPage());
+for (const a of ARTICLES) {
+  write(`blog/${a.slug}/index.html`, articlePage(a));
+  copyArticleImages(a, OUT);
+}
 for (const d of [OFFER, PRIVACY, PARTNER_OFFER]) write(`${d.slug}/index.html`, legalPage(d));
 write("404.html", notFound());
 write("sitemap.xml", sitemap());
