@@ -1817,38 +1817,48 @@
   },
   "6043df7b": {
    "to": "syromyatnikova.os@tgmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-17T06:37:52.351Z",
    "message_id": "<0a3e5aca-8077-2718-1c8e-23de8c3b797c@gmail.com>",
-   "subject": "Тихоокеанская конференция СНО ТГМУ: идея к следующей весне"
+   "subject": "Тихоокеанская конференция СНО ТГМУ: идея к следующей весне",
+   "followup_at": "2026-11-24T21:08:52.679Z",
+   "followup_message_id": "<1ef3b10f-c43e-52c9-66b4-5af63cb6e951@gmail.com>"
   },
   "7757cb6a": {
    "to": "onid.mu.ysmu@yandex.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-17T06:40:38.620Z",
    "message_id": "<91cf8fff-56e3-dcac-1777-b36dcd76e2c4@gmail.com>",
-   "subject": "Для СНО Ярославского ГМУ: приём виртуального пациента"
+   "subject": "Для СНО Ярославского ГМУ: приём виртуального пациента",
+   "followup_at": "2026-11-24T21:13:58.239Z",
+   "followup_message_id": "<6c1709cb-1502-76b5-ae2d-4e2c73e2ca1e@gmail.com>"
   },
   "6ed090ed": {
    "to": "rf@medelement.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-17T06:43:32.552Z",
    "message_id": "<a0d70cc8-6232-4505-e111-92371252c293@gmail.com>",
-   "subject": "МедЭлемент и практика приёма: предложение обменяться контентом"
+   "subject": "МедЭлемент и практика приёма: предложение обменяться контентом",
+   "followup_at": "2026-11-24T21:17:49.025Z",
+   "followup_message_id": "<f863ab1e-4dcd-8d3d-95d1-96a65d025b61@gmail.com>"
   },
   "a005186e": {
    "to": "sovet.bashgmu@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-17T06:48:19.093Z",
    "message_id": "<677f8215-e620-ba81-41a7-a8764ffc7890@gmail.com>",
-   "subject": "Для Совета обучающихся БГМУ: тренажёр приёма для студентов"
+   "subject": "Для Совета обучающихся БГМУ: тренажёр приёма для студентов",
+   "followup_at": "2026-11-24T21:21:00.198Z",
+   "followup_message_id": "<d8d11774-f670-e62e-997b-005b270a934e@gmail.com>"
   },
   "4ea94afa": {
    "to": "info@kursmedik.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-17T06:50:55.306Z",
    "message_id": "<7528ef3f-b0d2-e2d1-026a-c2d2d46fb7e2@gmail.com>",
-   "subject": "МЦ МФО и аккредитация: домашняя практика сбора анамнеза"
+   "subject": "МЦ МФО и аккредитация: домашняя практика сбора анамнеза",
+   "followup_at": "2026-11-24T21:23:58.292Z",
+   "followup_message_id": "<0527a0af-dd47-1f2e-7765-ae4ae1c647ea@gmail.com>"
   },
   "b5fb4c5f": {
    "to": "sovetpspbgmu@gmail.com",
@@ -2079,6 +2089,41 @@
    "sent_at": "2026-11-23T23:08:36.996Z",
    "message_id": "<9452ab15-58c5-0062-fa93-0b96c425620b@gmail.com>",
    "subject": "Для МНО Читинской ГМА: тренажёр приёма для студентов и ординаторов"
+  },
+  "6b523f7d": {
+   "to": "hrabrovamc@gmail.com",
+   "status": "sent",
+   "sent_at": "2026-11-24T21:27:23.305Z",
+   "message_id": "<065217d9-8a16-2515-f376-400e9d1d1141@gmail.com>",
+   "subject": "Тренажёр приёма пациента для участников «Primum inventa»"
+  },
+  "9e05eecb": {
+   "to": "ruy@ruy.ru",
+   "status": "sent",
+   "sent_at": "2026-11-24T21:31:28.928Z",
+   "message_id": "<3a22c682-da03-13f2-7b81-d80391499bae@gmail.com>",
+   "subject": "Тренажёр приёма для студентов-медиков: «Студент года» и Студвесна"
+  },
+  "000a6b31": {
+   "to": "info@medpulse.ru",
+   "status": "sent",
+   "sent_at": "2026-11-24T21:35:49.836Z",
+   "message_id": "<0556bdc3-0772-d75e-52c0-5b94c0bb71ac@gmail.com>",
+   "subject": "Новость для MedPulse: ИИ-тренажёр от студентов-медиков"
+  },
+  "46251d18": {
+   "to": "balev-nn@rudn.ru",
+   "status": "sent",
+   "sent_at": "2026-11-24T21:40:57.659Z",
+   "message_id": "<0d57cc3e-76dc-e2df-5359-d8a6838f536c@gmail.com>",
+   "subject": "Для НСО РУДН: тренажёр приёма для студентов-медиков"
+  },
+  "c6e4b400": {
+   "to": "kaplan.graphit@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-11-24T21:46:17.352Z",
+   "message_id": "<f62c7f02-d2d9-8ca1-7c43-4aefb80029f0@gmail.com>",
+   "subject": "KaplanMed: условия размещения о тренажёре клинических случаев"
   }
  },
  "days": [
@@ -2113,7 +2158,8 @@
   "2026-11-19",
   "2026-11-20",
   "2026-11-23",
-  "2026-11-24"
+  "2026-11-24",
+  "2026-11-25"
  ],
- "inbox_checked_at": "2026-11-24T19:42:21.088Z"
+ "inbox_checked_at": "2026-11-24T21:08:51.290Z"
 }
