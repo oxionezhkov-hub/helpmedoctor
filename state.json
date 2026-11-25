@@ -2193,6 +2193,12 @@
    "to_hash": "df422d9fda7809ec5c83a5a5d5079c5f693546b6a228617f70cc73eecf05c0c6",
    "status": "sent",
    "sent_at": "2026-11-25T12:54:54.421Z"
+  },
+  "50101aa4": {
+   "campaign": "creators",
+   "to_hash": "50101aa48813ebf91909e2c8b7fa9a6dc4fb84dee3d1dcc598c916d2f76f51f5",
+   "status": "attempted",
+   "sent_at": "2026-11-25T22:44:07.730Z"
   }
  },
  "days": [
