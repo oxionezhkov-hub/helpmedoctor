@@ -166,6 +166,11 @@ jobs:
           ADMIN_EXPORT_KEY: ${{ secrets.ADMIN_EXPORT_KEY }}
         run: |
           if [ -n "$ADMIN_EXPORT_KEY" ]; then printf '%s' "$ADMIN_EXPORT_KEY" | npx wrangler secret put ADMIN_EXPORT_KEY; else echo "ADMIN_EXPORT_KEY не задан — пропускаю"; fi
+      - name: Подписанный вебхук Telegram для ответов основателя
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+        run: node scripts/set-webhook.mjs --founder-auth
       # Кнопка «Приложение» и меню команд бота — на актуальный адрес сайта (вебхук не трогаем)
       - name: Кнопка меню и команды бота
         env:

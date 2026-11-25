@@ -696,3 +696,34 @@ test("очередь блога выпускает по два материал�
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("ответы основателя привязаны к личному чату и исходному сообщению", async () => {
+  const { founderReply } = await import("../src/lib/founder.js");
+  const env = { ADMIN_ID: "42,43", FOUNDER_MAILBOX: {}, SESSION_SECRET: "test-secret" };
+  const target = { id: "brief-2026-11-25", thread: "brief-2026-11-25", text: "1. Упростить регистрацию" };
+  const inbox = new Map();
+  const sent = [];
+  const hub = {
+    founderTarget: async (uid, mid) => uid === "42" && mid === 17 ? target : null,
+    founderRecorded: async (id) => inbox.has(id),
+    founderRecord: async (id, event) => { inbox.set(id, event); return true; },
+    founderRemember: async (uid, mid, context) => { assert.deepEqual([uid, mid, context], ["42", 21, target]); },
+  };
+  const bot = { send: async (...args) => { sent.push(args); return 21; } };
+  const msg = { chat: { type: "private", id: 42 }, message_id: 20, text: "Делаем первый пункт", reply_to_message: { message_id: 17 } };
+  assert.equal(await founderReply(env, bot, hub, "43", msg), false);
+  assert.equal(await founderReply(env, bot, hub, "42", { ...msg, reply_to_message: { message_id: 99 } }), false);
+  assert.equal(await founderReply(env, bot, hub, "42", msg), true);
+  assert.equal(await founderReply(env, bot, hub, "42", msg), true);
+  assert.deepEqual(inbox.get("reply-42-20"), { kind: "reply", target, text: msg.text, messageId: 20 });
+  assert.equal(inbox.size, 1);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0][3].reply_parameters.message_id, 20);
+});
+
+test("секрет подписи Telegram выводится отдельно от ключа сессий", async () => {
+  const { founderWebhookToken } = await import("../src/lib/founder-webhook.js");
+  const expected = nodeCrypto.createHmac("sha256", "test-key").update("helpmedoctor:telegram-webhook:v1").digest("hex");
+  assert.equal(await founderWebhookToken("test-key"), expected);
+  assert.equal(await founderWebhookToken(), "");
+});

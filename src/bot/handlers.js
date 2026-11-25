@@ -6,6 +6,7 @@ import { ADMIN_NAMES, adminIds, HINTS_PER_PATIENT, PHYSICAL_EXAMPLES, SPECIALIZA
 import * as G from "../lib/game.js";
 import { arrayBufferToBase64, declDays, declPatients, esc, firstName, UserError, userError } from "../lib/util.js";
 import { appBtn, btn, tg, urlBtn } from "../lib/telegram.js";
+import { founderReply } from "../lib/founder.js";
 import { OUTREACH_TAG, dispatchWorkflow } from "../lib/outreach.js";
 import * as R from "./render.js";
 
@@ -32,7 +33,7 @@ export function hubStub(env) {
   return env.HUB.get(env.HUB.idFromName("hub"));
 }
 
-export async function handleUpdate(env, update) {
+export async function handleUpdate(env, update, { trustedFounder = false } = {}) {
   const msg = update.message;
   const cb = update.callback_query;
   const from = msg?.from || cb?.from;
@@ -47,6 +48,7 @@ export async function handleUpdate(env, update) {
   const ctx = { env, uid, user, bot, from };
 
   try {
+    if (trustedFounder && msg?.reply_to_message && await founderReply(env, tg(env, { log: false }), hubStub(env), uid, msg)) return;
     if (await user.seenUpdate(update.update_id)) return;
     // Метка источника из ссылки t.me/<бот>?start=<метка> (кроме входа на сайт)
     const payload = /^\/start\s+(\S+)/.exec(msg?.text || "")?.[1] || "";
