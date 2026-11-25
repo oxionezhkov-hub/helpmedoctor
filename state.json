@@ -2133,6 +2133,12 @@
    "sent_at": "2026-11-24T21:46:17.352Z",
    "message_id": "<f62c7f02-d2d9-8ca1-7c43-4aefb80029f0@gmail.com>",
    "subject": "KaplanMed: условия размещения о тренажёре клинических случаев"
+  },
+  "809abac0": {
+   "campaign": "creators",
+   "to_hash": "809abac00fb3946f1914f0985b015d195d2c52ebdf9c515e1c23ad4c8bf31b66",
+   "status": "attempted",
+   "sent_at": "2026-11-25T12:21:16.932Z"
   }
  },
  "days": [
