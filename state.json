@@ -2245,8 +2245,14 @@
   "6d6c79a4": {
    "campaign": "creators",
    "to_hash": "6d6c79a4eba1ccd3c7e23fb1ed489e52d24b34554e905fb6ff2510906e28c14b",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-25T23:16:13.990Z"
+  },
+  "1718f6fc": {
+   "campaign": "creators",
+   "to_hash": "1718f6fc89c5bfb884bb58adda4d772cfed570ecc20cd6a2b5bdc05ec1c0f584",
+   "status": "attempted",
+   "sent_at": "2026-11-25T23:21:04.659Z"
   }
  },
  "days": [
