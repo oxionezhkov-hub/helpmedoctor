@@ -2179,8 +2179,14 @@
   "bb36ec0d": {
    "campaign": "creators",
    "to_hash": "bb36ec0d3a84136fb1d4bb87ef16f6f985b727119e74c30ca9c9a824931bebe0",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-25T12:46:51.225Z"
+  },
+  "b8c5091e": {
+   "campaign": "creators",
+   "to_hash": "b8c5091ef98c8757b3bc1b3eb79aa67606b4c0cf1a09a1494b6f93eb5e6b2910",
+   "status": "attempted",
+   "sent_at": "2026-11-25T12:49:39.491Z"
   }
  },
  "days": [
