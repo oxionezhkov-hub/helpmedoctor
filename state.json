@@ -1739,12 +1739,20 @@
   },
   "4e442681": {
    "to": "mno@chitgma.ru",
-   "status": "followed",
+   "status": "replied",
    "sent_at": "2026-11-13T06:55:41.776Z",
    "message_id": "<ef6b37c4-8319-a2b2-6368-ad2309f4e017@gmail.com>",
    "subject": "«Медицина завтрашнего дня» и студенты ЧГМА: практика с ИИ-пациентом",
    "followup_at": "2026-11-23T06:41:58.482Z",
-   "followup_message_id": "<84e36140-f2ab-d32c-c494-b9893c9cbb4f@gmail.com>"
+   "followup_message_id": "<84e36140-f2ab-d32c-c494-b9893c9cbb4f@gmail.com>",
+   "seen": [
+    "<1795583897.318497718@f743.i.mail.ru>"
+   ],
+   "last_in_msgid": "<1795583897.318497718@f743.i.mail.ru>",
+   "last_in_subject": "Re: «Медицина завтрашнего дня» и студенты ЧГМА: практика с ИИ-пациентом",
+   "last_in_from": "mno@chitgma.ru",
+   "last_in_at": "2026-11-25T06:21:15.363Z",
+   "reply_at": "2026-11-25T06:21:15.363Z"
   },
   "f2450116": {
    "to": "info@speransky-kidz.ru",
@@ -2161,5 +2169,5 @@
   "2026-11-24",
   "2026-11-25"
  ],
- "inbox_checked_at": "2026-11-24T21:08:51.290Z"
+ "inbox_checked_at": "2026-11-25T06:21:15.529Z"
 }
