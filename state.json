@@ -2173,8 +2173,14 @@
   "5bc300e0": {
    "campaign": "creators",
    "to_hash": "5bc300e047bbda38513855fa1491824bb1e7e6a03e65640d79a904bf48e2878b",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-25T12:43:59.950Z"
+  },
+  "bb36ec0d": {
+   "campaign": "creators",
+   "to_hash": "bb36ec0d3a84136fb1d4bb87ef16f6f985b727119e74c30ca9c9a824931bebe0",
+   "status": "attempted",
+   "sent_at": "2026-11-25T12:46:51.225Z"
   }
  },
  "days": [
