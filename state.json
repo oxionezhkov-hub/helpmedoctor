@@ -2143,8 +2143,14 @@
   "82ddea1e": {
    "campaign": "creators",
    "to_hash": "82ddea1ee7b67731166a71b84f8ac6e86150ddceb3e614835951a3585d68bdd1",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-25T12:24:38.891Z"
+  },
+  "adf5667b": {
+   "campaign": "creators",
+   "to_hash": "adf5667b60031bfe74ebf9de40eaf1b1e8034581f53ae4fb0cde25067aca7f47",
+   "status": "attempted",
+   "sent_at": "2026-11-25T12:27:52.067Z"
   }
  },
  "days": [
