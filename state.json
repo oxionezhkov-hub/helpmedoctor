@@ -2239,8 +2239,14 @@
   "0f6ff18d": {
    "campaign": "creators",
    "to_hash": "0f6ff18d419f8d57c191498b03492009392873204e91c2c95d1077b122a1f946",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-25T23:12:08.140Z"
+  },
+  "6d6c79a4": {
+   "campaign": "creators",
+   "to_hash": "6d6c79a4eba1ccd3c7e23fb1ed489e52d24b34554e905fb6ff2510906e28c14b",
+   "status": "attempted",
+   "sent_at": "2026-11-25T23:16:13.990Z"
   }
  },
  "days": [
