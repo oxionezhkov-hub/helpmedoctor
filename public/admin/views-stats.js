@@ -172,7 +172,7 @@ async function loadLive() {
 
 // ---------- Аналитика ----------
 const REPORTS = [
-  ["retention", "Удержание"], ["consultations", "Приёмы"], ["quality", "Качество"], ["procedures", "Обследования и осмотры"],
+  ["retention", "Удержание"], ["email_funnel", "Письма возврата"], ["consultations", "Приёмы"], ["quality", "Качество"], ["procedures", "Обследования и осмотры"],
   ["specialties", "Специальности"], ["quizzes", "Тесты"], ["gamification", "Геймификация"], ["money", "Деньги"], ["ai", "Расход ИИ"],
   ["sources", "Источники"], ["cjm", "CJM по каналу"], ["metrika", "Яндекс Метрика"], ["channels", "Каналы"], ["heatmap", "Активность по часам"], ["errors", "Ошибки"],
 ];
@@ -183,7 +183,7 @@ const CJM = { channel: "Реклама: Яндекс Директ" };
 export async function viewAnalytics(el, ctx) {
   const r = REPORTS.some(([k]) => k === S.route.q.r) ? S.route.q.r : "retention";
   const p = S.period;
-  const noFilters = ["specialties", "retention", "money", "ai", "errors", "cjm"].includes(r);
+  const noFilters = ["specialties", "retention", "money", "ai", "errors", "cjm", "email_funnel"].includes(r);
   el.innerHTML = str(html`
     <div class="page-head"><div class="grow">${periodPicker()}</div></div>
     <div class="report-layout">
@@ -204,7 +204,7 @@ export async function viewAnalytics(el, ctx) {
   bindPeriod(el, () => viewAnalytics(el, ctx).then(() => renderCharts(el)));
   $("#rsel").onchange = (e) => { location.hash = `#/analytics?r=${e.target.value}`; };
   $$("[data-af]", el).forEach((i) => (i.onchange = () => { AF[i.dataset.af] = i.value.trim(); viewAnalytics(el, ctx).then(() => renderCharts(el)); }));
-  const data = await q("report", { name: r, from: p.from, to: p.to, ...(noFilters ? {} : AF), ...(r === "cjm" ? { channel: CJM.channel } : {}) });
+  const data = await q(r === "email_funnel" ? r : "report", { name: r, from: p.from, to: p.to, ...(noFilters ? {} : AF), ...(r === "cjm" ? { channel: CJM.channel } : {}) });
   if (!ctx.isCurrent()) return;
   const box = $("#report");
   box.innerHTML = str(RENDER[r](data));
@@ -222,7 +222,34 @@ function bindCsv(box, map) {
 const pct = (v) => (v == null ? "—" : `${v}%`);
 const stat = (label, value, sub = "") => html`<div class="tile"><div class="label">${label}</div><div class="value">${value}</div>${sub ? html`<div class="sub">${sub}</div>` : ""}</div>`;
 
+const emailSegments = { first: "Первый приём", resume: "Начатый приём", returning: "Уже практиковались" };
+const emailVariants = { treatment: "Новое письмо", control: "Контроль", standard: "Обычная серия" };
+const fraction = (n, d) => d > 0 ? `${n}/${d} (${(100 * n / d).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}%)` : "—";
+const emailColumns = [
+  { key: "stage", label: "День" },
+  { key: "segment", label: "Сегмент", value: r => emailSegments[r.segment] },
+  { key: "variant", label: "Группа", value: r => emailVariants[r.variant] },
+  { key: "assigned", label: "Назначено" },
+  { key: "accepted", label: "Принято Resend" },
+  { key: "failed", label: "Ошибки отправки" },
+  { key: "delivered", label: "Доставлено", value: r => fraction(r.delivered, r.accepted) },
+  { key: "bounced", label: "Отказы" },
+  { key: "complained", label: "Жалобы" },
+  { key: "provider_clicks", label: "Клики Resend", value: r => fraction(r.provider_clicks, r.delivered) },
+  { key: "visits", label: "Входы по письму", value: r => fraction(r.visits, r.accepted) },
+  { key: "finished72", label: "Приём за 72 ч", value: r => fraction(r.finished72, r.mature72) },
+  { key: "paid7", label: "Оплата за 7 дней", value: r => fraction(r.paid7, r.mature7) },
+];
+const emailDeliveryKeys = new Set(["delivered", "bounced", "complained", "provider_clicks"]);
+
 const RENDER = {
+  email_funnel: (d) => html`<section class="card">
+    <h2>Письма возврата</h2>
+    <p class="muted">Приёмы и оплаты показаны только для групп с полным сроком наблюдения. Слеш отделяет результат от размера группы. Для писем обычной серии эта связь по времени.</p>
+    ${d.deliveryConfigured ? "" : html`<p class="muted">Подключите вебхук Resend для данных о доставке, отказах, жалобах и кликах.</p>`}
+    ${d.rows.length ? html`<div class="table-wrap"><table><thead><tr>${emailColumns.map(c => html`<th>${c.label}</th>`)}</tr></thead>
+    <tbody>${d.rows.map(r => html`<tr>${emailColumns.map(c => html`<td>${!d.deliveryConfigured && emailDeliveryKeys.has(c.key) ? "—" : c.value ? c.value(r) : r[c.key]}</td>`)}</tr>`)}</tbody></table></div>` : html`<p>За выбранный период новых записей пока нет.</p>`}
+  </section>`,
   retention: (d) => {
     const cell = (n, size) => {
       if (!size) return html`<td>—</td>`;

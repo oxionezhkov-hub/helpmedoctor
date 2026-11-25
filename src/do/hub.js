@@ -11,6 +11,7 @@ import { mskDate, mskParts, utcDate } from "../lib/util.js";
 import { FOUNDER_EVENT_ID, FOUNDER_INBOX, FOUNDER_OUTBOX, founderOwner } from "../lib/founder.js";
 import { tg, btn } from "../lib/telegram.js";
 import { emailHtml, sendEmail } from "../lib/email.js";
+import { emailFunnel, emailProviderColumn } from "../lib/email-funnel.js";
 import * as A from "../lib/analytics.js";
 import * as PT from "../lib/partners.js";
 import * as BL from "../lib/bloggers.js";
@@ -52,6 +53,11 @@ export class HubDO extends DurableObject {
       CREATE TABLE IF NOT EXISTS aliases (from_uid TEXT PRIMARY KEY, to_uid TEXT, created_at INTEGER);
       CREATE TABLE IF NOT EXISTS payments (op TEXT PRIMARY KEY, uid TEXT, plan TEXT, created_at INTEGER, done INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS daily (day TEXT, metric TEXT, value INTEGER, PRIMARY KEY (day, metric));
+      CREATE TABLE IF NOT EXISTS email_campaign (id TEXT PRIMARY KEY, uid TEXT, stage INTEGER, segment TEXT, variant TEXT,
+        assigned_at INTEGER, accepted_at INTEGER, provider_id TEXT, visit_at INTEGER, failed_at INTEGER);
+      CREATE INDEX IF NOT EXISTS email_campaign_at ON email_campaign(assigned_at);
+      CREATE INDEX IF NOT EXISTS email_campaign_uid ON email_campaign(uid, assigned_at);
+      CREATE TABLE IF NOT EXISTS email_provider (id TEXT PRIMARY KEY, delivered_at INTEGER, bounced_at INTEGER, complained_at INTEGER, clicked_at INTEGER);
       CREATE TABLE IF NOT EXISTS active (day TEXT, uid TEXT, PRIMARY KEY (day, uid));
       CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
       CREATE TABLE IF NOT EXISTS founder_events (id TEXT PRIMARY KEY, body TEXT);
@@ -1311,7 +1317,34 @@ export class HubDO extends DurableObject {
   // ---------------------------------------------------
   // API админки: один вход, чтобы не плодить RPC-методы
   // ---------------------------------------------------
+  emailCampaignAssign({ id, uid, stage, segment, variant, assignedAt }) {
+    this.sql.exec(`INSERT OR IGNORE INTO email_campaign (id, uid, stage, segment, variant, assigned_at)
+      VALUES (?, ?, ?, ?, ?, ?)`, id, uid, stage, segment, variant, assignedAt);
+  }
+
+  emailCampaignAccept(id, providerId, ts) {
+    this.sql.exec(`UPDATE email_campaign SET accepted_at = COALESCE(accepted_at, ?),
+      provider_id = COALESCE(provider_id, ?) WHERE id = ?`, ts, providerId, id);
+  }
+
+  emailCampaignFail(id, ts) {
+    this.sql.exec("UPDATE email_campaign SET failed_at = COALESCE(failed_at, ?) WHERE id = ? AND accepted_at IS NULL", ts, id);
+  }
+
+  emailCampaignVisit(id, uid) {
+    this.sql.exec(`UPDATE email_campaign SET visit_at = COALESCE(visit_at, ?)
+      WHERE id = ? AND uid = ? AND variant <> 'control'`, Date.now(), id, uid);
+  }
+
+  emailProviderEvent(id, type, ts) {
+    const column = emailProviderColumn(type);
+    if (!column) return;
+    this.sql.exec(`INSERT INTO email_provider (id, ${column}) VALUES (?, ?)
+      ON CONFLICT(id) DO UPDATE SET ${column} = MIN(COALESCE(${column}, excluded.${column}), excluded.${column})`, id, ts);
+  }
+
   async admin(op, args = {}, adminId = "") {
+    if (op === "email_funnel") return emailFunnel(this, args);
     const fn = A.ADMIN_OPS[op] || PARTNER_OPS[op] || BL.BLOGGER_OPS[op] || PR.PROMO_OPS[op] || DC.DOC_OPS[op];
     if (!fn) throw new Error(`unknown admin op ${op}`);
     return fn(this, args, String(adminId));

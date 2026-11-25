@@ -727,3 +727,32 @@ test("секрет подписи Telegram выводится отдельно �
   assert.equal(await founderWebhookToken("test-key"), expected);
   assert.equal(await founderWebhookToken(), "");
 });
+
+test("письма новичку и продолжение приёма ведут к нужному сценарию", async () => {
+  const { winbackEmail } = await import("../src/lib/winback.js");
+  const profile = { active_patient_ids: ["pat_1", "pat_2"] };
+  const first = winbackEmail(profile, 3, "first");
+  assert.equal(first.button.go, "/patient/pat_1");
+  assert.equal(first.stats.length, 0);
+  assert.equal(winbackEmail(profile, 3, "resume", "pat_2").button.go, "/consult/pat_2");
+  assert.equal(winbackEmail(profile, 3).button.go, "/patients");
+});
+
+test("вебхук Resend принимает подпись только для исходного тела и текущего времени", async () => {
+  const { verifyEmailWebhook, emailProviderColumn, emailBucket } = await import("../src/lib/email-funnel.js");
+  const raw = '{"type":"email.delivered"}';
+  const now = 1760000000000;
+  const key = Buffer.alloc(32, 7);
+  const secret = "whsec_" + key.toString("base64");
+  const stamp = String(now / 1000);
+  const sig = nodeCrypto.createHmac("sha256", key).update(`msg_example.${stamp}.${raw}`).digest("base64");
+  const headers = new Headers({ "svix-id": "msg_example", "svix-timestamp": stamp, "svix-signature": `v1,bad v1,${sig}` });
+  assert.equal(await verifyEmailWebhook(secret, headers, raw, now), true);
+  assert.equal(await verifyEmailWebhook(secret, headers, raw + " ", now), false);
+  assert.equal(await verifyEmailWebhook(secret, headers, raw, now + 301000), false);
+  assert.equal(emailProviderColumn("email.delivered"), "delivered_at");
+  assert.equal(emailProviderColumn("__proto__"), null);
+  const bucket = await emailBucket("42");
+  assert.ok(["control", "treatment"].includes(bucket));
+  assert.equal(await emailBucket("42"), bucket);
+});

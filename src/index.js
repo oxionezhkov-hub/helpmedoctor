@@ -11,6 +11,7 @@ import { createPayment, createSubscription, webhookOperationId } from "./lib/toc
 import { confirmPayment } from "./lib/payments.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
 import { FOUNDER_CRON } from "./lib/founder.js";
+import { emailProviderColumn, verifyEmailWebhook } from "./lib/email-funnel.js";
 import { founderWebhookToken } from "./lib/founder-webhook.js";
 import { OUTREACH_CRON, outreachCron } from "./lib/outreach.js";
 import { adminApi } from "./admin-api.js";
@@ -208,13 +209,54 @@ async function api(request, env, url) {
     if (!value) return new Response("not found", { status: 404 });
     return new Response(value, { headers: { "Content-Type": metadata?.type || "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" } });
   }
-  // Отписка от писем-напоминаний по ссылке из письма (подписанная, без входа)
-  if (path === "/email/off" && method === "GET") {
-    const d = await readSignedData(env, url.searchParams.get("t"));
-    const page = (t) => new Response(`<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Help me, Doctor</title></head><body style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f4f3ee;margin:0;padding:40px 16px"><div style="max-width:460px;margin:0 auto;background:#fff;border-radius:16px;padding:28px;text-align:center"><p style="font-size:17px;color:#1f2421">${t}</p><p><a href="/app" style="color:#0f766e">Открыть тренажёр</a></p></div></body></html>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
-    if (d?.k !== "unsub" || !d.uid) return page("Ссылка недействительна.");
+  if (path === "/email/resend" && method === "POST") {
+    const secret = env.RESEND_WEBHOOK_SECRET;
+    if (!secret) return json({ error: "Webhook disabled" }, 404);
+    const reader = request.body?.getReader();
+    if (!reader) return json({ error: "Missing body" }, 400);
+    const decoder = new TextDecoder();
+    let payload = "";
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 65536) {
+        await reader.cancel();
+        return json({ error: "Payload too large" }, 413);
+      }
+      payload += decoder.decode(value, { stream: true });
+    }
+    payload += decoder.decode();
+    if (!await verifyEmailWebhook(secret, request.headers, payload)) return json({ error: "Invalid signature" }, 403);
+    let event;
+    try { event = JSON.parse(payload); } catch { return json({ error: "Invalid JSON" }, 400); }
+    const id = event?.data?.email_id;
+    const ts = Date.parse(event?.created_at);
+    if (emailProviderColumn(event?.type) && typeof id === "string" && /^[a-f0-9-]{36}$/i.test(id) && Number.isFinite(ts)) {
+      await hubStub(env).emailProviderEvent(id, event.type, ts);
+    }
+    return json({ ok: true });
+  }
+  // GET показывает подтверждение, даже если ссылку первым открыл почтовый сканер.
+  if (path === "/email/off" && (method === "GET" || method === "POST")) {
+    const token = url.searchParams.get("t");
+    const d = await readSignedData(env, token);
+    const page = (t) => new Response(`<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Help me, Doctor</title></head><body style="font-family:system-ui;background:#f4f3ee;margin:0;padding:40px 16px"><main style="max-width:460px;margin:auto;background:#fff;border-radius:16px;padding:28px"><p>${t}</p><a href="/app">Открыть тренажёр</a></main></body></html>`, {
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
+    });
+    if (d?.k !== "unsub" || !/^w?\d+$/.test(d.uid || "")) return page("Ссылка недействительна.");
+    const oneClick = url.searchParams.get("one") === "1";
+    if (method === "GET") {
+      return page(`Отключить письма-напоминания?<form method="post" action="/api/email/off?t=${encodeURIComponent(token)}"><button type="submit">Отключить напоминания</button></form>`);
+    }
+    if (oneClick) {
+      let form;
+      try { form = await request.formData(); } catch { return json({ error: "Invalid one-click request" }, 400); }
+      if (form.get("List-Unsubscribe") !== "One-Click") return json({ error: "Invalid one-click request" }, 400);
+    }
     await userStub(env, d.uid, "web").emailOff();
-    return page("Готово — больше не будем присылать напоминания. Письма об оплате и подписке по-прежнему придут.");
+    return oneClick ? new Response(null, { status: 204 }) : page("Готово. Напоминания отключены. Письма об оплате и подписке продолжат приходить.");
   }
   if (path === "/config" && method === "GET") {
     return json({ bot_username: env.BOT_USERNAME, providers: enabledProviders(env) });
@@ -382,6 +424,13 @@ async function api(request, env, url) {
     }
     if (path === "/patients/new" && method === "POST") {
       return json(await user.requestNewPatient("web"));
+    }
+    if (path === "/email/visit" && method === "POST") {
+      const { token } = await readJson(request);
+      const data = await readSignedData(env, typeof token === "string" ? token.slice(0, 512) : "");
+      if (data?.k !== "email-visit" || !/^[a-f0-9-]{36}$/i.test(data.id || "")) return json({ ok: false }, 400);
+      await hubStub(env).emailCampaignVisit(data.id, uid);
+      return json({ ok: true });
     }
     if (path === "/attribution" && method === "POST") {
       return json(await user.setAttribution(await readJson(request)));
