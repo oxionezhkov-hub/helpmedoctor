@@ -3,6 +3,7 @@
 //   TELEGRAM_TOKEN=... WEBHOOK_SECRET=... node scripts/set-webhook.mjs
 // С флагом --menu-only вебхук не трогаем — только кнопка меню и команды (так запускает деплой).
 import { ADMIN_ID, FORMER_ADMIN_IDS } from "../src/config.js";
+import { founderWebhookToken } from "../src/lib/founder-webhook.js";
 const token = process.env.TELEGRAM_TOKEN;
 const secret = process.env.WEBHOOK_SECRET;
 const base = (process.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "");
@@ -18,6 +19,30 @@ async function call(method, body) {
   });
   const d = await r.json();
   console.log(method, d.ok ? "✅" : `❌ ${d.description}`);
+}
+if (process.argv.includes("--founder-auth")) {
+  const auth = await founderWebhookToken(process.env.SESSION_SECRET);
+  if (!auth) throw new Error("SESSION_SECRET отсутствует");
+  const info = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`, { method: "POST" })
+    .then((response) => response.json());
+  if (!info.ok) throw new Error("Не удалось проверить действующий вебхук Telegram");
+  const existing = info.result.url ? new URL(info.result.url) : null;
+  if (existing && (existing.protocol !== "https:" || ![new URL(base).hostname, new URL(appBase).hostname].includes(existing.hostname) ||
+      !["/", "/tg/webhook"].includes(existing.pathname))) throw new Error("Вебхук Telegram настроен на другой сервис");
+  const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url: existing?.href || `${base}/tg/webhook`,
+      allowed_updates: info.result.allowed_updates || ["message", "callback_query"],
+      ...(info.result.max_connections ? { max_connections: info.result.max_connections } : {}),
+      drop_pending_updates: false,
+      secret_token: auth,
+    }),
+  }).then((result) => result.json());
+  if (!response.ok) throw new Error("Telegram не подтвердил настройку подписанного вебхука");
+  console.log("Telegram подтвердил настройку подписанного вебхука.");
+  process.exit(0);
 }
 const menuOnly = process.argv.includes("--menu-only");
 if (!menuOnly) await call("setWebhook", {

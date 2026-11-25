@@ -10,6 +10,8 @@ import { arrayBufferToBase64, esc, json, userError } from "./lib/util.js";
 import { createPayment, createSubscription, webhookOperationId } from "./lib/tochka.js";
 import { confirmPayment } from "./lib/payments.js";
 import { handleUpdate, hubStub, startInBot, userStub } from "./bot/handlers.js";
+import { FOUNDER_CRON } from "./lib/founder.js";
+import { founderWebhookToken } from "./lib/founder-webhook.js";
 import { OUTREACH_CRON, outreachCron } from "./lib/outreach.js";
 import { adminApi } from "./admin-api.js";
 import { faceSvg } from "./lib/face.js";
@@ -98,6 +100,7 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
+    if (event.cron === FOUNDER_CRON) return ctx.waitUntil(hubStub(env).founderSync());
     // 07:00 UTC = 10:00 МСК — утреннее напоминание; 17:00 UTC = 20:00 МСК — «стрик сгорит»; 18:00 UTC = 21:00 МСК — итоги дня админам
     if (event.cron === "0 18 * * *") return ctx.waitUntil(hubStub(env).dailySummary());
     // Рассылка партнёрам: 09:20 и 15:20 МСК — отправка, в остальные часы — проверка почты (GitHub Actions, src/lib/outreach.js)
@@ -113,9 +116,10 @@ export default {
 // Telegram
 // ---------------------------------------------------
 async function telegramWebhook(request, env, ctx) {
-  if (env.WEBHOOK_SECRET && request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.WEBHOOK_SECRET) {
-    return new Response("forbidden", { status: 403 });
-  }
+  const token = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
+  const derived = token && env.FOUNDER_MAILBOX ? await founderWebhookToken(env.SESSION_SECRET) : "";
+  const trustedFounder = !!token && (token === env.WEBHOOK_SECRET || token === derived);
+  if (env.WEBHOOK_SECRET && !trustedFounder) return new Response("forbidden", { status: 403 });
   let update;
   try {
     update = await request.json();
@@ -123,7 +127,7 @@ async function telegramWebhook(request, env, ctx) {
     return new Response("OK");
   }
   // Отвечаем Telegram сразу; тяжёлые задачи (генерация пациента, разбор) идут через alarm в UserDO
-  ctx.waitUntil(handleUpdate(env, update));
+  ctx.waitUntil(handleUpdate(env, update, { trustedFounder }));
   return new Response("OK");
 }
 

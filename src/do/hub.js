@@ -8,6 +8,7 @@ import { adminIds, REFERRAL, AI_CAP_DEFAULT, AI_FALLBACKS, AI_FREE_NEURONS_PER_D
 import { cancelSubscription, chargeSubscription } from "../lib/tochka.js";
 import { confirmPayment, PAY_POLL } from "../lib/payments.js";
 import { mskDate, mskParts, utcDate } from "../lib/util.js";
+import { FOUNDER_EVENT_ID, FOUNDER_INBOX, FOUNDER_OUTBOX, founderOwner } from "../lib/founder.js";
 import { tg, btn } from "../lib/telegram.js";
 import { emailHtml, sendEmail } from "../lib/email.js";
 import * as A from "../lib/analytics.js";
@@ -53,6 +54,10 @@ export class HubDO extends DurableObject {
       CREATE TABLE IF NOT EXISTS daily (day TEXT, metric TEXT, value INTEGER, PRIMARY KEY (day, metric));
       CREATE TABLE IF NOT EXISTS active (day TEXT, uid TEXT, PRIMARY KEY (day, uid));
       CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
+      CREATE TABLE IF NOT EXISTS founder_events (id TEXT PRIMARY KEY, body TEXT);
+      CREATE INDEX IF NOT EXISTS founder_events_pending ON founder_events (id) WHERE body IS NOT NULL;
+      CREATE TABLE IF NOT EXISTS founder_targets (uid TEXT, mid INTEGER, body TEXT NOT NULL, PRIMARY KEY (uid, mid));
+      CREATE TABLE IF NOT EXISTS founder_delivery (id TEXT PRIMARY KEY, lease INTEGER NOT NULL, sent INTEGER NOT NULL DEFAULT 0);
       CREATE TABLE IF NOT EXISTS feedback (uid TEXT, ts INTEGER, rating INTEGER, text TEXT, source TEXT, PRIMARY KEY (uid, ts));
 
       CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, day TEXT, hour INTEGER, dow INTEGER,
@@ -824,11 +829,12 @@ export class HubDO extends DurableObject {
   async notifyAdmin(text, kind = "other", { kb = null, except = null, only = null } = {}) {
     const bot = tg(this.env, { log: false });
     const ids = this.adminTargets(kind, { except, only });
-    await Promise.all(ids.map(async (id) => {
+    return Promise.all(ids.map(async (id) => {
       try {
-        await bot.send(id, text, kb || undefined);
+        return { id, mid: await bot.send(id, text, kb || undefined) };
       } catch (e) {
         console.error("notifyAdmin", e);
+        return { id, mid: 0 };
       }
     }));
   }
@@ -974,12 +980,94 @@ export class HubDO extends DurableObject {
     }
   }
 
+  founderTarget(uid, mid) {
+    if (uid !== founderOwner(this.env)) return null;
+    const row = this.one("SELECT body FROM founder_targets WHERE uid = ? AND mid = ?", uid, mid);
+    return row ? JSON.parse(row.body) : null;
+  }
+
+  founderRemember(uid, mid, target) {
+    if (uid !== founderOwner(this.env)) return;
+    this.sql.exec("INSERT OR IGNORE INTO founder_targets (uid, mid, body) VALUES (?, ?, ?)", uid, mid, JSON.stringify(target));
+  }
+
+  founderRecorded(id) {
+    return !!this.one("SELECT 1 FROM founder_events WHERE id = ?", id);
+  }
+
+  founderRecord(id, event) {
+    if (!founderOwner(this.env) || !FOUNDER_EVENT_ID.test(id)) return false;
+    return !!this.one("INSERT OR IGNORE INTO founder_events (id, body) VALUES (?, ?) RETURNING id", id, JSON.stringify(event));
+  }
+
+  async founderSync() {
+    const uid = founderOwner(this.env);
+    if (!uid || this.founderSyncing) return;
+    this.founderSyncing = true;
+    try {
+      await this.founderSyncMailbox(uid);
+    } finally {
+      this.founderSyncing = false;
+    }
+  }
+
+  async founderSyncMailbox(uid) {
+    const kv = this.env.FOUNDER_MAILBOX;
+    for (const { id, body } of this.all("SELECT id, body FROM founder_events WHERE body IS NOT NULL ORDER BY rowid LIMIT 20")) {
+      await kv.put(FOUNDER_INBOX + id, body);
+      this.sql.exec("UPDATE founder_events SET body = NULL WHERE id = ?", id);
+    }
+    const bot = tg(this.env, { log: false });
+    const { keys } = await kv.list({ prefix: FOUNDER_OUTBOX, limit: 20 });
+    for (const { name } of keys) {
+      const id = name.slice(FOUNDER_OUTBOX.length);
+      if (!FOUNDER_EVENT_ID.test(id)) {
+        await kv.delete(name);
+        continue;
+      }
+      const raw = await kv.get(name);
+      if (raw === null) continue;
+      let event;
+      try { event = JSON.parse(raw); } catch { /* malformed private outbox entry */ }
+      if (!event || typeof event.text !== "string" || !event.text.trim() || event.text.length > 3800) {
+        await kv.delete(name);
+        console.warn("Invalid founder outbox entry");
+        continue;
+      }
+      if (this.one("SELECT sent FROM founder_delivery WHERE id = ?", id)?.sent) {
+        await kv.delete(name);
+        continue;
+      }
+      const now = Date.now();
+      const claimed = this.one(`
+        INSERT INTO founder_delivery (id, lease) VALUES (?, ?)
+        ON CONFLICT(id) DO UPDATE SET lease = excluded.lease
+        WHERE founder_delivery.sent = 0 AND founder_delivery.lease <= ? RETURNING id
+      `, id, now + 2 * 60 * 1000, now);
+      if (!claimed) continue;
+      const replies = Number.isSafeInteger(event.replyTo) && event.replyTo > 0
+        ? { reply_parameters: { message_id: event.replyTo, allow_sending_without_reply: true } }
+        : {};
+      const mid = await bot.send(uid, event.text, undefined, { ...replies, parse_mode: undefined });
+      if (!mid) continue;
+      this.ctx.storage.transactionSync(() => {
+        this.founderRemember(uid, mid, { id, text: event.text, thread: FOUNDER_EVENT_ID.test(event.thread || "") ? event.thread : id });
+        this.sql.exec("UPDATE founder_delivery SET sent = 1 WHERE id = ?", id);
+      });
+      await kv.delete(name);
+    }
+  }
+
   /** Итоги дня (cron 21:00 МСК) */
   async dailySummary() {
     const t = mskDate();
     const d = await A.daySummary(this, t);
     const text = A.daySummaryText(d, t);
-    await this.notifyAdmin(text, "daily", { kb: [[{ text: "Открыть админку", url: this.adminUrl("/") }]] });
+    const recipients = await this.notifyAdmin(text, "daily", { kb: [[{ text: "Открыть админку", url: this.adminUrl("/") }]] });
+    const id = `brief-${t}`;
+    const owner = recipients.find(({ id: uid, mid }) => mid && uid === founderOwner(this.env));
+    if (owner) this.founderRemember(owner.id, owner.mid, { id, thread: id, text: text.replace(/<[^>]*>/g, "") });
+    this.founderRecord(id, { kind: "brief", day: t, metrics: d, messageId: owner?.mid || null });
     // Напоминание о задачах со сроком сегодня — исполнителю
     for (const task of this.all("SELECT id, title, assignee FROM tasks WHERE due = ? AND status NOT IN ('done', 'rejected') AND assignee IS NOT NULL", t)) {
       await this.notifyAdmin(`📌 Срок сегодня: <b>${esc(task.title)}</b>`, "task", { only: [task.assignee], kb: [[{ text: "Открыть задачу", url: this.adminUrl(`/tasks/${task.id}`) }]] });
