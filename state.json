@@ -2209,8 +2209,14 @@
   "b33007af": {
    "campaign": "creators",
    "to_hash": "b33007af551ccd5aa353a93090e56aa42212bd3f2c909ac965a228ace09e11ba",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-25T22:53:02.306Z"
+  },
+  "bf8ca89c": {
+   "campaign": "creators",
+   "to_hash": "bf8ca89c8947287982ab3007cb23da388df738fc7c3c052226ec56feb91f4e19",
+   "status": "attempted",
+   "sent_at": "2026-11-25T22:56:46.413Z"
   }
  },
  "days": [
