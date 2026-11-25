@@ -30,19 +30,29 @@ ${title ? `<h1 style="margin:0 0 16px;font:700 24px/1.25 Georgia,'Times New Roma
  * Отправить письмо. Возвращает true, если Resend принял письмо. Сбой не бросает исключение: письмо — дополнительный канал.
  * @param {{to: string|string[], subject: string, html: string, text?: string, replyTo?: string}} m
  */
-export async function sendEmail(env, { to, subject, html, text, replyTo = "" }) {
+export async function sendEmail(env, message) {
+  return (await sendEmailResult(env, message)).ok;
+}
+
+/** Сохраняем статус и ID провайдера только там, где нужен контроль доставки. */
+export async function sendEmailResult(env, { to, subject, html, text, replyTo = "", headers, idempotencyKey }) {
   const list = [...new Set([].concat(to || []).map((x) => String(x || "").trim().toLowerCase()).filter((x) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)))];
-  if (!env.RESEND_API_KEY || !list.length) return false;
+  if (!env.RESEND_API_KEY || !list.length) return { ok: false, retry: false };
   try {
     const r = await fetch(env.RESEND_URL || "https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: env.EMAIL_FROM || DEFAULT_FROM, to: list, subject, html, ...(text ? { text } : {}), ...(replyTo ? { reply_to: replyTo } : {}) }),
+      signal: AbortSignal.timeout(10000),
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json", ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) },
+      body: JSON.stringify({ from: env.EMAIL_FROM || DEFAULT_FROM, to: list, subject, html, ...(text ? { text } : {}), ...(replyTo ? { reply_to: replyTo } : {}), ...(headers ? { headers } : {}) }),
     });
-    if (!r.ok) console.warn("resend", r.status, (await r.text()).slice(0, 300));
-    return r.ok;
-  } catch (e) {
-    console.warn("resend", e?.message || e);
-    return false;
+    if (!r.ok) {
+      console.warn("resend", r.status);
+      return { ok: false, retry: r.status === 408 || r.status === 409 || r.status === 429 || r.status >= 500 };
+    }
+    const receipt = await r.json().catch(() => null);
+    return { ok: true, id: typeof receipt?.id === "string" ? receipt.id : null };
+  } catch {
+    console.warn("resend network error");
+    return { ok: false, retry: true };
   }
 }

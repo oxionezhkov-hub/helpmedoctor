@@ -154,9 +154,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_WEBHOOK_SECRET: ${{ secrets.RESEND_WEBHOOK_SECRET }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
         run: |
           if [ -n "$RESEND_API_KEY" ]; then printf '%s' "$RESEND_API_KEY" | npx wrangler secret put RESEND_API_KEY; else echo "RESEND_API_KEY не задан — пропускаю"; fi
+          if [ -n "$RESEND_WEBHOOK_SECRET" ]; then printf '%s' "$RESEND_WEBHOOK_SECRET" | npx wrangler secret put RESEND_WEBHOOK_SECRET; fi
           if [ -n "$EMAIL_FROM" ]; then printf '%s' "$EMAIL_FROM" | npx wrangler secret put EMAIL_FROM; fi
       # Ключ выгрузки задач и идей из админки (workflow «Выгрузка из админки», только чтение) — по желанию
       - name: Ключ выгрузки из админки

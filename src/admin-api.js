@@ -16,14 +16,14 @@ import { buildKeyboard } from "./do/hub.js";
 const EXPORT_MSG_PER_DAY = 30;
 
 const READ_OPS = new Set([
-  "dashboard", "live", "report", "users", "chat", "events", "subscriptions", "payments", "inbox", "broadcasts", "segment_count",
+  "dashboard", "live", "report", "email_funnel", "users", "chat", "events", "subscriptions", "payments", "inbox", "broadcasts", "segment_count",
   "templates", "texts", "feedback", "onboarding", "tasks", "task", "audit_log", "backfill_status", "counts", "autopay_list",
   "partners", "bloggers", "blogger_log", "promos", "promo_uses", "docs", "doc",
 ]);
 
 // Операции HubDO, которые можно вызывать из интерфейса (остальные — только изнутри сервера)
 const HUB_OPS = new Set([
-  "dashboard", "live", "report", "users", "chat", "events", "subscriptions", "payments", "inbox", "broadcasts", "broadcast",
+  "dashboard", "live", "report", "email_funnel", "users", "chat", "events", "subscriptions", "payments", "inbox", "broadcasts", "broadcast",
   "segment_count", "broadcast_create", "broadcast_stop", "broadcast_test", "templates", "template_save", "template_delete", "texts", "texts_save",
   "feedback", "feedback_status", "onboarding", "notes_add", "notes_delete", "tasks", "task", "task_create", "task_update", "task_delete",
   "task_comment", "payment_status", "audit_log", "notify_get", "notify_save", "backfill_status", "counts", "ai_models_get", "ai_models_set", "autopay_list", "autopay_run",

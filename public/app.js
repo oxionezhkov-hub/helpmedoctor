@@ -447,11 +447,14 @@ async function boot() {
   if (IN_TG) sessionStore("hmd_tg", "1");
   else { registerSw(); cookieBar(); }
   // Ссылки из бота: /app?go=/patient/123 → #/patient/123
-  const goParam = new URLSearchParams(window.__hmdQs ?? location.search).get("go");
+  const entry = new URLSearchParams(window.__hmdQs ?? location.search);
+  const goParam = entry.get("go");
+  const emailRef = entry.get("email_ref");
+  if (emailRef && /^[\w-]+\.[\w-]+$/.test(emailRef) && emailRef.length <= 512) sessionStore("hmd_email_ref", emailRef);
   if (goParam && goParam.startsWith("/")) {
     history.replaceState(null, "", `${location.pathname}#${goParam}`);
     // Ссылка-вызов «Кто круче?» — помним её на время входа (после Google/Яндекса адрес теряется)
-    if (goParam.startsWith("/battle/")) sessionStore("hmd_go", goParam);
+    if (emailRef || goParam.startsWith("/battle/")) sessionStore("hmd_go", goParam);
   } else if (/tgWebApp/.test(location.hash)) {
     history.replaceState(null, "", `${location.pathname}#/`);
   }
@@ -535,6 +538,12 @@ async function boot() {
   window.addEventListener("hashchange", route);
   route();
   if (S.authNotice) toast(S.authNotice, S.authNoticeKind), (S.authNotice = null);
+  const pendingEmail = sessionStore("hmd_email_ref");
+  if (pendingEmail) {
+    api("POST", "/email/visit", { token: pendingEmail }).then(() => sessionStore("hmd_email_ref", "")).catch(e => {
+      if (e.status === 400) sessionStore("hmd_email_ref", "");
+    });
+  }
   api("POST", "/event", { type: "app_open" }).catch(() => {});
   followIntent();
   resumePaymentWatch();

@@ -19,8 +19,9 @@ import { cleanAttribution } from "../lib/attribution.js";
 import { clampStr, daysBetween, declDays, esc, toTelegramHtml, fixMedTerms, isRefusal, meaningfulItems, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { appBtn, tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
-import { emailHtml, sendEmail } from "../lib/email.js";
+import { emailHtml, sendEmail, sendEmailResult } from "../lib/email.js";
 import { signData } from "../lib/auth.js";
+import { emailBucket } from "../lib/email-funnel.js";
 import { winbackEmail, winbackStage } from "../lib/winback.js";
 import { refFromLabel } from "../lib/partners.js";
 import * as R from "../bot/render.js";
@@ -28,6 +29,8 @@ import * as R from "../bot/render.js";
 const PROFILE = "profile";
 const STATE = "state";
 const JOBS = "jobs";
+const WINBACK_PENDING = "winback_pending";
+const WINBACK_RETRY_MS = [5 * 60000, 30 * 60000];
 const TOMBSTONE = "merged_into";
 const patKey = (id) => `pat:${id}`;
 const quizKey = (patId) => `quiz:${patId}`;
@@ -1970,26 +1973,126 @@ export class UserDO extends DurableObject {
     return "none";
   }
 
-  /** Серия писем «вернись» по дням без активности (см. lib/winback.js). Один этап за раз, не чаще раза в день */
+  /** Этап возврата и повторные попытки используют один и тот же снимок письма. */
   async winbackTick(prof) {
-    if (prof.email_off || prof.blocked || !prof.last_active || !this.env.RESEND_API_KEY) return null;
-    const days = Math.floor((Date.now() - prof.last_active) / 86400000);
-    const stage = winbackStage(prof, days);
-    if (!stage) return null;
-    const m = winbackEmail(prof, stage);
-    const unsub = `${(this.env.PUBLIC_URL || "https://helpmedoctor.ru").replace(/\/$/, "")}/api/email/off?t=${encodeURIComponent(await signData(this.env, { uid: prof.uid, k: "unsub" }))}`;
-    const ok = await this.emailUser(m.subject, { title: m.title, paragraphs: m.paragraphs, button: { text: m.button.text, url: this.appLink(m.button.go) }, unsub, hero: m.hero, stats: m.stats, site: this.siteUrl() }, "winback");
-    // Этап отмечаем, даже если почты нет: иначе каждое утро будем зря её искать
+    if (this.winbackSending) return null;
+    this.winbackSending = true;
+    try {
+      return await this.winbackStep(prof);
+    } finally {
+      this.winbackSending = false;
+    }
+  }
+
+  async winbackStep(prof) {
+    const storage = this.ctx.storage;
+    const now = Date.now();
+    let pending = await storage.get(WINBACK_PENDING);
+    if (pending?.receipt) return this.finishWinback(pending);
+    if (prof.notifications === false || prof.email_off || prof.blocked || !prof.last_active || !this.env.RESEND_API_KEY ||
+        (pending && (pending.since !== prof.last_active || now - pending.assignedAt > 6 * 3600000))) {
+      if (pending) await storage.delete(WINBACK_PENDING);
+      return null;
+    }
+    if (pending && pending.retryAt > now) {
+      await this.scheduleWinback(pending.retryAt);
+      return null;
+    }
+
+    if (!pending) {
+      const days = Math.floor((now - prof.last_active) / 86400000);
+      const stage = winbackStage(prof, days);
+      if (!stage) return null;
+      const [to] = await this.hub().userEmails(prof.uid);
+      if (!to) {
+        await this.markWinback(prof.last_active, stage);
+        return null;
+      }
+      const practiced = !!prof.stats?.consultations_total;
+      const activeId = (await this.state()).active_patient_id;
+      const candidates = (prof.active_patient_ids || []).slice();
+      if (activeId && candidates.includes(activeId)) candidates.unshift(activeId);
+      const unfinished = practiced ? [] : await Promise.all([...new Set(candidates)].map((id) => this.patient(id).catch(() => null)));
+      const draft = unfinished.find(p => p?.current);
+      const segment = practiced ? "returning" : draft ? "resume" : "first";
+      const experiment = stage === 3 && !practiced && !prof.winback_experiment;
+      const variant = experiment ? await emailBucket(prof.uid) : "standard";
+      const id = crypto.randomUUID();
+      const mail = winbackEmail(prof, stage, variant === "treatment" ? segment : "", draft?.id);
+      const site = this.siteUrl();
+      const unsub = `${site}/api/email/off?t=${encodeURIComponent(await signData(this.env, { uid: prof.uid, k: "unsub" }))}`;
+      const token = await signData(this.env, { k: "email-visit", id, exp: now + 14 * 86400000 });
+      const href = new URL(this.appLink(mail.button.go));
+      href.searchParams.set("email_ref", token);
+      const button = { text: mail.button.text, url: href.href };
+      const fresh = await this.profile();
+      if (fresh.last_active !== prof.last_active || fresh.notifications === false || fresh.email_off || fresh.blocked) return null;
+      pending = { id, uid: prof.uid, stage, segment, variant, assignedAt: now, since: prof.last_active, days, attempt: 0 };
+      if (variant !== "control") {
+        pending.message = {
+          to, subject: mail.subject,
+          html: emailHtml({ ...mail, button, unsub, site }),
+          text: [mail.title, ...mail.paragraphs, `${button.text}: ${button.url}`, `Не присылать напоминания: ${unsub}`].join("\n\n"),
+          headers: { "List-Unsubscribe": `<${unsub}&one=1>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+          idempotencyKey: `winback/${id}`,
+        };
+      }
+      await storage.put(WINBACK_PENDING, pending);
+    }
+
+    // Таймер живёт в том же объекте, что и очередь приёмов. Он не переносит их ближайший alarm.
+    const retry = WINBACK_RETRY_MS[pending.attempt];
+    await this.scheduleWinback(now + (retry || 5 * 60000));
+    await this.hub().emailCampaignAssign(pending);
+    if (pending.variant === "control") return this.finishWinback({ ...pending, receipt: { ok: false } });
+
+    const current = await this.profile();
+    if (current.last_active !== pending.since || current.notifications === false || current.email_off || current.blocked) {
+      await storage.delete(WINBACK_PENDING);
+      return null;
+    }
+    const receipt = await sendEmailResult(this.env, pending.message);
+    if (receipt.retry && retry) {
+      await storage.put(WINBACK_PENDING, { ...pending, attempt: pending.attempt + 1, retryAt: now + retry });
+      return null;
+    }
+    pending = { ...pending, receipt };
+    await storage.put(WINBACK_PENDING, pending);
+    return this.finishWinback(pending);
+  }
+
+  async scheduleWinback(at) {
+    const storage = this.ctx.storage;
+    const next = await storage.getAlarm();
+    if (next === null || next > at) await storage.setAlarm(at);
+  }
+
+  async markWinback(since, stage, experiment = false) {
     const fresh = await this.profile();
-    fresh.winback = { since: prof.last_active, stage, at: Date.now() };
+    if (fresh.last_active === since) fresh.winback = { since, stage, at: Date.now() };
+    if (experiment) fresh.winback_experiment = true;
     await this.ctx.storage.put(PROFILE, fresh);
-    if (ok) await this.track("winback", { stage, days }, { source: "system" });
-    return ok ? stage : null;
+  }
+
+  async finishWinback(pending) {
+    if (pending.receipt.ok) {
+      await this.hub().emailCampaignAccept(pending.id, pending.receipt.id, Date.now());
+    } else if (pending.variant !== "control") {
+      await this.hub().emailCampaignFail(pending.id, Date.now());
+    }
+    await this.markWinback(pending.since, pending.stage, pending.variant !== "standard");
+    await this.ctx.storage.delete(WINBACK_PENDING);
+    if (pending.receipt.ok) {
+      await this.track("email", { kind: "winback" }, { source: "system" });
+      await this.track("winback", { stage: pending.stage, days: pending.days }, { source: "system" });
+    }
+    return pending.receipt.ok ? pending.stage : null;
   }
 
   /** Отписка от писем-напоминаний по ссылке из письма (служебные письма об оплате и студенческом приходят всё равно) */
   async emailOff() {
     const prof = await this.profile();
+    if (prof.email_off) return { ok: true };
     prof.email_off = true;
     await this.ctx.storage.put(PROFILE, prof);
     await this.track("email_off", {}, { source: "web" });
@@ -2054,6 +2157,9 @@ export class UserDO extends DurableObject {
 
   async alarm() {
     if (await this.ctx.storage.get(TOMBSTONE)) return;
+    if (await this.ctx.storage.get(WINBACK_PENDING)) {
+      await this.winbackTick(await this.profile()).catch(async () => this.scheduleWinback(Date.now() + 5 * 60000));
+    }
     for (let guard = 0; guard < 20; guard++) {
       const jobs = (await this.ctx.storage.get(JOBS)) || [];
       const job = jobs[0];

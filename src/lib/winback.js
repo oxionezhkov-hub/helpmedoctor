@@ -20,12 +20,22 @@ export function winbackStage(prof, days) {
 }
 
 /** Письмо этапа: { subject, title, paragraphs, button: { text, go }, hero, stats } */
-export function winbackEmail(prof, stage) {
-  const m = winbackText(prof, stage);
+export function winbackEmail(prof, stage, onboarding = "", targetId = "") {
+  const m = onboarding === "first" ? {
+    subject: "Ваш первый учебный приём",
+    title: "Попробуйте один учебный случай",
+    paragraphs: ["Примите виртуального пациента, расспросите его и попробуйте объяснить свой диагноз. После приёма тренажёр покажет, что получилось и что можно улучшить.", "Если застрянете, попросите подсказку наставника."],
+    button: { text: "Начать первый приём", go: prof.active_patient_ids?.[0] ? `/patient/${prof.active_patient_ids[0]}` : "/" },
+  } : onboarding === "resume" ? {
+    subject: "Можно продолжить начатый приём",
+    title: "Вернитесь к своему пациенту",
+    paragraphs: ["Откройте случай и продолжите с того места, где остановились. Когда завершите приём, получите разбор своих решений."],
+    button: { text: "Продолжить приём", go: targetId ? `/consult/${targetId}` : "/patients" },
+  } : winbackText(prof, stage);
   const lvl = G.levelInfo(prof.xp || 0).level;
   const waiting = (prof.active_patient_ids || []).length;
   const stats = [["🔥", `${prof.streak || 0} ${declDays(prof.streak || 0)}`], ["⭐", `уровень ${lvl}`], ["🩺", waiting ? `${waiting} в очереди` : "очередь пуста"]];
-  return { ...m, hero: `s${stage}`, stats };
+  return { ...m, hero: onboarding ? "" : `s${stage}`, stats: onboarding ? [] : stats };
 }
 
 function winbackText(prof, stage) {
