@@ -7,6 +7,7 @@
 //   node scripts/outreach-mail.mjs --preview out.md      все письма одним файлом — чтобы прочитать перед запуском
 //   node scripts/outreach-mail.mjs --test-to me@mail.ru  3 первых письма себе с пометкой [ТЕСТ] (состояние не меняется)
 //   node scripts/outreach-mail.mjs                       боевой запуск (нужны enabled: true и SMTP_USER / SMTP_PASS)
+//   node scripts/outreach-mail.mjs --creators            дневная кампания из закрытой очереди
 //   node scripts/outreach-mail.mjs --inbox               только проверить почту: новые ответы — в Telegram, отказы доставки — в состояние
 //   REPLY_TEXT="…" node scripts/outreach-mail.mjs --reply <id>   ответить адресату в ту же переписку (из Telegram через бота)
 // Ключи: --state <файл> (по умолчанию .state/state.json), --limit <n> — не больше n писем за запуск.
@@ -14,6 +15,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { firstLetter, followUp, OFF_TARGET } from "../content/outreach/mailing/templates.mjs";
 
 const DIR = path.resolve("content/outreach/mailing");
@@ -22,15 +25,39 @@ const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : un
 const DRY = args.includes("--dry");
 const PREVIEW = opt("--preview");
 const TEST_TO = opt("--test-to");
-const LIMIT = Number(opt("--limit")) || Infinity;
+const rawLimit = opt("--limit");
+const LIMIT = rawLimit ? Number(rawLimit) : Infinity;
+if (rawLimit && (!Number.isSafeInteger(LIMIT) || LIMIT < 1)) throw new Error("--limit должен быть целым числом больше нуля");
 const STATE_FILE = path.resolve(opt("--state") || ".state/state.json");
 const INBOX = args.includes("--inbox");
+const CREATORS = args.includes("--creators");
 const REPLY = opt("--reply");
 const REPLIES_DIR = path.join(path.dirname(STATE_FILE), "replies"); // наши ответы из Telegram — отдельными файлами, чтобы не конфликтовать с state.json
 
 const cfg = JSON.parse(fs.readFileSync(path.join(DIR, "config.json"), "utf8"));
 const recipients = JSON.parse(fs.readFileSync(path.join(DIR, "recipients.json"), "utf8"));
 const letters = JSON.parse(fs.readFileSync(path.join(DIR, "letters.json"), "utf8"));
+const creatorCampaign = "creators";
+const creatorBatchSize = 59;
+const fingerprint = (email) => createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+const creatorBatches = CREATORS ? Object.keys(process.env).filter((key) => /^CREATOR_OUTREACH_[0-9]+$/.test(key)).sort() : [];
+const creatorLetters = creatorBatches.flatMap((key) => {
+  if (!process.env[key]) return [];
+  const rows = JSON.parse(process.env[key]);
+  if (!Array.isArray(rows)) throw new Error("Некорректный формат очереди блогеров");
+  return rows;
+});
+const creatorRecipients = new Map();
+const morningAddresses = new Set(recipients.flatMap((r) => r.emails.map((e) => e.trim().toLowerCase())));
+for (const row of creatorLetters) {
+  const to = String(row.to || "").trim().toLowerCase();
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) && ["name", "subject", "text", "profile", "video", "source"].every((key) =>
+    typeof row[key] === "string" && row[key].trim()) && [row.profile, row.video, row.source].every((url) => /^https:\/\//i.test(url));
+  if (!valid || /[\r\n]/.test(row.subject)) throw new Error("В очереди блогеров есть письмо без подтверждённых данных");
+  const id = fingerprint(to).slice(0, 8);
+  if (creatorRecipients.has(id) || recipients.some((r) => r.id === id)) throw new Error("Дублирующийся адрес или идентификатор в очереди блогеров");
+  creatorRecipients.set(id, { id, name: row.name, to, subject: row.subject, text: row.text });
+}
 const recById = new Map(recipients.map((r) => [r.id, r]));
 const state = fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, "utf8")) : { contacts: {}, days: [] };
 const saveState = () => {
@@ -57,7 +84,7 @@ function workdaysBetween(fromIso, toIso) {
 // --- очередь ---
 const order = { A: 0, B: 1, C: 2 };
 function queue() {
-  const usedTo = new Set(Object.values(state.contacts).map((c) => c.to.toLowerCase()));
+  const usedTo = new Set(Object.values(state.contacts).map((c) => c.to_hash || fingerprint(c.to)));
   const excluded = new Set((cfg.exclude || []).map((x) => x.toLowerCase()));
   const fresh = [];
   for (const l of letters) {
@@ -65,8 +92,8 @@ function queue() {
     if (!rec || l.skip || state.contacts[l.id]) continue;
     const to = String(l.to || "").trim().toLowerCase();
     const domain = to.split("@")[1];
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) || usedTo.has(to) || excluded.has(to) || excluded.has(domain)) continue;
-    usedTo.add(to); // один адрес — одно письмо, даже если за ним несколько записей
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) || usedTo.has(fingerprint(to)) || excluded.has(to) || excluded.has(domain)) continue;
+    usedTo.add(fingerprint(to));
     fresh.push({ ...l, to, rec });
   }
   // Сначала приоритет A, внутри — чередуем сегменты, чтобы за день не уходили 30 писем одного типа
@@ -84,6 +111,13 @@ function queue() {
   }
   return out;
 }
+function creatorQueue() {
+  const used = new Set(Object.values(state.contacts).map((c) => c.to_hash || fingerprint(c.to)));
+  const excluded = new Set((cfg.exclude || []).map((e) => e.trim().toLowerCase()));
+  return [...creatorRecipients.values()].filter(({ id, to }) =>
+    !state.contacts[id] && !morningAddresses.has(to) && !used.has(fingerprint(to)) &&
+    !excluded.has(to) && !excluded.has(to.split("@")[1]));
+}
 function dueFollowUps(today) {
   return Object.entries(state.contacts)
     .filter(([, c]) => c.status === "sent" && !c.followup_at && workdaysBetween(mskDate(new Date(c.sent_at)), today) >= cfg.followup_after_workdays)
@@ -94,8 +128,9 @@ function dueFollowUps(today) {
 function capToday(today) {
   const days = state.days.length + (state.days.includes(today) ? 0 : 1);
   const limit = (cfg.ramp.find(([d]) => days <= d) || cfg.ramp.at(-1))[1];
-  const sentToday = Object.values(state.contacts).filter((c) => [c.sent_at, c.followup_at].some((t) => t && mskDate(new Date(t)) === today)).length;
-  return Math.max(0, limit - sentToday);
+  const sentToday = Object.values(state.contacts).filter((c) =>
+    (c.campaign === creatorCampaign) === CREATORS && [c.sent_at, c.followup_at].some((t) => t && mskDate(new Date(t)) === today)).length;
+  return Math.max(0, (CREATORS ? 10 : limit) - sentToday);
 }
 
 // --- зависимости для почты (в Actions ставятся в .mail-deps, локально — как обычные пакеты) ---
@@ -134,7 +169,7 @@ async function syncInbox() {
   const client = new ImapFlow({ host: cfg.imap.host, port: cfg.imap.port, secure: true, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }, logger: false });
   await client.connect();
   const news = [], replies = [];
-  const contacts = Object.entries(state.contacts);
+  const contacts = Object.entries(state.contacts).filter(([, c]) => c.campaign !== creatorCampaign);
   const byAddr = new Map(contacts.map(([id, c]) => [c.to.toLowerCase(), id]));
   const ours = ourReplies();
   const byMsgId = new Map();
@@ -209,10 +244,11 @@ async function notify(text, chatId) {
 
 function summary(extra = []) {
   const by = {};
-  for (const c of Object.values(state.contacts)) by[c.status] = (by[c.status] || 0) + 1;
+  const contacts = Object.values(state.contacts).filter((c) => c.campaign !== creatorCampaign);
+  for (const c of contacts) by[c.status] = (by[c.status] || 0) + 1;
   const left = queue().length;
   const lines = [
-    `Рассылка партнёрам: отправлено ${Object.keys(state.contacts).length}, осталось ${left}`,
+    `Рассылка партнёрам: отправлено ${contacts.length}, осталось ${left}`,
     `ответили ${by.replied || 0} · ждём ответа ${(by.sent || 0) + (by.followed || 0)} · адрес не существует ${by.bounced || 0} · ошибки ${by.failed || 0}`,
     ...extra,
   ];
@@ -223,7 +259,10 @@ function writeStatusCsv() {
   if (DRY || TEST_TO || PREVIEW) return;
   const rows = [["id", "Название", "Email", "Статус", "Отправлено", "Напоминание", "Ответ", "Тема"]];
   const label = { sent: "Написали", followed: "Напомнили", replied: "Ответили", bounced: "Нет адреса", failed: "Ошибка" };
-  for (const [id, c] of Object.entries(state.contacts)) rows.push([id, recById.get(id)?.name || "", c.to, label[c.status] || c.status, c.sent_at?.slice(0, 10) || "", c.followup_at?.slice(0, 10) || "", c.reply_at?.slice(0, 10) || "", c.subject || ""]);
+  for (const [id, c] of Object.entries(state.contacts)) {
+    if (c.campaign === creatorCampaign) continue;
+    rows.push([id, recById.get(id)?.name || "", c.to, label[c.status] || c.status, c.sent_at?.slice(0, 10) || "", c.followup_at?.slice(0, 10) || "", c.reply_at?.slice(0, 10) || "", c.subject || ""]);
+  }
   const csv = rows.map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",")).join("\n");
   fs.writeFileSync(path.join(path.dirname(STATE_FILE), "status.csv"), "﻿" + csv + "\n");
 }
@@ -249,14 +288,15 @@ function checkConfig() {
 if (PREVIEW) {
   checkConfig();
   const preview = { ...cfg, sender_name: cfg.sender_name || "[Имя Фамилия]", from_name: cfg.from_name || "[Имя Фамилия]", sender_about: cfg.sender_about || "[студент N курса … вуза]" };
-  const q = queue();
+  const q = CREATORS ? creatorQueue() : queue();
   const md = [`# Письма рассылки — ${q.length} шт. (в порядке отправки)\n`];
   q.forEach((l, i) => {
-    const m = firstLetter(l, preview);
-    md.push(`---\n\n### ${i + 1}. ${l.rec.name}\n\n**Кому:** ${l.to} · ${l.rec.segment} · приоритет ${l.rec.priority}\n**Тема:** ${m.subject}\n\n${m.text.replace(/\n/g, "  \n")}\n`);
+    const m = CREATORS ? l : firstLetter(l, preview);
+    md.push(`---\n\n### ${i + 1}. ${CREATORS ? l.name : l.rec.name}\n\n**Кому:** ${l.to}\n**Тема:** ${m.subject}\n\n${m.text.replace(/\n/g, "  \n")}\n`);
   });
   fs.writeFileSync(PREVIEW, md.join("\n"));
-  log(`✓ ${PREVIEW}: ${q.length} писем; пропущено ${letters.filter((l) => l.skip).length}`);
+  const skipped = CREATORS ? creatorRecipients.size - q.length : letters.filter((l) => l.skip).length;
+  log(`✓ ${PREVIEW}: ${q.length} писем; пропущено ${skipped}`);
   process.exit(0);
 }
 
@@ -309,13 +349,17 @@ if (REPLY) {
 if (!TEST_TO && !DRY) {
   if (!cfg.enabled) { log("Рассылка выключена (config.json → enabled: false)"); process.exit(0); }
   if (!isWorkday(today)) { log(`${today} — выходной, не отправляем`); process.exit(0); }
+  if (CREATORS && creatorRecipients.size !== creatorBatchSize) {
+    log(`Дневная рассылка ждёт очередь из ${creatorBatchSize} писем. Загружено: ${creatorRecipients.size}`);
+    process.exit(0);
+  }
   needMail();
 }
 
-const { news, replies } = !DRY && !TEST_TO ? await syncInbox() : { news: [], replies: [] };
+const { news, replies } = !DRY && !TEST_TO && !CREATORS ? await syncInbox() : { news: [], replies: [] };
 const cap = Math.min(capToday(today), LIMIT);
-const followups = dueFollowUps(today);
-const fresh = queue();
+const followups = CREATORS ? [] : dueFollowUps(today);
+const fresh = CREATORS ? creatorQueue() : queue();
 const plan = [
   ...followups.map((f) => ({ kind: "followup", id: f.id, to: f.c.to, letter: f.letter, c: f.c })),
   ...fresh.map((l) => ({ kind: "first", id: l.id, to: l.to, letter: l })),
@@ -331,27 +375,43 @@ const from = () => ({ name: cfg.from_name, address: process.env.SMTP_USER });
 
 let sent = 0;
 for (const [i, p] of plan.entries()) {
-  const m = p.kind === "first" ? firstLetter(p.letter, cfg) : followUp(p.letter, cfg, p.c.sent_at);
+  const m = CREATORS ? p.letter : p.kind === "first" ? firstLetter(p.letter, cfg) : followUp(p.letter, cfg, p.c.sent_at);
   const to = TEST_TO || p.to;
   const subject = TEST_TO ? `[ТЕСТ → ${p.to}] ${m.subject}` : m.subject;
   if (DRY) { log(`\n=== ${p.kind === "first" ? "письмо" : "напоминание"} → ${p.to}\nТема: ${subject}\n\n${m.text}`); continue; }
   const mail = { from: from(), to, subject, text: m.text };
   if (p.kind === "followup" && p.c.message_id && !TEST_TO) Object.assign(mail, { inReplyTo: p.c.message_id, references: [p.c.message_id] });
+  if (CREATORS && !TEST_TO) {
+    state.contacts[p.id] = { campaign: creatorCampaign, to_hash: fingerprint(p.to), status: "attempted", sent_at: new Date().toISOString() };
+    saveState();
+    if (process.env.GITHUB_ACTIONS === "true") {
+      execFileSync("bash", ["scripts/save-outreach-state.sh", path.dirname(STATE_FILE)], { stdio: "inherit" });
+    }
+  }
   try {
     const info = await transport.sendMail(mail);
     sent++;
-    log(`✓ ${p.kind === "first" ? "письмо" : "напоминание"} → ${to}`);
+    log(CREATORS ? "✓ Письмо блогеру принято SMTP" : `✓ ${p.kind === "first" ? "письмо" : "напоминание"} → ${to}`);
     if (!TEST_TO) {
       const now = new Date().toISOString();
-      if (p.kind === "first") state.contacts[p.id] = { to: p.to, status: "sent", sent_at: now, message_id: info.messageId, subject };
+      if (CREATORS) state.contacts[p.id].status = "sent";
+      else if (p.kind === "first") state.contacts[p.id] = { to: p.to, status: "sent", sent_at: now, message_id: info.messageId, subject };
       else Object.assign(state.contacts[p.id], { status: "followed", followup_at: now, followup_message_id: info.messageId });
-      if (!state.days.includes(today)) state.days.push(today);
+      if (!CREATORS && !state.days.includes(today)) state.days.push(today);
       saveState();
     }
   } catch (e) {
-    log(`✗ ${to}: ${e.message}`);
+    log(CREATORS ? `✗ Ошибка отправки письма блогеру: ${e.responseCode || e.code || "SMTP"}` : `✗ ${to}: ${e.message}`);
+    if (CREATORS && !TEST_TO) {
+      if (e.code === "EAUTH" || e.responseCode === 535 || (e.responseCode >= 400 && e.responseCode < 500)) {
+        delete state.contacts[p.id];
+      } else if (e.responseCode >= 500 && e.responseCode < 600) {
+        state.contacts[p.id].status = "bounced";
+      }
+      saveState();
+    }
     if (e.responseCode === 535 || e.code === "EAUTH") throw e; // неверный пароль — дальше нет смысла
-    if (!TEST_TO && e.responseCode >= 500 && e.responseCode < 600) {
+    if (!CREATORS && !TEST_TO && e.responseCode >= 500 && e.responseCode < 600) {
       state.contacts[p.id] = { ...(state.contacts[p.id] || { to: p.to, sent_at: new Date().toISOString(), subject }), status: "bounced", note: e.message.slice(0, 200) };
       saveState();
     }
@@ -360,7 +420,7 @@ for (const [i, p] of plan.entries()) {
 }
 saveState();
 writeStatusCsv();
-const text = summary([`Сегодня: ${sent} писем`, ...news]);
+const text = CREATORS ? `Рассылка блогерам: отправлено за запуск ${sent}, осталось ${creatorQueue().length}` : summary([`Сегодня: ${sent} писем`, ...news]);
 log("\n" + text);
 if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, text.replace(/\n/g, "  \n") + "\n");
 if (!DRY && !TEST_TO) {

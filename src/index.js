@@ -100,7 +100,7 @@ export default {
   async scheduled(event, env, ctx) {
     // 07:00 UTC = 10:00 МСК — утреннее напоминание; 17:00 UTC = 20:00 МСК — «стрик сгорит»; 18:00 UTC = 21:00 МСК — итоги дня админам
     if (event.cron === "0 18 * * *") return ctx.waitUntil(hubStub(env).dailySummary());
-    // Рассылка партнёрам: 09:20 МСК — отправка, дальше каждый час — проверка почты (GitHub Actions, src/lib/outreach.js)
+    // Рассылка партнёрам: 09:20 и 15:20 МСК — отправка, в остальные часы — проверка почты (GitHub Actions, src/lib/outreach.js)
     if (event.cron === OUTREACH_CRON) return ctx.waitUntil(outreachCron(env, event.scheduledTime).catch((e) => console.error("outreach cron", e)));
     const kind = event.cron === "0 17 * * *" ? "evening" : "morning";
     ctx.waitUntil(hubStub(env).startCron(kind));
