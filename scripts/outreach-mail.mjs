@@ -38,6 +38,7 @@ const cfg = JSON.parse(fs.readFileSync(path.join(DIR, "config.json"), "utf8"));
 const recipients = JSON.parse(fs.readFileSync(path.join(DIR, "recipients.json"), "utf8"));
 const letters = JSON.parse(fs.readFileSync(path.join(DIR, "letters.json"), "utf8"));
 const creatorCampaign = "creators";
+const creatorBatchSize = 59;
 const fingerprint = (email) => createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
 const creatorBatches = CREATORS ? Object.keys(process.env).filter((key) => /^CREATOR_OUTREACH_[0-9]+$/.test(key)).sort() : [];
 const creatorLetters = creatorBatches.flatMap((key) => {
@@ -348,9 +349,9 @@ if (REPLY) {
 if (!TEST_TO && !DRY) {
   if (!cfg.enabled) { log("Рассылка выключена (config.json → enabled: false)"); process.exit(0); }
   if (!isWorkday(today)) { log(`${today} — выходной, не отправляем`); process.exit(0); }
-  if (CREATORS) {
-    const approved = creatorQueue().length + Object.values(state.contacts).filter((c) => c.campaign === creatorCampaign).length;
-    if (approved < 500) { log(`Дневная рассылка ждёт 500 адресатов. Готово: ${approved}`); process.exit(0); }
+  if (CREATORS && creatorRecipients.size !== creatorBatchSize) {
+    log(`Дневная рассылка ждёт очередь из ${creatorBatchSize} писем. Загружено: ${creatorRecipients.size}`);
+    process.exit(0);
   }
   needMail();
 }
