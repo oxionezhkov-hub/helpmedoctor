@@ -2319,8 +2319,14 @@
   "b1b19f63": {
    "campaign": "creators",
    "to_hash": "b1b19f63f6902da9a3c6b77cec520ee50acddeb914dc409e1d0517dcdf9d18d0",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-26T22:41:15.008Z"
+  },
+  "8b47c675": {
+   "campaign": "creators",
+   "to_hash": "8b47c675e5f0ce68480614dc48a022d9f667b145a7ff4f9783b044f0077d736d",
+   "status": "attempted",
+   "sent_at": "2026-11-26T22:45:02.106Z"
   }
  },
  "days": [
