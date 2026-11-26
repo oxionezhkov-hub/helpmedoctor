@@ -1871,24 +1871,30 @@
   },
   "b5fb4c5f": {
    "to": "sovetpspbgmu@gmail.com",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-18T06:37:06.433Z",
    "message_id": "<2572405c-a481-8fa8-26ea-09bf7a9b6692@gmail.com>",
-   "subject": "Для Совета обучающихся ПСПбГМУ: тренажёр приёма пациента"
+   "subject": "Для Совета обучающихся ПСПбГМУ: тренажёр приёма пациента",
+   "followup_at": "2026-11-26T06:21:18.907Z",
+   "followup_message_id": "<01f8004a-ec6f-2046-6af2-391fc48d18cc@gmail.com>"
   },
   "eb300450": {
    "to": "pr@rlsnet.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-18T06:41:15.838Z",
    "message_id": "<c4e00835-2919-f852-ba85-0d38f38e0eba@gmail.com>",
-   "subject": "РЛС и студенты-медики: фармакология на клинических случаях"
+   "subject": "РЛС и студенты-медики: фармакология на клинических случаях",
+   "followup_at": "2026-11-26T06:26:11.873Z",
+   "followup_message_id": "<5513ca7a-80a1-7460-5cc0-7eb124648087@gmail.com>"
   },
   "d1429e63": {
    "to": "studsovet@samsmu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-18T06:43:56.877Z",
    "message_id": "<5416be22-b874-ca21-05a9-7e3c8c42453a@gmail.com>",
-   "subject": "Для Совета обучающихся СамГМУ: тренажёр приёма пациента"
+   "subject": "Для Совета обучающихся СамГМУ: тренажёр приёма пациента",
+   "followup_at": "2026-11-26T06:29:34.472Z",
+   "followup_message_id": "<9d1a83ac-1760-231d-14fb-35b7a22dcf90@gmail.com>"
   },
   "895d789f": {
    "to": "zabota@myrosmol.ru",
@@ -1909,10 +1915,12 @@
   },
   "d981b9c3": {
    "to": "kurskmed@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-18T06:50:31.434Z",
    "message_id": "<50270434-3410-a6f1-7f95-f77f09668dc9@gmail.com>",
-   "subject": "Для Совета СНО Курского ГМУ: виртуальный пациент для студентов"
+   "subject": "Для Совета СНО Курского ГМУ: виртуальный пациент для студентов",
+   "followup_at": "2026-11-26T06:33:57.358Z",
+   "followup_message_id": "<f64432bf-4648-da6b-cab1-4668c71d531c@gmail.com>"
   },
   "061a0d29": {
    "to": "m.vlasenko@vidal.ru",
@@ -2253,6 +2261,48 @@
    "to_hash": "1718f6fc89c5bfb884bb58adda4d772cfed570ecc20cd6a2b5bdc05ec1c0f584",
    "status": "sent",
    "sent_at": "2026-11-25T23:21:04.659Z"
+  },
+  "d07216a9": {
+   "to": "kaf-bh@bashgmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-26T06:38:34.597Z",
+   "message_id": "<ffd453d3-6ecb-94fb-f025-3fb81e322ca2@gmail.com>",
+   "subject": "Олимпиада «От биохимии к молекулярной медицине»: идея для участников"
+  },
+  "26f26ba5": {
+   "to": "education.senezh@rsv.ru",
+   "status": "sent",
+   "sent_at": "2026-11-26T06:43:13.383Z",
+   "message_id": "<67e4d6a2-3c07-bfa5-08db-e50235c1b535@gmail.com>",
+   "subject": "Тренажёр приёма для медицинской молодёжи на форумах Росмолодёжи"
+  },
+  "00547b1e": {
+   "to": "info@naked-science.ru",
+   "status": "sent",
+   "sent_at": "2026-11-26T06:46:43.372Z",
+   "message_id": "<79fa1dea-3896-4c8a-1f22-ac006ec0fc8b@gmail.com>",
+   "subject": "Для Naked Science: студенты научили ИИ играть пациента"
+  },
+  "a2be70ca": {
+   "to": "rec@fesmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-26T06:51:33.875Z",
+   "message_id": "<d1db0f33-f012-25e4-d0ad-5e4428a75631@gmail.com>",
+   "subject": "Для НОМУС ДВГМУ: тренажёр приёма для студентов"
+  },
+  "8ff4c9bf": {
+   "to": "office@kamey.ru",
+   "status": "sent",
+   "sent_at": "2026-11-26T06:56:21.234Z",
+   "message_id": "<f42a8018-d043-71a8-073e-605511ee1bad@gmail.com>",
+   "subject": "CAMEO и студенты медвузов в регионах: идея коллаборации"
+  },
+  "f1dd9c7c": {
+   "to": "elizametriya@mail.ru",
+   "status": "sent",
+   "sent_at": "2026-11-26T07:01:42.248Z",
+   "message_id": "<ec5adc4d-a616-bfd8-609d-6830893b4df1@gmail.com>",
+   "subject": "Для участников «Восходящих звёзд детской хирургии на Байкале»"
   }
  },
  "days": [
@@ -2288,7 +2338,8 @@
   "2026-11-20",
   "2026-11-23",
   "2026-11-24",
-  "2026-11-25"
+  "2026-11-25",
+  "2026-11-26"
  ],
- "inbox_checked_at": "2026-11-25T20:27:41.143Z"
+ "inbox_checked_at": "2026-11-26T06:21:17.377Z"
 }
