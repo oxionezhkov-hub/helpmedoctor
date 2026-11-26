@@ -2331,8 +2331,14 @@
   "8116b3d6": {
    "campaign": "creators",
    "to_hash": "8116b3d66d926b54b7ffd95dacaa0795323f72908c1261d3a2132cebe99b8f78",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-26T22:48:45.401Z"
+  },
+  "f42afd56": {
+   "campaign": "creators",
+   "to_hash": "f42afd56d9ee3db2d4b0c6f735137ca930be6412312a052e031ec53ca0364b5c",
+   "status": "attempted",
+   "sent_at": "2026-11-26T22:52:38.793Z"
   }
  },
  "days": [
