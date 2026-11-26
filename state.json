@@ -2337,8 +2337,14 @@
   "f42afd56": {
    "campaign": "creators",
    "to_hash": "f42afd56d9ee3db2d4b0c6f735137ca930be6412312a052e031ec53ca0364b5c",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-26T22:52:38.793Z"
+  },
+  "59b49468": {
+   "campaign": "creators",
+   "to_hash": "59b494685236422f19cb64db92d4fc08cb09b55b8ddb31c5d6347ff6b5004354",
+   "status": "attempted",
+   "sent_at": "2026-11-26T22:55:55.008Z"
   }
  },
  "days": [
