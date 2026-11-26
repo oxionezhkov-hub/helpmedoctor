@@ -2349,8 +2349,14 @@
   "ad6df11b": {
    "campaign": "creators",
    "to_hash": "ad6df11b9bc86980ea7ac3bc4ed1b1a270f1d6ac6fce0e819e586d60a607a055",
-   "status": "attempted",
+   "status": "sent",
    "sent_at": "2026-11-26T23:00:27.380Z"
+  },
+  "8cfa8f4f": {
+   "campaign": "creators",
+   "to_hash": "8cfa8f4fee1cd10f89cda4a31bd34a81aebd9f1e6c25ac96d1993d23cab32706",
+   "status": "attempted",
+   "sent_at": "2026-11-26T23:05:06.049Z"
   }
  },
  "days": [
