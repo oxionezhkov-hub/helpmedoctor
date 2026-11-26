@@ -2303,6 +2303,12 @@
    "sent_at": "2026-11-26T07:01:42.248Z",
    "message_id": "<ec5adc4d-a616-bfd8-609d-6830893b4df1@gmail.com>",
    "subject": "Для участников «Восходящих звёзд детской хирургии на Байкале»"
+  },
+  "705008d0": {
+   "campaign": "creators",
+   "to_hash": "705008d0d6d10088472ab95c106f0aa2bd959354fe83c4c8a159e43a83f3fe82",
+   "status": "attempted",
+   "sent_at": "2026-11-26T22:34:18.198Z"
   }
  },
  "days": [
