@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import { programOfferVariant } from "../src/lib/programs.js";
 
 const BASE = process.env.BASE || "http://127.0.0.1:8787";
 const TOKEN = "123:TEST";
@@ -53,6 +54,21 @@ async function login(uid) {
 }
 
 const step = (name) => console.log(`✔ ${name}`);
+
+// ---------------------------------------------------------------- эксперимент статьи
+{
+  const token = await login("908811");
+  const experiment = { article: "sbor-anamneza", variant: "card", via: "demo" };
+  assert.equal((await api(token, "POST", "/patients/new")).status, 200);
+  const patient = await waitFor(async () => (await api(token, "GET", "/me")).data.patients?.[0], "blog first patient");
+  const path = `/patients/${patient.id}/start`;
+  const body = { blogExperiment: { ...experiment, at: Date.now() } };
+  const responses = await Promise.all([api(token, "POST", path, body), api(token, "POST", path, body)]);
+  assert.ok(responses.every((r) => r.status === 200));
+  assert.deepEqual(responses.filter((r) => r.data.blog_experiment).map((r) => r.data.blog_experiment), [experiment]);
+  assert.equal(responses.filter((r) => r.data.is_new_consultation).length, 1);
+  step("эксперимент статьи: только один первый приём при повторном или одновременном запросе");
+}
 
 // ---------------------------------------------------------------- бот
 const U = "777";
@@ -1147,6 +1163,89 @@ step("«Кто круче?»: QR и ссылка, подключение, выб
 }
 
 // ---------------------------------------------------------------- админка и cron
+{
+  const program = "/programs/cardiology";
+  const start = (token, id, entry = "home") => api(token, "POST", `${program}/cases/${id}/start`, { entry });
+  const caseIds = ["palpitations", "exertional-dyspnea", "walking-discomfort"];
+  const uid = "9650";
+  const token = await login(uid);
+  const finish = (token, id) => api(token, "POST", `/patients/${id}/finish`, { type: "discharge" });
+  const review = (token, id) => waitFor(async () => {
+    const c = (await api(token, "GET", `/patients/${id}`)).data.patient?.consultations.at(-1);
+    return c && !c.evaluating && c;
+  }, "cardiology review");
+  assert.equal((await start(null, caseIds[0])).status, 401);
+  assert.equal((await start(token, caseIds[1])).data.code, "premium");
+  assert.equal((await start(token, caseIds[2])).data.code, "premium");
+  assert.equal((await start(token, "unknown")).data.code, "no_program_case");
+  let initial = await api(token, "GET", "/me");
+  assert.deepEqual(initial.data.program.cases.map((c) => c.premium), [false, true, true]);
+  assert.equal((await api(token, "POST", `${program}/events`, { type: "view", entry: "home" })).status, 200);
+  let results = await Promise.all([start(token, caseIds[0]), start(token, caseIds[0])]);
+  assert.ok(results.every((r) => r.status === 200));
+  const first = results[0].data.patient_id;
+  assert.equal(results[1].data.patient_id, first);
+  const patient = (await api(token, "GET", `/patients/${first}`)).data.patient;
+  assert.equal(patient.name, "Ирина");
+  assert.equal(patient.conversation_history[0].text, "Иногда сердце вдруг сильно стучит.");
+  assert.equal(patient.true_diagnosis, null);
+  assert.equal((await api(token, "GET", `/patients/${first}`)).data.patient.full_history, undefined);
+  assert.equal((await finish(token, first)).status, 200);
+  assert.equal((await review(token, first)).program_offer, undefined);
+  initial = (await api(await login(uid), "GET", "/me")).data;
+  assert.equal(initial.program.cases[0].finished, true);
+  assert.equal(initial.program.cases[1].available, true);
+  assert.equal(initial.profile.today_patients, 0);
+  assert.equal((await api(token, "POST", `${program}/events`, { type: "premium_exposure", case_id: caseIds[1], entry: "case_review" })).status, 200);
+  const pay = await api(token, "POST", "/pay", { plan: "trial", consent: true, programContext: { case_id: caseIds[1], entry: "case_review" } });
+  assert.equal(pay.status, 200, JSON.stringify(pay.data));
+  const op = pay.data.link.split("/").pop();
+  await fetch(`${BASE}/payment-callback`, { method: "POST", body: JSON.stringify({ operationId: op }) });
+  assert.equal((await api(token, "GET", "/me")).data.profile.premium, true);
+  assert.equal((await start(token, caseIds[2])).data.code, "previous_case");
+  const second = (await start(token, caseIds[1], "case_review")).data.patient_id;
+  assert.equal((await api(token, "GET", `/patients/${second}`)).data.patient.name, "Олег");
+  assert.equal((await adm(admTok, "POST", `/user/${uid}/action`, { action: "set_until", until: Date.now() - 1000 })).status, 200);
+  const expired = (await api(token, "GET", "/me")).data;
+  assert.equal(expired.program.cases[1].patient_id, null);
+  assert.equal(expired.profile.program_progress, undefined);
+  assert.equal(expired.active_patient_id, null);
+  assert.ok(!expired.patients.some((p) => p.id === second));
+  assert.equal((await api(token, "GET", `/patients/${second}`)).data.code, "premium");
+  assert.equal((await api(token, "POST", `/patients/${second}/start`)).data.code, "premium");
+  assert.equal((await api(token, "POST", `/patients/${second}/message`, { text: "Как давно?" })).data.code, "premium");
+  assert.equal((await finish(token, second)).data.code, "premium");
+  assert.equal((await adm(admTok, "POST", `/user/${uid}/action`, { action: "set_until", until: Date.now() + 60_000 })).status, 200);
+  assert.equal((await start(token, caseIds[1])).data.patient_id, second);
+  assert.equal((await finish(token, second)).status, 200);
+  await review(token, second);
+  const third = (await start(token, caseIds[2], "case_review")).data.patient_id;
+  assert.equal((await api(token, "GET", `/patients/${third}`)).data.patient.name, "Вера");
+
+  const events = (await aq("events", { uid })).rows;
+  assert.equal(events.filter((e) => e.type === "training_program_case_start").length, 3);
+  assert.equal(events.filter((e) => e.type === "training_program_case_finish").length, 2);
+  assert.equal(events.find((e) => e.type === "training_program_premium_exposure").meta.case, caseIds[1]);
+  assert.equal(events.find((e) => e.type === "pay_link" && e.meta.op === op).meta.program.entry, "case_review");
+  assert.ok(events.some((e) => e.type === "trial_start" && e.meta.op === op));
+
+  const candidates = Array.from({ length: 20 }, (_, i) => String(9651 + i));
+  for (const group of ["card", "control"]) {
+    const groupUid = group === programOfferVariant(uid) ? uid : candidates.find((id) => programOfferVariant(id) === group);
+    const groupToken = groupUid === uid ? token : await login(groupUid);
+    assert.equal((await api(groupToken, "POST", "/patients/new")).status, 200);
+    const ordinary = await waitFor(async () => (await api(groupToken, "GET", "/me")).data.patients.find((p) => p.id.startsWith("pat_")), "ordinary patient after cardiology");
+    assert.equal((await api(groupToken, "POST", `/patients/${ordinary.id}/start`)).status, 200);
+    assert.equal((await finish(groupToken, ordinary.id)).status, 200);
+    assert.equal((await review(groupToken, ordinary.id)).program_offer, group);
+    const exposure = () => api(groupToken, "POST", `${program}/events`, { type: "offer_view", entry: "first_review" });
+    await Promise.all([exposure(), exposure()]);
+    const observed = (await aq("events", { uid: groupUid, type: "training_program_offer_view" })).rows;
+    assert.deepEqual(observed.map((e) => e.meta.variant), [group]);
+  }
+  step("кардиология: бесплатный случай, прогресс, премиум-оплата, истечение доступа и обе группы первого разбора");
+}
+
 await text("1326867567", "/admin");
 await waitFor(() => sent("1326867567").some((m) => m.text.includes("дашборд")), "admin");
 await text("1000000002", "/admin");

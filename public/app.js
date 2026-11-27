@@ -30,6 +30,7 @@ const root = document.getElementById("app");
 const sheetRoot = document.getElementById("sheet-root");
 const toastRoot = document.getElementById("toast-root");
 const TOKEN_KEY = "hmd_token";
+const BLOG_EXPERIMENT_KEY = "hmd_blog_experiment";
 const IS_TOUCH = matchMedia("(pointer: coarse)").matches;
 
 const S = {
@@ -38,6 +39,7 @@ const S = {
   token: null,
   me: null,            // снимок: профиль, пациенты, тесты, конфиг
   patients: new Map(), // id -> { patient, quiz } полные карточки
+  programPaywallSeen: new Set(),
   route: { name: "home", params: {} },
   ws: null,
   wsOk: false,
@@ -494,6 +496,12 @@ async function boot() {
     const qs = new URLSearchParams(window.__hmdQs ?? location.search);
     const handoff = qs.get("login");
     if (qs.get("from")) sessionStore("hmd_from", qs.get("from").slice(0, 40));
+    const variant = qs.get("b1"), via = qs.get("b1via");
+    if (/^r_[a-z0-9]{4,12}$/i.test(qs.get("ref") || "")) {
+      store(BLOG_EXPERIMENT_KEY, null);
+    } else if (["control", "card"].includes(variant) && variant === store("hmd_b1_anamnez") && ["direct", "demo"].includes(via)) {
+      store(BLOG_EXPERIMENT_KEY, JSON.stringify({ article: "sbor-anamneza", variant, via, at: Date.now() }));
+    } else if (qs.has("from")) store(BLOG_EXPERIMENT_KEY, null);
     // Промокод из ссылки (/app?promo=КОД) — применим сразу после входа или регистрации
     if (qs.get("promo")) sessionStore("hmd_promo", qs.get("promo").slice(0, 32));
     // Личная ссылка партнёра (?ref=r_<код>, или сохранённая сайтом) — метка уходит в регистрацию любым способом входа
@@ -546,6 +554,21 @@ async function boot() {
 function goal(name, params) {
   try { window.ym?.(113057442, "reachGoal", name, params); } catch {}
   try { (window._tmr = window._tmr || []).push({ type: "reachGoal", id: 3799574, goal: name }); } catch {}
+}
+
+function blogExperimentForStart() {
+  if (IN_TG) return;
+  try {
+    const blogExperiment = JSON.parse(store(BLOG_EXPERIMENT_KEY) || "null");
+    if (blogExperiment && Date.now() - blogExperiment.at <= 7 * 86400000) return { blogExperiment };
+  } catch {}
+  store(BLOG_EXPERIMENT_KEY, null);
+}
+
+function trackBlogFirstConsult(start) {
+  store(BLOG_EXPERIMENT_KEY, null);
+  if (!start.blog_experiment) return;
+  try { window.ym?.(113057442, "reachGoal", "b1_first_consult", start.blog_experiment); } catch {}
 }
 
 /** Пришли с сайта по кнопке тарифа (from=…_trial / _month …) — после входа сразу открываем тарифы */
@@ -709,6 +732,9 @@ function fetchMe() {
   meInflight = api("GET", cfg ? "/me?lite=1" : "/me")
     .then((me) => {
       S.me = cfg && !me.config ? { ...me, config: cfg } : me;
+      for (const [id, { patient }] of S.patients) {
+        if (patient.program?.premium && !me.profile.premium) S.patients.delete(id);
+      }
       if (S.me.profile?.notice) setTimeout(() => showNotice(S.me.profile.notice), 300);
       return S.me;
     })
@@ -843,7 +869,16 @@ function scheduleRefresh(delay = 250) {
     try {
       await loadMe();
       const r = S.route;
-      if (["patient", "consult"].includes(r.name) && r.params.id) await loadPatient(r.params.id);
+      if (["patient", "consult"].includes(r.name) && r.params.id) {
+        try { await loadPatient(r.params.id); }
+        catch (e) {
+          if (r.params.id.startsWith("prog_") && (e.code === "premium" || e.code === "program_case")) {
+            S.patients.delete(r.params.id);
+            if (S.route === r) return go("/programs", true);
+          }
+          throw e;
+        }
+      }
       rerender();
     } catch {}
   }, delay);
@@ -997,6 +1032,7 @@ function parseRoute() {
   const q = Object.fromEntries(new URLSearchParams(query));
   if (!parts.length) return { name: "home", params: {}, q };
   if (parts[0] === "patients") return { name: "patients", params: {}, q };
+  if (parts[0] === "programs") return { name: "programs", params: {}, q };
   if (parts[0] === "patient" && parts[1]) return { name: "patient", params: { id: parts[1] }, q };
   if (parts[0] === "consult" && parts[1]) return { name: "consult", params: { id: parts[1] }, q };
   if (parts[0] === "quizzes") return { name: "quizzes", params: {}, q };
@@ -1025,8 +1061,10 @@ function goBack() {
   const r = S.route;
   if (sheetRoot.innerHTML) return closeSheet(); // сначала закрываем открытый лист
   if (r.name === "consult") return go(`/patient/${r.params.id}`);
+  if (r.name === "patient" && S.patients.get(r.params.id)?.patient.program) return go("/programs?from=case_review");
   if (r.name === "patient") return go(r.q.from === "consult" ? `/consult/${r.params.id}` : "/patients");
   if (r.name === "quiz") return go("/quizzes");
+  if (r.name === "plans" && r.q.from === "program") return go(`/programs?from=${encodeURIComponent(r.q.entry || "direct")}`);
   if (["plans", "stats", "settings", "battles"].includes(r.name)) return go("/profile");
   if (r.name === "battle") return go("/battles");
   go("/");
@@ -1036,29 +1074,34 @@ async function route() {
   closeSheet();
   S.route = parseRoute();
   const r = S.route;
+  S.programPaywallSeen.clear();
   if (IN_TG) {
     if (ROOT_TABS.includes(r.name)) tg.BackButton?.hide();
     else tg.BackButton?.show();
   }
-  if (["patient", "consult", "expert"].includes(r.name) && !S.patients.has(r.params.id)) {
+  if (["patient", "consult", "expert"].includes(r.name) && (r.params.id.startsWith("prog_") || !S.patients.has(r.params.id))) {
     renderShell(html`<div class="page"><div class="skeleton" style="height:140px"></div><div class="skeleton"></div></div>`, r.name !== "consult");
     try {
       await loadPatient(r.params.id);
     } catch (e) {
+      if (S.route !== r) return;
+      S.patients.delete(r.params.id);
       toast(e.message, "error");
-      return go("/patients", true);
+      return go(r.params.id.startsWith("prog_") ? "/programs" : "/patients", true);
     }
   }
   if (r.name === "quiz" && !S.patients.has(r.params.id)) {
     try { await loadPatient(r.params.id); } catch {}
   }
+  if (S.route !== r) return;
   rerender(true);
+  if (r.name === "programs" && S.me.program) programEvent("view", r.q.from);
 }
 
 function rerender(fresh = false) {
   const r = S.route;
   if (!S.me) return;
-  const views = { home: viewHome, patients: viewPatients, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, expert: viewExpert, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner, battles: viewBattles, battle: viewBattle };
+  const views = { home: viewHome, patients: viewPatients, programs: viewPrograms, patient: viewPatient, consult: viewConsult, quizzes: viewQuizzes, quiz: viewQuiz, expert: viewExpert, profile: viewProfile, stats: viewStats, settings: viewSettings, plans: viewPlans, accounts: viewAccounts, install: viewInstall, partner: viewPartner, battles: viewBattles, battle: viewBattle };
   (views[r.name] || viewHome)(fresh);
 }
 
@@ -1140,6 +1183,8 @@ function viewHome(fresh) {
 
     ${active.length ? (inConsult.length ? patientCard(inConsult[0], `/consult/${inConsult[0].id}`, "Продолжить приём") : patientCard(waiting[0])) : ""}
 
+    ${S.me.program ? programLink("home", "Учебные программы", "Кардиология · 3 клинических случая") : ""}
+
     ${pendingQuiz ? html`<a class="card tap row" href="#/quiz/${pendingQuiz.pat_id}" style="text-decoration:none;color:inherit">
       <div class="tile warn">${ic("quiz")}</div>
       <div class="grow"><b>Работа над ошибками</b><div class="small muted ellipsis">${pendingQuiz.pat_name} · ${pendingQuiz.pat_diagnosis}</div></div>
@@ -1155,6 +1200,82 @@ function viewHome(fresh) {
   if (!fresh) window.scrollTo(0, y);
   bindNewPatient();
   bindOnboarding();
+}
+
+function programLink(entry, title, subtitle) {
+  return html`<a class="card tap row program-link" href="#/programs?from=${entry}">
+    <div class="tile accent">${ic("book")}</div>
+    <div class="grow"><b>${title}</b><div class="small muted">${subtitle}</div></div>
+    ${ic("chevron", "c-muted")}</a>`;
+}
+
+function programEvent(type, entry, caseId) {
+  if (S.me?.program) return api("POST", `/programs/${S.me.program.id}/events`, { type, entry, case_id: caseId }).catch(() => {});
+}
+
+const programElements = new WeakSet();
+function observeProgramEvents(scope) {
+  for (const element of scope.querySelectorAll("[data-program-offer], [data-program-paywall]")) {
+    if (programElements.has(element)) continue;
+    programElements.add(element);
+    const report = () => {
+      if (!element.isConnected) return;
+      if (element.hasAttribute("data-program-offer")) programEvent("offer_view", "first_review");
+      else if (!S.programPaywallSeen.has(element.dataset.programPaywall)) {
+        S.programPaywallSeen.add(element.dataset.programPaywall);
+        programEvent("premium_exposure", S.route.q.from, element.dataset.programPaywall);
+      }
+    };
+    if (typeof IntersectionObserver === "undefined") { report(); continue; }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      report();
+    });
+    observer.observe(element);
+  }
+}
+
+function viewPrograms(fresh) {
+  const program = S.me.program;
+  if (!program) return;
+  const done = program.cases.filter((item) => item.finished).length;
+  const y = renderShell(html`<div class="page">
+    <div class="page-head"><button class="back" data-go="/" aria-label="Назад">${ic("back")}</button><h1>Учебные программы</h1></div>
+    <section class="card stack">
+      <div><h2>${program.title}</h2><p class="small muted">${program.description}</p></div>
+      <div class="stack-sm"><b class="small">Пройдено ${done} из ${program.cases.length}</b>
+        <progress class="program-progress" value="${done}" max="${program.cases.length}" aria-label="Прогресс по программе"></progress></div>
+      <p class="small muted">Все пациенты вымышлены.</p>
+    </section>
+    ${program.cases.map((item) => {
+      const closed = item.finished || S.me.patients.some((patient) => patient.id === item.patient_id && patient.status === "closed");
+      const status = item.finished ? "Пройден" : item.premium ? "Премиум" : "Бесплатно";
+      return html`<section class="card stack">
+        <div class="row between"><b>${item.title}</b><span class="badge ${item.finished ? "ok" : item.premium ? "accent" : ""}">${status}</span></div>
+        <p class="small muted">${item.goal}</p>
+        ${item.locked && item.available ? html`<a class="btn block outline program-link" data-program-paywall="${item.id}" href="#/plans?from=program&case=${item.id}&entry=${encodeURIComponent(S.route.q.from || "direct")}">${ic("gem")}Посмотреть тарифы</a>`
+          : !item.available ? html`<div class="small muted">Откроется после разбора предыдущего случая</div>`
+          : closed && item.patient_id ? html`<a class="btn block outline program-link" href="#/patient/${item.patient_id}">${item.finished ? "Посмотреть разбор" : "Открыть карточку"}</a>`
+          : !item.finished ? html`<button class="btn block" data-program-start="${item.id}">${item.patient_id ? "Продолжить приём" : "Начать приём"}</button>` : ""}
+      </section>`;
+    })}
+  </div>`);
+  if (!fresh) window.scrollTo(0, y);
+  observeProgramEvents(root);
+  root.querySelectorAll("[data-program-start]").forEach((button) => (button.onclick = async () => {
+    btnBusy(button);
+    try {
+      const result = await api("POST", `/programs/${program.id}/cases/${button.dataset.programStart}/start`, { entry: S.route.q.from, ...blogExperimentForStart() });
+      trackBlogFirstConsult(result);
+      if (result.patient_id) go(`/${result.closed ? "patient" : "consult"}/${result.patient_id}`);
+      await loadMe();
+      if (S.route.name === "programs") viewPrograms();
+    } catch (e) {
+      toast(e.message, "error");
+      if (e.code === "premium" || e.code === "previous_case") await loadMe().then(() => viewPrograms()).catch(() => {});
+    } finally { btnBusy(button, false); }
+  }));
 }
 
 // ---------- Уровень и ключевые цифры ----------
@@ -1355,7 +1476,7 @@ function bindOnboarding() {
 
 function newPatientBlock() {
   const p = S.me.profile;
-  const activeCount = S.me.patients.filter((x) => x.status !== "closed").length;
+  const activeCount = S.me.patients.filter((x) => x.status !== "closed" && !x.id.startsWith("prog_")).length;
   const max = S.me.config.max_active;
   if (p.generating_patient) {
     return html`<div class="card eta-card">${etaBox("patient", p.generating_since || S.expectNewPatient || Date.now())}</div>`;
@@ -1456,23 +1577,25 @@ function viewPatient() {
   const never = !(p.consultations || []).length && !p.current;
   // Пациент битвы: диагноз, оценка и разбор — только после итога битвы
   const battleLock = !!(p.battle?.id && consults.length && !battleRevealed(p.battle.id));
+  const useBot = IN_TG && !p.program;
 
   const y = renderShell(html`<div class="page">
-    <div class="page-head"><button class="back" data-go="${S.route.q.from === "consult" ? `/consult/${p.id}` : "/patients"}" aria-label="Назад">${ic("back")}</button><h2 class="grow ellipsis">Карточка пациента</h2></div>
+    <div class="page-head"><button class="back" data-go="${S.route.q.from === "consult" ? `/consult/${p.id}` : p.program ? "/programs?from=case_review" : "/patients"}" aria-label="Назад">${ic("back")}</button><h2 class="grow ellipsis">Карточка пациента</h2></div>
     <div class="card stack">
       <div class="patient">
         ${patAvatar(p, "lg")}
         <div class="grow">
           <h2>${p.name}</h2>
           <div class="small muted">${ageText(p)}${p.is_alien ? " · инопланетянин" : p.sex === "female" ? " · женщина" : p.sex === "male" ? " · мужчина" : ""} · ${p.specialization}</div>
+          ${p.program ? html`<div class="tiny muted">Учебный сценарий · вымышленный пациент</div>` : ""}
         </div>
       </div>
       ${p.chief_complaint ? html`<div class="quote">${p.chief_complaint}</div>` : ""}
       ${closed && !battleLock ? html`<div class="card flat" style="background:var(--surface-2)"><div class="tiny muted">ИСТИННЫЙ ДИАГНОЗ</div><b>${p.true_diagnosis}</b></div>` : ""}
       ${battleLock ? html`<a class="card flat row" href="#/battle/${p.battle.id}" style="text-decoration:none;color:inherit;background:var(--warn-soft)"><div class="tile warn">${ic("swords")}</div><div class="grow"><b>Пациент битвы</b><div class="small muted">Диагноз и разбор откроются после итога</div></div>${ic("chevron", "c-muted")}</a>` : ""}
       <div class="stack-sm">
-        ${!closed ? html`<button class="btn lg block" data-start="${p.id}">${ic(IN_TG ? "chat" : "play")}<span>${p.current ? "Продолжить приём" : p.consultations?.length ? "Начать повторный приём" : "Начать приём"}${IN_TG ? " в чате" : ""}</span></button>` : ""}
-        ${closed && !battleLock ? html`<button class="btn block outline" data-reopen="${p.id}">${ic("repeat")}<span>Повторный приём</span></button>` : ""}
+        ${!closed ? html`<button class="btn lg block" data-start="${p.id}">${ic(useBot ? "chat" : "play")}<span>${p.current ? "Продолжить приём" : p.consultations?.length ? "Начать повторный приём" : "Начать приём"}${useBot ? " в чате" : ""}</span></button>` : ""}
+        ${closed && !battleLock && !p.program ? html`<button class="btn block outline" data-reopen="${p.id}">${ic("repeat")}<span>Повторный приём</span></button>` : ""}
         ${(p.conversation_history || []).length ? html`<a class="btn block ghost" href="#/consult/${p.id}">${ic("chat")}<span>${closed || IN_TG ? "История диалога" : "Открыть чат приёма"}</span></a>` : ""}
         ${never ? html`<button class="btn block danger" data-reject="${p.id}">Отказаться от пациента</button>` : ""}
       </div>
@@ -1488,10 +1611,10 @@ function viewPatient() {
         <div class="row between"><b>Приём №${consults.length - i}</b><span class="tiny muted">${dateText(c.date)}</span></div>
         ${c.evaluating ? etaBox("evaluation", c.date)
           : i === 0 && c.rating != null && Date.now() - c.date < SEAL_TTL && !evalSeen(p.id, consults.length)
-            ? sealedEval(p.id, consults.length, () => evaluationBlock(c, { top: peakAsk(c.rating) }), (box) => afterReveal(box, c.rating))
+            ? sealedEval(p.id, consults.length, () => evaluationBlock(c, { top: p.program ? "" : peakAsk(c.rating) }), (box) => afterReveal(box, c.rating))
             : evaluationBlock(c)}
         ${actionsSummary(c)}
-        ${!c.evaluating && i === 0 ? html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id, p.gift_kr)}</div>${c.rating != null ? expertCta(p) : ""}` : ""}
+        ${!c.evaluating && i === 0 ? (p.program ? programLink("case_review", "К программе «Кардиология»", "Прогресс и следующие случаи") : html`<div data-guide-slot="${p.id}">${guideBlock(c, p.id, p.gift_kr)}</div>${c.rating != null ? expertCta(p) : ""}`) : ""}
       </div>`)}` : ""}
 
     ${p.test_results?.length ? html`<div class="section-title">Результаты обследований</div>
@@ -1501,6 +1624,7 @@ function viewPatient() {
   </div>`, true);
   window.scrollTo(0, y);
   bindSeals(root);
+  observeProgramEvents(root);
 }
 
 function actionsSummary(c) {
@@ -1542,6 +1666,7 @@ function evaluationBlock(c, { top = "" } = {}) {
     ${(f.dialog_moments || []).length ? html`<div class="stack-sm"><div class="tiny muted">МОМЕНТЫ ИЗ ДИАЛОГА</div>${f.dialog_moments.map((m) => html`<div class="moment">${m.quote ? html`<div class="quote small">«${m.quote}»</div>` : ""}<div class="small">${m.comment}</div></div>`)}</div>` : ""}
     ${f.recommendation ? html`<div class="small fact">${ic("bulb", "c-warn")}<div><b>Совет:</b> ${f.recommendation}</div></div>` : ""}
     ${c.post_story ? html`<div class="card flat" style="background:var(--surface-2)"><div class="tiny muted row-c">${ic("book")} ЧТО БЫЛО ДАЛЬШЕ</div><div class="small">${c.post_story}</div></div>` : ""}
+    ${c.program_offer && S.me.program ? html`<div data-program-offer>${c.program_offer === "card" ? programLink("first_review", "Попробуйте программу «Кардиология»", "Три учебных случая · первый бесплатно") : ""}</div>` : ""}
   </div>`;
 }
 
@@ -1602,6 +1727,7 @@ function bindSeals(scope = document) {
 
 /** После вскрытия: оценка отсчитывается, хорошая — с конфетти; кнопка следующего пациента */
 function afterReveal(box, rating) {
+  observeProgramEvents(box);
   const big = box.querySelector(".rating-big");
   const target = Number(rating) || 0;
   if (big && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -1807,14 +1933,15 @@ async function openOnSite(btn) {
 
 async function startConsult(id) {
   haptic();
-  if (IN_TG) {
+  if (IN_TG && !S.patients.get(id)?.patient.program) {
     // В Telegram приём идёт в чате с ботом: бот пришлёт карточку и первую фразу пациента
     await api("POST", `/patients/${id}/start?in_bot=1`);
     haptic("success");
     try { tg.close(); } catch {}
     return;
   }
-  await api("POST", `/patients/${id}/start`);
+  const started = await api("POST", `/patients/${id}/start`, blogExperimentForStart());
+  trackBlogFirstConsult(started);
   await Promise.all([loadPatient(id), loadMe()]);
   go(`/consult/${id}`);
 }
@@ -1841,6 +1968,7 @@ function viewConsult(fresh) {
   if (!data) return;
   const p = data.patient;
   const open = !!p.current && p.status !== "closed";
+  const useBot = IN_TG && !p.program;
   const prevMessages = $(".messages");
   const atBottom = !prevMessages || prevMessages.scrollHeight - prevMessages.scrollTop - prevMessages.clientHeight < 80;
   const ta = $("#composer-input");
@@ -1855,16 +1983,17 @@ function viewConsult(fresh) {
       <div class="grow">
         <div class="title ellipsis">${p.name}</div>
         <div class="tiny muted ellipsis">${open ? `Приём №${(p.consultations || []).length + 1} · ${ageText(p)}` : "Приём завершён"}</div>
+        ${p.program ? html`<div class="tiny muted">Учебный сценарий · вымышленный пациент</div>` : ""}
       </div>
-      ${open && !IN_TG ? hintButton(p) : ""}
+      ${open && !useBot ? hintButton(p) : ""}
       <button class="icon-btn" id="summary-open" aria-label="Сводка пациента">${ic("card")}</button>
     </div>
     <div class="messages" id="messages">${timeline(p)}${pendingBlock(p)}</div>
-    ${open && IN_TG ? html`<div class="composer"><div class="card flat tg-note">
+    ${open && useBot ? html`<div class="composer"><div class="card flat tg-note">
         <div class="row-c">${ic("chat", "c-accent")}<b>Приём идёт в чате с ботом</b></div>
         <p class="small muted">Пишите пациенту прямо в Telegram — здесь история обновляется сама.</p>
         <button class="btn block" id="to-chat">${ic("telegram")}<span>Перейти в чат</span></button></div></div>` : ""}
-    ${open && !IN_TG ? html`
+    ${open && !useBot ? html`
       <div class="actions-bar">
         <button class="chip" data-sheet="tests">${ic("flask")}<span>Анализы</span></button>
         <button class="chip" data-sheet="exam">${ic("steth")}<span>Осмотр</span></button>
@@ -1890,7 +2019,7 @@ function viewConsult(fresh) {
   const box = $("#messages");
   if (fresh || atBottom) box.scrollTop = box.scrollHeight;
   else if (prevMessages) box.scrollTop = prevMessages.scrollTop;
-  if (open && !IN_TG) bindComposer(p, hadFocus);
+  if (open && !useBot) bindComposer(p, hadFocus);
   root.querySelectorAll("[data-sheet]").forEach((b) => (b.onclick = () => {
     haptic();
     if (b.dataset.sheet === "tests") sheetTests(p);
@@ -2354,6 +2483,7 @@ async function finishConsult(p, body) {
     S.evalStart = Date.now();
     S.evalWaiting = p.id;
     openSheet(html`<h2 class="row-c">${ic("checkCircle", "c-ok")}Приём завершён</h2>
+      ${p.program ? html`<p class="tiny muted">Учебный сценарий · вымышленный пациент</p>` : ""}
       <div class="msg from-patient" style="max-width:100%;margin-bottom:12px"><span class="txt" id="farewell-txt"></span></div>
       <div class="card flat" style="background:var(--surface-2)"><div class="tiny muted">ИСТИННЫЙ ДИАГНОЗ</div><b>${res.true_diagnosis}</b></div>
       <div id="eval-slot" style="margin-top:16px">${etaBox("evaluation", S.evalStart)}</div>
@@ -2390,7 +2520,7 @@ async function pollEvaluation(id) {
       const { patient } = await loadPatient(id);
       const c = patient.consultations[patient.consultations.length - 1];
       if (c && !c.evaluating && c.rating != null) {
-        return onEvaluation({ patient_id: id, rating: c.rating, axes: c.feedback?.axes, expert_text: c.feedback?.expert_text, dialog_moments: c.feedback?.dialog_moments, post_story: c.post_story, xp: c.xp, fromPoll: true });
+        return onEvaluation({ patient_id: id, rating: c.rating, axes: c.feedback?.axes, expert_text: c.feedback?.expert_text, dialog_moments: c.feedback?.dialog_moments, post_story: c.post_story, xp: c.xp, program_case: !!patient.program, program_offer: c.program_offer, consultation_number: patient.consultations.length, fromPoll: true });
       }
     } catch {}
   }
@@ -2409,18 +2539,17 @@ function onEvaluation(r) {
   haptic("success");
   const slot = $("#eval-slot");
   if (!slot) return;
-  const c = { rating: r.rating, xp: r.xp, hints: r.hints, post_story: r.post_story, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments, recommendation: r.recommendation } };
+  const c = { rating: r.rating, xp: r.xp, hints: r.hints, post_story: r.post_story, program_offer: r.program_offer, feedback: { axes: r.axes, expert_text: r.expert_text, dialog_moments: r.dialog_moments, recommendation: r.recommendation } };
   const n = r.consultation_number || 1;
   const reveal = () => html`<div class="stack">
-    ${evaluationBlock(c, { top: r.battle_id ? "" : peakAsk(c.rating) })}
+    ${evaluationBlock(c, { top: r.battle_id || r.program_case ? "" : peakAsk(c.rating) })}
     ${r.level_up ? html`<div class="card flat center" style="background:var(--accent-soft)"><b class="row-c" style="justify-content:center">${ic("trophy", "c-accent")}Новый уровень: ${r.level_up.to}</b>${r.rank_up ? html`<div class="small">Новое звание — «${r.rank_up}»</div>` : ""}</div>` : ""}
     ${r.task_done ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("target", "c-ok")}Задание дня выполнено! +${r.task_done.xp} XP</span></div>` : ""}
     ${r.bonus_patient ? html`<div class="card flat center" style="background:var(--ok-soft)"><span class="row-c" style="justify-content:center">${ic("party", "c-ok")}Оценка от ${dec(S.me?.profile?.bonus_rating || 4.5)} — ещё один бесплатный пациент сегодня!</span></div>` : ""}
-    <div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id, r.gift_kr)}</div>
-    ${expertCta({ id: r.patient_id })}
+    ${r.program_case ? programLink("case_review", "К программе «Кардиология»", "Прогресс и следующие случаи") : html`<div data-guide-slot="${r.patient_id}">${guideBlock({}, r.patient_id, r.gift_kr)}</div>${expertCta({ id: r.patient_id })}`}
     ${r.battle_id ? html`<a class="btn block" href="#/battle/${r.battle_id}">${ic("swords")}<span>Итог битвы «Кто круче?»</span></a>` : ""}
     <a class="btn ghost block" href="#/patient/${r.patient_id}">Карточка пациента</a>
-    <p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>
+    ${r.program_case ? "" : html`<p class="tiny muted center">${r.premium ? "Тест «работа над ошибками» появится во вкладке «Тесты» через минуту." : "Тест по вашим ошибкам уже готовится — он откроется в премиуме."}</p>`}
   </div>`;
   slot.outerHTML = html`<div style="margin-top:16px">${sealedEval(r.patient_id, n, reveal, (box) => afterReveal(box, r.rating))}</div>`[RAW];
   bindSeals();
@@ -3961,7 +4090,7 @@ function viewPlans(fresh) {
       <button class="btn block sm" data-plan="${k}" ${disabled ? "disabled" : ""}>${disabled ? "Оформлено" : "Оплатить"}</button></div>`;
   };
   renderShell(html`<div class="page">
-    ${!IN_TG ? html`<div class="page-head"><button class="back" data-go="/profile" aria-label="Назад">${ic("back")}</button></div>` : ""}
+    ${!IN_TG ? html`<div class="page-head"><button class="back" data-go="${S.route.q.from === "program" ? `/programs?from=${encodeURIComponent(S.route.q.entry || "direct")}` : "/profile"}" aria-label="Назад">${ic("back")}</button></div>` : ""}
 
     ${p.has_sub ? html`<div class="card stack-sm sub-card">
       <h2 class="row-c">${ic("gem", "c-accent")}Ваша подписка</h2>
@@ -4089,7 +4218,9 @@ async function payFor(key, b, scope) {
   }
   btnBusy(b);
   try {
-    const { link } = await api("POST", "/pay", { plan: key, consent: true });
+    const q = S.route.q;
+    const programContext = S.route.name === "plans" && q.from === "program" ? { case_id: q.case, entry: q.entry } : undefined;
+    const { link } = await api("POST", "/pay", { plan: key, consent: true, programContext });
     goal("pay_click", { plan: key });
     store(PAY_KEY, String(Date.now()));
     watchPayment(600000);
