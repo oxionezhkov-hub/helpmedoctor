@@ -115,7 +115,7 @@ ${VK_PIXEL_HEAD}
 </head>`;
 }
 
-const bodyOpen = (page) => `<body data-page="${page}"${page.startsWith("blog_") ? ' data-popup="read"' : ""}>
+const bodyOpen = (page, article) => `<body data-page="${page}"${article ? ` data-article="${esc(article)}"` : ""}>
 ${METRIKA_NOSCRIPT}
 ${VK_PIXEL_NOSCRIPT}`;
 
@@ -195,9 +195,9 @@ const exitPopup = (from) => `<dialog class="pop" aria-labelledby="pop-t"><div cl
   <a class="btn btn-ghost" href="${app(`popup_${from}`)}">Или сразу потренироваться на пациенте ${ARR}</a>
 </div></dialog>`;
 
-function layout({ page, headOpts, main, sticky = true, popup = true, progress = false, stickyText }) {
+function layout({ page, headOpts, main, sticky = true, popup = true, progress = false, stickyText, article }) {
   return `${head(headOpts)}
-${bodyOpen(page)}
+${bodyOpen(page, article)}
 ${progress ? '<div class="progress" aria-hidden="true"></div>' : ""}
 ${header(page)}
 <main id="main">
@@ -218,8 +218,8 @@ const faqBlock = (faq) => `<div class="faq">${faq.map(([q, a], i) => `<details${
 
 const postCard = (a) => `<a class="post-card" href="/blog/${a.slug}/">${a.cover ? `<img class="post-cover" src="/blog/${a.slug}/cover.jpg" alt="" width="1200" height="630" loading="lazy" decoding="async">` : ""}<div class="post-body"><h3>${esc(a.h1)}</h3><p>${esc(a.description)}</p><span class="meta">${a.minutes} мин чтения</span></div></a>`;
 
-const inlineCta = (title, text, from, label = "Попробовать бесплатно") =>
-  `<aside class="inline-cta"><div><b>${esc(title)}</b><p>${esc(text)}</p></div><a class="btn btn-primary" href="${app(from)}">${esc(label)} ${ARR}</a></aside>`;
+const inlineCta = (title, text, from, label = "Попробовать бесплатно", { href = app(from), variant = "" } = {}) =>
+  `<aside class="inline-cta"${variant ? ` data-b1-cta="${variant}"${variant === "card" ? " hidden" : ""}` : ""}><div><b>${esc(title)}</b><p>${esc(text)}</p></div><a class="btn btn-primary" href="${href}">${esc(label)} ${ARR}</a></aside>`;
 
 // ---------------------------------------------------------------- общие блоки
 function heroChart() {
@@ -722,7 +722,11 @@ function articlePage(a) {
   const [ctaTitle, ctaText] = articleCta(a);
   const from = `b_${a.slug}`.slice(0, 34);
   const { html: bodyHtml, toc } = withHeadingIds(withFigures(a.body.trim()));
-  let body = insertMidCta(bodyHtml, inlineCta(ctaTitle, ctaText, `${from}_mid`));
+  let body = a.slug === "sbor-anamneza"
+    ? bodyHtml
+      .replace("<!--checklist:save-->", `<p class="save-checklist"><a class="btn btn-ghost" href="${CHECKLIST.href}" download data-save-checklist>Сохранить чек-лист</a></p>`)
+      .replace("<!--experiment:anamnez-->", `${inlineCta(ctaTitle, ctaText, `${from}_mid`, undefined, { variant: "control" })}\n${inlineCta("Третью неделю болит живот. С чего начнёте расспрос?", "Выберите вопросы для виртуального пациента.", "", "Попробовать без регистрации", { href: "/demo/", variant: "card" })}`)
+    : insertMidCta(bodyHtml, inlineCta(ctaTitle, ctaText, `${from}_mid`));
   // Оглавление — после вводного абзаца
   const tocHtml = toc.length >= 4 ? `<nav class="toc" aria-label="Содержание"><b>Содержание</b><ol>${toc.map(([id, t]) => `<li><a href="#${id}">${esc(t)}</a></li>`).join("")}</ol></nav>` : "";
   const leadEnd = body.startsWith('<p class="lead">') ? body.indexOf("</p>") + 4 : 0;
@@ -748,7 +752,7 @@ function articlePage(a) {
 </article>
 <div class="related"><h2 style="font-size:26px">Читайте также</h2><div class="posts">${others.map(postCard).join("")}</div></div>`;
   return layout({
-    page: from, progress: true,
+    page: from, progress: true, article: a.slug,
     headOpts: { title: a.title, description: a.description, canonical: url, type: "article", image: a.cover ? `${SITE}/blog/${a.slug}/og.jpg` : undefined,
       extra: `<meta property="article:published_time" content="${a.date}">\n${schema.filter(Boolean).map(ldjson).join("\n")}` },
     main,

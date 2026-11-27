@@ -383,6 +383,12 @@ async function api(request, env, url) {
     if (path === "/patients/new" && method === "POST") {
       return json(await user.requestNewPatient("web"));
     }
+    const program = path.match(/^\/programs\/([a-z-]+)\/(?:events|cases\/([a-z-]+)\/start)$/);
+    if (program && method === "POST") {
+      const body = await readJson(request);
+      if (program[2]) return json(await user.startProgramCase(program[1], program[2], body.entry, source === "web" ? body.blogExperiment : undefined));
+      return json(await user.programEvent(program[1], body));
+    }
     if (path === "/attribution" && method === "POST") {
       return json(await user.setAttribution(await readJson(request)));
     }
@@ -393,13 +399,14 @@ async function api(request, env, url) {
       return json(await user.trackEvent(type, typeof meta === "object" && meta ? meta : {}));
     }
     if (path === "/pay" && method === "POST") {
-      const { plan, consent } = await readJson(request);
+      const { plan, consent, programContext } = await readJson(request);
       if (!(plan === TRIAL.key || PACKS[plan] || (PLANS[plan] && !PLANS[plan].hidden))) return json({ error: "Неизвестный тариф" }, 400);
       // Согласие с офертой и на автосписания — обязательное условие оплаты; фиксируем его в истории пользователя
       if (!consent) return json({ error: "Отметьте согласие с условиями оплаты", code: "consent" }, 400);
       await user.trackEvent("consent", { plan, offer: "/oferta/", privacy: "/privacy/", recurring: plan === TRIAL.key || !!PLANS[plan]?.recurring });
       // Пробный период — один раз; вторую подписку с автопродлением не оформляем. Цена — на момент покупки.
       const { price } = await user.checkPurchase(plan);
+      const context = !PACKS[plan] && programContext?.case_id ? await user.programPaymentContext(programContext.case_id, programContext.entry).catch(() => null) : null;
       await user.trackEvent("pay_click", { plan });
       let payment;
       try {
@@ -414,7 +421,7 @@ async function api(request, env, url) {
         return json({ error: "Платёжная система сейчас не отвечает. Мы уже разбираемся — попробуйте чуть позже.", code: "payment" }, 502);
       }
       if (payment.operationId) await hubStub(env).savePayment(payment.operationId, uid, plan, price);
-      await user.trackEvent("pay_link", { plan, op: payment.operationId });
+      await user.trackEvent("pay_link", { plan, op: payment.operationId, ...(context ? { program: context } : {}) });
       return json({ link: payment.link });
     }
     if (path === "/pay/check" && method === "POST") {
@@ -438,8 +445,9 @@ async function api(request, env, url) {
       if (method !== "POST") return json({ error: "Метод не поддерживается" }, 405);
       if (action === "start") {
         // Из мини-приложения Telegram приём идёт в чате с ботом
-        if (url.searchParams.get("in_bot") === "1") return json(await startInBot(env, uid, id));
-        return json(await user.startConsultation(id));
+        if (url.searchParams.get("in_bot") === "1" && !id.startsWith("prog_")) return json(await startInBot(env, uid, id));
+        const blogExperiment = source === "web" ? (await readJson(request)).blogExperiment : undefined;
+        return json(await user.startConsultation(id, blogExperiment));
       }
       if (action === "reject") return json(await user.rejectPatient(id));
       if (action === "reopen") return json(await user.reopenPatient(id));

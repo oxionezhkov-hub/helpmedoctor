@@ -6,19 +6,67 @@
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const ls = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    set(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } },
   };
   const goal = (name, params) => { try { window.ym && window.ym(113057442, "reachGoal", name, params); } catch {} };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const plural = (n, a, b, c) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? a : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? b : c; };
   const page = document.body.dataset.page || "page";
+  const article = document.body.dataset.article;
   // Уже вошёл в тренажёр (токен веб-версии в этом браузере) — не продаём, а зовём продолжить
   const loggedIn = !!ls.get("hmd_token");
+
+  // B1: браузер сохраняет группу, ссылки передают только группу и путь в тренажёр.
+  const b1Article = "sbor-anamneza";
+  const b1Key = "hmd_b1_anamnez";
+  const validVariant = (value) => value === "control" || value === "card";
+  let articleVariant = article === b1Article ? ls.get(b1Key) : null;
+  if (article === b1Article && !validVariant(articleVariant)) {
+    const group = Math.random() < 0.5 ? "control" : "card";
+    articleVariant = ls.set(b1Key, group) ? group : null;
+  }
+  const demoVariant = page === "demo" ? new URLSearchParams(location.search).get("b1") : null;
+  const b1Variant = articleVariant || (validVariant(demoVariant) && demoVariant === ls.get(b1Key) ? demoVariant : null);
+  const b1Via = articleVariant ? "direct" : "demo";
+  const b1 = (name, extra) => {
+    if (b1Variant) goal(name, { article: b1Article, variant: b1Variant, ...extra });
+  };
+  const tagExperimentLinks = (root) => {
+    if (!b1Variant) return;
+    $$("a[href^='/app'], a[href='/demo/']", root).forEach((a) => {
+      const url = new URL(a.href, location.href);
+      if (url.pathname !== "/app" && !(articleVariant && url.pathname === "/demo/")) return;
+      url.searchParams.set("b1", b1Variant);
+      if (url.pathname === "/app") url.searchParams.set("b1via", b1Via);
+      a.href = `${url.pathname}${url.search}${url.hash}`;
+    });
+  };
+  if (articleVariant) {
+    $$('[data-b1-cta]').forEach((cta) => { cta.hidden = cta.dataset.b1Cta !== articleVariant; });
+    const shownCta = $("[data-b1-cta]:not([hidden])");
+    if (shownCta && typeof IntersectionObserver === "function") {
+      const observer = new IntersectionObserver((entries) => {
+        if (document.hidden || !entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.5)) return;
+        b1("b1_cta_view");
+        observer.disconnect();
+        document.removeEventListener("visibilitychange", observeCta);
+      }, { threshold: 0.5 });
+      const observeCta = () => { observer.unobserve(shownCta); observer.observe(shownCta); };
+      observer.observe(shownCta);
+      document.addEventListener("visibilitychange", observeCta);
+    }
+    try { window.ym?.(113057442, "params", { b1_article: b1Article, b1_variant: articleVariant }); } catch {}
+    b1("b1_article");
+  } else if (b1Variant) b1("b1_demo_open");
+  tagExperimentLinks(document);
 
   // Клики по кнопкам «в приложение» — цель в Метрике
   document.addEventListener("click", (e) => {
     const a = e.target.closest("a[href^='/app']");
     if (a) goal("cta_app", { from: new URL(a.href, location.href).searchParams.get("from") || page });
+    const link = e.target.closest("a");
+    if (link?.closest("[data-b1-cta]")) b1("b1_cta");
+    if (link?.matches("[data-save-checklist]")) goal("b2_checklist", { article, ...(articleVariant && { variant: articleVariant }) });
   });
 
   // ---------- Откуда пришёл посетитель (первое касание) и последняя страница перед переходом в приложение ----------
@@ -141,46 +189,81 @@
   // ---------- Прогресс чтения статьи ----------
   const bar = $(".progress");
   const art = $(".article");
+  let readDepth = 0;
   if (bar && art) {
+    const readMilestones = new Set();
     const onScroll = () => {
       const r = art.getBoundingClientRect();
       const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
       bar.style.width = `${(p * 100).toFixed(1)}%`;
+      readDepth = Math.max(readDepth, p);
+      if (!articleVariant || document.hidden) return;
+      for (const depth of [60, 90]) {
+        if (readDepth * 100 >= depth && !readMilestones.has(depth)) {
+          readMilestones.add(depth);
+          b1(`b1_depth_${depth}`);
+        }
+      }
     };
     addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   }
 
-  // ---------- Окно при уходе: раз в 3 дня, не раньше 20 секунд, не тем, кто уже вошёл ----------
-  // На компьютере — при уводе курсора к вкладкам. На телефоне — только в статьях, после 60% прочтения и резкой прокрутки вверх.
+  const READ_MS = 20000;
+  let visibleSince = document.hidden ? null : performance.now();
+  let visibleMs = 0;
+  let readTimer, readGoalSent = false;
+  const readTime = () => visibleMs + (visibleSince === null ? 0 : performance.now() - visibleSince);
+  const scheduleReadGoal = () => {
+    if (!articleVariant || readGoalSent || visibleSince === null) return;
+    readTimer = setTimeout(() => {
+      if (document.hidden) return;
+      if (readTime() < READ_MS) return scheduleReadGoal();
+      readGoalSent = true;
+      b1("b1_read_20s");
+    }, Math.max(0, READ_MS - readTime()));
+  };
+  scheduleReadGoal();
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && visibleSince !== null) {
+      visibleMs = readTime();
+      visibleSince = null;
+      clearTimeout(readTimer);
+    } else if (!document.hidden && visibleSince === null) {
+      visibleSince = performance.now();
+      scheduleReadGoal();
+    }
+  });
+
+  // ---------- Окно при уходе: только мышь, в статьях после 60% глубины и 20 секунд в видимой вкладке ----------
   const dlg = $("dialog.pop");
   if (dlg && typeof dlg.showModal === "function" && !loggedIn) {
     const KEY = "hmd_pop_at";
-    const t0 = Date.now();
-    const readMode = document.body.dataset.popup === "read";
-    const readShare = () => { const a = $(".article"); if (!a) return 1; const r = a.getBoundingClientRect(); return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight))); };
-    const allowed = () => Date.now() - Number(ls.get(KEY) || 0) > 3 * 86400000 && Date.now() - t0 > 20000 && !document.querySelector("dialog[open]") && (!readMode || readShare() > 0.6);
-    const show = (why) => {
-      if (!allowed()) return;
-      ls.set(KEY, String(Date.now()));
+    const desktop = matchMedia("(hover: hover) and (pointer: fine)");
+    const popupParams = { page, ...(article && { article }), ...(articleVariant && { variant: articleVariant }) };
+    let closeReason = "close";
+    document.addEventListener("pointerout", (e) => {
+      if (!desktop.matches || e.pointerType !== "mouse" || e.relatedTarget || e.clientY > 0 || document.hidden) return;
+      if (readTime() < READ_MS || (article && readDepth < 0.6) || $("dialog[open], .cookie")) return;
+      const now = Date.now();
+      if (now - Number(ls.get(KEY) || 0) < 3 * 86400000 || !ls.set(KEY, String(now))) return;
+      closeReason = "close";
       dlg.showModal();
-      goal("popup_show", { why, page });
-    };
-    document.addEventListener("mouseout", (e) => { if (!e.relatedTarget && e.clientY <= 0) show("exit"); });
-    if (readMode && matchMedia("(pointer: coarse)").matches) {
-      let lastY = scrollY, lastT = Date.now();
-      addEventListener("scroll", () => {
-        const now = Date.now();
-        const v = (lastY - scrollY) / Math.max(1, now - lastT);
-        if (v > 4 && scrollY > innerHeight * 2) show("scroll_up");
-        lastY = scrollY; lastT = now;
-      }, { passive: true });
-    }
+      goal("popup_show", { ...popupParams, why: "exit" });
+    });
     dlg.addEventListener("click", (e) => {
       const a = e.target.closest("a");
-      if (a) goal("popup_click", { to: a.getAttribute("href"), page });
+      if (a) {
+        const url = new URL(a.href);
+        url.searchParams.delete("b1");
+        url.searchParams.delete("b1via");
+        goal("popup_click", { ...popupParams, to: url.pathname + url.search });
+      }
+      closeReason = a ? "download" : e.target === dlg ? "backdrop" : "close";
       if (e.target === dlg || e.target.closest("[data-close]")) dlg.close();
     });
+    dlg.addEventListener("cancel", () => { closeReason = "escape"; });
+    dlg.addEventListener("close", () => goal("popup_close", { ...popupParams, why: closeReason }));
   }
 
   // ---------- Пациент в углу: живой клинический случай ----------
@@ -287,6 +370,7 @@
           </div>
         </div>`;
         document.body.append(dlgP);
+        tagExperimentLinks(dlgP);
         dlgP.addEventListener("click", (e) => {
           const a = e.target.closest("[data-act]");
           if (a?.dataset.act === "refuse") return refuse("button");
@@ -380,7 +464,8 @@
         ${S.asked.size >= 2 ? `<div class="demo-next"><button class="btn btn-primary" type="button" data-to-tests>К обследованию <span class="arr">→</span></button></div>` : ""}`;
     }
     async function ask(id) {
-      if (!started) { started = true; goal("demo_start", { page }); }
+      const hadFocus = root.contains(document.activeElement);
+      if (!started) { started = true; goal("demo_start", { page }); b1("b1_demo_start"); }
       const q = D.qs.find((x) => x.id === id);
       S.asked.add(id);
       act.querySelectorAll("button").forEach((b) => (b.disabled = true));
@@ -389,11 +474,16 @@
       await say("pat", esc(q.a));
       if (S.asked.size === D.qs.length) renderTests();
       else renderAsk();
-      focusFirst();
+      focusFirst(hadFocus);
     }
-    function focusFirst() {
+    function restoreDemoFocus(hadFocus, element) {
+      if (hadFocus && (document.activeElement === document.body || root.contains(document.activeElement))) {
+        element?.focus({ preventScroll: true });
+      }
+    }
+    function focusFirst(hadFocus) {
       const b = act.querySelector(".opt:not([disabled])") || act.querySelector(".btn");
-      if (b && root.contains(document.activeElement)) b.focus({ preventScroll: true });
+      restoreDemoFocus(hadFocus, b);
     }
     function renderTests() {
       if (S.step !== 1) goal("demo_tests", { page });
@@ -403,12 +493,13 @@
         ${S.tests.size ? `<div class="demo-next"><button class="btn btn-primary" type="button" data-to-dx>Поставить диагноз <span class="arr">→</span></button></div>` : ""}`;
     }
     async function order(id) {
+      const hadFocus = root.contains(document.activeElement);
       const t = D.tests.find((x) => x.id === id);
       S.tests.add(id);
       act.querySelectorAll("button").forEach((b) => (b.disabled = true));
       await say("res", `<b>${esc(t.n)}</b>${esc(t.r)}`, 350);
       renderTests();
-      focusFirst();
+      focusFirst(hadFocus);
     }
     function renderDx() {
       goal("demo_dx", { page });
@@ -417,13 +508,14 @@
         <div class="opts">${D.dx.map((d) => `<button class="opt" type="button" data-d="${d.id}">${esc(d.n)}</button>`).join("")}</div>`;
     }
     async function diagnose(id) {
+      const hadFocus = root.contains(document.activeElement);
       S.dx = D.dx.find((x) => x.id === id);
       act.querySelectorAll("button").forEach((b) => (b.disabled = true));
       await say("doc", `Диагноз: ${esc(S.dx.n)}`);
       await say("res", "<b>ИИ-разбор</b>Сравниваю ваш приём с историей случая…", 300);
-      setTimeout(renderResult, 900);
+      setTimeout(() => renderResult(hadFocus), 900);
     }
-    function renderResult() {
+    function renderResult(hadFocus) {
       setStep(3);
       steps.forEach((li) => li.classList.add("done"));
       const keys = D.qs.filter((q) => q.key);
@@ -450,7 +542,7 @@
       $(".demo-main", root).innerHTML = `<div class="result">
         <div class="result-top"><p><strong>${missed ? `Упущено: ${missed}. ` : "Чистый приём. "}</strong>Проверьте себя на новом пациенте — каждый раз другой случай.</p><a class="btn btn-primary" href="/app?from=demo_top">Принять пациента бесплатно <span class="arr">→</span></a></div>
         <div class="review">
-          <div class="review-h"><b>Разбор приёма</b><span>${String(total).replace(".", ",")} / 5</span></div>
+          <div class="review-h"><h2 tabindex="-1">Разбор приёма</h2><span>${String(total).replace(".", ",")} / 5</span></div>
           <div class="scores">${bar("Расспрос", aScore)}${bar("Обследование", tScore)}${bar("Диагноз", dScore)}</div>
           ${good.length ? `<p><strong>Что получилось</strong></p><ul>${good.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : ""}
           ${miss.length ? `<p style="margin-top:12px"><strong>Что упустили</strong></p><ul>${miss.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : ""}
@@ -460,15 +552,26 @@
         <div class="cta"><a class="btn btn-primary btn-lg" href="/app?from=demo_result">Принять настоящего пациента <span class="arr">→</span></a><button class="btn btn-ghost" type="button" data-restart>Пройти демо ещё раз</button></div>
       </div>`;
       goal("demo_done", { score: total, page });
+      b1("b1_demo_done");
+      tagExperimentLinks(root);
+      restoreDemoFocus(hadFocus, $(".review-h h2", root));
     }
 
     root.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b || b.disabled) return;
       if (b.dataset.q) ask(b.dataset.q);
-      else if ("toTests" in b.dataset) renderTests();
+      else if ("toTests" in b.dataset) {
+        const hadFocus = root.contains(document.activeElement);
+        renderTests();
+        focusFirst(hadFocus);
+      }
       else if (b.dataset.t) order(b.dataset.t);
-      else if ("toDx" in b.dataset) renderDx();
+      else if ("toDx" in b.dataset) {
+        const hadFocus = root.contains(document.activeElement);
+        renderDx();
+        focusFirst(hadFocus);
+      }
       else if (b.dataset.d) diagnose(b.dataset.d);
       else if ("restart" in b.dataset) { location.hash = "demo"; location.reload(); }
     });

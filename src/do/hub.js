@@ -272,6 +272,10 @@ export class HubDO extends DurableObject {
     if (e.type === "patient_failed" || e.type === "ai_error") await this.checkAiErrors();
   }
 
+  hasConsultationStart(uid) {
+    return !!this.one("SELECT 1 AS x FROM events WHERE uid = ? AND type = 'consult_start' LIMIT 1", String(uid));
+  }
+
   /** Пачка событий (бэкфилл истории) */
   logEvents(list) {
     for (const e of list) {

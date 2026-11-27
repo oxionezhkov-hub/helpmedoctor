@@ -41,3 +41,10 @@ export function cleanAttribution(a = {}) {
     channel: channelOf(host, utm),
   };
 }
+
+/** Метка эксперимента в ссылке со статьи или демо, действительна на время входа и первого приёма. */
+export function cleanBlogExperiment(raw, now = Date.now()) {
+  if (!raw || raw.article !== "sbor-anamneza" || !["control", "card"].includes(raw.variant) || !["direct", "demo"].includes(raw.via)) return null;
+  if (!Number.isSafeInteger(raw.at) || raw.at <= 0 || now - raw.at < -5 * 60000 || now - raw.at > 7 * 86400000) return null;
+  return { article: raw.article, variant: raw.variant, via: raw.via };
+}

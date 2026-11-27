@@ -149,5 +149,24 @@ await shot(tp, "16-telegram-profile");
 const tgClass = await tp.evaluate(() => document.documentElement.classList.contains("tg"));
 if (!tgClass) errors.push("telegram mode not detected");
 
+const demoCtx = await browser.newContext();
+await demoCtx.route(/mc\.yandex\.ru|top-fwz1\.mail\.ru/, (route) => route.abort());
+await demoCtx.addInitScript(() => localStorage.setItem("hmd_b1_anamnez", "card"));
+const demo = await demoCtx.newPage();
+await demo.goto(`${BASE}/demo/?b1=card`);
+for (const [button, next] of [
+  ["[data-q=food]", "[data-q=meds]"],
+  ["[data-q=meds]", "[data-q=blood]"],
+  ["[data-to-tests]", "[data-t=egd]"],
+  ["[data-t=egd]", "[data-t=cbc]"],
+  ["[data-to-dx]", "[data-d=gerd]"],
+  ["[data-d=pud]", ".review-h h2"],
+]) {
+  await demo.locator(button).press("Enter");
+  await demo.waitForFunction((selector) => document.activeElement?.matches(selector), next);
+}
+const demoApp = new URL(await demo.locator(".result a").first().evaluate((a) => a.href));
+if (demoApp.searchParams.get("b1") !== "card" || demoApp.searchParams.get("b1via") !== "demo") errors.push("demo lost blog variant");
+
 await browser.close();
 console.log(errors.length ? `ERRORS:\n${errors.join("\n")}` : "UI OK, без ошибок в консоли");

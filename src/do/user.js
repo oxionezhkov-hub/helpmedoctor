@@ -15,7 +15,8 @@ import { aiJson, aiText, aiTextStream, transcribe } from "../lib/ai.js";
 import * as P from "../lib/prompts.js";
 import { krForPatient, krText, matchKr } from "../lib/kr.js";
 import * as G from "../lib/game.js";
-import { cleanAttribution } from "../lib/attribution.js";
+import { getProgram, mergeProgramProgress, programOfferVariant, programSnapshot } from "../lib/programs.js";
+import { cleanAttribution, cleanBlogExperiment } from "../lib/attribution.js";
 import { clampStr, daysBetween, declDays, esc, toTelegramHtml, fixMedTerms, isRefusal, meaningfulItems, mskDate, pick, stripForeignDeep, UserError, userError } from "../lib/util.js";
 import { appBtn, tg } from "../lib/telegram.js";
 import { sendPush, validSubscription, vapidKeys } from "../lib/webpush.js";
@@ -27,6 +28,7 @@ import * as R from "../bot/render.js";
 
 const PROFILE = "profile";
 const STATE = "state";
+const CONSULT_STARTED = "consult_started";
 const JOBS = "jobs";
 const TOMBSTONE = "merged_into";
 const patKey = (id) => `pat:${id}`;
@@ -35,7 +37,7 @@ const quizKey = (patId) => `quiz:${patId}`;
 // Откуда пришло действие: bot | miniapp | web | system — задаётся в rpc()
 const als = new AsyncLocalStorage();
 // Что нельзя делать заблокированному админом пользователю
-const BLOCKED_METHODS = new Set(["requestNewPatient", "startConsultation", "doctorMessage", "voiceMessage", "orderTest", "physicalExam", "requestHint", "finishConsultation", "answerQuiz", "reopenPatient"]);
+const BLOCKED_METHODS = new Set(["requestNewPatient", "startProgramCase", "startConsultation", "doctorMessage", "voiceMessage", "orderTest", "physicalExam", "requestHint", "finishConsultation", "answerQuiz", "reopenPatient"]);
 
 export class UserDO extends DurableObject {
   constructor(ctx, env) {
@@ -122,7 +124,7 @@ export class UserDO extends DurableObject {
     for (const prefix of ["pat:", "quiz:"]) {
       for (const [k, v] of await this.ctx.storage.list({ prefix })) entries[k] = v;
     }
-    return { profile: prof, state: await this.state(), entries };
+    return { profile: prof, state: await this.state(), entries, consult_started: !!(await this.ctx.storage.get(CONSULT_STARTED)) };
   }
 
   /**
@@ -147,7 +149,7 @@ export class UserDO extends DurableObject {
       const ratings = (st.ratings_count || 0) + (ss.ratings_count || 0);
       st.avg_rating = ratings ? ((st.avg_rating || 0) * (st.ratings_count || 0) + (ss.avg_rating || 0) * (ss.ratings_count || 0)) / ratings : 0;
       st.ratings_count = ratings;
-      for (const k of ["patients_total", "consultations_total", "quizzes_done"]) st[k] = (st[k] || 0) + (ss[k] || 0);
+      for (const k of ["patients_total", "consultations_total", "quizzes_done", "non_ordinary_reviews"]) st[k] = (st[k] || 0) + (ss[k] || 0);
       prof.xp = (prof.xp || 0) + (src.xp || 0);
       prof.streak = Math.max(prof.streak || 0, src.streak || 0);
       prof.active_patient_ids = [...prof.active_patient_ids, ...src.active_patient_ids];
@@ -169,6 +171,8 @@ export class UserDO extends DurableObject {
       prof.payments = [...(prof.payments || []), ...(src.payments || [])];
       if (!prof.autopay && src.autopay) prof.autopay = src.autopay;
       for (const k of ["strengths", "weaknesses", "recommendations"]) prof[k] = [...new Set([...prof[k], ...src[k]])].slice(0, 20);
+      if (src.program_progress) prof.program_progress = mergeProgramProgress(prof.program_progress, src.program_progress);
+      prof.program_offer ||= src.program_offer;
       if (!prof.onboarding_done && src.onboarding_done) {
         Object.assign(prof, { onboarding_done: true, level: src.level, profession: src.profession, specializations: src.specializations, difficulty: src.difficulty });
       }
@@ -179,7 +183,7 @@ export class UserDO extends DurableObject {
     for (let i = 0; i < entries.length; i += 100) await this.ctx.storage.put(Object.fromEntries(entries.slice(i, i + 100)));
     prof.merged_from = [...new Set([...(prof.merged_from || []), String(dump.profile.uid)])];
     G.ensureDailyTask(prof);
-    await this.ctx.storage.put(PROFILE, prof);
+    await this.ctx.storage.put({ [PROFILE]: prof, ...(dump.consult_started && { [CONSULT_STARTED]: true }) });
     await this.track("account_merge", { from: dump.profile.uid, into_empty: empty });
     this.broadcast("profile");
     return { ok: true, into_empty: empty };
@@ -291,11 +295,14 @@ export class UserDO extends DurableObject {
     const ids = [...prof.active_patient_ids, ...prof.closed_patient_ids.slice(-60).reverse()];
     const pats = await this.ctx.storage.get(ids.map(patKey));
     const quizzes = await this.ctx.storage.get(prof.test_ids.slice(0, 40).map(quizKey));
+    const premium = G.isPremium(prof);
+    const patients = ids.map((id) => pats.get(patKey(id))).filter((p) => p && canViewProgramPatient(p, prof, premium));
     await this.healQuizzes(prof, [...pats.values()]).catch((e) => console.warn("heal quiz", e.message));
     return {
       profile: publicProfile(prof),
-      active_patient_id: st.active_patient_id,
-      patients: ids.map((id) => pats.get(patKey(id))).filter(Boolean).map((p) => patientSummary(p)),
+      active_patient_id: patients.some((p) => p.id === st.active_program_patient_id) ? st.active_program_patient_id : st.active_patient_id,
+      patients: patients.map(patientSummary),
+      program: programSnapshot(prof.program_progress?.cardiology, premium),
       quizzes: prof.test_ids.slice(0, 40).map((id) => quizzes.get(quizKey(id))).filter(Boolean).map((q) => ({ ...quizSummary(q), locked: !G.isPremium(prof) && !q.gift })),
       plans: offerPlans().plans,
       offer: offerPlans(),
@@ -305,9 +312,74 @@ export class UserDO extends DurableObject {
 
   async patientView(id) {
     const pat = await this.patient(id);
+    if (pat.program && this.source() === "bot") throw new UserError("Этот учебный случай доступен в приложении", "program_case");
     const quiz = await this.ctx.storage.get(quizKey(id));
-    const premium = G.isPremium(await this.profile());
-    return { patient: publicPatient(pat, premium), quiz: quiz ? { ...quizSummary(quiz), locked: !premium && !quiz.gift } : null };
+    const prof = await this.profile();
+    requireProgramPatientAccess(pat, prof);
+    const premium = G.isPremium(prof);
+    return { patient: publicPatient(pat, premium, prof.program_offer), quiz: quiz ? { ...quizSummary(quiz), locked: !premium && !quiz.gift } : null };
+  }
+
+  async startProgramCase(programId, caseId, entry, blogExperiment) {
+    const program = getProgram(programId);
+    const index = program?.cases.findIndex((item) => item.id === caseId) ?? -1;
+    if (index < 0) throw new UserError("Случай не найден", "no_program_case");
+    const item = program.cases[index];
+    return this.withLock(`program:${programId}`, async () => {
+      const prof = await this.profile();
+      requireProgramAccess(item, prof);
+      const progress = (prof.program_progress ||= {});
+      const cases = (progress[programId] ||= {});
+      const saved = cases[caseId];
+      if (saved?.finished_at) return { patient_id: saved.patient_id, closed: true };
+      if (index && !cases[program.cases[index - 1].id]?.finished_at) {
+        throw new UserError("Сначала завершите предыдущий случай и дождитесь разбора", "previous_case");
+      }
+      let patient = saved?.patient_id ? await this.ctx.storage.get(patKey(saved.patient_id)) : null;
+      if (!patient) {
+        const id = `prog_${crypto.randomUUID()}`;
+        patient = buildPatient(item.patient, { id, uid: prof.uid, spec: program.title, now: Date.now() });
+        patient.program = { id: programId, case_id: caseId, premium: item.premium, entry: programEntry(entry) };
+        patient.kr = null;
+        cases[caseId] = { patient_id: id };
+        prof.active_patient_ids = [...prof.active_patient_ids, id];
+        await this.ctx.storage.put({ [patKey(id)]: patient, [PROFILE]: prof });
+      }
+      if (patient.status === "closed") return { patient_id: patient.id, closed: true };
+      const started = await this.startConsultation(patient.id, blogExperiment);
+      return { patient_id: patient.id, closed: false, blog_experiment: started.blog_experiment };
+    });
+  }
+
+  async programEvent(programId, { type, entry, case_id } = {}) {
+    const program = getProgram(programId);
+    if (!program) throw new UserError("Программа не найдена", "no_program");
+    const source = programEntry(entry);
+    const prof = await this.profile();
+    const meta = { program: programId, entry: source, variant: programVariant(prof) };
+    if (type === "view") await this.track("training_program_view", meta);
+    if (type === "offer_view" && source === "first_review") {
+      await this.withLock("program-offer", async () => {
+        const eligible = await this.profile();
+        if (!eligible.program_offer || eligible.program_offer.seen) return;
+        eligible.program_offer.seen = true;
+        await this.ctx.storage.put(PROFILE, eligible);
+        await this.track("training_program_offer_view", meta);
+      });
+    }
+    if (type === "premium_exposure" && program.cases.some((item) => item.id === case_id && item.premium) && !G.isPremium(prof)) {
+      await this.track("training_program_premium_exposure", { ...meta, case: case_id });
+    }
+    return { ok: true };
+  }
+
+  async programPaymentContext(caseId, entry) {
+    const prof = await this.profile();
+    if (G.isPremium(prof)) return null;
+    const program = getProgram("cardiology");
+    const item = programSnapshot(prof.program_progress?.[program.id]).cases.find((item) => item.id === caseId);
+    if (!item?.premium || !item.available) return null;
+    return { id: program.id, case: caseId, entry: programEntry(entry), variant: programVariant(prof) };
   }
 
   // ---------------------------------------------------
@@ -413,7 +485,7 @@ export class UserDO extends DurableObject {
     if (prof.generating_patient && Date.now() - prof.generating_patient < 120000) {
       throw new UserError("Пациент уже готовится — подождите несколько секунд", "busy");
     }
-    if (prof.active_patient_ids.length >= MAX_ACTIVE_PATIENTS) {
+    if (prof.active_patient_ids.filter((id) => !id.startsWith("prog_")).length >= MAX_ACTIVE_PATIENTS) {
       throw new UserError(`У вас уже ${MAX_ACTIVE_PATIENTS} активных пациентов. Завершите один из приёмов, чтобы принять нового.`, "max_active");
     }
     if (!G.canAcceptPatient(prof)) {
@@ -561,11 +633,12 @@ export class UserDO extends DurableObject {
     const pat = await this.patient(patId);
     if ((pat.consultations || []).length) throw new UserError("С этим пациентом уже был приём — завершите его через «Завершить приём»");
     prof.active_patient_ids = prof.active_patient_ids.filter((id) => id !== patId);
+    detachProgramPatient(prof, pat);
     await this.ctx.storage.put(PROFILE, prof);
     await this.ctx.storage.delete(patKey(patId));
     await this.track("patient_reject", { name: pat.name, diagnosis: pat.true_diagnosis, complaint: pat.chief_complaint, spec: pat.specialization });
     const st = await this.state();
-    if (st.active_patient_id === patId) await this.ctx.storage.put(STATE, { ...st, active_patient_id: null, bot: null });
+    if (st.active_patient_id === patId || st.active_program_patient_id === patId) await this.ctx.storage.put(STATE, clearActivePatient(st, patId));
     this.broadcast("patients");
     return { ok: true };
   }
@@ -574,10 +647,11 @@ export class UserDO extends DurableObject {
   async reopenPatient(patId) {
     const prof = await this.profile();
     if (!prof.closed_patient_ids.includes(patId)) throw new UserError("Пациент не найден в архиве");
-    if (prof.active_patient_ids.length >= MAX_ACTIVE_PATIENTS) {
+    if (prof.active_patient_ids.filter((id) => !id.startsWith("prog_")).length >= MAX_ACTIVE_PATIENTS) {
       throw new UserError(`У вас уже ${MAX_ACTIVE_PATIENTS} активных пациентов. Завершите один, чтобы принять повторно.`, "max_active");
     }
     const pat = await this.patient(patId);
+    if (pat.program) throw new UserError("Этот случай проходится один раз в программе", "program_case");
     pat.status = "active";
     pat.closed_at = null;
     prof.closed_patient_ids = prof.closed_patient_ids.filter((id) => id !== patId);
@@ -598,10 +672,11 @@ export class UserDO extends DurableObject {
     prof.active_patient_ids = prof.active_patient_ids.filter((id) => id !== patId);
     prof.closed_patient_ids = prof.closed_patient_ids.filter((id) => id !== patId);
     prof.test_ids = prof.test_ids.filter((id) => id !== patId);
+    detachProgramPatient(prof, pat);
     await this.ctx.storage.put(PROFILE, prof);
     await this.ctx.storage.delete([patKey(patId), quizKey(patId)]);
     const st = await this.state();
-    if (st.active_patient_id === patId) await this.ctx.storage.put(STATE, { ...st, active_patient_id: null, bot: null });
+    if (st.active_patient_id === patId || st.active_program_patient_id === patId) await this.ctx.storage.put(STATE, clearActivePatient(st, patId));
     await this.track("patient_delete", { name: pat.name, diagnosis: pat.true_diagnosis, status: pat.status, consultations: (pat.consultations || []).length });
     this.broadcast("patients");
     return { ok: true };
@@ -698,31 +773,58 @@ export class UserDO extends DurableObject {
   // ---------------------------------------------------
 
   /** Начать/продолжить приём. Делает пациента активным и в боте, и на сайте. */
-  async startConsultation(patId) {
+  async startConsultation(patId, rawExperiment) {
+    return this.withLock("consult-start", () => this._startConsultation(patId, rawExperiment));
+  }
+
+  async _startConsultation(patId, rawExperiment) {
     const prof = await this.profile();
     if (!prof.active_patient_ids.includes(patId)) throw new UserError("Этот пациент не в очереди на приём");
     const pat = await this.patient(patId);
+    if (pat.program && this.source() === "bot") throw new UserError("Этот учебный случай доступен в приложении", "program_case");
+    requireProgramPatientAccess(pat, prof);
     const st = await this.state();
     const prevId = st.active_patient_id;
-    let isNewConsultation = false;
-    if (!pat.current) {
-      isNewConsultation = true;
+    const isNewConsultation = !pat.current;
+    const observedConsult = await this.ctx.storage.get(CONSULT_STARTED);
+    const firstCandidate = isNewConsultation && !observedConsult && !prof.stats?.consultations_total && !pat.consultations?.length;
+    const experiment = firstCandidate && this.source() === "web" ? cleanBlogExperiment(rawExperiment) : null;
+    if (isNewConsultation) {
       pat.current = { started_at: Date.now(), tests: [], physicals: [], diagnosis: null, treatment: null, referrals: [], discharged: false };
       pat.status = "active";
       if (!pat.conversation_history.length && pat.opening_phrase) {
         pat.conversation_history.push({ role: "patient", text: pat.opening_phrase, ts: Date.now() });
       }
     }
-    await this.ctx.storage.put({ [patKey(patId)]: pat, [STATE]: { ...st, active_patient_id: patId, bot: null } });
+    await this.ctx.storage.put({
+      [patKey(patId)]: pat,
+      [STATE]: pat.program ? { ...st, active_program_patient_id: patId } : { ...st, active_patient_id: patId, active_program_patient_id: null, bot: null },
+      ...(!observedConsult && { [CONSULT_STARTED]: true }),
+    });
+    const earlierIds = experiment ? [...prof.active_patient_ids, ...prof.closed_patient_ids].filter((id) => id !== patId) : [];
+    const earlier = [];
+    for (let i = 0; i < earlierIds.length; i += 100) {
+      const batch = await this.ctx.storage.get(earlierIds.slice(i, i + 100).map(patKey));
+      earlier.push(...batch.values());
+    }
+    // Старые профили могли начинать приём до появления маркера, в том числе у уже удалённого пациента.
+    const hasEarlierConsult = experiment && (earlier.some((p) => p?.current || p?.consultations?.length)
+      || await this.hub().hasConsultationStart(prof.uid).catch(() => true));
+    const attributed = experiment && !hasEarlierConsult ? experiment : null;
     this.broadcast("consultation", { patient_id: patId });
+    if (isNewConsultation && pat.program) {
+      await this.track("training_program_case_start", { program: pat.program.id, case: pat.program.case_id, entry: pat.program.entry, variant: programVariant(prof) });
+    }
     await this.track("consult_start", { patient: patId, name: pat.name, new: isNewConsultation, n: (pat.consultations || []).length + 1 });
+    if (attributed) await this.track("b1_first_consult", attributed);
     const lastPatientMsg = [...pat.conversation_history].reverse().find((m) => m.role === "patient");
     return {
-      patient: publicPatient(pat, G.isPremium(await this.profile())),
+      patient: publicPatient(pat, G.isPremium(await this.profile()), prof.program_offer),
       paused_other: prevId && prevId !== patId ? prevId : null,
       is_new_consultation: isNewConsultation,
       consultation_number: (pat.consultations || []).length + 1,
       last_patient_message: lastPatientMsg?.text || null,
+      ...(attributed && { blog_experiment: attributed }),
     };
   }
 
@@ -732,6 +834,7 @@ export class UserDO extends DurableObject {
     if (!st.active_patient_id) return null;
     const pat = await this.ctx.storage.get(patKey(st.active_patient_id));
     if (!pat || !pat.current || pat.status === "closed") return null;
+    if (pat.program && !canViewProgramPatient(pat, await this.profile())) return null;
     return pat;
   }
 
@@ -779,6 +882,7 @@ export class UserDO extends DurableObject {
   }
 
   async voiceMessage(patId, base64Audio) {
+    await this.openPatient(patId);
     let text;
     try {
       text = await transcribe(this.env, base64Audio, { uid: (await this.profile()).uid });
@@ -970,7 +1074,7 @@ export class UserDO extends DurableObject {
       await this.ctx.storage.put({
         [patKey(patId)]: fresh,
         [PROFILE]: prof,
-        [STATE]: st.active_patient_id === patId ? { ...st, active_patient_id: null, bot: null } : st,
+        [STATE]: clearActivePatient(st, patId),
       });
       await this.enqueue({ type: "evaluate", patId, origin, source: this.source() });
       this.broadcast("patients", { patient_id: patId });
@@ -1031,6 +1135,22 @@ export class UserDO extends DurableObject {
 
     const fresh = await this.patient(job.patId);
     const rec = fresh.consultations[fresh.consultations.length - 1];
+    if (fresh.program || fresh.battle) {
+      prof.stats.non_ordinary_reviews = (prof.stats.non_ordinary_reviews || 0) + 1;
+    } else if (!prof.program_offer && rc === (prof.stats.non_ordinary_reviews || 0)) {
+      const variant = programVariant(prof);
+      prof.program_offer = { variant, patient_id: fresh.id, consultation_id: rec.id };
+      rec.program_offer = variant;
+    }
+    let finishedProgramCase = false;
+    if (fresh.program) {
+      const progress = (prof.program_progress ||= {});
+      const cases = (progress[fresh.program.id] ||= {});
+      if (cases[fresh.program.case_id]?.patient_id === fresh.id && !cases[fresh.program.case_id].finished_at) {
+        cases[fresh.program.case_id] = { patient_id: fresh.id, finished_at: Date.now() };
+        finishedProgramCase = true;
+      }
+    }
     rec.rating = ev.rating;
     rec.feedback = {
       axes: ev.axes, expert_text: ev.expert_text, dialog_moments: ev.dialog_moments,
@@ -1046,7 +1166,7 @@ export class UserDO extends DurableObject {
     fresh.quiz_facts = { hints: facts.hints || [] };
     await this.ctx.storage.put({ [patKey(job.patId)]: fresh, [PROFILE]: prof });
     // Тест — отдельной задачей в очереди: сбой уведомлений ниже или ответа ИИ не оставит приём без теста
-    await this.enqueue({ type: "quiz", patId: job.patId, source: job.source });
+    if (!fresh.program) await this.enqueue({ type: "quiz", patId: job.patId, source: job.source });
 
     const lvlBefore = G.levelInfo(prevXp).level;
     const lvlAfter = G.levelInfo(prof.xp).level;
@@ -1061,11 +1181,15 @@ export class UserDO extends DurableObject {
       task_done: taskDone ? prof.daily_task : null, consultation_number: fresh.consultations.length,
       hints: facts.hints?.length || 0,
       bonus_patient: bonusPatient,
+      program_case: !!fresh.program,
+      program_offer: rec.program_offer || null,
     };
     // Весь разбор приёма открыт всем; в премиуме — разбор по клиническим рекомендациям (по кнопке) и тест
     Object.assign(result, { recommendation: ev.recommendation, premium: G.isPremium(prof), trial_available: !prof.trial_used, free_quiz: G.freePerkLeft(prof, "quiz") > 0 });
     if (fresh.battle?.id) result.battle_id = fresh.battle.id;
-    this.broadcast("evaluation", result);
+    const canShareReview = !fresh.program?.premium || G.isPremium(await this.profile());
+    if (canShareReview) this.broadcast("evaluation", result);
+    else this.broadcast("patients");
     // Приём в битве «Кто круче?» — результат в HubDO: когда закончат оба, он определит победителя и сообщит обоим
     if (fresh.battle?.id) {
       await this.hub().battleResult(fresh.battle.id, prof.uid, {
@@ -1075,6 +1199,9 @@ export class UserDO extends DurableObject {
       }).catch((e) => console.error("battleResult", e));
     }
     const evSource = { source: job.source || (job.origin === "bot" ? "bot" : "web") };
+    if (finishedProgramCase) {
+      await this.track("training_program_case_finish", { program: fresh.program.id, case: fresh.program.case_id, entry: fresh.program.entry, variant: programVariant(prof) }, evSource);
+    }
     await this.track("evaluation", {
       patient: job.patId, spec: fresh.specialization, rating: ev.rating, axes: ev.axes, correct: ev.diagnosis_correct, xp: earned,
       tests: facts.tests, exams: facts.physicals, weaknesses: ev.weaknesses, level: prof.level,
@@ -1085,11 +1212,11 @@ export class UserDO extends DurableObject {
     if (prof.streak !== prevStreak) await this.track(prof.streak > prevStreak ? "streak_up" : "streak_reset", { streak: prof.streak, before: prevStreak }, evSource);
 
     // Битва: оценку и разбор не присылаем до итога — его пришлёт битва, когда закончат оба
-    if (job.origin !== "bot" && !fresh.battle?.id) {
+    if (canShareReview && job.origin !== "bot" && !fresh.battle?.id) {
       // Оценку не пишем: она раскрывается в приложении — ради неё врач и откроет уведомление
       await this.pushNotify({ title: "✅ Разбор приёма готов", body: `${fresh.name}: ${fresh.true_diagnosis}. Откройте, чтобы узнать оценку`, url: `/app#/patient/${job.patId}`, tag: `ev-${job.patId}` }, { away: true });
     }
-    if (job.origin === "bot" && !fresh.battle?.id) {
+    if (canShareReview && job.origin === "bot" && !fresh.battle?.id) {
       const m = R.evaluation(this.env, result);
       await tg(this.env).send(prof.uid, m.text, m.kb);
       // Первый разобранный приём и отзыва ещё нет — сразу просим оценить тренажёр (на сайте это окно в листе завершения)
@@ -1110,6 +1237,7 @@ export class UserDO extends DurableObject {
    */
   async requestGuide(patId, origin = "web") {
     const pat = await this.patient(patId);
+    if (pat.program) throw new UserError("Для этого случая доступен разбор приёма", "program_case");
     const rec = pat.consultations?.[pat.consultations.length - 1];
     if (!rec || rec.evaluating) throw new UserError("Разбор приёма ещё готовится — подождите минуту", "guide_wait");
     if (rec.guide) return { guide: rec.guide };
@@ -1200,6 +1328,7 @@ export class UserDO extends DurableObject {
     const since = Date.now() - 3 * 86400000;
     const jobs = (await this.ctx.storage.get(JOBS)) || [];
     for (const pat of pats) {
+      if (pat?.program) continue;
       const rec = pat?.consultations?.[pat.consultations.length - 1];
       if (!rec?.feedback || rec.evaluating || !(rec.date >= since) || pat.quiz_heal) continue;
       if (prof.test_ids.includes(pat.id) || jobs.some((j) => j.type === "quiz" && j.patId === pat.id)) continue;
@@ -1273,6 +1402,7 @@ export class UserDO extends DurableObject {
     const question = clampStr(String(text || "").trim(), 1500);
     if (!question) throw new UserError("Напишите вопрос эксперту");
     const pat = await this.patient(patId);
+    if (pat.program) throw new UserError("Для этого случая доступен разбор приёма", "program_case");
     const rec = [...(pat.consultations || [])].reverse().find((c) => c.rating != null && !c.evaluating);
     if (!rec) throw new UserError("Обсудить приём с экспертом можно после разбора");
     if (pat.expert_busy && Date.now() - pat.expert_busy < 90000) throw new UserError("Эксперт ещё отвечает на прошлый вопрос", "busy");
@@ -1893,7 +2023,7 @@ export class UserDO extends DurableObject {
     const pats = await this.ctx.storage.get(prof.active_patient_ids.map(patKey));
     return {
       profile: publicProfile(prof),
-      waiting: prof.active_patient_ids.map((id) => pats.get(patKey(id))).filter(Boolean).map(patientSummary),
+      waiting: prof.active_patient_ids.map((id) => pats.get(patKey(id))).filter((p) => p && !p.program).map(patientSummary),
     };
   }
 
@@ -2202,6 +2332,7 @@ export class UserDO extends DurableObject {
   /** Пациент с открытым приёмом; иначе ошибка */
   async openPatient(patId) {
     const pat = await this.patient(patId);
+    if (pat.program) requireProgramPatientAccess(pat, await this.profile());
     if (!pat.current || pat.status === "closed") throw new UserError("Приём с этим пациентом не начат", "not_in_consultation");
     return pat;
   }
@@ -2245,6 +2376,44 @@ function actionsList(cur) {
   for (const r of cur.referrals || []) a.push(`Направление: ${r}`);
   if (cur.discharged) a.push("Отказ от пациента");
   return a;
+}
+
+function programEntry(value) {
+  return ["home", "first_review", "case_review"].includes(value) ? value : "direct";
+}
+
+function clearActivePatient(state, id) {
+  if (state.active_patient_id === id) return { ...state, active_patient_id: null, bot: null };
+  if (state.active_program_patient_id === id) return { ...state, active_program_patient_id: null };
+  return state;
+}
+
+function requireProgramAccess(item, prof) {
+  if (item?.premium && !G.isPremium(prof)) throw new UserError("Этот случай доступен с подпиской Премиум", "premium");
+}
+
+function programVariant(prof) {
+  return prof.program_offer?.variant || programOfferVariant(prof.uid);
+}
+
+function canViewProgramPatient(pat, prof, premium = G.isPremium(prof)) {
+  if (!pat.program) return true;
+  const { id, case_id } = pat.program;
+  return (!pat.program.premium || premium) && (pat.status === "closed" || prof.program_progress?.[id]?.[case_id]?.patient_id === pat.id);
+}
+
+function requireProgramPatientAccess(pat, prof) {
+  requireProgramAccess(pat.program, prof);
+  if (!canViewProgramPatient(pat, prof)) throw new UserError("Продолжите случай из программы", "program_case");
+}
+
+function detachProgramPatient(prof, pat) {
+  if (!pat.program) return;
+  const cases = prof.program_progress?.[pat.program.id];
+  const entry = cases?.[pat.program.case_id];
+  if (entry?.patient_id !== pat.id) return;
+  if (entry.finished_at) delete entry.patient_id;
+  else delete cases[pat.program.case_id];
 }
 
 function mergeList(fresh = [], old = [], max) {
@@ -2431,7 +2600,7 @@ const fmtRub = (v) => Number(v).toLocaleString("ru", { maximumFractionDigits: 2 
 
 export function publicProfile(prof) {
   const lvl = G.levelInfo(prof.xp || 0);
-  const { payments, daily_patients, push_subs, ...rest } = prof;
+  const { payments, daily_patients, push_subs, program_progress, program_offer, ...rest } = prof;
   return {
     ...rest,
     level_info: lvl,
@@ -2481,13 +2650,17 @@ export function patientSummary(p) {
   };
 }
 
-export function publicPatient(p, premium = true) {
+export function publicPatient(p, premium = true, programOffer = null) {
   const closed = p.status === "closed";
   const { full_history, key_findings, findings, personality, last_facts, summary, mkb10, kr, specialty, ...rest } = p;
   rest.specialization = specialtyOf(p); // профиль приёма, а не раздел — раздел часто подсказывает диагноз
   // Без премиума: оценка, оси и вывод эксперта; цитаты, совет и «что было дальше» — закрыты.
   // В разборе по КР бесплатно — как надо было распознать и чек-лист; диагностика и лечение с дозами — в премиуме.
-  const lock = (c) => (premium || p.gift_kr || !c.guide ? c : { ...c, guide: lockGuide(c.guide) });
+  const lock = ({ program_offer, ...c }) => ({
+    ...c,
+    ...(!premium && !p.gift_kr && c.guide && { guide: lockGuide(c.guide) }),
+    ...(program_offer && programOffer?.patient_id === p.id && programOffer.consultation_id === c.id && { program_offer: programOffer.variant }),
+  });
   // Старые пациенты могли сохраниться с иероглифами от ИИ — чистим при показе
   return stripForeignDeep({
     ...rest,

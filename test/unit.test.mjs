@@ -12,6 +12,35 @@ import { mdPlain } from "../src/lib/md-plain.js";
 import { firstLetter, followUp, OFF_TARGET } from "../content/outreach/mailing/templates.mjs";
 import { readFileSync } from "node:fs";
 import { vkParts } from "../src/lib/vkfeed.js";
+import { mergeProgramProgress, programOfferVariant, programSnapshot } from "../src/lib/programs.js";
+
+test("кардиология: прогресс, порядок и доступ к данным случая", () => {
+  const progress = {
+    palpitations: { patient_id: "free-patient", finished_at: 1 },
+    "exertional-dyspnea": { patient_id: "premium-patient" },
+  };
+  const free = programSnapshot(progress).cases;
+  assert.deepEqual(free.map(({ available, locked }) => [available, locked]), [[true, false], [true, true], [false, true]]);
+  assert.equal(free[1].patient_id, null);
+  assert.equal(Object.hasOwn(free[0], "patient"), false);
+  const premium = programSnapshot(progress, true).cases;
+  assert.equal(premium[1].patient_id, "premium-patient");
+  assert.equal(premium[1].locked, false);
+  const merged = mergeProgramProgress({ cardiology: progress }, { cardiology: {
+    palpitations: { patient_id: "another-free-patient" },
+    "exertional-dyspnea": { patient_id: "completed-patient", finished_at: 2 },
+  } });
+  assert.equal(merged.cardiology.palpitations.patient_id, "free-patient");
+  assert.equal(merged.cardiology["exertional-dyspnea"].patient_id, "completed-patient");
+  assert.equal(programSnapshot(merged.cardiology, true).cases[2].available, true);
+});
+
+test("кардиология: вариант первого разбора стабилен, обе группы получают трафик", () => {
+  const sample = Array.from({ length: 1000 }, (_, i) => programOfferVariant(String(i)));
+  assert.equal(programOfferVariant("777"), sample[777]);
+  const cards = sample.filter((x) => x === "card").length;
+  assert.ok(cards > 450 && cards < 550);
+});
 
 test("parseJsonLoose достаёт JSON из болтовни модели", () => {
   assert.deepEqual(parseJsonLoose('Вот:\n```json\n{"a":1}\n```'), { a: 1 });
@@ -463,6 +492,18 @@ test("откуда пришёл: канал по сайту-источнику �
   assert.equal(channelOf("yandex.ru", "source=vk&medium=cpc"), "UTM: vk / cpc", "UTM важнее сайта-источника");
   assert.equal(channelOf("", "yclid=123"), "Реклама: Яндекс Директ");
   assert.equal(cleanAttribution({ r: "YANDEX.RU<script>", l: "/blog/a/\"><b>", cid: "12ab34" }).land, "/blog/a/b");
+});
+
+test("эксперимент статьи принимает только недавнюю метку известной группы и пути", async () => {
+  const { cleanBlogExperiment } = await import("../src/lib/attribution.js");
+  const now = Date.now();
+  const valid = { article: "sbor-anamneza", variant: "card", via: "demo" };
+  assert.deepEqual(cleanBlogExperiment({ ...valid, at: now, email: "omit@example.com" }, now), valid);
+  assert.equal(cleanBlogExperiment({ ...valid, variant: "unknown", at: now }, now), null);
+  assert.equal(cleanBlogExperiment({ ...valid, via: "other", at: now }, now), null);
+  assert.deepEqual(cleanBlogExperiment({ ...valid, at: now - 7 * 86400000 }, now), valid);
+  assert.equal(cleanBlogExperiment({ ...valid, at: now - 7 * 86400000 - 1 }, now), null);
+  assert.equal(cleanBlogExperiment({ ...valid, at: now + 300001 }, now), null);
 });
 
 test("письма «вернись»: этапы 1/3/7/14/30, без повторов, стрик на 1-й день, новая серия после возвращения", async () => {
