@@ -20,10 +20,12 @@
   },
   "58885903": {
    "to": "studsovetngmu@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-19T06:50:06.218Z",
    "message_id": "<4f33a713-7e45-f314-fb06-cde9d3b43701@gmail.com>",
-   "subject": "Для студсовета НГМУ: тренажёр приёма от студентов-медиков"
+   "subject": "Для студсовета НГМУ: тренажёр приёма от студентов-медиков",
+   "followup_at": "2026-11-27T06:21:27.010Z",
+   "followup_message_id": "<21faf4e8-383e-b700-e9cf-a7993a382b57@gmail.com>"
   },
   "63194435": {
    "to": "smu@orgma.ru",
@@ -1939,17 +1941,21 @@
   },
   "a02f2b97": {
    "to": "med@rudn.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-19T06:32:13.091Z",
    "message_id": "<02fe8b86-f772-9dda-ec57-909b794ae3af@gmail.com>",
-   "subject": "Для студкомитета Медицинского института РУДН: тренажёр приёма"
+   "subject": "Для студкомитета Медицинского института РУДН: тренажёр приёма",
+   "followup_at": "2026-11-27T06:24:48.104Z",
+   "followup_message_id": "<5538dd1d-8c32-794c-4c82-3ae4d2b385ea@gmail.com>"
   },
   "13c482ab": {
    "to": "mail@books-up.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-19T06:37:24.848Z",
    "message_id": "<27ea0d43-c9eb-c818-d515-76ab9531ebab@gmail.com>",
-   "subject": "ЭБС BookUp и разборы клинических случаев: партнёрство"
+   "subject": "ЭБС BookUp и разборы клинических случаев: партнёрство",
+   "followup_at": "2026-11-27T06:29:51.571Z",
+   "followup_message_id": "<6d889d14-1574-0922-0e04-3754ec5064ed@gmail.com>"
   },
   "f3aa60cd": {
    "to": "profkom_1med@bk.ru",
@@ -1968,17 +1974,21 @@
   },
   "9fae9fb9": {
    "to": "studmed34@mail.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-19T06:45:14.755Z",
    "message_id": "<e8a673d8-6c72-e7f7-3a71-1f1b10619e0a@gmail.com>",
-   "subject": "Для студсовета ВолгГМУ: тренажёр приёма для студентов"
+   "subject": "Для студсовета ВолгГМУ: тренажёр приёма для студентов",
+   "followup_at": "2026-11-27T06:33:51.063Z",
+   "followup_message_id": "<7054c7ef-1f7a-98bc-d9f6-f9112664b2fd@gmail.com>"
   },
   "62533d4f": {
    "to": "office_med@spbu.ru",
-   "status": "sent",
+   "status": "followed",
    "sent_at": "2026-11-19T06:54:33.317Z",
    "message_id": "<f5b90f8c-c2de-43a2-f962-2a7f0c44fa53@gmail.com>",
-   "subject": "Для СНО Медицинского института СПбГУ: тренажёр приёма"
+   "subject": "Для СНО Медицинского института СПбГУ: тренажёр приёма",
+   "followup_at": "2026-11-27T06:38:12.163Z",
+   "followup_message_id": "<3d71359c-1603-1a09-51d3-6de85712a49f@gmail.com>"
   },
   "56cba526": {
    "to": "mpasc@bashgmu.ru",
@@ -2363,6 +2373,41 @@
    "to_hash": "ff75a85429147674fe979f55d91fe65adaee61c244275758e2e8e20f97450cb3",
    "status": "sent",
    "sent_at": "2026-11-26T23:08:53.024Z"
+  },
+  "c4dab3a8": {
+   "to": "conference@qmu.kz",
+   "status": "sent",
+   "sent_at": "2026-11-27T06:40:49.812Z",
+   "message_id": "<f7e67bab-f412-276d-a09e-a29ca7176d17@gmail.com>",
+   "subject": "ИИ-пациенты для студентов и резидентов: конгресс КМУ в Караганде"
+  },
+  "e4adf763": {
+   "to": "lyapinamv@tyumsmu.ru",
+   "status": "sent",
+   "sent_at": "2026-11-27T06:45:28.441Z",
+   "message_id": "<7d1a7dad-90b5-790a-d12d-d72ad2083422@gmail.com>",
+   "subject": "Тренажёр с ИИ-пациентом для участников «IT SaveHealth»"
+  },
+  "b2bc4192": {
+   "to": "team@spark.ru",
+   "status": "sent",
+   "sent_at": "2026-11-27T06:50:24.709Z",
+   "message_id": "<cbc015cf-f944-2458-9d2b-f8bc76e61649@gmail.com>",
+   "subject": "История запуска для Spark: студенты-медики и ИИ-пациент"
+  },
+  "013860cc": {
+   "to": "profcom1spbgmu@yandex.ru",
+   "status": "sent",
+   "sent_at": "2026-11-27T06:53:12.999Z",
+   "message_id": "<b87209ea-2b3d-fd6f-7769-27a161a97da2@gmail.com>",
+   "subject": "Для профбюро обучающихся ПСПбГМУ: тренажёр приёма пациента"
+  },
+  "97bdccdd": {
+   "to": "manager@clinic-style.ru",
+   "status": "sent",
+   "sent_at": "2026-11-27T06:56:09.401Z",
+   "message_id": "<58705962-18e3-2788-0b01-692e211b2483@gmail.com>",
+   "subject": "Clinic Style и студенты-медики: идея совместного розыгрыша"
   }
  },
  "days": [
@@ -2399,7 +2444,8 @@
   "2026-11-23",
   "2026-11-24",
   "2026-11-25",
-  "2026-11-26"
+  "2026-11-26",
+  "2026-11-27"
  ],
- "inbox_checked_at": "2026-11-26T20:08:37.658Z"
+ "inbox_checked_at": "2026-11-27T06:21:25.685Z"
 }
